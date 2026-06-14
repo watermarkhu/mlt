@@ -1,0 +1,17 @@
+[package]
+name = "mlt_cli"
+version = "0.1.0"
+edition.workspace = true
+license.workspace = true
+authors.workspace = true
+description = "Command-line interface for the mlt MATLAB linter"
+
+[[bin]]
+name = "mlt"
+path = "src/main.rs"
+
+[dependencies]
+mlt_core = { path = "../mlt_core" }
+mlt_rules = { path = "../mlt_rules" }
+clap.workspace = true
+anyhow.workspace = true
