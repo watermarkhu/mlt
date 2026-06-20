@@ -162,48 +162,34 @@ All items completed and verified.
 
 ---
 
-## Phase 2: Semantic Analysis Infrastructure
+## Phase 2: Semantic Analysis Infrastructure ✅ COMPLETE
 
-Shared infrastructure needed by Phases 3's rule categories that require scope
-analysis, variable tracking, or control flow reasoning.
+### 2.1 — Symbol Table ✅
+- **File:** `crates/mlt_rules/src/analysis/symbols.rs` (1,355 lines)
+- `SymbolTable::build(tree, source)` — single DFS pass producing `Vec<Scope>`
+- Types: `DefKind` (8 variants), `VarDef`, `VarUse`, `ScopeKind` (6 variants), `Scope`, `SymbolTable`
+- Tracks: input/output args, assignments, for-loop iterators, global/persistent, nested functions, lambda params
+- Helpers: `scope_at()`, `function_scopes()`, `defs_of()`, `uses_of()`, `is_defined()`, `is_used()`
+- 14 unit tests
 
-### 2.1 — Symbol Table
-- **New file:** `crates/mlt_rules/src/analysis/symbols.rs`
-- Per-function-scope tracking:
-  - Variable definitions: assignments, function args, for-loop iterators, global/persistent declarations
-  - Variable reads: identifier references in expressions
-  - Scope boundaries: function definitions, nested functions
-  - Scope type: function, script, nested, class method
-- Builds a `Vec<Scope>` from a single DFS pass over the tree.
-- **Used by:** Unset Variables (6), Unused Constructions (17), some Good Practices, some Bugs
+### 2.2 — Control Flow Analysis ✅
+- **File:** `crates/mlt_rules/src/analysis/control_flow.rs` (1,448 lines)
+- `find_unreachable(tree, source)` — detects code after return/break/continue
+- `analyze_definite_assignment(func_node, source)` — set-based flow analysis through if/switch/try/loop branches
+- `block_terminates(block_node)` — recursive termination check
+- Handles: if/elseif/else intersection, switch/case/otherwise, try/catch, for/while (conservative), global/persistent as assigned
+- 24 unit tests
 
-### 2.2 — Control Flow Graph (Basic)
-- **New file:** `crates/mlt_rules/src/analysis/control_flow.rs`
-- Basic reachability analysis:
-  - Mark code after `return`, `break`, `continue` as unreachable
-  - Track whether all branches of `if`/`switch` assign to a variable (definite assignment)
-- **Depends on:** 2.1 (symbol table)
-- **Used by:** `UNRCH`, `NODEF`, `USENS`, `STOUT`
+### 2.3 — Function/Class Metadata Extraction ✅
+- **File:** `crates/mlt_rules/src/analysis/metadata.rs` (1,304 lines)
+- `FileMeta::build(tree, source)` — extracts `FileType`, `ClassMeta`, `FunctionMeta`, `PropertyMeta`, etc.
+- Detects: file type (Script/FunctionFile/ClassFile), constructors, setters/getters, abstract methods, argument validation blocks
+- Helpers: `main_function()`, `all_methods()`, `all_properties()`, `is_sealed()`, `is_abstract()`, `is_handle()`
+- 10 unit tests
 
-### 2.3 — Function/Class Metadata Extraction
-- **New file:** `crates/mlt_rules/src/analysis/metadata.rs`
-- Single-pass extraction of:
-  - Function signatures (name, input count, output count, is constructor, is setter/getter)
-  - Class structure (name, superclasses, properties with attributes, methods with attributes, events, enumerations)
-  - Argument validation blocks (`arguments` statements with size/class/validation functions)
-  - File type (script vs function file vs class file)
-- **Used by:** Language Specification Errors (157), many Good Practices, Bugs
-
-### 2.4 — Analysis Module Scaffold
-- **New file:** `crates/mlt_rules/src/analysis/mod.rs`
+### 2.4 — Analysis Module Scaffold ✅
+- **File:** `crates/mlt_rules/src/analysis/mod.rs`
 - Re-exports `symbols`, `control_flow`, `metadata` sub-modules.
-
-### Dependencies
-```
-2.1 (symbols) ────────────────────→ can start immediately
-2.2 (control_flow) ──────────────→ depends on 2.1
-2.3 (metadata) ──────────────────→ can start immediately (parallel with 2.1)
-```
 
 ---
 

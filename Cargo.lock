@@ -216,6 +216,7 @@ dependencies = [
  "serde",
  "toml",
  "tree-sitter",
+ "tree-sitter-matlab",
 ]
 
 [[package]]

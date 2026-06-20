@@ -18,10 +18,27 @@
 //! No manual edits to `lib.rs` are needed — the rule is automatically discovered
 //! at link time via the `inventory` crate.
 
-pub mod naming;
-pub mod custom_checks;
+pub mod analysis;
+pub mod bugs;
+pub mod codegen;
 pub mod compatibility;
+pub mod config_issues;
+pub mod custom_checks;
+pub mod deployment;
+pub mod formatting;
+pub mod good_practices;
+pub mod incomplete_analysis;
+pub mod language_spec;
+pub mod naming;
 pub mod nosemi;
+pub mod performance;
+pub mod readability;
+pub mod suggested_improvements;
+pub mod syntax_errors;
+pub mod system_objects;
+pub mod unsupported;
+pub mod unused;
+pub mod unset_variables;
 
 use mlt_core::{Config, Rule};
 
