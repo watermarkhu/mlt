@@ -25,6 +25,7 @@ use serde::de::DeserializeOwned;
 use serde::Deserialize;
 
 use crate::diagnostic::Severity;
+use crate::rule::Category;
 
 // ---------------------------------------------------------------------------
 // Config errors
@@ -58,10 +59,15 @@ pub struct LintSection {
     #[serde(default)]
     pub exclude: Vec<String>,
 
-    /// Per-rule configuration. Keys are rule IDs (e.g., "M001").
+    /// Per-rule configuration. Keys are rule IDs (e.g., "NOSEMI").
     /// Values are either a severity string or a full config table.
     #[serde(default)]
     pub rules: HashMap<String, RuleEntry>,
+
+    /// Per-category configuration. Keys are category slugs (e.g., "performance").
+    /// Values are severity strings ("off", "error", "warn", "info").
+    #[serde(default)]
+    pub categories: HashMap<String, String>,
 }
 
 /// A single rule's config entry — either a severity shorthand or a full table.
@@ -113,6 +119,9 @@ pub struct Config {
     pub exclude: Vec<String>,
     /// Per-rule configuration, keyed by rule ID.
     pub rules: HashMap<String, RuleConfig>,
+    /// Per-category severity overrides, keyed by [`Category`].
+    /// A value of `None` means the category is disabled ("off").
+    pub categories: HashMap<Category, Option<Severity>>,
 }
 
 impl Config {
@@ -144,21 +153,16 @@ impl Config {
                             .ok_or_else(|| ConfigError::InvalidSeverity(val.to_string()))?;
                         let (enabled, sev) = parse_severity_string(s)?;
                         if !enabled {
-                            // If severity is "off", the rule is disabled regardless of params.
-                            return Ok(Self {
-                                exclude: file.lint.exclude,
-                                rules: {
-                                    rules.insert(
-                                        rule_id,
-                                        RuleConfig {
-                                            enabled: false,
-                                            severity: None,
-                                            params: toml::Table::new(),
-                                        },
-                                    );
-                                    rules
+                            // Rule is disabled — record it and continue to the next rule.
+                            rules.insert(
+                                rule_id,
+                                RuleConfig {
+                                    enabled: false,
+                                    severity: None,
+                                    params: toml::Table::new(),
                                 },
-                            });
+                            );
+                            continue;
                         }
                         sev
                     } else {
@@ -182,15 +186,33 @@ impl Config {
             rules.insert(rule_id, rule_config);
         }
 
+        // Parse category overrides.
+        let mut categories = HashMap::new();
+        for (cat_name, severity_str) in file.lint.categories {
+            let category: Category = cat_name.parse().map_err(|_| {
+                ConfigError::InvalidSeverity(format!("unknown category: {cat_name}"))
+            })?;
+            let (enabled, severity) = parse_severity_string(&severity_str)?;
+            if enabled {
+                categories.insert(category, severity);
+            } else {
+                // "off" means the category is disabled — store None.
+                categories.insert(category, None);
+            }
+        }
+
         Ok(Self {
             exclude: file.lint.exclude,
             rules,
+            categories,
         })
     }
 
     /// Load and deserialize rule-specific parameters into a typed struct.
     ///
-    /// If the rule has no config entry or deserialization fails, returns `T::default()`.
+    /// If the rule has no config entry or the params table is empty, returns
+    /// `T::default()`. If deserialization fails, logs a warning to stderr and
+    /// returns `T::default()`.
     ///
     /// # Example
     ///
@@ -210,7 +232,15 @@ impl Config {
                     return None;
                 }
                 let value = toml::Value::Table(rc.params.clone());
-                value.try_into::<T>().ok()
+                match value.try_into::<T>() {
+                    Ok(v) => Some(v),
+                    Err(e) => {
+                        eprintln!(
+                            "mlt: warning: invalid config for rule {rule_id}: {e}; using defaults"
+                        );
+                        None
+                    }
+                }
             })
             .unwrap_or_default()
     }
@@ -225,9 +255,53 @@ impl Config {
             .unwrap_or(true)
     }
 
+    /// Check whether a rule is enabled, considering both per-rule and per-category config.
+    ///
+    /// Resolution order:
+    /// 1. Per-rule config takes precedence (if rule is explicitly configured).
+    /// 2. Per-category config applies if the rule has no explicit config.
+    /// 3. Default: enabled.
+    pub fn is_rule_enabled_for_category(
+        &self,
+        rule_id: &str,
+        category: Category,
+    ) -> bool {
+        // Per-rule override takes precedence.
+        if let Some(rc) = self.rules.get(rule_id) {
+            return rc.enabled;
+        }
+        // Check category-level config.
+        if let Some(cat_severity) = self.categories.get(&category) {
+            // None means category is disabled ("off").
+            return cat_severity.is_some();
+        }
+        // Default: enabled.
+        true
+    }
+
     /// Get the configured severity override for a rule, if any.
     pub fn rule_severity(&self, rule_id: &str) -> Option<Severity> {
         self.rules.get(rule_id).and_then(|rc| rc.severity)
+    }
+
+    /// Get the effective severity for a rule, considering category overrides.
+    ///
+    /// Resolution order:
+    /// 1. Per-rule severity override.
+    /// 2. Per-category severity override.
+    /// 3. None (use rule's default).
+    pub fn effective_severity(&self, rule_id: &str, category: Category) -> Option<Severity> {
+        // Per-rule override takes precedence.
+        if let Some(rc) = self.rules.get(rule_id) {
+            if rc.severity.is_some() {
+                return rc.severity;
+            }
+        }
+        // Category-level override (flatten Option<Option<Severity>> → Option<Severity>).
+        if let Some(cat_severity) = self.categories.get(&category) {
+            return *cat_severity;
+        }
+        None
     }
 }
 
@@ -359,5 +433,33 @@ M001 = "banana"
         let result = Config::from_toml(toml);
         assert!(result.is_err());
         assert!(result.unwrap_err().to_string().contains("banana"));
+    }
+
+    #[test]
+    fn test_full_table_off_does_not_drop_subsequent_rules() {
+        // Regression test: a rule with severity = "off" in full-table form
+        // must not prevent subsequent rules from being parsed.
+        let toml = r#"
+[lint.rules.M001]
+severity = "off"
+
+[lint.rules.M002]
+severity = "error"
+
+[lint.rules]
+M003 = "warn"
+"#;
+        let config = Config::from_toml(toml).unwrap();
+
+        let m001 = &config.rules["M001"];
+        assert!(!m001.enabled);
+
+        let m002 = &config.rules["M002"];
+        assert!(m002.enabled);
+        assert_eq!(m002.severity, Some(Severity::Error));
+
+        let m003 = &config.rules["M003"];
+        assert!(m003.enabled);
+        assert_eq!(m003.severity, Some(Severity::Warning));
     }
 }

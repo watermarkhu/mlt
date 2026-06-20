@@ -68,13 +68,14 @@ impl Linter {
         // Step 2: Single-pass DFS traversal using TreeCursor
         let mut diagnostics = self.traverse(&tree, source, file_path);
 
-        // Step 3: File-level checks
+        // Step 3: File-level checks (only on rules that implement check_file)
         let file_ctx = FileContext {
             tree: &tree,
             source,
             file_path,
         };
-        for (idx, rule) in self.registry.rules_with_indices() {
+        for &idx in self.registry.file_check_rules() {
+            let rule = self.registry.get_rule(idx);
             let mut file_diags = rule.check_file(&file_ctx);
             // Stamp effective severity on file-level diagnostics.
             let effective_severity = self.registry.effective_severity(idx);

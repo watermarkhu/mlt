@@ -31,7 +31,7 @@ nav = [
   { "Configuration" = "configuration.md" },
   { "Rules" = [
     { "Overview" = "rules.md" },
-    { "M001 - Trailing Semicolon" = "m001.md" },
+    { "NOSEMI - Trailing Semicolon" = "nosemi.md" },
   ]},
 ]
 

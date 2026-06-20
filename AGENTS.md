@@ -6,6 +6,8 @@ This document describes how to develop and document the `mlt` codebase for AI co
 
 `mlt` (pronounced "melt") is an ultra-fast, extensible linter for MATLAB written in Rust. It uses `tree-sitter-matlab` for parsing and is architecturally inspired by [ruff](https://github.com/astral-sh/ruff) and [rumdl](https://github.com/rvben/rumdl).
 
+The goal is full feature parity with MATLAB's Code Analyzer (~2,680 checks), using the same check IDs (e.g., `NOSEMI`, `AGROW`, `naming.class.casing`).
+
 ## Workspace Structure
 
 ```
@@ -23,8 +25,8 @@ mlt/
 
 | Crate | Purpose |
 |-------|---------|
-| `mlt_core` | Defines `Rule` trait, `NodeContext`/`FileContext`, `RuleRegistry`, `Linter` engine, `Config` parsing, `Diagnostic`/`Fix`/`Severity` types. No concrete rules live here. |
-| `mlt_rules` | All concrete rule implementations. Exports `all_rules(&Config)` and `active_rules(&Config)`. Depends on `mlt_core`. |
+| `mlt_core` | Defines `Rule` trait, `Category` enum, `NodeContext`/`FileContext`, `RuleRegistry`, `Linter` engine, `Config` parsing, `Diagnostic`/`Fix`/`Severity` types. No concrete rules live here. |
+| `mlt_rules` | All concrete rule implementations. Uses `inventory` crate for auto-registration. Exports `all_rules(&Config)` and `active_rules(&Config)`. Depends on `mlt_core`. |
 | `mlt_cli` | Binary entry point. Discovers `.mlt.toml`, builds registry, invokes linter, formats output. Depends on both `mlt_core` and `mlt_rules`. |
 
 ### Dependency Direction
@@ -40,12 +42,12 @@ mlt_cli → mlt_rules → mlt_core
 ### Lint Engine Flow
 
 1. CLI loads `.mlt.toml` → parses into `Config`
-2. `mlt_rules::active_rules(&config)` → constructs only enabled rules (filtered by config)
-3. `RuleRegistry::new(rules, &config)` → indexes rules by `target_node_types()`, resolves effective severity per rule
+2. `mlt_rules::active_rules(&config)` → constructs only enabled rules (filtered by per-rule and per-category config)
+3. `RuleRegistry::new(rules, &config)` → indexes rules by `target_node_types()`, resolves effective severity per rule (per-rule > per-category > rule default)
 4. `Linter::new(registry)` → initializes tree-sitter parser with MATLAB grammar
 5. `linter.lint(source, file_path)` → single-pass DFS traversal:
    - For each node: O(1) lookup of subscribed rules, dispatch `rule.check(&NodeContext)`
-   - After traversal: call `rule.check_file(&FileContext)` on all rules
+   - After traversal: call `rule.check_file(&FileContext)` only on rules where `has_file_check() == true`
    - Stamp effective severity (config override) onto all diagnostics
    - Return sorted diagnostics
 
@@ -53,10 +55,14 @@ mlt_cli → mlt_rules → mlt_core
 
 ```rust
 pub trait Rule: Send + Sync {
-    fn id(&self) -> &'static str;                          // e.g., "M001"
+    fn id(&self) -> &'static str;                          // e.g., "NOSEMI"
     fn description(&self) -> &'static str;                 // One-line summary
     fn severity(&self) -> Severity;                        // Default severity
+    fn category(&self) -> Category;                        // Rule category for bulk config
     fn target_node_types(&self) -> &'static [&'static str]; // Node types to subscribe to
+
+    fn can_be_disabled(&self) -> bool { true }             // false for critical checks
+    fn has_file_check(&self) -> bool { false }             // true if check_file is implemented
 
     fn check(&self, ctx: &NodeContext) -> Vec<Diagnostic> { vec![] }      // Per-node
     fn check_file(&self, ctx: &FileContext) -> Vec<Diagnostic> { vec![] } // Per-file
@@ -64,8 +70,45 @@ pub trait Rule: Send + Sync {
 ```
 
 - **Node-level rules**: Implement `check()`, return non-empty `target_node_types()`.
-- **File-level rules**: Implement `check_file()`, return empty `target_node_types()`.
+- **File-level rules**: Implement `check_file()`, set `has_file_check() → true`, return empty `target_node_types()`.
 - **Hybrid**: Implement both (rare).
+
+### Rule Categories
+
+Rules are organized into categories matching MATLAB's Code Analyzer groups:
+
+| Category Enum | Config Key | Description |
+|---------------|-----------|-------------|
+| `IncompleteAnalysis` | `incomplete-analysis` | Internal linter limits |
+| `SyntaxErrors` | `syntax-errors` | Parser-level validation |
+| `LanguageSpecification` | `language-specification` | Language constraint violations |
+| `Bugs` | `bugs` | Likely bugs and logic errors |
+| `CustomChecks` | `custom-checks` | Complexity/style metrics |
+| `Naming` | `naming` | Naming conventions |
+| `Compatibility` | `compatibility` | Deprecated/removed APIs |
+| `ForwardCompatibility` | `forward-compatibility` | Forward compatibility |
+| `GoodPractices` | `good-practices` | Best practices |
+| `UnsetVariables` | `unset-variables` | Undefined variables |
+| `UnusedConstructions` | `unused-constructions` | Dead code |
+| `SuggestedImprovements` | `suggested-improvements` | Code improvement suggestions |
+| `Readability` | `readability` | Readability improvements |
+| `Formatting` | `formatting` | Code formatting |
+| `Performance` | `performance` | Performance hints |
+| `CodeGeneration` | `code-generation` | MATLAB Coder constraints |
+| `FixedPoint` | `fixed-point` | Fixed-point toolbox |
+| `Deployment` | `deployment` | MATLAB Compiler constraints |
+| `SystemObjects` | `system-objects` | System object validation |
+| `Unsupported` | `unsupported` | Unsupported features |
+| `BehaviorChanges` | `behavior-changes` | Version behavior changes |
+| `ConfigurationIssues` | `configuration-issues` | Config file validation |
+
+### Auto-Registration
+
+Rules self-register using the `inventory` crate. No manual editing of `lib.rs` registration arrays is needed. Each rule module adds at the bottom:
+
+```rust
+inventory::submit!(crate::RuleRegistration::new("RULE_ID", RuleStruct::from_config));
+```
 
 ### Configuration System
 
@@ -75,14 +118,20 @@ Config file: `.mlt.toml` (discovered in CWD, or explicit `--config <path>`).
 [lint]
 exclude = ["vendor/**"]
 
-[lint.rules]
-M001 = "warn"           # Shorthand: severity only
-M002 = "off"            # Disable rule
+[lint.categories]
+performance = "off"          # Disable all performance rules
+compatibility = "warn"       # Set all compatibility rules to warning
 
-[lint.rules.M001]       # Full table: severity + rule-specific params
+[lint.rules]
+NOSEMI = "info"              # Shorthand: severity only
+AGROW = "off"               # Disable rule
+
+[lint.rules.NOSEMI]          # Full table: severity + rule-specific params
 severity = "error"
 ignore_functions = ["disp", "fprintf"]
 ```
+
+Resolution order: per-rule > per-category > rule default.
 
 Rules access typed parameters via `config.rule_params::<T>(rule_id)`, which deserializes the rule's TOML table into a `#[derive(Deserialize, Default)]` struct.
 
@@ -92,33 +141,38 @@ This is the most common task. Follow these steps exactly:
 
 ### 1. Create the rule module
 
-Create `crates/mlt_rules/src/m<NNN>_<snake_name>.rs`:
+Create `crates/mlt_rules/src/<rule_id_lowercase>.rs`:
 
 ```rust
-use mlt_core::{Config, Diagnostic, Fix, NodeContext, Rule, Severity};
+//! # RULE_ID: Rule Description
+//!
+//! Explanation of what the rule checks.
+
+use mlt_core::{Category, Config, Diagnostic, Fix, NodeContext, Rule, Severity};
 use serde::Deserialize;
 
 /// Rule-specific configuration (deserialized from .mlt.toml).
 #[derive(Debug, Clone, Deserialize, Default)]
-pub struct M<NNN>Config {
+pub struct RuleIdConfig {
     // Add rule-specific parameters here with #[serde(default)]
 }
 
-pub struct M<NNN><RuleName> {
-    config: M<NNN>Config,
+pub struct RuleId {
+    config: RuleIdConfig,
 }
 
-impl M<NNN><RuleName> {
+impl RuleId {
     pub fn from_config(config: &Config) -> Box<dyn Rule> {
-        let rule_config: M<NNN>Config = config.rule_params("M<NNN>");
+        let rule_config: RuleIdConfig = config.rule_params("RULE_ID");
         Box::new(Self { config: rule_config })
     }
 }
 
-impl Rule for M<NNN><RuleName> {
-    fn id(&self) -> &'static str { "M<NNN>" }
+impl Rule for RuleId {
+    fn id(&self) -> &'static str { "RULE_ID" }
     fn description(&self) -> &'static str { "..." }
     fn severity(&self) -> Severity { Severity::Warning }
+    fn category(&self) -> Category { Category::GoodPractices }
     fn target_node_types(&self) -> &'static [&'static str] { &["..."] }
 
     fn check(&self, ctx: &NodeContext) -> Vec<Diagnostic> {
@@ -126,25 +180,26 @@ impl Rule for M<NNN><RuleName> {
         Vec::new()
     }
 }
+
+inventory::submit!(crate::RuleRegistration::new("RULE_ID", RuleId::from_config));
 ```
 
-### 2. Register the rule
+### 2. Register the module
 
-In `crates/mlt_rules/src/lib.rs`:
+In `crates/mlt_rules/src/lib.rs`, add only:
 
-1. Add `pub mod m<NNN>_<snake_name>;`
-2. Add `use m<NNN>_<snake_name>::M<NNN><RuleName>;`
-3. Add entry to `RULE_FACTORIES`:
-   ```rust
-   ("M<NNN>", M<NNN><RuleName>::from_config),
-   ```
+```rust
+pub mod rule_id_lowercase;
+```
+
+No other changes needed — `inventory` handles the rest.
 
 ### 3. Add documentation
 
-Create `docs/m<NNN>.md` following the format of `docs/m001.md`:
+Create `docs/<rule_id_lowercase>.md` following the format of `docs/nosemi.md`:
 
 - Title with rule ID and name
-- Default severity and auto-fix status
+- Default severity, auto-fix status, category, can-be-disabled
 - "What this rule does" section
 - "Why this matters" section
 - Examples: Correct / Incorrect / Fixed (with MATLAB code blocks)
@@ -162,7 +217,7 @@ Add a row to the rule table in `docs/rules.md`.
 Add the rule page to the `Rules` section in `zensical.toml`:
 
 ```toml
-{ "M<NNN> - <Name>" = "m<NNN>.md" },
+{ "RULE_ID - Name" = "rule_id_lowercase.md" },
 ```
 
 ### 6. Verify
@@ -175,14 +230,36 @@ cargo test
 
 ## Key Patterns and Conventions
 
+### Rule ID Convention
+
+Rule IDs match MATLAB Code Analyzer check IDs exactly (e.g., `NOSEMI`, `AGROW`, `PFBNS`, `naming.class.casing`). This gives users familiar IDs and enables feature parity tracking.
+
+### Data-Driven Rules
+
+For large groups of similar checks (Compatibility: ~1800, Suggested Improvements: ~243), use data-driven lookup tables:
+
+```rust
+// Load from embedded TOML data file
+const DATA: &str = include_str!("data/compatibility.toml");
+```
+
+A single rule module handles many check IDs by matching function names against a lookup table.
+
+### Generic Rule Engines
+
+For systematic patterns (Naming: 81 checks = 9 entities x 9 check types), implement a single generic engine parameterized by configuration.
+
 ### Tree-sitter Node Types
 
-The MATLAB grammar defines these important node types:
+The MATLAB grammar (tree-sitter-matlab 1.3) defines these important node types:
 
 - **Statements**: `assignment`, `function_call`, `command`, `for_statement`, `if_statement`, `while_statement`, `switch_statement`, `try_statement`, `return_statement`, `break_statement`, `continue_statement`
 - **Expressions**: `binary_operator`, `boolean_operator`, `comparison_operator`, `unary_operator`, `postfix_operator`, `number`, `string`, `identifier`, `function_call`, `field_expression`, `cell`, `matrix`, `range`, `lambda`
 - **Structural**: `source_file`, `block`, `function_definition`, `class_definition`, `properties`, `methods`, `arguments_statement`
+- **OOP**: `attributes`, `attribute`, `enumeration`, `enum`, `events`, `property`, `superclasses`
 - **Statement parents**: `source_file`, `block` (use these to determine if a node is at statement level)
+
+**Important limitation**: `function_call` is used for both actual function calls AND array/cell indexing. The grammar cannot distinguish them.
 
 ### Checking Statement-Level Context
 
@@ -216,7 +293,7 @@ Every rule should define a `#[derive(Deserialize, Default)]` config struct, even
 
 ```rust
 #[derive(Debug, Clone, Deserialize, Default)]
-pub struct M<NNN>Config {
+pub struct RuleIdConfig {
     #[serde(default)]
     pub some_param: Vec<String>,
 }
@@ -238,7 +315,7 @@ pub struct M<NNN>Config {
 - Zero clippy warnings (CI gate)
 - All public types and functions must have doc comments
 - Rule modules must have module-level `//!` documentation with examples
-- Every rule must have a corresponding `docs/m<NNN>.md` documentation page
+- Every rule must have a corresponding `docs/<rule_id>.md` documentation page
 - Tests should cover: rule fires correctly, rule does NOT fire on valid code, config parameters are respected
 
 ## Documentation System
@@ -264,15 +341,15 @@ docs/
 │   └── ci-cd.md                # CI/CD integration
 ├── configuration.md            # .mlt.toml schema reference
 ├── rules.md                    # Rules overview + table
-└── m<NNN>.md                   # One page per rule (flat, not nested)
+└── <rule_id>.md                # One page per rule (flat, not nested)
 ```
 
 ### Rule Documentation Template
 
-Every rule page follows this structure (see `docs/m001.md` as the canonical example):
+Every rule page follows this structure (see `docs/nosemi.md` as the canonical example):
 
-1. `# M<NNN> - <Human Name>`
-2. Default severity + auto-fix badge
+1. `# RULE_ID - <Human Name>`
+2. Default severity + auto-fix badge + category + can-be-disabled
 3. "What this rule does"
 4. "Why this matters" (bullet points)
 5. "Examples" → Correct / Incorrect / Fixed (MATLAB code blocks)

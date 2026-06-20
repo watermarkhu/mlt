@@ -10,3 +10,4 @@ description = "Lint rule implementations for mlt"
 mlt_core = { path = "../mlt_core" }
 tree-sitter.workspace = true
 serde.workspace = true
+inventory.workspace = true

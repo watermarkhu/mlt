@@ -1,4 +1,4 @@
-//! # M001: Trailing Semicolon Missing
+//! # NOSEMI: Trailing Semicolon Missing
 //!
 //! In MATLAB, statements that produce output without a trailing semicolon will
 //! print their result to the console. This is almost always unintentional in
@@ -21,23 +21,23 @@
 //! ## Configuration
 //!
 //! ```toml
-//! [lint.rules.M001]
-//! severity = "error"
+//! [lint.rules.NOSEMI]
+//! severity = "info"
 //! ignore_functions = ["disp", "fprintf", "warning", "error"]
 //! ```
 
-use mlt_core::{Config, Diagnostic, Fix, NodeContext, Rule, Severity};
+use mlt_core::{Category, Config, Diagnostic, Fix, NodeContext, Rule, Severity};
 use serde::Deserialize;
 
 // ---------------------------------------------------------------------------
 // Rule-specific configuration
 // ---------------------------------------------------------------------------
 
-/// Configuration for M001.
+/// Configuration for NOSEMI.
 ///
-/// Deserialized from the `[lint.rules.M001]` section in `.mlt.toml`.
+/// Deserialized from the `[lint.rules.NOSEMI]` section in `.mlt.toml`.
 #[derive(Debug, Clone, Deserialize, Default)]
-pub struct M001Config {
+pub struct NosemiConfig {
     /// Function names to ignore (statements calling these functions won't be
     /// flagged even without a semicolon). Useful for intentional output
     /// functions like `disp`, `fprintf`, etc.
@@ -49,14 +49,14 @@ pub struct M001Config {
 // Rule implementation
 // ---------------------------------------------------------------------------
 
-/// Rule M001: flags statements at the top level of a block that do not end
+/// Rule NOSEMI: flags statements at the top level of a block that do not end
 /// with a trailing semicolon.
 ///
 /// Targets `assignment`, `function_call`, and `command` nodes. Only fires when
 /// the node is a direct child of `source_file` or `block` (i.e., at statement
 /// level, not as a sub-expression).
-pub struct M001TrailingSemicolon {
-    config: M001Config,
+pub struct Nosemi {
+    config: NosemiConfig,
 }
 
 /// Statement-level node types that should typically end with a semicolon.
@@ -65,19 +65,19 @@ const TARGET_NODES: &[&str] = &["assignment", "function_call", "command"];
 /// Parent node types that indicate statement-level context.
 const STATEMENT_PARENTS: &[&str] = &["source_file", "block"];
 
-impl M001TrailingSemicolon {
+impl Nosemi {
     /// Factory constructor. Reads rule-specific params from config.
     pub fn from_config(config: &Config) -> Box<dyn Rule> {
-        let rule_config: M001Config = config.rule_params("M001");
+        let rule_config: NosemiConfig = config.rule_params("NOSEMI");
         Box::new(Self {
             config: rule_config,
         })
     }
 }
 
-impl Rule for M001TrailingSemicolon {
+impl Rule for Nosemi {
     fn id(&self) -> &'static str {
-        "M001"
+        "NOSEMI"
     }
 
     fn description(&self) -> &'static str {
@@ -85,7 +85,11 @@ impl Rule for M001TrailingSemicolon {
     }
 
     fn severity(&self) -> Severity {
-        Severity::Warning
+        Severity::Info
+    }
+
+    fn category(&self) -> Category {
+        Category::Formatting
     }
 
     fn target_node_types(&self) -> &'static [&'static str] {
@@ -208,3 +212,9 @@ fn has_trailing_semicolon(node: tree_sitter::Node, source: &str) -> bool {
 
     false
 }
+
+// ---------------------------------------------------------------------------
+// Auto-registration
+// ---------------------------------------------------------------------------
+
+inventory::submit!(crate::RuleRegistration::new("NOSEMI", Nosemi::from_config));

@@ -24,6 +24,8 @@ pub struct RuleRegistry {
     /// Maps tree-sitter node type string → indices into `rules`.
     /// Multiple rules may subscribe to the same node type.
     node_type_index: HashMap<&'static str, Vec<usize>>,
+    /// Indices of rules that implement file-level checking.
+    file_check_indices: Vec<usize>,
 }
 
 impl RuleRegistry {
@@ -31,15 +33,16 @@ impl RuleRegistry {
     ///
     /// Constructs the internal index mapping each declared node type to the
     /// rules that subscribe to it. Resolves effective severity per rule:
-    /// if the config overrides a rule's severity, that takes precedence.
+    /// config override (per-rule or per-category) takes precedence over rule default.
     pub fn new(rules: Vec<Box<dyn Rule>>, config: &Config) -> Self {
         let mut node_type_index: HashMap<&'static str, Vec<usize>> = HashMap::new();
         let mut severities = Vec::with_capacity(rules.len());
+        let mut file_check_indices = Vec::new();
 
         for (idx, rule) in rules.iter().enumerate() {
-            // Resolve effective severity: config override > rule default.
+            // Resolve effective severity: per-rule > per-category > rule default.
             let effective_severity = config
-                .rule_severity(rule.id())
+                .effective_severity(rule.id(), rule.category())
                 .unwrap_or_else(|| rule.severity());
             severities.push(effective_severity);
 
@@ -49,12 +52,17 @@ impl RuleRegistry {
                     .or_default()
                     .push(idx);
             }
+
+            if rule.has_file_check() {
+                file_check_indices.push(idx);
+            }
         }
 
         Self {
             rules,
             severities,
             node_type_index,
+            file_check_indices,
         }
     }
 
@@ -68,6 +76,12 @@ impl RuleRegistry {
             .get(node_type)
             .map(|v| v.as_slice())
             .unwrap_or(&[])
+    }
+
+    /// Get indices of rules that implement file-level checking.
+    #[inline]
+    pub fn file_check_rules(&self) -> &[usize] {
+        &self.file_check_indices
     }
 
     /// Get a rule by its index.

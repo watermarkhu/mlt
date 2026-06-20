@@ -1,7 +1,9 @@
-# M001 - Trailing Semicolon Missing
+# NOSEMI - Trailing Semicolon Missing
 
-**Default severity:** Warning
+**Default severity:** Info
 **Auto-fix:** Yes
+**Category:** Formatting
+**Can be disabled:** Yes
 
 ## What this rule does
 
@@ -47,8 +49,8 @@ result = process(data);
 ## Configuration
 
 ```toml title=".mlt.toml"
-[lint.rules.M001]
-severity = "warn"
+[lint.rules.NOSEMI]
+severity = "info"
 ignore_functions = ["disp", "fprintf", "warning", "error"]
 ```
 
@@ -56,7 +58,7 @@ ignore_functions = ["disp", "fprintf", "warning", "error"]
 
 | Parameter | Type | Default | Description |
 | --------- | ---- | ------- | ----------- |
-| `severity` | string | `"warn"` | Severity level (`"error"`, `"warn"`, `"info"`, `"off"`) |
+| `severity` | string | `"info"` | Severity level (`"error"`, `"warn"`, `"info"`, `"off"`) |
 | `ignore_functions` | array of strings | `[]` | Function names to exclude from this check |
 
 ### `ignore_functions`
@@ -99,4 +101,5 @@ Sub-expressions (e.g., `bar(1)` inside `x = foo(bar(1))`) are **not** flagged.
 
 ## Related rules
 
-*No related rules yet.*
+- `NOCOMMA` — Missing comma between matrix elements
+- `NO4LP` — Missing indentation for loop body
