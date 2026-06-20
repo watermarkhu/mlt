@@ -21,3 +21,4 @@ thiserror = "2"
 anyhow = "1"
 clap = { version = "4", features = ["derive"] }
 inventory = "0.3"
+regex = "1"

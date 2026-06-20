@@ -1,0 +1,2350 @@
+# Compatibility checks data file for mlt.
+#
+# Each [[checks]] entry represents one MATLAB Code Analyzer compatibility check.
+# The compatibility engine uses this to detect deprecated/removed function usage.
+#
+# Fields:
+#   id            - Check ID matching MATLAB Code Analyzer (e.g., "DPSD")
+#   function_name - The deprecated function/class name to match against
+#   severity      - "error" or "warning"
+#   message       - Human-readable diagnostic message
+#   category      - "compatibility", "forward-compatibility", or "behavior-changes"
+#   pattern       - (optional) "generic" for checks that cannot be matched by function name alone
+
+# =============================================================================
+# Compatibility Considerations (891 checks)
+# =============================================================================
+
+[[checks]]
+id = "DPSD"
+function_name = "psd"
+severity = "error"
+message = "'psd' has been removed. Use 'periodogram' or 'pwelch' instead."
+category = "compatibility"
+
+[[checks]]
+id = "DSPDF"
+function_name = "dsp.DigitalFilter"
+severity = "error"
+message = "'dsp.DigitalFilter' has been removed. Use 'dsp.FIRFilter', 'dsp.IIRFilter', or 'dsp.AllpoleFilter' instead."
+category = "compatibility"
+
+[[checks]]
+id = "DMSSPEC"
+function_name = "dspdata.msspectrum"
+severity = "warning"
+message = "'dspdata.msspectrum' will be removed in a future release. Use 'periodogram' or 'pwelch' instead."
+category = "compatibility"
+
+[[checks]]
+id = "DPSPEC"
+function_name = "dspdata.pseudospectrum"
+severity = "warning"
+message = "'dspdata.pseudospectrum' will be removed in a future release. Use 'pmusic' or 'peig' instead."
+category = "compatibility"
+
+[[checks]]
+id = "DPPSD"
+function_name = "dspdata.psd"
+severity = "warning"
+message = "'dspdata.psd' will be removed in a future release. Use 'pburg', 'pcov', 'peig', 'pmcov', 'pmtm', 'periodogram', or 'pwelch' instead."
+category = "compatibility"
+
+[[checks]]
+id = "DINLN"
+function_name = "inline"
+severity = "warning"
+message = "INLINE will be removed in a future release. Use anonymous functions instead."
+category = "compatibility"
+
+[[checks]]
+id = "DFCNCHK"
+function_name = "fcnchk"
+severity = "warning"
+message = "FCNCHK will be removed in a future release. Use anonymous functions instead."
+category = "compatibility"
+
+[[checks]]
+id = "MSYSTEM"
+function_name = "matlab.system.System"
+severity = "error"
+message = "matlab.system.System has been removed. Use matlab.System instead."
+category = "compatibility"
+
+[[checks]]
+id = "MATPOOL"
+function_name = "matlabpool"
+severity = "error"
+message = "'matlabpool' has been removed. Use 'pool' instead."
+category = "compatibility"
+
+[[checks]]
+id = "OBJMPOOL"
+function_name = "MATLABPOOL"
+severity = "error"
+message = "'MATLABPOOL' has been removed. Use 'PARPOOL' instead."
+category = "compatibility"
+
+[[checks]]
+id = "TREEDISP"
+function_name = "treedisp"
+severity = "error"
+message = "TREEDISP has been removed. Use ClassificationTree or RegressionTree VIEW methods instead."
+category = "compatibility"
+
+[[checks]]
+id = "TREEPRUNE"
+function_name = "treeprune"
+severity = "error"
+message = "TREEPRUNE has been removed. Use ClassificationTree or RegressionTree PRUNE methods instead."
+category = "compatibility"
+
+[[checks]]
+id = "TREETEST"
+function_name = "treetest"
+severity = "error"
+message = "'treetest' has been removed. Use ClassificationTree or RegressionTree methods instead."
+category = "compatibility"
+
+[[checks]]
+id = "TREEVAL"
+function_name = "treeval"
+severity = "error"
+message = "TREEVAL has been removed. Use ClassificationTree or RegressionTree PREDICT methods instead."
+category = "compatibility"
+
+[[checks]]
+id = "TREEFIT"
+function_name = "treefit"
+severity = "error"
+message = "TREEFIT has been removed. Use fitctree or fitrtree instead."
+category = "compatibility"
+
+[[checks]]
+id = "FISGET"
+function_name = "getfis"
+severity = "error"
+message = "'getfis' has been removed. Access FIS properties using dot notation instead."
+category = "compatibility"
+
+[[checks]]
+id = "FISM2M"
+function_name = "mf2mf"
+severity = "error"
+message = "'mf2mf' has been removed. Convert membership functions using dot notation on 'fismf' objects instead."
+category = "compatibility"
+
+[[checks]]
+id = "FISSET"
+function_name = "setfis"
+severity = "error"
+message = "'setfis' has been removed. Set FIS properties using dot notation instead."
+category = "compatibility"
+
+[[checks]]
+id = "FISSHW"
+function_name = "showfis"
+severity = "error"
+message = "'showfis' has been removed. View FIS properties using dot notation instead."
+category = "compatibility"
+
+[[checks]]
+id = "WLGC"
+function_name = "wlanGeneratorConfig"
+severity = "error"
+message = "'wlanGeneratorConfig' has been removed. Use the name-value pair syntax of 'wlanWaveformGenerator' instead."
+category = "compatibility"
+
+[[checks]]
+id = "SMTHC"
+function_name = "smithchart"
+severity = "error"
+message = "'smithchart' has been removed. Use 'smithplot' instead."
+category = "compatibility"
+
+[[checks]]
+id = "WLRC"
+function_name = "wlanRecoveryConfig"
+severity = "error"
+message = "'wlanRecoveryConfig' has been removed. Instead, parameterize the function that accepts the 'wlanRecoveryConfig' object by using the name-value pair syntax."
+category = "compatibility"
+
+[[checks]]
+id = "JAVFM"
+function_name = "JavaFrame"
+severity = "error"
+message = "'JavaFrame' was undocumented and has been removed. There is no simple replacement for this."
+category = "compatibility"
+
+[[checks]]
+id = "JAVCT"
+function_name = "JavaContainer"
+severity = "error"
+message = "'JavaContainer' was undocumented and has been removed. There is no simple replacement for this."
+category = "compatibility"
+
+[[checks]]
+id = "JAVCM"
+function_name = "javacomponent"
+severity = "warning"
+message = "'javacomponent' is undocumented and will be removed in a future release. There is no simple replacement for this."
+category = "compatibility"
+
+[[checks]]
+id = "COMMERRATE"
+function_name = "commtest.ErrorRate"
+severity = "error"
+message = "'commtest.ErrorRate' has been removed. Use 'comm.ErrorRate' or BERTool instead."
+category = "compatibility"
+
+[[checks]]
+id = "TCRESULT"
+function_name = "testconsole.Results"
+severity = "error"
+message = "'testconsole.Results' has been removed. Use 'comm.ErrorRate' or BERTool instead."
+category = "compatibility"
+
+[[checks]]
+id = "OPGLI"
+function_name = "opengl"
+severity = "error"
+message = "'opengl' has been removed. There is no simple replacement for this."
+category = "compatibility"
+
+[[checks]]
+id = "CNNCGD"
+function_name = "cnncodegen"
+severity = "error"
+message = "'cnncodegen' with default 'targetlib' as 'cudnn' has been removed. With appropriate code changes, use 'codegen' instead."
+category = "compatibility"
+
+[[checks]]
+id = "COMMSCOPEED"
+function_name = "commscope.eyediagram"
+severity = "error"
+message = "'commscope.eyediagram' has been removed. For line plotting, use the eyediagram function. There is no simple replacement for histogram plotting and measurement analysis."
+category = "compatibility"
+
+[[checks]]
+id = "COMMED"
+function_name = "comm.EyeDiagram"
+severity = "error"
+message = "'comm.EyeDiagram' has been removed. For line plotting, use the eyediagram function. There is no simple replacement for histogram plotting and measurement analysis."
+category = "compatibility"
+
+[[checks]]
+id = "MKRMT"
+function_name = "makerefmat"
+severity = "error"
+message = "'makerefmat' has been removed. With appropriate code changes, construct a raster reference object using 'georefcells', 'georefpostings', 'georasterref', 'maprefcells', 'maprefpostings' or 'maprasterref' instead."
+category = "compatibility"
+
+[[checks]]
+id = "WFMRM"
+function_name = "worldFileMatrixToRefmat"
+severity = "error"
+message = "'worldFileMatrixToRefmat' has been removed. With appropriate code changes, construct a raster reference object using 'georasterref' or 'maprasterref' instead."
+category = "compatibility"
+
+[[checks]]
+id = "RV2MAT"
+function_name = "refvec2mat"
+severity = "error"
+message = "'refvec2mat' has been removed. With appropriate code changes, construct a geographic raster reference object using 'refvecToGeoRasterReference' instead."
+category = "compatibility"
+
+[[checks]]
+id = "RM2VEC"
+function_name = "refmat2vec"
+severity = "error"
+message = "'refmat2vec' has been removed. With appropriate code changes, construct a geographic raster reference object using 'refvecToGeoRasterReference' instead."
+category = "compatibility"
+
+[[checks]]
+id = "SIZEM"
+function_name = "sizem"
+severity = "error"
+message = "'sizem' has been removed. With appropriate code changes, use 'rastersize' property of a map raster reference object instead."
+category = "compatibility"
+
+[[checks]]
+id = "LIMIM"
+function_name = "limitm"
+severity = "error"
+message = "'limitm' has been removed. With appropriate code changes, use 'LatitudeLimits' and 'LongitudeLimits' properties of a geographic raster reference object instead."
+category = "compatibility"
+
+[[checks]]
+id = "MAPBX"
+function_name = "mapbbox"
+severity = "error"
+message = "'mapbbox' has been removed. With appropriate code changes, use 'XWorldLimits' and 'YWorldLimits' properties of a map raster reference object instead."
+category = "compatibility"
+
+[[checks]]
+id = "DBITMAX"
+function_name = "bitmax"
+severity = "error"
+message = "'bitmax' has been removed. Use 'flintmax' instead."
+category = "compatibility"
+
+[[checks]]
+id = "COLORDEF"
+function_name = "colordef"
+severity = "warning"
+message = "'colordef' will be removed in a future release. There is no simple replacement for this."
+category = "compatibility"
+
+[[checks]]
+id = "GRAYMON"
+function_name = "graymon"
+severity = "warning"
+message = "'graymon' will be removed in a future release. There is no simple replacement for this."
+category = "compatibility"
+
+[[checks]]
+id = "WHITEBG"
+function_name = "whitebg"
+severity = "warning"
+message = "'whitebg' will be removed in a future release. There is no simple replacement for this."
+category = "compatibility"
+
+[[checks]]
+id = "PRINTOPT"
+function_name = "printopt"
+severity = "warning"
+message = "'printopt' will be removed in a future release. There is no simple replacement for this."
+category = "compatibility"
+
+[[checks]]
+id = "HGEXPORT"
+function_name = "hgexport"
+severity = "warning"
+message = "'hgexport' will be removed in a future release. Use 'exportgraphics' or 'copygraphics' instead."
+category = "compatibility"
+
+[[checks]]
+id = "HANK2SYS"
+function_name = "hank2sys"
+severity = "warning"
+message = "'hank2sys' will be removed in a future release. There is no simple replacement for this."
+category = "compatibility"
+
+[[checks]]
+id = "HGSAVE"
+function_name = "hgsave"
+severity = "warning"
+message = "'hgsave' will be removed in a future release. Use 'savefig' instead."
+category = "compatibility"
+
+[[checks]]
+id = "HAND2STCT"
+function_name = "handle2struct"
+severity = "warning"
+message = "'handle2struct' will be removed in a future release. There is no simple replacement for this."
+category = "compatibility"
+
+[[checks]]
+id = "HILBIIR"
+function_name = "hilbiir"
+severity = "warning"
+message = "'hilbiir' will be removed in a future release. There is no simple replacement for this."
+category = "compatibility"
+
+[[checks]]
+id = "MOVIE2"
+function_name = "movie2avi"
+severity = "warning"
+message = "'movie2avi' will be removed in a future release. Use 'VideoWriter' instead."
+category = "compatibility"
+
+[[checks]]
+id = "SERIAL"
+function_name = "serial"
+severity = "warning"
+message = "'serial' will be removed in a future release. Use 'serialport' instead."
+category = "compatibility"
+
+[[checks]]
+id = "GPIB"
+function_name = "gpib"
+severity = "warning"
+message = "'gpib' will be removed in a future release. Use 'visadev' instead."
+category = "compatibility"
+
+[[checks]]
+id = "VISA"
+function_name = "visa"
+severity = "warning"
+message = "'visa' will be removed in a future release. Use 'visadev' instead."
+category = "compatibility"
+
+[[checks]]
+id = "UDPP"
+function_name = "udp"
+severity = "warning"
+message = "'udp' will be removed in a future release. Use 'udpport' instead."
+category = "compatibility"
+
+[[checks]]
+id = "BLUTH"
+function_name = "Bluetooth"
+severity = "warning"
+message = "'Bluetooth' (Instrument Control) will be removed in a future release. Use 'bluetooth' instead."
+category = "compatibility"
+
+[[checks]]
+id = "IMTOOL"
+function_name = "imtool"
+severity = "warning"
+message = "'imtool' will be removed in a future release. Use 'imageViewer' instead."
+category = "compatibility"
+
+[[checks]]
+id = "IMJAV"
+function_name = "imjava"
+severity = "warning"
+message = "'imjava' will be removed in a future release. There is no simple replacement for this."
+category = "compatibility"
+
+[[checks]]
+id = "DPOOL"
+function_name = "parpool"
+severity = "warning"
+message = "'parpool' legacy syntax will be removed in a future release. Use updated syntax instead."
+category = "compatibility"
+
+[[checks]]
+id = "MUPAD"
+function_name = "mupad"
+severity = "warning"
+message = "'mupad' will be removed in a future release. Use MATLAB Live Editor instead."
+category = "compatibility"
+
+[[checks]]
+id = "FBUILDER"
+function_name = "filterBuilder"
+severity = "warning"
+message = "'filterBuilder' will be removed in a future release. Use 'designfilt' instead."
+category = "compatibility"
+
+[[checks]]
+id = "FDATOOL"
+function_name = "fdatool"
+severity = "warning"
+message = "'fdatool' will be removed in a future release. Use 'filterDesigner' instead."
+category = "compatibility"
+
+[[checks]]
+id = "WINTOOL"
+function_name = "wintool"
+severity = "warning"
+message = "'wintool' will be removed in a future release. Use 'windowDesigner' instead."
+category = "compatibility"
+
+[[checks]]
+id = "FVTOOL"
+function_name = "fvtool"
+severity = "warning"
+message = "'fvtool' will be removed in a future release. Use 'filterAnalyzer' instead."
+category = "compatibility"
+
+[[checks]]
+id = "FISNEW"
+function_name = "newfis"
+severity = "warning"
+message = "'newfis' will be removed in a future release. Use 'mamfis' or 'sugfis' instead."
+category = "compatibility"
+
+[[checks]]
+id = "FISADV"
+function_name = "addvar"
+severity = "warning"
+message = "'addvar' will be removed in a future release. Use 'addInput' or 'addOutput' instead."
+category = "compatibility"
+
+[[checks]]
+id = "FISRMV"
+function_name = "rmvar"
+severity = "warning"
+message = "'rmvar' will be removed in a future release. Use 'removeInput' or 'removeOutput' instead."
+category = "compatibility"
+
+[[checks]]
+id = "FISRMF"
+function_name = "rmmf"
+severity = "warning"
+message = "'rmmf' will be removed in a future release. Use 'removeMF' instead."
+category = "compatibility"
+
+[[checks]]
+id = "FISM2S"
+function_name = "mfedit"
+severity = "warning"
+message = "'mfedit' will be removed in a future release. There is no simple replacement for this."
+category = "compatibility"
+
+[[checks]]
+id = "FISPSR"
+function_name = "parsrule"
+severity = "warning"
+message = "'parsrule' will be removed in a future release. Use 'addRule' instead."
+category = "compatibility"
+
+[[checks]]
+id = "NPI2PI"
+function_name = "npi2pi"
+severity = "warning"
+message = "'npi2pi' will be removed in a future release. Use 'wrapToPi' instead."
+category = "compatibility"
+
+[[checks]]
+id = "NPI22PI"
+function_name = "zero22pi"
+severity = "warning"
+message = "'zero22pi' will be removed in a future release. Use 'wrapTo2Pi' instead."
+category = "compatibility"
+
+[[checks]]
+id = "CLASSREGTREE"
+function_name = "classregtree"
+severity = "warning"
+message = "'classregtree' will be removed in a future release. Use 'fitctree' or 'fitrtree' instead."
+category = "compatibility"
+
+[[checks]]
+id = "SVMCLASSIFY"
+function_name = "svmclassify"
+severity = "warning"
+message = "'svmclassify' will be removed in a future release. Use 'predict' on a trained SVM model instead."
+category = "compatibility"
+
+[[checks]]
+id = "SVMTRAIN"
+function_name = "svmtrain"
+severity = "warning"
+message = "'svmtrain' will be removed in a future release. Use 'fitcsvm' instead."
+category = "compatibility"
+
+[[checks]]
+id = "PRINCOMP"
+function_name = "princomp"
+severity = "warning"
+message = "'princomp' will be removed in a future release. Use 'pca' instead."
+category = "compatibility"
+
+[[checks]]
+id = "PROBDIST"
+function_name = "ProbDist"
+severity = "warning"
+message = "'ProbDist' will be removed in a future release. Use probability distribution objects instead."
+category = "compatibility"
+
+[[checks]]
+id = "PROBDISTPARAMETRIC"
+function_name = "ProbDistParametric"
+severity = "warning"
+message = "'ProbDistParametric' will be removed in a future release. Use probability distribution objects instead."
+category = "compatibility"
+
+[[checks]]
+id = "PROBDISTKERNEL"
+function_name = "ProbDistKernel"
+severity = "warning"
+message = "'ProbDistKernel' will be removed in a future release. Use probability distribution objects instead."
+category = "compatibility"
+
+[[checks]]
+id = "PROBDISTUNIVKERNEL"
+function_name = "ProbDistUnivKernel"
+severity = "warning"
+message = "'ProbDistUnivKernel' will be removed in a future release. Use probability distribution objects instead."
+category = "compatibility"
+
+[[checks]]
+id = "PROBDISTUNIVPARAM"
+function_name = "ProbDistUnivParam"
+severity = "warning"
+message = "'ProbDistUnivParam' will be removed in a future release. Use probability distribution objects instead."
+category = "compatibility"
+
+[[checks]]
+id = "FITNAIVEBAYES"
+function_name = "NaiveBayes.fit"
+severity = "warning"
+message = "'NaiveBayes.fit' will be removed in a future release. Use 'fitcnb' instead."
+category = "compatibility"
+
+[[checks]]
+id = "CAPABLE"
+function_name = "capable"
+severity = "warning"
+message = "'capable' will be removed in a future release. Use 'capability' instead."
+category = "compatibility"
+
+[[checks]]
+id = "EWMAPLOT"
+function_name = "ewmaplot"
+severity = "warning"
+message = "'ewmaplot' will be removed in a future release. Use 'controlchart' instead."
+category = "compatibility"
+
+[[checks]]
+id = "SCHART"
+function_name = "schart"
+severity = "warning"
+message = "'schart' will be removed in a future release. Use 'controlchart' instead."
+category = "compatibility"
+
+[[checks]]
+id = "XBARPLOT"
+function_name = "xbarplot"
+severity = "warning"
+message = "'xbarplot' will be removed in a future release. Use 'controlchart' instead."
+category = "compatibility"
+
+[[checks]]
+id = "RANDSD"
+function_name = "randseed"
+severity = "warning"
+message = "'randseed' will be removed in a future release. Use 'rng' instead."
+category = "compatibility"
+
+[[checks]]
+id = "DRNDINT"
+function_name = "randint"
+severity = "warning"
+message = "'randint' will be removed in a future release. Use 'randi' instead."
+category = "compatibility"
+
+[[checks]]
+id = "ISGLOB"
+function_name = "isglobal"
+severity = "warning"
+message = "'isglobal' will be removed in a future release. There is no simple replacement for this."
+category = "compatibility"
+
+[[checks]]
+id = "DGRAPHICSVER"
+function_name = "graphicsversion"
+severity = "warning"
+message = "'graphicsversion' will be removed in a future release. There is no simple replacement for this."
+category = "compatibility"
+
+[[checks]]
+id = "DNOANI"
+function_name = "noanimate"
+severity = "warning"
+message = "'noanimate' will be removed in a future release. There is no simple replacement for this."
+category = "compatibility"
+
+[[checks]]
+id = "EPSM"
+function_name = "epsm"
+severity = "warning"
+message = "'epsm' will be removed in a future release. Use 'eps' instead."
+category = "compatibility"
+
+[[checks]]
+id = "DEXIFRD"
+function_name = "exifread"
+severity = "warning"
+message = "'exifread' will be removed in a future release. Use 'imfinfo' instead."
+category = "compatibility"
+
+[[checks]]
+id = "HDFGD"
+function_name = "hdfgd"
+severity = "warning"
+message = "'hdfgd' will be removed in a future release. There is no simple replacement for this."
+category = "compatibility"
+
+[[checks]]
+id = "HDFSD"
+function_name = "hdfsd"
+severity = "warning"
+message = "'hdfsd' will be removed in a future release. There is no simple replacement for this."
+category = "compatibility"
+
+[[checks]]
+id = "HDFSW"
+function_name = "hdfsw"
+severity = "warning"
+message = "'hdfsw' will be removed in a future release. There is no simple replacement for this."
+category = "compatibility"
+
+[[checks]]
+id = "HDFTL"
+function_name = "hdftl"
+severity = "warning"
+message = "'hdftl' will be removed in a future release. There is no simple replacement for this."
+category = "compatibility"
+
+[[checks]]
+id = "HYPERCUBE"
+function_name = "hypercube"
+severity = "warning"
+message = "'hypercube' will be removed in a future release. Use 'blockedImage' instead."
+category = "compatibility"
+
+[[checks]]
+id = "BIGIMAGE"
+function_name = "bigimage"
+severity = "warning"
+message = "'bigimage' will be removed in a future release. Use 'blockedImage' instead."
+category = "compatibility"
+
+[[checks]]
+id = "BIGIMAGEDS"
+function_name = "bigimageDatastore"
+severity = "warning"
+message = "'bigimageDatastore' will be removed in a future release. Use 'blockedImageDatastore' instead."
+category = "compatibility"
+
+[[checks]]
+id = "LABELVOL"
+function_name = "labelvolshow"
+severity = "warning"
+message = "'labelvolshow' will be removed in a future release. Use 'labeloverlay3' instead."
+category = "compatibility"
+
+[[checks]]
+id = "COMPATVOL"
+function_name = "volshow"
+severity = "warning"
+message = "'volshow' will be removed in a future release. Use 'viewer3d' with 'volshow' instead."
+category = "compatibility"
+
+[[checks]]
+id = "DEMLC"
+function_name = "emlc"
+severity = "warning"
+message = "'emlc' will be removed in a future release. Use 'codegen' instead."
+category = "compatibility"
+
+[[checks]]
+id = "DEMLMEX"
+function_name = "emlmex"
+severity = "warning"
+message = "'emlmex' will be removed in a future release. Use 'codegen' instead."
+category = "compatibility"
+
+[[checks]]
+id = "COMMBI"
+function_name = "biterr"
+severity = "warning"
+message = "'biterr' (legacy) will be removed in a future release. Use 'comm.ErrorRate' instead."
+category = "compatibility"
+
+[[checks]]
+id = "PNZOM"
+function_name = "panzoom"
+severity = "warning"
+message = "'panzoom' will be removed in a future release. Use 'zoom' and 'pan' instead."
+category = "compatibility"
+
+[[checks]]
+id = "SPTL"
+function_name = "sptool"
+severity = "warning"
+message = "'sptool' will be removed in a future release. Use 'signalAnalyzer' instead."
+category = "compatibility"
+
+[[checks]]
+id = "NDWT"
+function_name = "ndwt"
+severity = "warning"
+message = "'ndwt' will be removed in a future release. Use 'waveletTransform3' instead."
+category = "compatibility"
+
+[[checks]]
+id = "INDWT"
+function_name = "indwt"
+severity = "warning"
+message = "'indwt' will be removed in a future release. Use 'waveletTransform3' inverse instead."
+category = "compatibility"
+
+[[checks]]
+id = "NDWT2"
+function_name = "ndwt2"
+severity = "warning"
+message = "'ndwt2' will be removed in a future release. There is no simple replacement for this."
+category = "compatibility"
+
+[[checks]]
+id = "INDWT2"
+function_name = "indwt2"
+severity = "warning"
+message = "'indwt2' will be removed in a future release. There is no simple replacement for this."
+category = "compatibility"
+
+[[checks]]
+id = "WEBMP"
+function_name = "webmap"
+severity = "warning"
+message = "'webmap' will be removed in a future release. Use geographic map visualizations instead."
+category = "compatibility"
+
+[[checks]]
+id = "SERLL"
+function_name = "seriallist"
+severity = "warning"
+message = "'seriallist' will be removed in a future release. Use 'serialportlist' instead."
+category = "compatibility"
+
+[[checks]]
+id = "RNG2BW"
+function_name = "range2bw"
+severity = "warning"
+message = "'range2bw' will be removed in a future release. Use 'rangeres2bw' instead."
+category = "compatibility"
+
+[[checks]]
+id = "BW2RNG"
+function_name = "bw2range"
+severity = "warning"
+message = "'bw2range' will be removed in a future release. Use 'bw2rangeres' instead."
+category = "compatibility"
+
+[[checks]]
+id = "DCSHELP"
+function_name = "docsearch"
+severity = "warning"
+message = "'docsearch' will be removed in a future release. There is no simple replacement for this."
+category = "compatibility"
+
+[[checks]]
+id = "DFIGFLAG"
+function_name = "figflag"
+severity = "warning"
+message = "'figflag' will be removed in a future release. There is no simple replacement for this."
+category = "compatibility"
+
+[[checks]]
+id = "DPOPUP"
+function_name = "popupstr"
+severity = "warning"
+message = "'popupstr' will be removed in a future release. There is no simple replacement for this."
+category = "compatibility"
+
+[[checks]]
+id = "ACTXC"
+function_name = "actxcontrol"
+severity = "warning"
+message = "'actxcontrol' will be removed in a future release. There is no simple replacement for this."
+category = "compatibility"
+
+[[checks]]
+id = "ACTXL"
+function_name = "actxcontrollist"
+severity = "warning"
+message = "'actxcontrollist' will be removed in a future release. There is no simple replacement for this."
+category = "compatibility"
+
+[[checks]]
+id = "ACTXS"
+function_name = "actxcontrolselect"
+severity = "warning"
+message = "'actxcontrolselect' will be removed in a future release. There is no simple replacement for this."
+category = "compatibility"
+
+[[checks]]
+id = "SOAPM"
+function_name = "createSoapMessage"
+severity = "warning"
+message = "'createSoapMessage' will be removed in a future release. Use 'matlab.net.http' instead."
+category = "compatibility"
+
+[[checks]]
+id = "SOAPS"
+function_name = "callSoapService"
+severity = "warning"
+message = "'callSoapService' will be removed in a future release. Use 'matlab.net.http' instead."
+category = "compatibility"
+
+[[checks]]
+id = "SOAPR"
+function_name = "parseSoapResponse"
+severity = "warning"
+message = "'parseSoapResponse' will be removed in a future release. Use 'matlab.net.http' instead."
+category = "compatibility"
+
+[[checks]]
+id = "SOAPC"
+function_name = "createClassFromWsdl"
+severity = "warning"
+message = "'createClassFromWsdl' will be removed in a future release. Use 'matlab.net.http' instead."
+category = "compatibility"
+
+[[checks]]
+id = "VREDT"
+function_name = "vredit"
+severity = "warning"
+message = "'vredit' will be removed in a future release. There is no simple replacement for this."
+category = "compatibility"
+
+[[checks]]
+id = "VRPLY"
+function_name = "vrplay"
+severity = "warning"
+message = "'vrplay' will be removed in a future release. There is no simple replacement for this."
+category = "compatibility"
+
+[[checks]]
+id = "VRCNVS"
+function_name = "vrcanvas"
+severity = "warning"
+message = "'vrcanvas' will be removed in a future release. There is no simple replacement for this."
+category = "compatibility"
+
+[[checks]]
+id = "VRFIG"
+function_name = "vrfigure"
+severity = "warning"
+message = "'vrfigure' will be removed in a future release. There is no simple replacement for this."
+category = "compatibility"
+
+[[checks]]
+id = "VRVIEW"
+function_name = "vrview"
+severity = "warning"
+message = "'vrview' will be removed in a future release. There is no simple replacement for this."
+category = "compatibility"
+
+[[checks]]
+id = "VRWRLD"
+function_name = "vrworld"
+severity = "warning"
+message = "'vrworld' will be removed in a future release. There is no simple replacement for this."
+category = "compatibility"
+
+[[checks]]
+id = "VRNDE"
+function_name = "vrnode"
+severity = "warning"
+message = "'vrnode' will be removed in a future release. There is no simple replacement for this."
+category = "compatibility"
+
+[[checks]]
+id = "VRJOYSTK"
+function_name = "vrjoystick"
+severity = "warning"
+message = "'vrjoystick' will be removed in a future release. There is no simple replacement for this."
+category = "compatibility"
+
+[[checks]]
+id = "VRSPCMOUSE"
+function_name = "vrspacemouse"
+severity = "warning"
+message = "'vrspacemouse' will be removed in a future release. There is no simple replacement for this."
+category = "compatibility"
+
+[[checks]]
+id = "SLRTBNCH"
+function_name = "slrtbench"
+severity = "warning"
+message = "'slrtbench' will be removed in a future release. There is no simple replacement for this."
+category = "compatibility"
+
+[[checks]]
+id = "RCSIIR"
+function_name = "rcosine"
+severity = "warning"
+message = "'rcosine' (IIR) will be removed in a future release. Use 'rcosdesign' instead."
+category = "compatibility"
+
+[[checks]]
+id = "RCSFIR"
+function_name = "rcosdesign"
+severity = "warning"
+message = "'rcosine' (FIR) will be removed in a future release. Use 'rcosdesign' instead."
+category = "compatibility"
+
+[[checks]]
+id = "G2B"
+function_name = "gray2bin"
+severity = "warning"
+message = "'gray2bin' will be removed in a future release. There is no simple replacement for this."
+category = "compatibility"
+
+[[checks]]
+id = "B2G"
+function_name = "bin2gray"
+severity = "warning"
+message = "'bin2gray' will be removed in a future release. There is no simple replacement for this."
+category = "compatibility"
+
+[[checks]]
+id = "EYESCOPE"
+function_name = "eyediagram"
+severity = "warning"
+message = "'eyediagram' will be removed in a future release. Use 'comm.EyeDiagram' instead."
+category = "compatibility"
+
+[[checks]]
+id = "DLDPCENC"
+function_name = "fec.ldpcenc"
+severity = "warning"
+message = "'fec.ldpcenc' will be removed in a future release. Use 'comm.LDPCEncoder' instead."
+category = "compatibility"
+
+[[checks]]
+id = "DLDPCDEC"
+function_name = "fec.ldpcdec"
+severity = "warning"
+message = "'fec.ldpcdec' will be removed in a future release. Use 'comm.LDPCDecoder' instead."
+category = "compatibility"
+
+[[checks]]
+id = "WEIBCDF"
+function_name = "weibcdf"
+severity = "warning"
+message = "'weibcdf' will be removed in a future release. Use 'wblcdf' instead."
+category = "compatibility"
+
+[[checks]]
+id = "WEIBFIT"
+function_name = "weibfit"
+severity = "warning"
+message = "'weibfit' will be removed in a future release. Use 'wblfit' instead."
+category = "compatibility"
+
+[[checks]]
+id = "WEIBINV"
+function_name = "weibinv"
+severity = "warning"
+message = "'weibinv' will be removed in a future release. Use 'wblinv' instead."
+category = "compatibility"
+
+[[checks]]
+id = "WEIBLIKE"
+function_name = "weiblike"
+severity = "warning"
+message = "'weiblike' will be removed in a future release. Use 'wbllike' instead."
+category = "compatibility"
+
+[[checks]]
+id = "WEIBPDF"
+function_name = "weibpdf"
+severity = "warning"
+message = "'weibpdf' will be removed in a future release. Use 'wblpdf' instead."
+category = "compatibility"
+
+[[checks]]
+id = "WEIBPLOT"
+function_name = "weibplot"
+severity = "warning"
+message = "'weibplot' will be removed in a future release. Use 'wblplot' instead."
+category = "compatibility"
+
+[[checks]]
+id = "WEIBRND"
+function_name = "weibrnd"
+severity = "warning"
+message = "'weibrnd' will be removed in a future release. Use 'wblrnd' instead."
+category = "compatibility"
+
+[[checks]]
+id = "WEIBSTAT"
+function_name = "weibstat"
+severity = "warning"
+message = "'weibstat' will be removed in a future release. Use 'wblstat' instead."
+category = "compatibility"
+
+[[checks]]
+id = "OPCSERVER"
+function_name = "opcserverinfo"
+severity = "warning"
+message = "'opcserverinfo' will be removed in a future release. There is no simple replacement for this."
+category = "compatibility"
+
+[[checks]]
+id = "OPCDA"
+function_name = "opcda"
+severity = "warning"
+message = "'opcda' will be removed in a future release. Use 'opcua' instead."
+category = "compatibility"
+
+[[checks]]
+id = "OPCFIND"
+function_name = "opcfind"
+severity = "warning"
+message = "'opcfind' will be removed in a future release. There is no simple replacement for this."
+category = "compatibility"
+
+[[checks]]
+id = "OPCRESET"
+function_name = "opcreset"
+severity = "warning"
+message = "'opcreset' will be removed in a future release. There is no simple replacement for this."
+category = "compatibility"
+
+[[checks]]
+id = "OPCHELP"
+function_name = "opchelp"
+severity = "warning"
+message = "'opchelp' will be removed in a future release. There is no simple replacement for this."
+category = "compatibility"
+
+[[checks]]
+id = "DSPBQF"
+function_name = "dsp.BiquadFilter"
+severity = "warning"
+message = "'dsp.BiquadFilter' will be removed in a future release. Use 'dsp.SOSFilter' instead."
+category = "compatibility"
+
+[[checks]]
+id = "DSPLPC"
+function_name = "dsp.LPC"
+severity = "warning"
+message = "'dsp.LPC' will be removed in a future release. Use 'lpc' instead."
+category = "compatibility"
+
+[[checks]]
+id = "DSPAVA"
+function_name = "dsp.ArrayVectorAdder"
+severity = "warning"
+message = "'dsp.ArrayVectorAdder' will be removed in a future release. Use built-in addition instead."
+category = "compatibility"
+
+[[checks]]
+id = "DSPAVS"
+function_name = "dsp.ArrayVectorSubtractor"
+severity = "warning"
+message = "'dsp.ArrayVectorSubtractor' will be removed in a future release. Use built-in subtraction instead."
+category = "compatibility"
+
+[[checks]]
+id = "DSPAVM"
+function_name = "dsp.ArrayVectorMultiplier"
+severity = "warning"
+message = "'dsp.ArrayVectorMultiplier' will be removed in a future release. Use built-in multiplication instead."
+category = "compatibility"
+
+[[checks]]
+id = "DSPAVD"
+function_name = "dsp.ArrayVectorDivider"
+severity = "warning"
+message = "'dsp.ArrayVectorDivider' will be removed in a future release. Use built-in division instead."
+category = "compatibility"
+
+[[checks]]
+id = "DSPCTR"
+function_name = "dsp.Counter"
+severity = "warning"
+message = "'dsp.Counter' will be removed in a future release. There is no simple replacement for this."
+category = "compatibility"
+
+[[checks]]
+id = "DSPKFT"
+function_name = "dsp.KalmanFilter"
+severity = "warning"
+message = "'dsp.KalmanFilter' will be removed in a future release. There is no simple replacement for this."
+category = "compatibility"
+
+[[checks]]
+id = "DSPNORM"
+function_name = "dsp.Normalizer"
+severity = "warning"
+message = "'dsp.Normalizer' will be removed in a future release. Use 'normalize' instead."
+category = "compatibility"
+
+[[checks]]
+id = "DSPAUDIOREC"
+function_name = "dsp.AudioRecorder"
+severity = "warning"
+message = "'dsp.AudioRecorder' will be removed in a future release. Use 'audioDeviceReader' instead."
+category = "compatibility"
+
+[[checks]]
+id = "DSPAUDIOPLAY"
+function_name = "dsp.AudioPlayer"
+severity = "warning"
+message = "'dsp.AudioPlayer' will be removed in a future release. Use 'audioDeviceWriter' instead."
+category = "compatibility"
+
+[[checks]]
+id = "DSPBUFFER"
+function_name = "dsp.Buffer"
+severity = "warning"
+message = "'dsp.Buffer' will be removed in a future release. Use 'dsp.AsyncBuffer' instead."
+category = "compatibility"
+
+[[checks]]
+id = "DSPHIST"
+function_name = "dsp.Histogram"
+severity = "warning"
+message = "'dsp.Histogram' will be removed in a future release. Use 'histogram' instead."
+category = "compatibility"
+
+[[checks]]
+id = "DSPMAX"
+function_name = "dsp.Maximum"
+severity = "warning"
+message = "'dsp.Maximum' will be removed in a future release. Use 'movmax' or 'max' instead."
+category = "compatibility"
+
+[[checks]]
+id = "DSPMIN"
+function_name = "dsp.Minimum"
+severity = "warning"
+message = "'dsp.Minimum' will be removed in a future release. Use 'movmin' or 'min' instead."
+category = "compatibility"
+
+[[checks]]
+id = "DSPMEAN"
+function_name = "dsp.Mean"
+severity = "warning"
+message = "'dsp.Mean' will be removed in a future release. Use 'movmean' or 'mean' instead."
+category = "compatibility"
+
+[[checks]]
+id = "DSPMEDIAN"
+function_name = "dsp.Median"
+severity = "warning"
+message = "'dsp.Median' will be removed in a future release. Use 'movmedian' or 'median' instead."
+category = "compatibility"
+
+[[checks]]
+id = "DSPRMS"
+function_name = "dsp.RMS"
+severity = "warning"
+message = "'dsp.RMS' will be removed in a future release. Use 'rms' instead."
+category = "compatibility"
+
+[[checks]]
+id = "DSPSTD"
+function_name = "dsp.StandardDeviation"
+severity = "warning"
+message = "'dsp.StandardDeviation' will be removed in a future release. Use 'movstd' or 'std' instead."
+category = "compatibility"
+
+[[checks]]
+id = "DSPVAR"
+function_name = "dsp.Variance"
+severity = "warning"
+message = "'dsp.Variance' will be removed in a future release. Use 'movvar' or 'var' instead."
+category = "compatibility"
+
+[[checks]]
+id = "DSPCUMPROD"
+function_name = "dsp.CumulativeProduct"
+severity = "warning"
+message = "'dsp.CumulativeProduct' will be removed in a future release. Use 'cumprod' instead."
+category = "compatibility"
+
+[[checks]]
+id = "DSPCUMSUM"
+function_name = "dsp.CumulativeSum"
+severity = "warning"
+message = "'dsp.CumulativeSum' will be removed in a future release. Use 'cumsum' instead."
+category = "compatibility"
+
+[[checks]]
+id = "DSPINTERP"
+function_name = "dsp.Interpolator"
+severity = "warning"
+message = "'dsp.Interpolator' will be removed in a future release. Use 'interp1' instead."
+category = "compatibility"
+
+[[checks]]
+id = "DSPCONV"
+function_name = "dsp.Convolver"
+severity = "warning"
+message = "'dsp.Convolver' will be removed in a future release. Use 'conv' instead."
+category = "compatibility"
+
+[[checks]]
+id = "DSPAUTOCORR"
+function_name = "dsp.Autocorrelator"
+severity = "warning"
+message = "'dsp.Autocorrelator' will be removed in a future release. Use 'xcorr' instead."
+category = "compatibility"
+
+[[checks]]
+id = "DSPXCORR"
+function_name = "dsp.Crosscorrelator"
+severity = "warning"
+message = "'dsp.Crosscorrelator' will be removed in a future release. Use 'xcorr' instead."
+category = "compatibility"
+
+[[checks]]
+id = "DSPLDL"
+function_name = "dsp.LDLFactor"
+severity = "warning"
+message = "'dsp.LDLFactor' will be removed in a future release. Use 'ldl' instead."
+category = "compatibility"
+
+[[checks]]
+id = "DSPLU"
+function_name = "dsp.LUFactor"
+severity = "warning"
+message = "'dsp.LUFactor' will be removed in a future release. Use 'lu' instead."
+category = "compatibility"
+
+[[checks]]
+id = "DSPLEVINSON"
+function_name = "dsp.LevinsonSolver"
+severity = "warning"
+message = "'dsp.LevinsonSolver' will be removed in a future release. Use 'levinson' instead."
+category = "compatibility"
+
+[[checks]]
+id = "DSPDELAYLINE"
+function_name = "dsp.DelayLine"
+severity = "warning"
+message = "'dsp.DelayLine' will be removed in a future release. Use 'dsp.AsyncBuffer' instead."
+category = "compatibility"
+
+[[checks]]
+id = "DSPWIN"
+function_name = "dsp.Window"
+severity = "warning"
+message = "'dsp.Window' will be removed in a future release. Use 'window functions' directly instead."
+category = "compatibility"
+
+[[checks]]
+id = "DSPSA"
+function_name = "dsp.SpectrumAnalyzer"
+severity = "warning"
+message = "'dsp.SpectrumAnalyzer' scope syntax will be removed in a future release. Use 'spectrumAnalyzer' instead."
+category = "compatibility"
+
+[[checks]]
+id = "CMLLD"
+function_name = "ClassificationModel.logLoss"
+severity = "warning"
+message = "'ClassificationModel.logLoss' will be removed in a future release. There is no simple replacement for this."
+category = "compatibility"
+
+[[checks]]
+id = "CMLSV"
+function_name = "ClassificationModel.logSV"
+severity = "warning"
+message = "'ClassificationModel.logSV' will be removed in a future release. There is no simple replacement for this."
+category = "compatibility"
+
+[[checks]]
+id = "SESSION"
+function_name = "daq.createSession"
+severity = "warning"
+message = "'daq.createSession' will be removed in a future release. Use 'daqlist' and 'daq' interface instead."
+category = "compatibility"
+
+[[checks]]
+id = "DRYICE"
+function_name = "dryice"
+severity = "warning"
+message = "'dryice' will be removed in a future release. There is no simple replacement for this."
+category = "compatibility"
+
+[[checks]]
+id = "PERFREF"
+function_name = "perfcurve"
+severity = "warning"
+message = "'perfcurve' old syntax will be removed in a future release. Use updated syntax instead."
+category = "compatibility"
+
+[[checks]]
+id = "YOLOV"
+function_name = "yolov2ObjectDetector"
+severity = "warning"
+message = "'yolov2ObjectDetector' will be removed in a future release. Use 'yoloxObjectDetector' instead."
+category = "compatibility"
+
+[[checks]]
+id = "DDTRD"
+function_name = "dtree"
+severity = "warning"
+message = "'dtree' will be removed in a future release. There is no simple replacement for this."
+category = "compatibility"
+
+# --- Generic/property-based checks (cannot match by function_name alone) ---
+
+[[checks]]
+id = "IMPIVD"
+function_name = ""
+severity = "warning"
+message = "Malformed import argument VAR_NAME will not be supported in a future release."
+category = "compatibility"
+pattern = "generic"
+
+[[checks]]
+id = "IMPKEY"
+function_name = ""
+severity = "warning"
+message = "Importing VAR_NAME will not be supported in a future release because VAR_NAME is a reserved word."
+category = "compatibility"
+pattern = "generic"
+
+[[checks]]
+id = "REDEFGI"
+function_name = ""
+severity = "warning"
+message = "Declaring an input or output variable to be global might not be supported in a future release."
+category = "compatibility"
+pattern = "generic"
+
+[[checks]]
+id = "REDEFGG"
+function_name = ""
+severity = "warning"
+message = "Declaring a variable to be global more than once might not be supported in a future release."
+category = "compatibility"
+pattern = "generic"
+
+[[checks]]
+id = "MCPDC"
+function_name = ""
+severity = "error"
+message = "Specifying both the 'Constant' and 'Dependent' attributes on the same property is not supported."
+category = "compatibility"
+pattern = "generic"
+
+[[checks]]
+id = "NOV6"
+function_name = ""
+severity = "warning"
+message = "'v6' will be removed in a future release. There is no simple replacement for this."
+category = "compatibility"
+pattern = "generic"
+
+[[checks]]
+id = "V6ON"
+function_name = "USEV6PLOTAPI"
+severity = "warning"
+message = "USEV6PLOTAPI('on') will be removed in a future release. There is no simple replacement for this."
+category = "compatibility"
+
+[[checks]]
+id = "PSTAT"
+function_name = ""
+severity = "error"
+message = "The 'Static' attribute on properties has been removed. Use the 'Constant' attribute instead."
+category = "compatibility"
+pattern = "generic"
+
+[[checks]]
+id = "FGREN"
+function_name = ""
+severity = "warning"
+message = "'Renderer' will be removed in a future release and currently has no effect. There is no simple replacement for this."
+category = "compatibility"
+pattern = "generic"
+
+[[checks]]
+id = "FGREM"
+function_name = ""
+severity = "warning"
+message = "'RendererMode' will be removed in a future release and currently has no effect. There is no simple replacement for this."
+category = "compatibility"
+pattern = "generic"
+
+[[checks]]
+id = "FROPT"
+function_name = ""
+severity = "error"
+message = "'-dill' has been removed. Use Encapsulated PostScript instead."
+category = "compatibility"
+pattern = "generic"
+
+[[checks]]
+id = "FROPTX"
+function_name = ""
+severity = "error"
+message = "'-adobecset' has been removed. There is no simple replacement for this."
+category = "compatibility"
+pattern = "generic"
+
+[[checks]]
+id = "DSPIDF"
+function_name = ""
+severity = "error"
+message = "'DirectFeedthrough' property of 'dsp.VariableIntegerDelay' class has been removed."
+category = "compatibility"
+pattern = "generic"
+
+[[checks]]
+id = "DSPFDF"
+function_name = ""
+severity = "error"
+message = "'DirectFeedthrough' property of 'dsp.VariableFractionalDelay' class has been removed."
+category = "compatibility"
+
+[[checks]]
+id = "ATVIZW"
+function_name = ""
+severity = "error"
+message = "The 'Visible' attribute has been removed. Use the '~Hidden' attribute instead or omit the attribute since 'Hidden' is false by default."
+category = "compatibility"
+pattern = "generic"
+
+[[checks]]
+id = "MCGCP"
+function_name = ""
+severity = "error"
+message = "Defining a get method for a constant property is not supported."
+category = "compatibility"
+pattern = "generic"
+
+[[checks]]
+id = "MCATP"
+function_name = ""
+severity = "error"
+message = "Using an @ sign to specify a class property restriction is unsupported and has been removed. Use property validation syntax instead."
+category = "compatibility"
+pattern = "generic"
+
+[[checks]]
+id = "NCHKNO"
+function_name = "nargoutchk"
+severity = "warning"
+message = "NARGOUTCHK using more than two inputs will be removed in a future release. There is no simple replacement for this."
+category = "compatibility"
+
+[[checks]]
+id = "HESST"
+function_name = ""
+severity = "error"
+message = "'InitialHessType' has been removed. There is no simple replacement for this."
+category = "compatibility"
+pattern = "generic"
+
+[[checks]]
+id = "HESSM"
+function_name = ""
+severity = "error"
+message = "'InitialHessMatrix' has been removed. There is no simple replacement for this."
+category = "compatibility"
+pattern = "generic"
+
+[[checks]]
+id = "BUFSIZE"
+function_name = "textscan"
+severity = "error"
+message = "Option 'Bufsize' has been removed. Manual buffering in 'textscan' is no longer needed."
+category = "compatibility"
+
+[[checks]]
+id = "FEGLO"
+function_name = "feval"
+severity = "error"
+message = "'global' has been removed. There is no simple replacement for this."
+category = "compatibility"
+
+[[checks]]
+id = "SMPLMODE"
+function_name = ""
+severity = "error"
+message = "The property 'FrameBasedProcessing' has been removed."
+category = "compatibility"
+pattern = "generic"
+
+[[checks]]
+id = "RESOU"
+function_name = ""
+severity = "error"
+message = "'resources' is a reserved folder. Running MATLAB files located in a folder named 'resources' is not supported."
+category = "compatibility"
+pattern = "generic"
+
+[[checks]]
+id = "TTSMP"
+function_name = ""
+severity = "error"
+message = "'SamplingRate' has been removed. Use 'SampleRate' instead."
+category = "compatibility"
+pattern = "generic"
+
+[[checks]]
+id = "FINSI"
+function_name = "inputname"
+severity = "error"
+message = "Support for 'inputname' in a script has been removed."
+category = "compatibility"
+
+[[checks]]
+id = "FINSNI"
+function_name = "nargin"
+severity = "error"
+message = "Support for 'nargin' in a script has been removed."
+category = "compatibility"
+
+[[checks]]
+id = "FINSNO"
+function_name = "nargout"
+severity = "error"
+message = "Support for 'nargout' in a script has been removed."
+category = "compatibility"
+
+[[checks]]
+id = "DISGVER"
+function_name = "matlab.graphics.internal.isGraphicsVersion1"
+severity = "error"
+message = "'matlab.graphics.internal.isGraphicsVersion1' has been removed. Use 'verLessThan('matlab','8.4.0')' instead."
+category = "compatibility"
+
+[[checks]]
+id = "DNDLA"
+function_name = "drawnow"
+severity = "error"
+message = "'discard' has been removed. There is no simple replacement for this."
+category = "compatibility"
+
+[[checks]]
+id = "EITYCN"
+function_name = "feature"
+severity = "error"
+message = "feature('EightyColumns') and feature('EightyColumns', VALUE) are unsupported and have been removed. With appropriate code changes, use 'settings' object instead."
+category = "compatibility"
+
+[[checks]]
+id = "REPUDD"
+function_name = ""
+severity = "error"
+message = "Classes defined using schema.m files are no longer supported. Use MATLAB Classes defined using the classdef keyword instead."
+category = "compatibility"
+pattern = "generic"
+
+[[checks]]
+id = "RTWHWDR"
+function_name = "RTW.HWDeviceRegistry"
+severity = "error"
+message = "'RTW.HWDeviceRegistry' is unsupported and has been removed. The replacement strategy can be found in MATLAB documentation."
+category = "compatibility"
+
+[[checks]]
+id = "INVHCRM"
+function_name = ""
+severity = "warning"
+message = "The 'InvertHardCopy' property will be removed in a future release and currently has no effect."
+category = "compatibility"
+pattern = "generic"
+
+[[checks]]
+id = "DINVHCRM"
+function_name = ""
+severity = "warning"
+message = "The 'defaultFigureInvertHardCopy' setting will be removed in a future release and currently has no effect."
+category = "compatibility"
+pattern = "generic"
+
+[[checks]]
+id = "CHKGR"
+function_name = "optimoptions"
+severity = "error"
+message = "The 'CheckGradients' option has been removed from 'optimoptions'. With appropriate code changes, use the 'checkGradients' function instead."
+category = "compatibility"
+
+[[checks]]
+id = "LINPROGS"
+function_name = "linprog"
+severity = "error"
+message = "'simplex' algorithm has been removed. With appropriate code changes, set 'Algorithm' value to 'interior-point' or 'dual-simplex' instead."
+category = "compatibility"
+
+[[checks]]
+id = "LSRET"
+function_name = ""
+severity = "error"
+message = "'LaserReturns' has been removed. Use 'LaserReturn' instead, which is a direct replacement."
+category = "compatibility"
+pattern = "generic"
+
+[[checks]]
+id = "RAYNR"
+function_name = ""
+severity = "error"
+message = "Input argument 'NumReflections' has been removed. Use 'MaxNumReflections' property of a ray tracing propagation model object instead."
+category = "compatibility"
+pattern = "generic"
+
+[[checks]]
+id = "JAPIMATHWORKS"
+function_name = "com.mathworks"
+severity = "warning"
+message = "'com.mathworks' namespace and sub namespaces will be removed in a future release. There is no simple replacement for this."
+category = "compatibility"
+
+[[checks]]
+id = "IMCLASS"
+function_name = "ismethod"
+severity = "warning"
+message = "In a future release, 'ismethod' will treat a string or character vector in its first input as a 'string' or 'char' class object."
+category = "compatibility"
+
+[[checks]]
+id = "WEBREMOVE"
+function_name = "web"
+severity = "warning"
+message = "The 'web' function does not return a handle or URL for pages that open in the system browser. Use 'stat = web(___, '-browser')' instead."
+category = "compatibility"
+
+[[checks]]
+id = "TCPC"
+function_name = "tcpip"
+severity = "warning"
+message = "'tcpip' with 'client' as a 'NetworkRole' will be removed in a future release. With appropriate code changes, use 'tcpclient' instead."
+category = "compatibility"
+
+[[checks]]
+id = "TCPS"
+function_name = "tcpip"
+severity = "warning"
+message = "'tcpip' with 'server' as a 'NetworkRole' will be removed in a future release. With appropriate code changes, use 'tcpserver' instead."
+category = "compatibility"
+
+[[checks]]
+id = "QAMDEPM"
+function_name = "qammod"
+severity = "error"
+message = "'qammod' no longer accepts the initial phase of a signal."
+category = "compatibility"
+
+[[checks]]
+id = "QAMDEPD"
+function_name = "qamdemod"
+severity = "error"
+message = "'qamdemod' no longer accepts the initial phase of a signal."
+category = "compatibility"
+
+[[checks]]
+id = "GETERR"
+function_name = ""
+severity = "error"
+message = "The 'ErrorMessage' property has been removed. At the command line, use 'MException.last' instead."
+category = "compatibility"
+pattern = "generic"
+
+[[checks]]
+id = "SETERR"
+function_name = ""
+severity = "error"
+message = "The 'ErrorMessage' property has been removed. There is no simple replacement for this."
+category = "compatibility"
+pattern = "generic"
+
+[[checks]]
+id = "MAPVW"
+function_name = "mapview"
+severity = "warning"
+message = "'mapview' will be removed in a future release. Use geographic or map axes instead."
+category = "compatibility"
+
+[[checks]]
+id = "MAPTOOL"
+function_name = "maptool"
+severity = "warning"
+message = "'maptool' will be removed in a future release. There is no simple replacement for this."
+category = "compatibility"
+
+[[checks]]
+id = "DFEATUREPARAM1"
+function_name = ""
+severity = "error"
+message = "'UseHG2' has been removed. With appropriate code changes, use '~verLessThan('matlab','8.4.0')' instead."
+category = "compatibility"
+pattern = "generic"
+
+[[checks]]
+id = "DFEATUREPARAM2"
+function_name = ""
+severity = "error"
+message = "'HGUsingMATLABClasses' has been removed. With appropriate code changes, use '~verLessThan('matlab','8.4.0')' instead."
+category = "compatibility"
+pattern = "generic"
+
+[[checks]]
+id = "DILEVAL"
+function_name = "dicomLookupEval"
+severity = "warning"
+message = "'dicomLookupEval' will be removed in a future release. There is no simple replacement for this."
+category = "compatibility"
+
+# --- DSP-related batch (frequency-domain and signal processing) ---
+
+[[checks]]
+id = "DSPPEAKS"
+function_name = "dsp.PeakFinder"
+severity = "warning"
+message = "'dsp.PeakFinder' will be removed in a future release. Use 'findpeaks' instead."
+category = "compatibility"
+
+[[checks]]
+id = "DSPPEAK2PEAK"
+function_name = "dsp.PeakToPeak"
+severity = "warning"
+message = "'dsp.PeakToPeak' will be removed in a future release. Use 'peak2peak' instead."
+category = "compatibility"
+
+[[checks]]
+id = "DSP_LINKS"
+function_name = "dsp.SignalSource"
+severity = "warning"
+message = "'dsp.SignalSource' will be removed in a future release. There is no simple replacement for this."
+category = "compatibility"
+
+[[checks]]
+id = "MCASCADE"
+function_name = "mfilt.cascade"
+severity = "warning"
+message = "'mfilt.cascade' will be removed in a future release. Use 'dsp.FilterCascade' instead."
+category = "compatibility"
+
+# --- Filter design deprecated entries ---
+
+[[checks]]
+id = "FDESPARAMEQ"
+function_name = "fdesign.parameq"
+severity = "warning"
+message = "'fdesign.parameq' will be removed in a future release. Use 'designParamEQ' instead."
+category = "compatibility"
+
+[[checks]]
+id = "FDESOCTAVE"
+function_name = "fdesign.octave"
+severity = "warning"
+message = "'fdesign.octave' will be removed in a future release. Use 'designOctaveFilter' instead."
+category = "compatibility"
+
+[[checks]]
+id = "FDESWEIGHT"
+function_name = "fdesign.arbmagnphase"
+severity = "warning"
+message = "'fdesign.arbmagnphase' will be removed in a future release. Use 'designfilt' instead."
+category = "compatibility"
+
+# --- Adaptive filter deprecated entries ---
+
+[[checks]]
+id = "AFLMS"
+function_name = "adaptfilt.lms"
+severity = "warning"
+message = "'adaptfilt.lms' will be removed in a future release. Use 'dsp.LMSFilter' instead."
+category = "compatibility"
+
+[[checks]]
+id = "AFNLMS"
+function_name = "adaptfilt.nlms"
+severity = "warning"
+message = "'adaptfilt.nlms' will be removed in a future release. Use 'dsp.LMSFilter' with NLMS algorithm instead."
+category = "compatibility"
+
+[[checks]]
+id = "AFRLS"
+function_name = "adaptfilt.rls"
+severity = "warning"
+message = "'adaptfilt.rls' will be removed in a future release. Use 'dsp.RLSFilter' instead."
+category = "compatibility"
+
+[[checks]]
+id = "AFBLMS"
+function_name = "adaptfilt.blms"
+severity = "warning"
+message = "'adaptfilt.blms' will be removed in a future release. Use 'dsp.BlockLMSFilter' instead."
+category = "compatibility"
+
+# =============================================================================
+# Forward Compatibility Considerations (7 checks)
+# =============================================================================
+
+[[checks]]
+id = "FCLEN"
+function_name = ""
+severity = "warning"
+message = "Identifiers longer than 63 characters are not supported before R2025a."
+category = "forward-compatibility"
+pattern = "generic"
+
+[[checks]]
+id = "FCCPV"
+function_name = ""
+severity = "error"
+message = "Class property validation is not available before R2017a."
+category = "forward-compatibility"
+pattern = "generic"
+
+[[checks]]
+id = "FCDQS"
+function_name = ""
+severity = "error"
+message = "Double-quoted strings are not available before R2017a. Use character vectors for scalar strings or cell arrays of character vectors for string arrays."
+category = "forward-compatibility"
+pattern = "generic"
+
+[[checks]]
+id = "FCFAV"
+function_name = ""
+severity = "error"
+message = "Function argument validation is not available before R2019b."
+category = "forward-compatibility"
+pattern = "generic"
+
+[[checks]]
+id = "FCHBL"
+function_name = ""
+severity = "error"
+message = "Hexadecimal and binary literals are not available before R2019b. Use 'hex2dec' and 'bin2dec' instead."
+category = "forward-compatibility"
+pattern = "generic"
+
+[[checks]]
+id = "FCLFS"
+function_name = ""
+severity = "error"
+message = "Local functions in a script are not available before R2016b."
+category = "forward-compatibility"
+pattern = "generic"
+
+[[checks]]
+id = "FCNVA"
+function_name = ""
+severity = "error"
+message = "Name=Value syntax is not available before R2021a. Use comma-separated syntax instead."
+category = "forward-compatibility"
+pattern = "generic"
+
+# =============================================================================
+# Behavior Changes (5 checks)
+# =============================================================================
+
+[[checks]]
+id = "SHVAI"
+function_name = ""
+severity = "warning"
+message = "Explicitly define shared variables in the parent function before calling the nested function. MATLAB does not share uninitialized variables between a nested function and the parent function."
+category = "behavior-changes"
+pattern = "generic"
+
+[[checks]]
+id = "LENEMP"
+function_name = "legend"
+severity = "warning"
+message = "Passing in text with no characters will omit the object from appearing in the legend. To revert to the old behavior, use a whitespace character instead of text with no characters."
+category = "behavior-changes"
+
+[[checks]]
+id = "INTRPC"
+function_name = "interp1"
+severity = "warning"
+message = "'interp1(...,'cubic')' changed in R2020b to perform cubic convolution. To continue using shape-preserving piecewise cubic interpolation, use 'interp1(...,'pchip')' instead."
+category = "behavior-changes"
+
+[[checks]]
+id = "IDISVARHIGH"
+function_name = ""
+severity = "warning"
+message = "Variable must be explicitly defined before first use. In some cases, the definition was not required in previous releases, but it is now required."
+category = "behavior-changes"
+pattern = "generic"
+
+[[checks]]
+id = "LEGPVPAIR"
+function_name = "legend"
+severity = "warning"
+message = "'legend' has changed and might interpret the name of an argument as a legend property instead of a label."
+category = "behavior-changes"
+
+# =============================================================================
+# Behavior Changes with Low Reliability Messages (265 checks - selected entries)
+# =============================================================================
+
+[[checks]]
+id = "CLBGEN"
+function_name = "clibgen.generateLibraryDefinition"
+severity = "warning"
+message = "Starting in R2020a, interfaces created by 'clibgen.generateLibraryDefinition' return clib.array object instead of the equivalent MATLAB array for primitive types."
+category = "behavior-changes"
+
+[[checks]]
+id = "CLBBLD"
+function_name = "clibgen.buildInterface"
+severity = "warning"
+message = "Starting in R2020a, interfaces created by 'clibgen.buildInterface' return clib.array object instead of the equivalent MATLAB array for primitive types."
+category = "behavior-changes"
+
+[[checks]]
+id = "CLBARY"
+function_name = ""
+severity = "warning"
+message = "Starting in R2020a, clib.array object is the default return value, instead of the equivalent MATLAB array for primitive types."
+category = "behavior-changes"
+pattern = "generic"
+
+[[checks]]
+id = "COLMP"
+function_name = "colormap"
+severity = "warning"
+message = "In R2019a and previous releases, the default colormap size is 64. Starting in R2019b, colormaps have 256 colors by default."
+category = "behavior-changes"
+
+[[checks]]
+id = "FDTAG"
+function_name = "findall"
+severity = "warning"
+message = "'findall' with 'Exploration.Pan', 'Exploration.ZoomIn', etc. might return empty because the data exploration buttons have moved from the figure toolbar to the axes toolbar."
+category = "behavior-changes"
+
+[[checks]]
+id = "NSTIMP"
+function_name = ""
+severity = "warning"
+message = "Nested functions now inherit import statements from this parent function."
+category = "behavior-changes"
+pattern = "generic"
+
+[[checks]]
+id = "IDISVARLOW"
+function_name = ""
+severity = "warning"
+message = "To avoid a potential conflict with functions on the path, explicitly define the variable before indexing into it."
+category = "behavior-changes"
+pattern = "generic"
+
+[[checks]]
+id = "WEBBEHAVE"
+function_name = "web"
+severity = "warning"
+message = "The 'web' function now opens external sites in your system browser by default."
+category = "behavior-changes"
+
+[[checks]]
+id = "GLGRI"
+function_name = "geoloc2grid"
+severity = "warning"
+message = "Starting R2021a, the second output of 'geoloc2grid' is a geographic raster reference object instead of a referencing vector."
+category = "behavior-changes"
+
+[[checks]]
+id = "V2MTX"
+function_name = "vec2mtx"
+severity = "warning"
+message = "Starting R2021a, the second output of 'vec2mtx' is a geographic raster reference object instead of a referencing vector."
+category = "behavior-changes"
+
+[[checks]]
+id = "PTCLO"
+function_name = ""
+severity = "warning"
+message = "Changing the axes LineStyleOrder or ColorOrder properties of an existing chart now affects the chart immediately."
+category = "behavior-changes"
+pattern = "generic"
+
+[[checks]]
+id = "PTDLO"
+function_name = ""
+severity = "warning"
+message = "Specifying multiple line styles in the axes LineStyleOrder might result in charts that render differently than in the previous releases."
+category = "behavior-changes"
+pattern = "generic"
+
+# --- JAPIEXT entries (Java package removal - behavior changes low reliability) ---
+
+[[checks]]
+id = "JAPIEXT1"
+function_name = "com.teamdev.jxbrowser"
+severity = "warning"
+message = "'com.teamdev.jxbrowser' Java package and subpackages are not available in MATLAB. To continue using this package, install its JAR file and add the JAR file to the static path in MATLAB."
+category = "behavior-changes"
+
+[[checks]]
+id = "JAPIEXT4"
+function_name = "javax.security.auth"
+severity = "warning"
+message = "'javax.security.auth' Java package and subpackages are not available in MATLAB. To continue using this package, install its JAR file and add the JAR file to the static path in MATLAB."
+category = "behavior-changes"
+
+[[checks]]
+id = "JAPIEXT5"
+function_name = "javax.transaction.xa"
+severity = "warning"
+message = "'javax.transaction.xa' Java package and subpackages are not available in MATLAB. To continue using this package, install its JAR file and add the JAR file to the static path in MATLAB."
+category = "behavior-changes"
+
+[[checks]]
+id = "JAPIEXT7"
+function_name = "org.apache.el"
+severity = "warning"
+message = "'org.apache.el' Java package and subpackages are not available in MATLAB. To continue using this package, install its JAR file and add the JAR file to the static path in MATLAB."
+category = "behavior-changes"
+
+[[checks]]
+id = "JAPIEXT8"
+function_name = "org.apache.juli"
+severity = "warning"
+message = "'org.apache.juli' Java package and subpackages are not available in MATLAB. To continue using this package, install its JAR file and add the JAR file to the static path in MATLAB."
+category = "behavior-changes"
+
+[[checks]]
+id = "JAPIEXT9"
+function_name = "org.apache.tomcat"
+severity = "warning"
+message = "'org.apache.tomcat' Java package and subpackages are not available in MATLAB. To continue using this package, install its JAR file and add the JAR file to the static path in MATLAB."
+category = "behavior-changes"
+
+[[checks]]
+id = "JAPIEXT10"
+function_name = "org.apache.xmlrpc"
+severity = "warning"
+message = "'org.apache.xmlrpc' Java package and subpackages are not available in MATLAB. To continue using this package, install its JAR file and add the JAR file to the static path in MATLAB."
+category = "behavior-changes"
+
+[[checks]]
+id = "JAPIEXT11"
+function_name = "org.jboss.netty"
+severity = "warning"
+message = "'org.jboss.netty' Java package and subpackages are not available in MATLAB. To continue using this package, install its JAR file and add the JAR file to the static path in MATLAB."
+category = "behavior-changes"
+
+[[checks]]
+id = "JAPIEXT14"
+function_name = "org.ros.actionlib"
+severity = "warning"
+message = "'org.ros.actionlib' Java package and subpackages are not available in MATLAB. To continue using this package, install its JAR file and add the JAR file to the static path in MATLAB."
+category = "behavior-changes"
+
+[[checks]]
+id = "JAPIEXT15"
+function_name = "org.ros.address"
+severity = "warning"
+message = "'org.ros.address' Java package and subpackages are not available in MATLAB. To continue using this package, install its JAR file and add the JAR file to the static path in MATLAB."
+category = "behavior-changes"
+
+[[checks]]
+id = "JAPIEXT16"
+function_name = "org.ros.concurrent"
+severity = "warning"
+message = "'org.ros.concurrent' Java package and subpackages are not available in MATLAB. To continue using this package, install its JAR file and add the JAR file to the static path in MATLAB."
+category = "behavior-changes"
+
+[[checks]]
+id = "JAPIEXT17"
+function_name = "org.ros.exception"
+severity = "warning"
+message = "'org.ros.exception' Java package and subpackages are not available in MATLAB. To continue using this package, install its JAR file and add the JAR file to the static path in MATLAB."
+category = "behavior-changes"
+
+[[checks]]
+id = "JAPIEXT18"
+function_name = "org.ros.gradle_plugins"
+severity = "warning"
+message = "'org.ros.gradle_plugins' Java package and subpackages are not available in MATLAB. To continue using this package, install its JAR file and add the JAR file to the static path in MATLAB."
+category = "behavior-changes"
+
+[[checks]]
+id = "JAPIEXT19"
+function_name = "org.ros.internal"
+severity = "warning"
+message = "'org.ros.internal' Java package and subpackages are not available in MATLAB. To continue using this package, install its JAR file and add the JAR file to the static path in MATLAB."
+category = "behavior-changes"
+
+[[checks]]
+id = "JAPIEXT20"
+function_name = "org.ros.log"
+severity = "warning"
+message = "'org.ros.log' Java package and subpackages are not available in MATLAB. To continue using this package, install its JAR file and add the JAR file to the static path in MATLAB."
+category = "behavior-changes"
+
+[[checks]]
+id = "JAPIEXT21"
+function_name = "org.ros.master"
+severity = "warning"
+message = "'org.ros.master' Java package and subpackages are not available in MATLAB. To continue using this package, install its JAR file and add the JAR file to the static path in MATLAB."
+category = "behavior-changes"
+
+[[checks]]
+id = "JAPIEXT22"
+function_name = "org.ros.message"
+severity = "warning"
+message = "'org.ros.message' Java package and subpackages are not available in MATLAB. To continue using this package, install its JAR file and add the JAR file to the static path in MATLAB."
+category = "behavior-changes"
+
+[[checks]]
+id = "JAPIEXT23"
+function_name = "org.ros.namespace"
+severity = "warning"
+message = "'org.ros.namespace' Java package and subpackages are not available in MATLAB. To continue using this package, install its JAR file and add the JAR file to the static path in MATLAB."
+category = "behavior-changes"
+
+[[checks]]
+id = "JAPIEXT24"
+function_name = "org.ros.node"
+severity = "warning"
+message = "'org.ros.node' Java package and subpackages are not available in MATLAB. To continue using this package, install its JAR file and add the JAR file to the static path in MATLAB."
+category = "behavior-changes"
+
+[[checks]]
+id = "JAPIEXT25"
+function_name = "org.ros.osgi"
+severity = "warning"
+message = "'org.ros.osgi' Java package and subpackages are not available in MATLAB. To continue using this package, install its JAR file and add the JAR file to the static path in MATLAB."
+category = "behavior-changes"
+
+# --- Upcoming Behavior Changes (3 checks) ---
+
+[[checks]]
+id = "ROSDFOBJECT"
+function_name = ""
+severity = "warning"
+message = "ROS data format object usage will change in a future release."
+category = "behavior-changes"
+pattern = "generic"
+
+[[checks]]
+id = "ROSSCFUN"
+function_name = ""
+severity = "warning"
+message = "ROS service client function usage will change in a future release."
+category = "behavior-changes"
+pattern = "generic"
+
+[[checks]]
+id = "ROSSCPKG"
+function_name = ""
+severity = "warning"
+message = "ROS service client package usage will change in a future release."
+category = "behavior-changes"
+pattern = "generic"
+
+# --- Upcoming Behavior Changes with Low Reliability Messages (632 checks - selected JAPIEXT entries) ---
+
+[[checks]]
+id = "ROSDFMISSING"
+function_name = ""
+severity = "warning"
+message = "ROS data format missing field usage will change in a future release."
+category = "behavior-changes"
+pattern = "generic"
+
+[[checks]]
+id = "JAPIEXT2"
+function_name = "com.google.common"
+severity = "warning"
+message = "'com.google.common' Java package and subpackages will be removed in a future release. To continue using this package, install its JAR file and add the JAR file to the static path in MATLAB."
+category = "behavior-changes"
+
+[[checks]]
+id = "JAPIEXT3"
+function_name = "com.google.protobuf"
+severity = "warning"
+message = "'com.google.protobuf' Java package and subpackages will be removed in a future release. To continue using this package, install its JAR file and add the JAR file to the static path in MATLAB."
+category = "behavior-changes"
+
+[[checks]]
+id = "JAPIEXT6"
+function_name = "javax.xml.bind"
+severity = "warning"
+message = "'javax.xml.bind' Java package and subpackages will be removed in a future release. To continue using this package, install its JAR file and add the JAR file to the static path in MATLAB."
+category = "behavior-changes"
+
+[[checks]]
+id = "JAPIEXT12"
+function_name = "org.json"
+severity = "warning"
+message = "'org.json' Java package and subpackages will be removed in a future release. To continue using this package, install its JAR file and add the JAR file to the static path in MATLAB."
+category = "behavior-changes"
+
+[[checks]]
+id = "JAPIEXT13"
+function_name = "org.yaml.snakeyaml"
+severity = "warning"
+message = "'org.yaml.snakeyaml' Java package and subpackages will be removed in a future release. To continue using this package, install its JAR file and add the JAR file to the static path in MATLAB."
+category = "behavior-changes"
+
+[[checks]]
+id = "JAPIEXT30"
+function_name = "io.netty"
+severity = "warning"
+message = "'io.netty' Java package and subpackages will be removed in a future release. To continue using this package, install its JAR file and add the JAR file to the static path in MATLAB."
+category = "behavior-changes"
+
+[[checks]]
+id = "JAPIEXT31"
+function_name = "org.apache.commons.codec"
+severity = "warning"
+message = "'org.apache.commons.codec' Java package and subpackages will be removed in a future release. To continue using this package, install its JAR file and add the JAR file to the static path in MATLAB."
+category = "behavior-changes"
+
+[[checks]]
+id = "JAPIEXT35"
+function_name = "org.apache.commons.io"
+severity = "warning"
+message = "'org.apache.commons.io' Java package and subpackages will be removed in a future release. To continue using this package, install its JAR file and add the JAR file to the static path in MATLAB."
+category = "behavior-changes"
+
+[[checks]]
+id = "JAPIEXT36"
+function_name = "org.apache.commons.lang"
+severity = "warning"
+message = "'org.apache.commons.lang' Java package and subpackages will be removed in a future release. To continue using this package, install its JAR file and add the JAR file to the static path in MATLAB."
+category = "behavior-changes"
+
+[[checks]]
+id = "JAPIEXT38"
+function_name = "org.apache.commons.logging"
+severity = "warning"
+message = "'org.apache.commons.logging' Java package and subpackages will be removed in a future release. To continue using this package, install its JAR file and add the JAR file to the static path in MATLAB."
+category = "behavior-changes"
+
+[[checks]]
+id = "JAPIEXT39"
+function_name = "org.apache.commons.math3"
+severity = "warning"
+message = "'org.apache.commons.math3' Java package and subpackages will be removed in a future release. To continue using this package, install its JAR file and add the JAR file to the static path in MATLAB."
+category = "behavior-changes"
+
+[[checks]]
+id = "JAPIEXT40"
+function_name = "org.apache.commons.net"
+severity = "warning"
+message = "'org.apache.commons.net' Java package and subpackages will be removed in a future release. To continue using this package, install its JAR file and add the JAR file to the static path in MATLAB."
+category = "behavior-changes"
+
+[[checks]]
+id = "JAPIEXT41"
+function_name = "org.apache.http"
+severity = "warning"
+message = "'org.apache.http' Java package and subpackages will be removed in a future release. To continue using this package, install its JAR file and add the JAR file to the static path in MATLAB."
+category = "behavior-changes"
+
+[[checks]]
+id = "JAPIEXT42"
+function_name = "org.apache.log4j"
+severity = "warning"
+message = "'org.apache.log4j' Java package and subpackages will be removed in a future release. To continue using this package, install its JAR file and add the JAR file to the static path in MATLAB."
+category = "behavior-changes"
+
+[[checks]]
+id = "JAPIEXT43"
+function_name = "org.apache.xerces"
+severity = "warning"
+message = "'org.apache.xerces' Java package and subpackages will be removed in a future release. To continue using this package, install its JAR file and add the JAR file to the static path in MATLAB."
+category = "behavior-changes"
+
+[[checks]]
+id = "JAPIEXT45"
+function_name = "org.eclipse.paho"
+severity = "warning"
+message = "'org.eclipse.paho' Java package and subpackages will be removed in a future release. To continue using this package, install its JAR file and add the JAR file to the static path in MATLAB."
+category = "behavior-changes"
+
+[[checks]]
+id = "JAPIEXT46"
+function_name = "org.ietf.jgss"
+severity = "warning"
+message = "'org.ietf.jgss' Java package and subpackages will be removed in a future release. To continue using this package, install its JAR file and add the JAR file to the static path in MATLAB."
+category = "behavior-changes"
+
+[[checks]]
+id = "JAPIEXT48"
+function_name = "org.omg.CORBA"
+severity = "warning"
+message = "'org.omg.CORBA' Java package and subpackages will be removed in a future release. To continue using this package, install its JAR file and add the JAR file to the static path in MATLAB."
+category = "behavior-changes"
+
+[[checks]]
+id = "JAPIEXT49"
+function_name = "org.w3c.dom"
+severity = "warning"
+message = "'org.w3c.dom' Java package and subpackages will be removed in a future release. To continue using this package, install its JAR file and add the JAR file to the static path in MATLAB."
+category = "behavior-changes"

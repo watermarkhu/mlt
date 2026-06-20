@@ -18,6 +18,9 @@
 //! No manual edits to `lib.rs` are needed — the rule is automatically discovered
 //! at link time via the `inventory` crate.
 
+pub mod naming;
+pub mod custom_checks;
+pub mod compatibility;
 pub mod nosemi;
 
 use mlt_core::{Config, Rule};

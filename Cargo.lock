@@ -212,7 +212,9 @@ version = "0.1.0"
 dependencies = [
  "inventory",
  "mlt_core",
+ "regex",
  "serde",
+ "toml",
  "tree-sitter",
 ]
 

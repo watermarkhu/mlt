@@ -1,0 +1,849 @@
+//! # Generic Naming Engine
+//!
+//! This module implements ALL 81 naming convention checks from MATLAB's Code Analyzer
+//! as a single file-level rule engine. The 81 checks are the Cartesian product of:
+//!
+//! - **9 entity types**: class, function, localFunction, method, nestedFunction,
+//!   property, event, enumeration, variable
+//! - **9 check types**: maxLength, minLength, regularExpression, requiredPrefix,
+//!   disallowedPrefix, disallowedPhrase, requiredSuffix, disallowedSuffix, casing
+//!
+//! Rule IDs follow the pattern `naming.<entity>.<checkType>`.
+//!
+//! ## Architecture
+//!
+//! A single `NamingEngine` rule instance:
+//! - Registers once with inventory as `"NAMING_ENGINE"`
+//! - Uses `has_file_check() = true` for full-tree traversal
+//! - Walks the tree once to extract all named entities
+//! - Applies all enabled naming checks to each entity
+//! - Emits diagnostics with the specific rule ID (e.g., `"naming.class.casing"`)
+//!
+//! ## Configuration
+//!
+//! Each of the 81 checks can be configured individually:
+//!
+//! ```toml
+//! [lint.rules."naming.class.casing"]
+//! severity = "error"
+//! style = "PascalCase"
+//!
+//! [lint.rules."naming.function.maxLength"]
+//! severity = "warn"
+//! max = 32
+//!
+//! [lint.rules."naming.variable.disallowedPrefix"]
+//! prefix = "temp"
+//! ```
+
+use std::sync::LazyLock;
+
+use mlt_core::{Category, Config, Diagnostic, FileContext, Rule, Severity};
+use regex::Regex;
+use serde::Deserialize;
+use tree_sitter::Node;
+
+// ---------------------------------------------------------------------------
+// Entity and check type enums
+// ---------------------------------------------------------------------------
+
+/// Entity types that naming rules apply to.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub enum NamingEntity {
+    Class,
+    Function,
+    LocalFunction,
+    Method,
+    NestedFunction,
+    Property,
+    Event,
+    Enumeration,
+    Variable,
+}
+
+impl NamingEntity {
+    /// All entity types in the canonical order.
+    pub const ALL: &'static [NamingEntity] = &[
+        NamingEntity::Class,
+        NamingEntity::Function,
+        NamingEntity::LocalFunction,
+        NamingEntity::Method,
+        NamingEntity::NestedFunction,
+        NamingEntity::Property,
+        NamingEntity::Event,
+        NamingEntity::Enumeration,
+        NamingEntity::Variable,
+    ];
+
+    /// String key used in rule IDs.
+    pub fn as_str(self) -> &'static str {
+        match self {
+            NamingEntity::Class => "class",
+            NamingEntity::Function => "function",
+            NamingEntity::LocalFunction => "localFunction",
+            NamingEntity::Method => "method",
+            NamingEntity::NestedFunction => "nestedFunction",
+            NamingEntity::Property => "property",
+            NamingEntity::Event => "event",
+            NamingEntity::Enumeration => "enumeration",
+            NamingEntity::Variable => "variable",
+        }
+    }
+}
+
+/// Check types for naming rules.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub enum NamingCheckType {
+    MaxLength,
+    MinLength,
+    RegularExpression,
+    RequiredPrefix,
+    DisallowedPrefix,
+    DisallowedPhrase,
+    RequiredSuffix,
+    DisallowedSuffix,
+    Casing,
+}
+
+impl NamingCheckType {
+    /// All check types in the canonical order.
+    pub const ALL: &'static [NamingCheckType] = &[
+        NamingCheckType::MaxLength,
+        NamingCheckType::MinLength,
+        NamingCheckType::RegularExpression,
+        NamingCheckType::RequiredPrefix,
+        NamingCheckType::DisallowedPrefix,
+        NamingCheckType::DisallowedPhrase,
+        NamingCheckType::RequiredSuffix,
+        NamingCheckType::DisallowedSuffix,
+        NamingCheckType::Casing,
+    ];
+
+    /// String key used in rule IDs.
+    pub fn as_str(self) -> &'static str {
+        match self {
+            NamingCheckType::MaxLength => "maxLength",
+            NamingCheckType::MinLength => "minLength",
+            NamingCheckType::RegularExpression => "regularExpression",
+            NamingCheckType::RequiredPrefix => "requiredPrefix",
+            NamingCheckType::DisallowedPrefix => "disallowedPrefix",
+            NamingCheckType::DisallowedPhrase => "disallowedPhrase",
+            NamingCheckType::RequiredSuffix => "requiredSuffix",
+            NamingCheckType::DisallowedSuffix => "disallowedSuffix",
+            NamingCheckType::Casing => "casing",
+        }
+    }
+}
+
+// ---------------------------------------------------------------------------
+// Static rule ID table (81 entries)
+// ---------------------------------------------------------------------------
+
+/// All 81 naming rule IDs as `&'static str`, lazily generated.
+///
+/// Uses `Box::leak` to produce `'static` references since these live for the
+/// entire process lifetime.
+static NAMING_IDS: LazyLock<Vec<&'static str>> = LazyLock::new(|| {
+    let mut ids = Vec::with_capacity(81);
+    for entity in NamingEntity::ALL {
+        for check in NamingCheckType::ALL {
+            let id = format!("naming.{}.{}", entity.as_str(), check.as_str());
+            ids.push(Box::leak(id.into_boxed_str()) as &'static str);
+        }
+    }
+    ids
+});
+
+/// Get the static rule ID for a given entity/check combination.
+fn rule_id_for(entity: NamingEntity, check_type: NamingCheckType) -> &'static str {
+    let entity_idx = NamingEntity::ALL.iter().position(|e| *e == entity).unwrap();
+    let check_idx = NamingCheckType::ALL
+        .iter()
+        .position(|c| *c == check_type)
+        .unwrap();
+    let index = entity_idx * NamingCheckType::ALL.len() + check_idx;
+    NAMING_IDS[index]
+}
+
+/// Iterator over all (id, entity, check_type) combinations.
+fn all_naming_combinations() -> Vec<(&'static str, NamingEntity, NamingCheckType)> {
+    let mut combos = Vec::with_capacity(81);
+    for &entity in NamingEntity::ALL {
+        for &check_type in NamingCheckType::ALL {
+            combos.push((rule_id_for(entity, check_type), entity, check_type));
+        }
+    }
+    combos
+}
+
+// ---------------------------------------------------------------------------
+// Per-check configuration
+// ---------------------------------------------------------------------------
+
+/// Configuration for a single naming check, read from `.mlt.toml`.
+///
+/// Each field applies to a specific check type:
+/// - `max`: maxLength check threshold
+/// - `min`: minLength check threshold
+/// - `pattern`: regularExpression pattern
+/// - `prefix`: requiredPrefix / disallowedPrefix value
+/// - `phrase`: disallowedPhrase value
+/// - `suffix`: requiredSuffix / disallowedSuffix value
+/// - `style`: casing style ("camelCase", "PascalCase", "snake_case", "UPPER_CASE")
+#[derive(Debug, Clone, Deserialize, Default)]
+pub struct NamingCheckConfig {
+    /// Maximum allowed name length (for maxLength checks).
+    #[serde(default)]
+    pub max: Option<usize>,
+    /// Minimum required name length (for minLength checks).
+    #[serde(default)]
+    pub min: Option<usize>,
+    /// Regular expression the name must match (for regularExpression checks).
+    #[serde(default)]
+    pub pattern: Option<String>,
+    /// Required or disallowed prefix string.
+    #[serde(default)]
+    pub prefix: Option<String>,
+    /// Disallowed phrase (substring).
+    #[serde(default)]
+    pub phrase: Option<String>,
+    /// Required or disallowed suffix string.
+    #[serde(default)]
+    pub suffix: Option<String>,
+    /// Casing style: "camelCase", "PascalCase", "snake_case", "UPPER_CASE".
+    #[serde(default)]
+    pub style: Option<String>,
+}
+
+// ---------------------------------------------------------------------------
+// Named entity representation
+// ---------------------------------------------------------------------------
+
+/// A named entity extracted from the AST.
+struct NamedEntity<'a> {
+    /// The entity type (class, function, variable, etc.)
+    entity: NamingEntity,
+    /// The name text.
+    name: &'a str,
+    /// Byte range of the name in the source (for diagnostic positioning).
+    byte_range: std::ops::Range<usize>,
+    /// 1-indexed line number.
+    line: usize,
+    /// 1-indexed column number.
+    column: usize,
+}
+
+// ---------------------------------------------------------------------------
+// NamingEngine rule
+// ---------------------------------------------------------------------------
+
+/// A single active naming check instance.
+struct NamingRuleInstance {
+    /// The static rule ID (e.g., "naming.class.casing").
+    id: &'static str,
+    /// Which entity type this check applies to.
+    entity: NamingEntity,
+    /// What kind of check this is.
+    check_type: NamingCheckType,
+    /// User configuration for this check.
+    config: NamingCheckConfig,
+    /// Compiled regex (lazily built from config.pattern).
+    compiled_regex: Option<Regex>,
+}
+
+/// The generic naming engine that handles all 81 naming convention checks.
+///
+/// Registered as `"NAMING_ENGINE"` with inventory. Uses file-level analysis
+/// to walk the tree once and apply all enabled naming checks.
+pub struct NamingEngine {
+    /// All enabled naming check instances.
+    checks: Vec<NamingRuleInstance>,
+}
+
+impl NamingEngine {
+    /// Factory constructor invoked by inventory.
+    ///
+    /// Reads configuration for all 81 naming rules and constructs instances
+    /// only for those that are enabled.
+    pub fn from_config(config: &Config) -> Box<dyn Rule> {
+        let mut checks = Vec::with_capacity(81);
+        for (id, entity, check_type) in all_naming_combinations() {
+            if config.is_rule_enabled(id) {
+                let check_config: NamingCheckConfig = config.rule_params(id);
+                let compiled_regex = check_config.pattern.as_ref().and_then(|p| {
+                    Regex::new(p).ok()
+                });
+                checks.push(NamingRuleInstance {
+                    id,
+                    entity,
+                    check_type,
+                    config: check_config,
+                    compiled_regex,
+                });
+            }
+        }
+        Box::new(Self { checks })
+    }
+}
+
+impl Rule for NamingEngine {
+    fn id(&self) -> &'static str {
+        "NAMING_ENGINE"
+    }
+
+    fn description(&self) -> &'static str {
+        "Naming convention checks (81 sub-rules for 9 entity types x 9 check types)"
+    }
+
+    fn severity(&self) -> Severity {
+        Severity::Info
+    }
+
+    fn category(&self) -> Category {
+        Category::Naming
+    }
+
+    fn target_node_types(&self) -> &'static [&'static str] {
+        // File-level only — no node subscriptions.
+        &[]
+    }
+
+    fn has_file_check(&self) -> bool {
+        true
+    }
+
+    fn check_file(&self, ctx: &FileContext) -> Vec<Diagnostic> {
+        if self.checks.is_empty() {
+            return Vec::new();
+        }
+
+        // Step 1: Extract all named entities from the tree.
+        let entities = collect_named_entities(ctx.tree, ctx.source);
+
+        // Step 2: Apply each enabled check to matching entities.
+        let mut diagnostics = Vec::new();
+        for entity in &entities {
+            for check in &self.checks {
+                if check.entity != entity.entity {
+                    continue;
+                }
+                if let Some(diag) = run_check(check, entity) {
+                    diagnostics.push(diag);
+                }
+            }
+        }
+
+        diagnostics
+    }
+}
+
+// ---------------------------------------------------------------------------
+// Entity extraction
+// ---------------------------------------------------------------------------
+
+/// Walk the tree-sitter tree and extract all named entities.
+///
+/// Determines entity type based on AST context:
+/// - `class_definition` → Class
+/// - `function_definition` at file level (first one) → Function
+/// - `function_definition` at file level (subsequent) → LocalFunction
+/// - `function_definition` inside `methods` block → Method
+/// - `function_definition` inside another function → NestedFunction
+/// - `property` node → Property
+/// - node inside `events` block → Event
+/// - `enum` node inside `enumeration` block → Enumeration
+/// - `assignment` LHS identifier → Variable
+fn collect_named_entities<'a>(tree: &'a tree_sitter::Tree, source: &'a str) -> Vec<NamedEntity<'a>> {
+    let mut entities = Vec::new();
+    let mut first_function_seen = false;
+
+    collect_recursive(
+        tree.root_node(),
+        source,
+        &mut entities,
+        &mut first_function_seen,
+        EntityContext::TopLevel,
+    );
+
+    entities
+}
+
+/// Context for determining what kind of entity a function_definition represents.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum EntityContext {
+    /// At the top level of the file (source_file or block).
+    TopLevel,
+    /// Inside a methods block of a class.
+    Methods,
+    /// Inside another function (nested).
+    Function,
+    /// Inside an events block.
+    Events,
+    /// Inside an enumeration block.
+    Enumeration,
+}
+
+/// Recursively collect named entities from the AST.
+fn collect_recursive<'a>(
+    node: Node<'a>,
+    source: &'a str,
+    entities: &mut Vec<NamedEntity<'a>>,
+    first_function_seen: &mut bool,
+    context: EntityContext,
+) {
+    match node.kind() {
+        "function_definition" => {
+            // Extract function name from the "name" field.
+            if let Some(name_node) = node.child_by_field_name("name") {
+                let name = &source[name_node.start_byte()..name_node.end_byte()];
+                let pos = name_node.start_position();
+                let entity_type = match context {
+                    EntityContext::Methods => NamingEntity::Method,
+                    EntityContext::Function => NamingEntity::NestedFunction,
+                    EntityContext::TopLevel => {
+                        if !*first_function_seen {
+                            *first_function_seen = true;
+                            NamingEntity::Function
+                        } else {
+                            NamingEntity::LocalFunction
+                        }
+                    }
+                    _ => NamingEntity::Function,
+                };
+                entities.push(NamedEntity {
+                    entity: entity_type,
+                    name,
+                    byte_range: name_node.start_byte()..name_node.end_byte(),
+                    line: pos.row + 1,
+                    column: pos.column + 1,
+                });
+            }
+
+            // Recurse into function body with Function context.
+            let child_count = node.child_count();
+            for i in 0..child_count {
+                if let Some(child) = node.child(i) {
+                    collect_recursive(child, source, entities, first_function_seen, EntityContext::Function);
+                }
+            }
+            return; // Don't recurse again below.
+        }
+
+        "class_definition" => {
+            // Extract class name from the "name" field.
+            if let Some(name_node) = node.child_by_field_name("name") {
+                let name = &source[name_node.start_byte()..name_node.end_byte()];
+                let pos = name_node.start_position();
+                entities.push(NamedEntity {
+                    entity: NamingEntity::Class,
+                    name,
+                    byte_range: name_node.start_byte()..name_node.end_byte(),
+                    line: pos.row + 1,
+                    column: pos.column + 1,
+                });
+            }
+
+            // Recurse into class children (methods, properties, events, enumeration).
+            let child_count = node.child_count();
+            for i in 0..child_count {
+                if let Some(child) = node.child(i) {
+                    collect_recursive(child, source, entities, first_function_seen, context);
+                }
+            }
+            return;
+        }
+
+        "methods" => {
+            // Children are function_definitions → Method.
+            let child_count = node.child_count();
+            for i in 0..child_count {
+                if let Some(child) = node.child(i) {
+                    collect_recursive(child, source, entities, first_function_seen, EntityContext::Methods);
+                }
+            }
+            return;
+        }
+
+        "events" => {
+            // Children are event identifiers.
+            let child_count = node.child_count();
+            for i in 0..child_count {
+                if let Some(child) = node.child(i) {
+                    collect_recursive(child, source, entities, first_function_seen, EntityContext::Events);
+                }
+            }
+            return;
+        }
+
+        "enumeration" => {
+            // Children are enum nodes.
+            let child_count = node.child_count();
+            for i in 0..child_count {
+                if let Some(child) = node.child(i) {
+                    collect_recursive(child, source, entities, first_function_seen, EntityContext::Enumeration);
+                }
+            }
+            return;
+        }
+
+        "property" => {
+            // Extract property name (first identifier child or "name" field).
+            if let Some(name_node) = node.child_by_field_name("name") {
+                let name = &source[name_node.start_byte()..name_node.end_byte()];
+                let pos = name_node.start_position();
+                entities.push(NamedEntity {
+                    entity: NamingEntity::Property,
+                    name,
+                    byte_range: name_node.start_byte()..name_node.end_byte(),
+                    line: pos.row + 1,
+                    column: pos.column + 1,
+                });
+            } else {
+                // Fallback: find the first identifier child.
+                let child_count = node.child_count();
+                for i in 0..child_count {
+                    if let Some(child) = node.child(i) {
+                        if child.kind() == "identifier" {
+                            let name = &source[child.start_byte()..child.end_byte()];
+                            let pos = child.start_position();
+                            entities.push(NamedEntity {
+                                entity: NamingEntity::Property,
+                                name,
+                                byte_range: child.start_byte()..child.end_byte(),
+                                line: pos.row + 1,
+                                column: pos.column + 1,
+                            });
+                            break;
+                        }
+                    }
+                }
+            }
+            return;
+        }
+
+        "enum" => {
+            if context == EntityContext::Enumeration {
+                // Extract enum member name (first identifier child or "name" field).
+                if let Some(name_node) = node.child_by_field_name("name") {
+                    let name = &source[name_node.start_byte()..name_node.end_byte()];
+                    let pos = name_node.start_position();
+                    entities.push(NamedEntity {
+                        entity: NamingEntity::Enumeration,
+                        name,
+                        byte_range: name_node.start_byte()..name_node.end_byte(),
+                        line: pos.row + 1,
+                        column: pos.column + 1,
+                    });
+                } else {
+                    let child_count = node.child_count();
+                    for i in 0..child_count {
+                        if let Some(child) = node.child(i) {
+                            if child.kind() == "identifier" {
+                                let name = &source[child.start_byte()..child.end_byte()];
+                                let pos = child.start_position();
+                                entities.push(NamedEntity {
+                                    entity: NamingEntity::Enumeration,
+                                    name,
+                                    byte_range: child.start_byte()..child.end_byte(),
+                                    line: pos.row + 1,
+                                    column: pos.column + 1,
+                                });
+                                break;
+                            }
+                        }
+                    }
+                }
+            }
+            return;
+        }
+
+        "identifier" if context == EntityContext::Events => {
+            // Identifier inside events block is an event name.
+            let name = &source[node.start_byte()..node.end_byte()];
+            let pos = node.start_position();
+            entities.push(NamedEntity {
+                entity: NamingEntity::Event,
+                name,
+                byte_range: node.start_byte()..node.end_byte(),
+                line: pos.row + 1,
+                column: pos.column + 1,
+            });
+            return;
+        }
+
+        "assignment" => {
+            // Extract LHS variable name. Only simple identifiers, not field
+            // expressions or indexed assignments.
+            if let Some(lhs) = node.child_by_field_name("left") {
+                if lhs.kind() == "identifier" {
+                    let name = &source[lhs.start_byte()..lhs.end_byte()];
+                    let pos = lhs.start_position();
+                    entities.push(NamedEntity {
+                        entity: NamingEntity::Variable,
+                        name,
+                        byte_range: lhs.start_byte()..lhs.end_byte(),
+                        line: pos.row + 1,
+                        column: pos.column + 1,
+                    });
+                } else if lhs.kind() == "multioutput_variable" {
+                    // Handle [a, b] = ... — extract each identifier.
+                    let lhs_count = lhs.child_count();
+                    for i in 0..lhs_count {
+                        if let Some(child) = lhs.child(i) {
+                            if child.kind() == "identifier" {
+                                let name = &source[child.start_byte()..child.end_byte()];
+                                let pos = child.start_position();
+                                entities.push(NamedEntity {
+                                    entity: NamingEntity::Variable,
+                                    name,
+                                    byte_range: child.start_byte()..child.end_byte(),
+                                    line: pos.row + 1,
+                                    column: pos.column + 1,
+                                });
+                            }
+                        }
+                    }
+                }
+            }
+            // Don't return — recurse into RHS for nested assignments.
+        }
+
+        _ => {}
+    }
+
+    // Default: recurse into children with the same context.
+    let child_count = node.child_count();
+    for i in 0..child_count {
+        if let Some(child) = node.child(i) {
+            collect_recursive(child, source, entities, first_function_seen, context);
+        }
+    }
+}
+
+// ---------------------------------------------------------------------------
+// Check execution
+// ---------------------------------------------------------------------------
+
+/// Run a single naming check against a named entity.
+/// Returns `Some(Diagnostic)` if the check fails.
+fn run_check(check: &NamingRuleInstance, entity: &NamedEntity) -> Option<Diagnostic> {
+    let name = entity.name;
+    let message = match check.check_type {
+        NamingCheckType::MaxLength => check_max_length(name, &check.config)?,
+        NamingCheckType::MinLength => check_min_length(name, &check.config)?,
+        NamingCheckType::RegularExpression => check_regex(name, check)?,
+        NamingCheckType::RequiredPrefix => check_required_prefix(name, &check.config)?,
+        NamingCheckType::DisallowedPrefix => check_disallowed_prefix(name, &check.config)?,
+        NamingCheckType::DisallowedPhrase => check_disallowed_phrase(name, &check.config)?,
+        NamingCheckType::RequiredSuffix => check_required_suffix(name, &check.config)?,
+        NamingCheckType::DisallowedSuffix => check_disallowed_suffix(name, &check.config)?,
+        NamingCheckType::Casing => check_casing(name, &check.config)?,
+    };
+
+    Some(Diagnostic {
+        rule_id: check.id,
+        message,
+        severity: Severity::Info, // Will be overridden by effective severity.
+        byte_range: entity.byte_range.clone(),
+        line: entity.line,
+        column: entity.column,
+        fix: None,
+    })
+}
+
+// ---------------------------------------------------------------------------
+// Individual check implementations
+// ---------------------------------------------------------------------------
+
+/// Check if name exceeds maximum length.
+fn check_max_length(name: &str, config: &NamingCheckConfig) -> Option<String> {
+    let max = config.max.unwrap_or(63); // MATLAB default namelengthmax
+    if name.len() > max {
+        Some(format!(
+            "Name '{}' exceeds maximum length of {} (has {} characters)",
+            name,
+            max,
+            name.len()
+        ))
+    } else {
+        None
+    }
+}
+
+/// Check if name is shorter than minimum length.
+fn check_min_length(name: &str, config: &NamingCheckConfig) -> Option<String> {
+    let min = config.min.unwrap_or(2);
+    // Don't flag single-char loop vars like i, j, k by default unless min > 1.
+    if name.len() < min {
+        Some(format!(
+            "Name '{}' is shorter than minimum length of {} (has {} characters)",
+            name,
+            min,
+            name.len()
+        ))
+    } else {
+        None
+    }
+}
+
+/// Check if name matches the required regular expression pattern.
+fn check_regex(name: &str, check: &NamingRuleInstance) -> Option<String> {
+    let re = check.compiled_regex.as_ref()?;
+    if !re.is_match(name) {
+        Some(format!(
+            "Name '{}' does not match required pattern '{}'",
+            name,
+            check.config.pattern.as_deref().unwrap_or("")
+        ))
+    } else {
+        None
+    }
+}
+
+/// Check if name has the required prefix.
+fn check_required_prefix(name: &str, config: &NamingCheckConfig) -> Option<String> {
+    let prefix = config.prefix.as_deref()?;
+    if !name.starts_with(prefix) {
+        Some(format!(
+            "Name '{}' does not have the required prefix '{}'",
+            name, prefix
+        ))
+    } else {
+        None
+    }
+}
+
+/// Check if name has a disallowed prefix.
+fn check_disallowed_prefix(name: &str, config: &NamingCheckConfig) -> Option<String> {
+    let prefix = config.prefix.as_deref()?;
+    if name.starts_with(prefix) {
+        Some(format!(
+            "Name '{}' has the disallowed prefix '{}'",
+            name, prefix
+        ))
+    } else {
+        None
+    }
+}
+
+/// Check if name contains a disallowed phrase.
+fn check_disallowed_phrase(name: &str, config: &NamingCheckConfig) -> Option<String> {
+    let phrase = config.phrase.as_deref()?;
+    if name.contains(phrase) {
+        Some(format!(
+            "Name '{}' contains the disallowed phrase '{}'",
+            name, phrase
+        ))
+    } else {
+        None
+    }
+}
+
+/// Check if name has the required suffix.
+fn check_required_suffix(name: &str, config: &NamingCheckConfig) -> Option<String> {
+    let suffix = config.suffix.as_deref()?;
+    if !name.ends_with(suffix) {
+        Some(format!(
+            "Name '{}' does not have the required suffix '{}'",
+            name, suffix
+        ))
+    } else {
+        None
+    }
+}
+
+/// Check if name has a disallowed suffix.
+fn check_disallowed_suffix(name: &str, config: &NamingCheckConfig) -> Option<String> {
+    let suffix = config.suffix.as_deref()?;
+    if name.ends_with(suffix) {
+        Some(format!(
+            "Name '{}' has the disallowed suffix '{}'",
+            name, suffix
+        ))
+    } else {
+        None
+    }
+}
+
+/// Check if name follows the required casing style.
+///
+/// Supported styles:
+/// - `"camelCase"`: starts with lowercase, no underscores (except leading `_`), contains uppercase
+/// - `"PascalCase"`: starts with uppercase, no underscores
+/// - `"snake_case"`: all lowercase with underscores
+/// - `"UPPER_CASE"` / `"CONSTANT_CASE"`: all uppercase with underscores
+fn check_casing(name: &str, config: &NamingCheckConfig) -> Option<String> {
+    let style = config.style.as_deref()?;
+
+    // Strip leading underscores for style checking (preserving convention for private members).
+    let stripped = name.trim_start_matches('_');
+    if stripped.is_empty() {
+        return None; // All underscores — skip.
+    }
+
+    let violation = match style {
+        "camelCase" => !is_camel_case(stripped),
+        "PascalCase" => !is_pascal_case(stripped),
+        "snake_case" => !is_snake_case(stripped),
+        "UPPER_CASE" | "CONSTANT_CASE" => !is_upper_case(stripped),
+        _ => false, // Unknown style — don't flag.
+    };
+
+    if violation {
+        Some(format!(
+            "Name '{}' does not follow {} naming convention",
+            name, style
+        ))
+    } else {
+        None
+    }
+}
+
+// ---------------------------------------------------------------------------
+// Casing helpers
+// ---------------------------------------------------------------------------
+
+/// Check if a name follows camelCase: starts lowercase, no underscores, has uppercase after first char.
+fn is_camel_case(name: &str) -> bool {
+    let mut chars = name.chars();
+    match chars.next() {
+        Some(c) if c.is_ascii_lowercase() => {}
+        _ => return false,
+    }
+    // Must not contain underscores (except it's acceptable if single-word lowercase).
+    if name.contains('_') {
+        return false;
+    }
+    true
+}
+
+/// Check if a name follows PascalCase: starts uppercase, no underscores.
+fn is_pascal_case(name: &str) -> bool {
+    let mut chars = name.chars();
+    match chars.next() {
+        Some(c) if c.is_ascii_uppercase() => {}
+        _ => return false,
+    }
+    !name.contains('_')
+}
+
+/// Check if a name follows snake_case: all lowercase and underscores, no uppercase.
+fn is_snake_case(name: &str) -> bool {
+    name.chars()
+        .all(|c| c.is_ascii_lowercase() || c.is_ascii_digit() || c == '_')
+}
+
+/// Check if a name follows UPPER_CASE: all uppercase and underscores, no lowercase.
+fn is_upper_case(name: &str) -> bool {
+    name.chars()
+        .all(|c| c.is_ascii_uppercase() || c.is_ascii_digit() || c == '_')
+}
+
+// ---------------------------------------------------------------------------
+// Auto-registration
+// ---------------------------------------------------------------------------
+
+inventory::submit!(crate::RuleRegistration::new(
+    "NAMING_ENGINE",
+    NamingEngine::from_config
+));
