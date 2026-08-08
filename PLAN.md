@@ -10,6 +10,91 @@ parity with MATLAB's Code Analyzer (~2,680 checks).
 - Custom checks (25) use a single engine with per-check thresholds.
 - Rules auto-register via the `inventory` crate — no manual `lib.rs` arrays.
 - Category-level config is supported (`[lint.categories]` in `.mlt.toml`).
+- Changes land via **stacked pull requests** (see below).
+
+---
+
+## Development Workflow: Stacked Pull Requests
+
+This repository uses **stacked pull requests** to land changes as a chain of
+small, independently reviewable PRs instead of one large PR. Each PR targets
+the branch of the PR below it, forming an ordered stack that lands on `feat`.
+
+See the [GitHub stacked PRs quickstart](https://docs.github.com/en/pull-requests/get-started/stacked-prs-quickstart)
+for the official guide.
+
+### Setup (once per machine)
+
+```bash
+gh extension install github/gh-stack
+gh auth login
+```
+
+Requires `gh` ≥ 2.90 and Git ≥ 2.20.
+
+### Daily flow
+
+1. **Start a stack** from the trunk (`feat`):
+
+   ```bash
+   gh stack init            # prompts for the first branch name
+   ```
+
+   To turn existing branches into a stack, list them in dependency order:
+
+   ```bash
+   gh stack init feat/clippy-warnings feat/formatting-checks feat/plan-update
+   ```
+
+2. **Work and commit** on the current branch:
+
+   ```bash
+   # ... write code ...
+   git add .
+   git commit -m "helpful message"
+   ```
+
+3. **Add the next logical unit** on top of the stack:
+
+   ```bash
+   gh stack add BRANCH-NAME
+   # ... write code ...
+   git add .
+   git commit -m "next unit"
+   ```
+
+   Or stage, commit, and branch in one step:
+
+   ```bash
+   gh stack add -Am "next unit"
+   ```
+
+4. **Push and submit** the PRs (each PR is auto-linked to its base branch):
+
+   ```bash
+   gh stack push
+   gh stack submit
+   ```
+
+5. **Inspect the stack** at any time:
+
+   ```bash
+   gh stack view
+   ```
+
+### Conventions
+
+- **Trunk:** `feat` is this repo's integration branch; the bottom PR of every
+  stack targets it.
+- **One logical unit per branch.** Split work so each branch is independently
+  reviewable — e.g., one branch for clippy cleanups, the next for a rule
+  engine plus its tests, and docs/plan updates on top.
+- **Keep stacks shallow** (2–4 branches). Deep stacks are hard to review and
+  prone to merge conflicts.
+- **Review and merge bottom-up.** Each PR's diff shrinks as its dependencies
+  land, keeping downstream PRs small.
+- **Sync with trunk** before merging: rebase the bottom branch onto `feat`,
+  then each branch onto its parent.
 
 ---
 
