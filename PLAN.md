@@ -11,6 +11,18 @@ parity with MATLAB's Code Analyzer (~2,680 checks).
 - Rules auto-register via the `inventory` crate — no manual `lib.rs` arrays.
 - Category-level config is supported (`[lint.categories]` in `.mlt.toml`).
 - Changes land via **stacked pull requests** (see below).
+- Rule context (description, severity, examples) for every check MUST be looked up on the
+  official MATLAB Code Analyzer check index:
+  `https://www.mathworks.com/help/matlab/matlab_env/index-of-code-analyzer-checks.html`.
+  MathWorks blocks plain HTTP/webfetch with HTTP 403, so the page is read with the
+  **Playwright MCP browser** (`playwright_browser_navigate` → `playwright_browser_find` →
+  `playwright_browser_snapshot`). A local archive of the page also exists at
+  `~/.local/share/opencode/tool-output/tool_fe291ac62001Qy9pI2rEjqHVAK` as fallback.
+- Each new rule is implemented via the **rule-pipeline** (see
+  `.opencode/skill/rule-pipeline/`): planning happens in the main session (it owns the
+  single Playwright MCP instance), then each rule is reviewed and implemented via
+  independent parallel **Reviewer → Implementer** subagent flows (`.opencode/agent/`).
+  Subagents never use Playwright; rule context is passed to them as plan text.
 
 ---
 
@@ -133,7 +145,7 @@ Requires `gh` ≥ 2.90 and Git ≥ 2.20.
 
 | # | Category | Count | Severity | Notes |
 |---|----------|-------|----------|-------|
-| 1 | Incomplete Analysis | 17 | Error | All `can_be_disabled = false`; linter-internal limits |
+| 1 | Incomplete Analysis | 17 | Error | **17/17 done** — Wave A completed QUIT, NOFIL, RDERR; all `can_be_disabled = false`; linter-internal limits |
 | 2 | Syntax Errors | 50 | Error | Parser-adjacent validation |
 | 3 | Language Specification Errors | 157 | Error | OOP, parfor, spmd, argument validation |
 | 4 | Bugs | 35 | Error | Suspicious patterns, logic errors |
@@ -145,7 +157,7 @@ Requires `gh` ≥ 2.90 and Git ≥ 2.20.
 | 10 | Unset Variables | 6 | Warning | Needs symbol table |
 | 11 | Unused Constructions | 17 | Warning/Info | Needs symbol table + control flow |
 | 12 | Suggested Improvements | 243 | Info | Data-driven (function replacement suggestions) |
-| 13 | Readability Improvements | 35 | Info | Pattern matching on AST |
+| 13 | Readability Improvements | 35 | Info | **35/35 done** — Wave A completed COMNL, STLOW, FLUDLR, MFAMB, FVINR |
 | 14 | Formatting Suggestions | 8 | Info | **Partial** — NOSEMI done; 7 remaining |
 | 15 | Performance Improvements | 41 | Info | Pattern matching on AST |
 | 16 | MATLAB for Code Generation | 19 | Error | Specialized |

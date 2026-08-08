@@ -32,6 +32,13 @@ nav = [
   { "Rules" = [
     { "Overview" = "rules.md" },
     { "NOSEMI - Trailing Semicolon" = "nosemi.md" },
+    { "NOFIL - File Not Found" = "nofil.md" },
+    { "RDERR - Unable to Read File" = "rderr.md" },
+    { "STLOW - Unnecessary UPPER/LOWER" = "stlow.md" },
+    { "MFAMB - Ambiguous Identifier" = "mfamb.md" },
+    { "COMNL - Comma Newline" = "comnl.md" },
+    { "FVINR - Input Attribute" = "fvinr.md" },
+    { "QUIT - Analysis Did Not Complete" = "quit.md" },
   ]},
 ]
 
