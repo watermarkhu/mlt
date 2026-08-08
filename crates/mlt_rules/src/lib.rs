@@ -18,6 +18,9 @@
 //! No manual edits to `lib.rs` are needed — the rule is automatically discovered
 //! at link time via the `inventory` crate.
 
+#[cfg(test)]
+pub mod test_util;
+
 pub mod analysis;
 pub mod bugs;
 pub mod codegen;
