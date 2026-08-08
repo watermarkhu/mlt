@@ -907,3 +907,299 @@ inventory::submit!(crate::RuleRegistration::new(
     "SYNTAX_ERRORS_ENGINE",
     SyntaxErrorsEngine::from_config
 ));
+
+// ---------------------------------------------------------------------------
+// Tests
+// ---------------------------------------------------------------------------
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::test_util::{has_id, lint_file};
+    use mlt_core::Config;
+
+    fn engine() -> Box<dyn Rule> {
+        SyntaxErrorsEngine::from_config(&Config::default())
+    }
+
+    fn engine_with_disabled(checks: &[&str]) -> Box<dyn Rule> {
+        let disabled = checks
+            .iter()
+            .map(|c| format!("\"{c}\""))
+            .collect::<Vec<_>>()
+            .join(", ");
+        let config = Config::from_toml(&format!(
+            "[lint.rules.SYNTAX_ERRORS_ENGINE]\ndisabled_checks = [{disabled}]\n"
+        ))
+        .unwrap();
+        SyntaxErrorsEngine::from_config(&config)
+    }
+
+    // -- BADNE: `!=` instead of `~=` ----------------------------------------
+
+    #[test]
+    fn badne_fires_on_bang_equals() {
+        let diags = lint_file(&*engine(), "x = 1 != 2;\n");
+        assert!(has_id(&diags, "BADNE"), "got: {diags:?}");
+    }
+
+    #[test]
+    fn badne_ok_on_tilde_equals() {
+        let diags = lint_file(&*engine(), "x = 1 ~= 2;\n");
+        assert!(!has_id(&diags, "BADNE"), "got: {diags:?}");
+    }
+
+    // -- BADOT: `..` not part of `...` --------------------------------------
+
+    #[test]
+    fn badot_fires_on_double_dot() {
+        let diags = lint_file(&*engine(), "x = 1..2;\n");
+        assert!(has_id(&diags, "BADOT"), "got: {diags:?}");
+    }
+
+    #[test]
+    fn badot_ok_on_line_continuation() {
+        let diags = lint_file(&*engine(), "x = 1 + ...\n    2;\n");
+        assert!(!has_id(&diags, "BADOT"), "got: {diags:?}");
+    }
+
+    // -- TWOCM: double comma ------------------------------------------------
+
+    #[test]
+    fn twocm_fires_on_double_comma() {
+        let diags = lint_file(&*engine(), "x = [1,,2];\n");
+        assert!(has_id(&diags, "TWOCM"), "got: {diags:?}");
+    }
+
+    #[test]
+    fn twocm_ok_on_single_comma() {
+        let diags = lint_file(&*engine(), "x = [1,2];\n");
+        assert!(!has_id(&diags, "TWOCM"), "got: {diags:?}");
+    }
+
+    // -- BADCH: invalid control characters ----------------------------------
+
+    #[test]
+    fn badch_fires_on_control_char() {
+        let diags = lint_file(&*engine(), "x = 1;\u{1}\n");
+        assert!(has_id(&diags, "BADCH"), "got: {diags:?}");
+    }
+
+    #[test]
+    fn badch_ok_on_normal_source() {
+        let diags = lint_file(&*engine(), "x = 1;\n");
+        assert!(!has_id(&diags, "BADCH"), "got: {diags:?}");
+    }
+
+    // -- BADSP: non-ASCII whitespace ----------------------------------------
+
+    #[test]
+    fn badsp_fires_on_non_ascii_space() {
+        let diags = lint_file(&*engine(), "x = 1;\u{a0}\n");
+        assert!(has_id(&diags, "BADSP"), "got: {diags:?}");
+    }
+
+    #[test]
+    fn badsp_ok_on_regular_spaces() {
+        let diags = lint_file(&*engine(), "x = 1;\n");
+        assert!(!has_id(&diags, "BADSP"), "got: {diags:?}");
+    }
+
+    // -- SYNER: generic syntax error ----------------------------------------
+
+    #[test]
+    fn syner_fires_on_parse_error() {
+        let diags = lint_file(&*engine(), "x = ;\n");
+        assert!(has_id(&diags, "SYNER"), "got: {diags:?}");
+    }
+
+    #[test]
+    fn syner_ok_on_valid_source() {
+        let diags = lint_file(&*engine(), "x = 5;\ny = x + 1;\n");
+        assert!(!has_id(&diags, "SYNER"), "got: {diags:?}");
+    }
+
+    // -- NOPAR: missing closing bracket -------------------------------------
+
+    #[test]
+    fn nopar_fires_on_unclosed_bracket() {
+        let diags = lint_file(&*engine(), "y = [1 2;\n");
+        assert!(has_id(&diags, "NOPAR"), "got: {diags:?}");
+    }
+
+    #[test]
+    fn nopar_ok_on_balanced_brackets() {
+        let diags = lint_file(&*engine(), "y = [1 2];\n");
+        assert!(!has_id(&diags, "NOPAR"), "got: {diags:?}");
+    }
+
+    // -- ENDCT: possible missing `end` --------------------------------------
+
+    #[test]
+    fn endct_fires_on_unterminated_if() {
+        let diags = lint_file(&*engine(), "if x > 0\n    y = 1;\n");
+        assert!(has_id(&diags, "ENDCT"), "got: {diags:?}");
+    }
+
+    #[test]
+    fn endct_ok_on_terminated_if() {
+        let diags = lint_file(&*engine(), "if x > 0\n    y = 1;\nend\n");
+        assert!(!has_id(&diags, "ENDCT"), "got: {diags:?}");
+    }
+
+    // -- EOFMI: file ends with ERROR node -----------------------------------
+
+    #[test]
+    fn eofmi_fires_on_incomplete_tail() {
+        let diags = lint_file(&*engine(), "x = 1; 2");
+        assert!(has_id(&diags, "EOFMI"), "got: {diags:?}");
+    }
+
+    #[test]
+    fn eofmi_ok_on_complete_file() {
+        let diags = lint_file(&*engine(), "x = 5;\n");
+        assert!(!has_id(&diags, "EOFMI"), "got: {diags:?}");
+    }
+
+    // -- SEPEXR: missing separator between statements -----------------------
+
+    #[test]
+    fn sepexr_fires_on_same_line_statements() {
+        let diags = lint_file(&*engine(), "x = 1; 2");
+        assert!(has_id(&diags, "SEPEXR"), "got: {diags:?}");
+    }
+
+    #[test]
+    fn sepexr_ok_on_separate_lines() {
+        let diags = lint_file(&*engine(), "x = 1;\ny = 2;\n");
+        assert!(!has_id(&diags, "SEPEXR"), "got: {diags:?}");
+    }
+
+    // -- NOLHS: assignment with empty left side -----------------------------
+
+    #[test]
+    fn nolhs_fires_on_empty_lhs() {
+        let diags = lint_file(&*engine(), "= 5;\n");
+        assert!(has_id(&diags, "NOLHS"), "got: {diags:?}");
+    }
+
+    #[test]
+    fn nolhs_ok_on_normal_assignment() {
+        let diags = lint_file(&*engine(), "x = 5;\n");
+        assert!(!has_id(&diags, "NOLHS"), "got: {diags:?}");
+    }
+
+    // -- CLIS: class definition in a script file ----------------------------
+
+    #[test]
+    fn clis_fires_on_class_with_script_statements() {
+        let diags = lint_file(&*engine(), "classdef Foo\nend\nx = 5;\n");
+        assert!(has_id(&diags, "CLIS"), "got: {diags:?}");
+    }
+
+    #[test]
+    fn clis_ok_on_plain_class_file() {
+        let diags = lint_file(&*engine(), "classdef Foo\nend\n");
+        assert!(!has_id(&diags, "CLIS"), "got: {diags:?}");
+    }
+
+    // -- CLTWO: multiple class definitions ----------------------------------
+
+    #[test]
+    fn cltwo_fires_on_two_classes() {
+        let diags = lint_file(&*engine(), "classdef Foo\nend\nclassdef Bar\nend\n");
+        assert!(has_id(&diags, "CLTWO"), "got: {diags:?}");
+    }
+
+    #[test]
+    fn cltwo_ok_on_single_class() {
+        let diags = lint_file(&*engine(), "classdef Foo\nend\n");
+        assert!(!has_id(&diags, "CLTWO"), "got: {diags:?}");
+    }
+
+    // -- SOFOC: statements outside class in class file ----------------------
+
+    #[test]
+    fn sofoc_fires_on_statements_outside_class() {
+        let diags = lint_file(
+            &*engine(),
+            "classdef Foo\nend\nfunction f()\nend\nx = 5;\n",
+        );
+        assert!(has_id(&diags, "SOFOC"), "got: {diags:?}");
+    }
+
+    #[test]
+    fn sofoc_ok_on_class_with_methods() {
+        let diags = lint_file(
+            &*engine(),
+            "classdef Foo\nmethods\nfunction f()\nend\nend\nend\n",
+        );
+        assert!(!has_id(&diags, "SOFOC"), "got: {diags:?}");
+    }
+
+    // -- SEMFU: file with only empty statements -----------------------------
+
+    #[test]
+    fn semfu_fires_on_comment_only_file() {
+        let diags = lint_file(&*engine(), "% just a comment\n");
+        assert!(has_id(&diags, "SEMFU"), "got: {diags:?}");
+    }
+
+    #[test]
+    fn semfu_ok_on_real_content() {
+        let diags = lint_file(&*engine(), "x = 5;\n");
+        assert!(!has_id(&diags, "SEMFU"), "got: {diags:?}");
+    }
+
+    // -- FNDOT: dotted function name outside methods ------------------------
+
+    #[test]
+    fn fndot_fires_on_dotted_function_name() {
+        let diags = lint_file(&*engine(), "function y = foo.bar()\n    y = 1;\nend\n");
+        assert!(has_id(&diags, "FNDOT"), "got: {diags:?}");
+    }
+
+    #[test]
+    fn fndot_ok_on_simple_function_name() {
+        let diags = lint_file(&*engine(), "function y = foo()\n    y = 1;\nend\n");
+        assert!(!has_id(&diags, "FNDOT"), "got: {diags:?}");
+    }
+
+    // -- FNSWA: function name starts with non-alphabetic --------------------
+
+    #[test]
+    fn fnswa_fires_on_underscore_name() {
+        let diags = lint_file(&*engine(), "function y = _foo()\n    y = 1;\nend\n");
+        assert!(has_id(&diags, "FNSWA"), "got: {diags:?}");
+    }
+
+    #[test]
+    fn fnswa_ok_on_alphabetic_name() {
+        let diags = lint_file(&*engine(), "function y = foo()\n    y = 1;\nend\n");
+        assert!(!has_id(&diags, "FNSWA"), "got: {diags:?}");
+    }
+
+    // -- REDEF: identifier as both function name and variable ---------------
+
+    #[test]
+    fn redef_fires_on_function_and_variable() {
+        let diags = lint_file(&*engine(), "function foo()\n    foo = 1;\nend\n");
+        assert!(has_id(&diags, "REDEF"), "got: {diags:?}");
+    }
+
+    #[test]
+    fn redef_ok_on_distinct_names() {
+        let diags = lint_file(&*engine(), "function foo()\n    x = 1;\nend\n");
+        assert!(!has_id(&diags, "REDEF"), "got: {diags:?}");
+    }
+
+    // -- disabled_checks config ---------------------------------------------
+
+    #[test]
+    fn disabled_checks_turn_off_checks() {
+        let engine = engine_with_disabled(&["BADNE", "TWOCM"]);
+        let diags = lint_file(&*engine, "x = 1 != 2; y = [1,,2];\n");
+        assert!(!has_id(&diags, "BADNE"), "got: {diags:?}");
+        assert!(!has_id(&diags, "TWOCM"), "got: {diags:?}");
+    }
+}

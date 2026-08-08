@@ -847,3 +847,420 @@ inventory::submit!(crate::RuleRegistration::new(
     "NAMING_ENGINE",
     NamingEngine::from_config
 ));
+
+// ---------------------------------------------------------------------------
+// Tests
+// ---------------------------------------------------------------------------
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::test_util::{has_id, lint_file};
+    use mlt_core::Config;
+
+    fn engine() -> Box<dyn Rule> {
+        NamingEngine::from_config(&Config::default())
+    }
+
+    /// Build an engine with a single naming check configured via TOML.
+    fn engine_with(rule_id: &str, params: &str) -> Box<dyn Rule> {
+        let config = Config::from_toml(&format!(
+            "[lint.rules.\"{rule_id}\"]\n{params}\n"
+        ))
+        .unwrap();
+        NamingEngine::from_config(&config)
+    }
+
+    // -- minLength (default) --------------------------------------------------
+
+    #[test]
+    fn variable_min_length_fires_on_single_char() {
+        let diags = lint_file(&*engine(), "a = 1;\n");
+        assert!(
+            has_id(&diags, "naming.variable.minLength"),
+            "got: {diags:?}"
+        );
+    }
+
+    #[test]
+    fn variable_min_length_ok_on_two_chars() {
+        let diags = lint_file(&*engine(), "ab = 1;\n");
+        assert!(
+            !has_id(&diags, "naming.variable.minLength"),
+            "got: {diags:?}"
+        );
+    }
+
+    #[test]
+    fn function_min_length_fires_on_single_char() {
+        let diags = lint_file(&*engine(), "function f()\nend\n");
+        assert!(
+            has_id(&diags, "naming.function.minLength"),
+            "got: {diags:?}"
+        );
+    }
+
+    #[test]
+    fn function_min_length_ok_on_two_chars() {
+        let diags = lint_file(&*engine(), "function fo()\nend\n");
+        assert!(
+            !has_id(&diags, "naming.function.minLength"),
+            "got: {diags:?}"
+        );
+    }
+
+    #[test]
+    fn multioutput_assignment_extracts_each_variable() {
+        let diags = lint_file(&*engine(), "[a, b] = deal(1, 2);\n");
+        assert!(
+            has_id(&diags, "naming.variable.minLength"),
+            "got: {diags:?}"
+        );
+    }
+
+    // -- maxLength (default 63) ------------------------------------------------
+
+    #[test]
+    fn variable_max_length_fires_on_long_name() {
+        let long_name = "a".repeat(64);
+        let source = format!("{long_name} = 1;\n");
+        let diags = lint_file(&*engine(), &source);
+        assert!(
+            has_id(&diags, "naming.variable.maxLength"),
+            "got: {diags:?}"
+        );
+    }
+
+    #[test]
+    fn variable_max_length_ok_at_exactly_63_chars() {
+        let name = "b".repeat(63);
+        let source = format!("{name} = 1;\n");
+        let diags = lint_file(&*engine(), &source);
+        assert!(
+            !has_id(&diags, "naming.variable.maxLength"),
+            "got: {diags:?}"
+        );
+    }
+
+    #[test]
+    fn variable_max_length_ok_on_short_name() {
+        let diags = lint_file(&*engine(), "someVariable = 1;\n");
+        assert!(
+            !has_id(&diags, "naming.variable.maxLength"),
+            "got: {diags:?}"
+        );
+    }
+
+    #[test]
+    fn default_config_no_diagnostics_for_normal_names() {
+        let diags = lint_file(&*engine(), "someVariable = 1;\nanotherVariable = 2;\n");
+        assert!(diags.is_empty(), "got: {diags:?}");
+    }
+
+    // -- Configured thresholds ------------------------------------------------
+
+    #[test]
+    fn max_length_fires_with_lowered_threshold() {
+        let engine = engine_with("naming.variable.maxLength", "max = 5");
+        let diags = lint_file(&*engine, "myVariable = 1;\n");
+        assert!(
+            has_id(&diags, "naming.variable.maxLength"),
+            "got: {diags:?}"
+        );
+    }
+
+    #[test]
+    fn max_length_ok_with_lowered_threshold() {
+        let engine = engine_with("naming.variable.maxLength", "max = 5");
+        let diags = lint_file(&*engine, "myVar = 1;\n");
+        assert!(
+            !has_id(&diags, "naming.variable.maxLength"),
+            "got: {diags:?}"
+        );
+    }
+
+    #[test]
+    fn min_length_fires_with_raised_threshold() {
+        let engine = engine_with("naming.variable.minLength", "min = 5");
+        let diags = lint_file(&*engine, "ab = 1;\n");
+        assert!(
+            has_id(&diags, "naming.variable.minLength"),
+            "got: {diags:?}"
+        );
+    }
+
+    #[test]
+    fn min_length_ok_with_raised_threshold() {
+        let engine = engine_with("naming.variable.minLength", "min = 5");
+        let diags = lint_file(&*engine, "abcdef = 1;\n");
+        assert!(
+            !has_id(&diags, "naming.variable.minLength"),
+            "got: {diags:?}"
+        );
+    }
+
+    // -- requiredPrefix --------------------------------------------------------
+
+    #[test]
+    fn required_prefix_fires_when_configured() {
+        let engine = engine_with("naming.variable.requiredPrefix", "prefix = \"temp\"");
+        let diags = lint_file(&*engine, "myVar = 1;\n");
+        assert!(
+            has_id(&diags, "naming.variable.requiredPrefix"),
+            "got: {diags:?}"
+        );
+    }
+
+    #[test]
+    fn required_prefix_ok_when_satisfied() {
+        let engine = engine_with("naming.variable.requiredPrefix", "prefix = \"temp\"");
+        let diags = lint_file(&*engine, "tempVar = 1;\n");
+        assert!(
+            !has_id(&diags, "naming.variable.requiredPrefix"),
+            "got: {diags:?}"
+        );
+    }
+
+    // -- disallowedPrefix ------------------------------------------------------
+
+    #[test]
+    fn disallowed_prefix_fires_when_configured() {
+        let engine = engine_with("naming.variable.disallowedPrefix", "prefix = \"tmp\"");
+        let diags = lint_file(&*engine, "tmpVar = 1;\n");
+        assert!(
+            has_id(&diags, "naming.variable.disallowedPrefix"),
+            "got: {diags:?}"
+        );
+    }
+
+    #[test]
+    fn disallowed_prefix_ok_when_not_matching() {
+        let engine = engine_with("naming.variable.disallowedPrefix", "prefix = \"tmp\"");
+        let diags = lint_file(&*engine, "myVar = 1;\n");
+        assert!(
+            !has_id(&diags, "naming.variable.disallowedPrefix"),
+            "got: {diags:?}"
+        );
+    }
+
+    // -- requiredSuffix --------------------------------------------------------
+
+    #[test]
+    fn required_suffix_fires_when_configured() {
+        let engine = engine_with("naming.function.requiredSuffix", "suffix = \"_fn\"");
+        let diags = lint_file(&*engine, "function doStuff()\nend\n");
+        assert!(
+            has_id(&diags, "naming.function.requiredSuffix"),
+            "got: {diags:?}"
+        );
+    }
+
+    #[test]
+    fn required_suffix_ok_when_satisfied() {
+        let engine = engine_with("naming.function.requiredSuffix", "suffix = \"_fn\"");
+        let diags = lint_file(&*engine, "function doStuff_fn()\nend\n");
+        assert!(
+            !has_id(&diags, "naming.function.requiredSuffix"),
+            "got: {diags:?}"
+        );
+    }
+
+    // -- disallowedSuffix ------------------------------------------------------
+
+    #[test]
+    fn disallowed_suffix_fires_when_configured() {
+        let engine = engine_with("naming.variable.disallowedSuffix", "suffix = \"_count\"");
+        let diags = lint_file(&*engine, "loop_count = 0;\n");
+        assert!(
+            has_id(&diags, "naming.variable.disallowedSuffix"),
+            "got: {diags:?}"
+        );
+    }
+
+    #[test]
+    fn disallowed_suffix_ok_when_not_matching() {
+        let engine = engine_with("naming.variable.disallowedSuffix", "suffix = \"_count\"");
+        let diags = lint_file(&*engine, "loopTotal = 0;\n");
+        assert!(
+            !has_id(&diags, "naming.variable.disallowedSuffix"),
+            "got: {diags:?}"
+        );
+    }
+
+    // -- disallowedPhrase ------------------------------------------------------
+
+    #[test]
+    fn disallowed_phrase_fires_when_configured() {
+        let engine = engine_with("naming.variable.disallowedPhrase", "phrase = \"old\"");
+        let diags = lint_file(&*engine, "oldValue = 1;\n");
+        assert!(
+            has_id(&diags, "naming.variable.disallowedPhrase"),
+            "got: {diags:?}"
+        );
+    }
+
+    #[test]
+    fn disallowed_phrase_ok_when_not_matching() {
+        let engine = engine_with("naming.variable.disallowedPhrase", "phrase = \"old\"");
+        let diags = lint_file(&*engine, "freshValue = 1;\n");
+        assert!(
+            !has_id(&diags, "naming.variable.disallowedPhrase"),
+            "got: {diags:?}"
+        );
+    }
+
+    // -- regularExpression -----------------------------------------------------
+
+    #[test]
+    fn regular_expression_fires_when_pattern_not_matched() {
+        let engine = engine_with(
+            "naming.variable.regularExpression",
+            "pattern = \"^[a-z]+[A-Z][a-z]+$\"",
+        );
+        let diags = lint_file(&*engine, "my_var = 1;\n");
+        assert!(
+            has_id(&diags, "naming.variable.regularExpression"),
+            "got: {diags:?}"
+        );
+    }
+
+    #[test]
+    fn regular_expression_ok_when_pattern_matched() {
+        let engine = engine_with(
+            "naming.variable.regularExpression",
+            "pattern = \"^[a-z]+[A-Z][a-z]+$\"",
+        );
+        let diags = lint_file(&*engine, "myVar = 1;\n");
+        assert!(
+            !has_id(&diags, "naming.variable.regularExpression"),
+            "got: {diags:?}"
+        );
+    }
+
+    // -- casing ----------------------------------------------------------------
+
+    #[test]
+    fn casing_camel_fires_when_configured() {
+        let engine = engine_with("naming.variable.casing", "style = \"camelCase\"");
+        let diags = lint_file(&*engine, "MyVar = 1;\n");
+        assert!(has_id(&diags, "naming.variable.casing"), "got: {diags:?}");
+    }
+
+    #[test]
+    fn casing_camel_ok_when_satisfied() {
+        let engine = engine_with("naming.variable.casing", "style = \"camelCase\"");
+        let diags = lint_file(&*engine, "myVar = 1;\n");
+        assert!(!has_id(&diags, "naming.variable.casing"), "got: {diags:?}");
+    }
+
+    #[test]
+    fn casing_pascal_fires_when_configured() {
+        let engine = engine_with("naming.variable.casing", "style = \"PascalCase\"");
+        let diags = lint_file(&*engine, "myVar = 1;\n");
+        assert!(has_id(&diags, "naming.variable.casing"), "got: {diags:?}");
+    }
+
+    #[test]
+    fn casing_snake_fires_when_configured() {
+        let engine = engine_with("naming.variable.casing", "style = \"snake_case\"");
+        let diags = lint_file(&*engine, "MyVar = 1;\n");
+        assert!(has_id(&diags, "naming.variable.casing"), "got: {diags:?}");
+    }
+
+    #[test]
+    fn casing_upper_fires_when_configured() {
+        let engine = engine_with("naming.variable.casing", "style = \"UPPER_CASE\"");
+        let diags = lint_file(&*engine, "myVar = 1;\n");
+        assert!(has_id(&diags, "naming.variable.casing"), "got: {diags:?}");
+    }
+
+    // -- Entity extraction -----------------------------------------------------
+
+    #[test]
+    fn class_entity_detected() {
+        let engine = engine_with("naming.class.requiredPrefix", "prefix = \"Cls\"");
+        let diags = lint_file(&*engine, "classdef MyClass\nend\n");
+        assert!(
+            has_id(&diags, "naming.class.requiredPrefix"),
+            "got: {diags:?}"
+        );
+    }
+
+    #[test]
+    fn local_function_entity_detected() {
+        let engine = engine_with("naming.localFunction.requiredPrefix", "prefix = \"lf_\"");
+        let diags = lint_file(
+            &*engine,
+            "function main()\nend\nfunction helper()\nend\n",
+        );
+        assert!(
+            has_id(&diags, "naming.localFunction.requiredPrefix"),
+            "got: {diags:?}"
+        );
+    }
+
+    #[test]
+    fn nested_function_entity_detected() {
+        let engine = engine_with("naming.nestedFunction.requiredPrefix", "prefix = \"nf_\"");
+        let diags = lint_file(
+            &*engine,
+            "function main()\n    function helper()\n    end\nend\n",
+        );
+        assert!(
+            has_id(&diags, "naming.nestedFunction.requiredPrefix"),
+            "got: {diags:?}"
+        );
+    }
+
+    #[test]
+    fn method_entity_detected() {
+        let engine = engine_with("naming.method.requiredPrefix", "prefix = \"m_\"");
+        let diags = lint_file(
+            &*engine,
+            "classdef MyClass\n    methods\n        function helper()\n        end\n    end\nend\n",
+        );
+        assert!(
+            has_id(&diags, "naming.method.requiredPrefix"),
+            "got: {diags:?}"
+        );
+    }
+
+    #[test]
+    fn property_entity_detected() {
+        let engine = engine_with("naming.property.requiredPrefix", "prefix = \"prop_\"");
+        let diags = lint_file(
+            &*engine,
+            "classdef MyClass\n    properties\n        Value\n    end\nend\n",
+        );
+        assert!(
+            has_id(&diags, "naming.property.requiredPrefix"),
+            "got: {diags:?}"
+        );
+    }
+
+    #[test]
+    fn event_entity_detected() {
+        let engine = engine_with("naming.event.requiredPrefix", "prefix = \"ev_\"");
+        let diags = lint_file(
+            &*engine,
+            "classdef MyClass\n    events\n        ValueChanged\n    end\nend\n",
+        );
+        assert!(
+            has_id(&diags, "naming.event.requiredPrefix"),
+            "got: {diags:?}"
+        );
+    }
+
+    #[test]
+    fn enumeration_entity_detected() {
+        let engine = engine_with("naming.enumeration.requiredPrefix", "prefix = \"ENUM_\"");
+        let diags = lint_file(
+            &*engine,
+            "classdef MyClass\n    enumeration\n        Red\n        Green\n    end\nend\n",
+        );
+        assert!(
+            has_id(&diags, "naming.enumeration.requiredPrefix"),
+            "got: {diags:?}"
+        );
+    }
+}

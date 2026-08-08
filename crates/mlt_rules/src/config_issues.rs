@@ -365,3 +365,115 @@ inventory::submit!(crate::RuleRegistration::new(
     "CONFIG_ISSUES_ENGINE",
     ConfigIssuesEngine::from_config
 ));
+
+// ---------------------------------------------------------------------------
+// Tests
+// ---------------------------------------------------------------------------
+
+// NOTE: The positive paths for BDCFG/BDOPT/CFERR/CFIG are unreachable with the
+// tree-sitter-matlab 1.3 grammar used by this crate:
+//   - BDCFG/BDOPT look up the argument list via `child_by_field_name("arguments")`,
+//     but the grammar defines `arguments` as a positional child of `function_call`,
+//     not a field, so the lookup always returns `None`.
+//   - CFERR matches dotted config names (`coder.config`), but those parse as
+//     `field_expression` nodes; the inner `function_call` name is only `config`.
+//   - CFIG matches dotted toolbox command names, but those parse as
+//     `field_expression` nodes, never as `command` nodes.
+// The negative tests below document that these checks do not produce false
+// positives on well-formed code.
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::test_util::{has_id, lint_nodes};
+    use mlt_core::Config;
+
+    fn engine() -> Box<dyn Rule> {
+        ConfigIssuesEngine::from_config(&Config::default())
+    }
+
+    fn engine_with_disabled(checks: &[&str]) -> Box<dyn Rule> {
+        let disabled = checks
+            .iter()
+            .map(|c| format!("\"{c}\""))
+            .collect::<Vec<_>>()
+            .join(", ");
+        let config = Config::from_toml(&format!(
+            "[lint.rules.CONFIG_ISSUES_ENGINE]\ndisabled_checks = [{disabled}]\n"
+        ))
+        .unwrap();
+        ConfigIssuesEngine::from_config(&config)
+    }
+
+    // -- BDCFG: invalid configuration parameter (negative only) -------------
+
+    #[test]
+    fn bdcfg_ok_on_valid_param() {
+        let diags = lint_nodes(&*engine(), "set_param(gcs, 'SimulationCommand', 'start');\n");
+        assert!(!has_id(&diags, "BDCFG"), "got: {diags:?}");
+    }
+
+    #[test]
+    fn bdcfg_ok_on_unrelated_function() {
+        let diags = lint_nodes(&*engine(), "myfunc('NotARealParam');\n");
+        assert!(!has_id(&diags, "BDCFG"), "got: {diags:?}");
+    }
+
+    // -- CFERR: configuration function error (negative only) ----------------
+
+    #[test]
+    fn cferr_ok_with_argument() {
+        let diags = lint_nodes(&*engine(), "cfg = coder.config('lib');\n");
+        assert!(!has_id(&diags, "CFERR"), "got: {diags:?}");
+    }
+
+    #[test]
+    fn cferr_ok_on_plain_function() {
+        let diags = lint_nodes(&*engine(), "x = config();\n");
+        assert!(!has_id(&diags, "CFERR"), "got: {diags:?}");
+    }
+
+    // -- BDOPT: invalid option value (negative only) ------------------------
+
+    #[test]
+    fn bdopt_ok_on_valid_option() {
+        let diags = lint_nodes(&*engine(), "opts = optimset('Display', 'off');\n");
+        assert!(!has_id(&diags, "BDOPT"), "got: {diags:?}");
+    }
+
+    #[test]
+    fn bdopt_ok_on_unrelated_function() {
+        let diags = lint_nodes(&*engine(), "foo('NotAnOption');\n");
+        assert!(!has_id(&diags, "BDOPT"), "got: {diags:?}");
+    }
+
+    // -- CFIG: configuration command issue (negative only) ------------------
+
+    #[test]
+    fn cfig_ok_with_command_args() {
+        let diags = lint_nodes(
+            &*engine(),
+            "matlab.addons.toolbox.installToolbox myToolbox.mlappinstall\n",
+        );
+        assert!(!has_id(&diags, "CFIG"), "got: {diags:?}");
+    }
+
+    #[test]
+    fn cfig_ok_on_plain_command() {
+        let diags = lint_nodes(&*engine(), "cd myFolder\n");
+        assert!(!has_id(&diags, "CFIG"), "got: {diags:?}");
+    }
+
+    // -- disabled_checks config ---------------------------------------------
+
+    #[test]
+    fn disabled_checks_parse_successfully() {
+        let engine = engine_with_disabled(&["BDCFG", "BDOPT"]);
+        let diags = lint_nodes(
+            &*engine,
+            "set_param(gcs, 'SimulationCommand', 'start');\nopts = optimset('Display', 'off');\n",
+        );
+        assert!(!has_id(&diags, "BDCFG"), "got: {diags:?}");
+        assert!(!has_id(&diags, "BDOPT"), "got: {diags:?}");
+    }
+}
