@@ -55,11 +55,19 @@ const CHECK_IDS: &[&str] = &[
 // ---------------------------------------------------------------------------
 
 /// Configuration for the NO4LP indentation check.
-#[derive(Debug, Clone, Deserialize, Default)]
+#[derive(Debug, Clone, Deserialize)]
 pub struct No4lpConfig {
     /// Expected indentation size in spaces.
     #[serde(default = "default_indent_size")]
     pub indent_size: usize,
+}
+
+impl Default for No4lpConfig {
+    fn default() -> Self {
+        Self {
+            indent_size: default_indent_size(),
+        }
+    }
 }
 
 /// Default indentation size (4 spaces).
@@ -179,45 +187,47 @@ impl FormattingEngine {
         source: &str,
         diagnostics: &mut Vec<Diagnostic>,
     ) {
-        match node.kind() {
-            // NOCOMMA: matrix/cell rows with space-separated elements
-            "matrix" | "cell" if self.enabled.nocomma => {
-                self.check_nocomma(node, source, diagnostics);
-            }
+        let kind = node.kind();
+        // Note: multiple checks can apply to the same node type, so dispatch
+        // each independently rather than using mutually-exclusive match arms.
 
-            // NO4LP: indentation in loop/conditional bodies
+        // NOCOMMA: matrix/cell rows with space-separated elements
+        if (kind == "matrix" || kind == "cell") && self.enabled.nocomma {
+            self.check_nocomma(node, source, diagnostics);
+        }
+
+        // NO4LP: indentation in loop/conditional bodies
+        if matches!(
+            kind,
             "for_statement" | "while_statement" | "if_statement" | "switch_statement"
-                if self.enabled.no4lp =>
-            {
-                self.check_no4lp(node, source, diagnostics);
-            }
+        ) && self.enabled.no4lp
+        {
+            self.check_no4lp(node, source, diagnostics);
+        }
 
-            // ALIGN: elseif/else alignment with parent if
-            "if_statement" if self.enabled.align => {
-                self.check_align(node, source, diagnostics);
-            }
+        // ALIGN: elseif/else alignment with parent if
+        if kind == "if_statement" && self.enabled.align {
+            self.check_align(node, source, diagnostics);
+        }
 
-            // NOPTS: unnecessary parentheses around condition
-            "if_statement" | "while_statement" if self.enabled.nopts => {
-                self.check_nopts(node, source, diagnostics);
-            }
+        // NOPTS: unnecessary parentheses around condition
+        if matches!(kind, "if_statement" | "while_statement") && self.enabled.nopts {
+            self.check_nopts(node, source, diagnostics);
+        }
 
-            // NOPRT: unnecessary parentheses around simple expressions
-            "parenthesis" if self.enabled.noprt => {
-                self.check_noprt(node, source, diagnostics);
-            }
+        // NOPRT: unnecessary parentheses around simple expressions
+        if kind == "parenthesis" && self.enabled.noprt {
+            self.check_noprt(node, source, diagnostics);
+        }
 
-            // PRTCAL: function syntax that could be command syntax
-            "function_call" if self.enabled.prtcal => {
-                self.check_prtcal(node, source, diagnostics);
-            }
+        // PRTCAL: function syntax that could be command syntax
+        if kind == "function_call" && self.enabled.prtcal {
+            self.check_prtcal(node, source, diagnostics);
+        }
 
-            // NCOMMA: function call args separated by spaces
-            "function_call" if self.enabled.ncomma => {
-                self.check_ncomma(node, source, diagnostics);
-            }
-
-            _ => {}
+        // NCOMMA: function call args separated by spaces
+        if kind == "function_call" && self.enabled.ncomma {
+            self.check_ncomma(node, source, diagnostics);
         }
 
         // Recurse into children.
@@ -272,8 +282,21 @@ impl FormattingEngine {
             };
             let kind = child.kind();
 
-            // Reset tracking on comma or semicolon.
+            // Reset tracking on comma or semicolon. A zero-width comma token
+            // is inserted by the grammar when an element separator is missing.
             if kind == "," {
+                if child.start_byte() == child.end_byte() {
+                    let pos = child.start_position();
+                    diagnostics.push(Diagnostic {
+                        rule_id: "NOCOMMA",
+                        message: "Use commas to separate elements in a row".to_string(),
+                        severity: Severity::Info,
+                        byte_range: child.start_byte()..child.start_byte(),
+                        line: pos.row + 1,
+                        column: pos.column + 1,
+                        fix: Some(Fix::insert(child.start_byte(), ", ")),
+                    });
+                }
                 prev_expr = None;
                 continue;
             }
@@ -586,7 +609,7 @@ impl FormattingEngine {
         }
 
         // Must have an arguments node with only string/identifier children.
-        let Some(args_node) = node.child_by_field_name("arguments") else {
+        let Some(args_node) = find_arguments_child(node) else {
             return;
         };
 
@@ -670,7 +693,7 @@ impl FormattingEngine {
         source: &str,
         diagnostics: &mut Vec<Diagnostic>,
     ) {
-        let Some(args_node) = node.child_by_field_name("arguments") else {
+        let Some(args_node) = find_arguments_child(node) else {
             return;
         };
 
@@ -684,8 +707,21 @@ impl FormattingEngine {
             };
             let kind = child.kind();
 
-            // Reset on comma.
+            // Reset on comma. A zero-width comma token is inserted by the
+            // grammar when an argument separator is missing.
             if kind == "," {
+                if child.start_byte() == child.end_byte() {
+                    let pos = child.start_position();
+                    diagnostics.push(Diagnostic {
+                        rule_id: "NCOMMA",
+                        message: "Use comma to separate input arguments".to_string(),
+                        severity: Severity::Info,
+                        byte_range: child.start_byte()..child.start_byte(),
+                        line: pos.row + 1,
+                        column: pos.column + 1,
+                        fix: Some(Fix::insert(child.start_byte(), ", ")),
+                    });
+                }
                 prev_expr = None;
                 continue;
             }
@@ -723,6 +759,22 @@ impl FormattingEngine {
 /// Returns `true` if the node kind is bracket/punctuation that should be skipped.
 fn is_punctuation(kind: &str) -> bool {
     matches!(kind, "[" | "]" | "{" | "}" | "(" | ")" | ";" | "," | "...")
+}
+
+/// Find the direct `arguments` child of a `function_call` node.
+///
+/// The grammar does not expose `arguments` as a named field on
+/// `function_call`, so it must be located by walking the children.
+fn find_arguments_child(node: Node) -> Option<Node> {
+    let child_count = node.child_count();
+    for i in 0..child_count {
+        if let Some(child) = node.child(i) {
+            if child.kind() == "arguments" {
+                return Some(child);
+            }
+        }
+    }
+    None
 }
 
 /// Get the byte offset of the start of the line containing `byte_offset`.
@@ -802,3 +854,189 @@ inventory::submit!(crate::RuleRegistration::new(
     "FORMATTING_ENGINE",
     FormattingEngine::from_config
 ));
+
+// ---------------------------------------------------------------------------
+// Tests
+// ---------------------------------------------------------------------------
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use mlt_core::Config;
+    use tree_sitter::Parser;
+
+    /// Parse MATLAB source and return the tree.
+    fn parse(source: &str) -> tree_sitter::Tree {
+        let mut parser = Parser::new();
+        parser
+            .set_language(&tree_sitter_matlab::LANGUAGE.into())
+            .expect("failed to load tree-sitter-matlab");
+        parser.parse(source, None).expect("parse failed")
+    }
+
+    /// Run the formatting engine on source code and return diagnostics.
+    fn lint(source: &str) -> Vec<Diagnostic> {
+        let config = Config::default();
+        let rule = FormattingEngine::from_config(&config);
+        let tree = parse(source);
+        let ctx = FileContext {
+            tree: &tree,
+            source,
+            file_path: std::path::Path::new("test.m"),
+        };
+        rule.check_file(&ctx)
+    }
+
+    fn has_id(diags: &[Diagnostic], id: &str) -> bool {
+        diags.iter().any(|d| d.rule_id == id)
+    }
+
+    // -- NOCOMMA -------------------------------------------------------------
+
+    #[test]
+    fn nocomma_space_separated_row() {
+        let source = "x = [1 2 3];\n";
+        let diags = lint(source);
+        assert!(has_id(&diags, "NOCOMMA"), "got: {diags:?}");
+    }
+
+    #[test]
+    fn nocomma_comma_separated_row() {
+        let source = "x = [1, 2, 3];\n";
+        let diags = lint(source);
+        assert!(!has_id(&diags, "NOCOMMA"), "got: {diags:?}");
+    }
+
+    #[test]
+    fn nocomma_cell_space_separated() {
+        let source = "c = {1 2};\n";
+        let diags = lint(source);
+        assert!(has_id(&diags, "NOCOMMA"), "got: {diags:?}");
+    }
+
+    // -- NO4LP ---------------------------------------------------------------
+
+    #[test]
+    fn no4lp_loop_body_unindented() {
+        let source = "\
+function f()
+for i = 1:10
+x = i;
+end
+end
+";
+        let diags = lint(source);
+        assert!(has_id(&diags, "NO4LP"), "got: {diags:?}");
+    }
+
+    #[test]
+    fn no4lp_loop_body_indented() {
+        let source = "\
+function f()
+    for i = 1:10
+        x = i;
+    end
+end
+";
+        let diags = lint(source);
+        assert!(!has_id(&diags, "NO4LP"), "got: {diags:?}");
+    }
+
+    // -- ALIGN ---------------------------------------------------------------
+
+    #[test]
+    fn align_misaligned_elseif() {
+        let source = "\
+function f()
+    if x > 0
+        a = 1;
+      elseif x < 0
+        a = -1;
+    else
+        a = 0;
+    end
+end
+";
+        let diags = lint(source);
+        assert!(has_id(&diags, "ALIGN"), "got: {diags:?}");
+    }
+
+    #[test]
+    fn align_aligned_clauses() {
+        let source = "\
+function f()
+    if x > 0
+        a = 1;
+    elseif x < 0
+        a = -1;
+    else
+        a = 0;
+    end
+end
+";
+        let diags = lint(source);
+        assert!(!has_id(&diags, "ALIGN"), "got: {diags:?}");
+    }
+
+    // -- NOPTS ---------------------------------------------------------------
+
+    #[test]
+    fn nopts_parenthesized_condition() {
+        let source = "if (x > 0)\n    y = 1;\nend\n";
+        let diags = lint(source);
+        assert!(has_id(&diags, "NOPTS"), "got: {diags:?}");
+    }
+
+    #[test]
+    fn nopts_unparenthesized_condition() {
+        let source = "if x > 0\n    y = 1;\nend\n";
+        let diags = lint(source);
+        assert!(!has_id(&diags, "NOPTS"), "got: {diags:?}");
+    }
+
+    // -- NOPRT ---------------------------------------------------------------
+
+    #[test]
+    fn noprt_unnecessary_parens() {
+        let source = "y = (x);\n";
+        let diags = lint(source);
+        assert!(has_id(&diags, "NOPRT"), "got: {diags:?}");
+    }
+
+    #[test]
+    fn noprt_binary_expression_kept() {
+        let source = "y = (a + b) * c;\n";
+        let diags = lint(source);
+        assert!(!has_id(&diags, "NOPRT"), "got: {diags:?}");
+    }
+
+    // -- PRTCAL --------------------------------------------------------------
+
+    #[test]
+    fn prtcal_simple_string_call() {
+        let source = "disp('hello');\n";
+        let diags = lint(source);
+        assert!(has_id(&diags, "PRTCAL"), "got: {diags:?}");
+    }
+
+    #[test]
+    fn prtcal_non_string_argument() {
+        let source = "disp(123);\n";
+        let diags = lint(source);
+        assert!(!has_id(&diags, "PRTCAL"), "got: {diags:?}");
+    }
+
+    // -- NCOMMA --------------------------------------------------------------
+    //
+    // Note: space-separated function arguments (e.g. `foo(a b)`) parse as
+    // syntax errors in tree-sitter-matlab, so NCOMMA is not reachable on that
+    // input; it is reported by the syntax-errors engine instead. The check is
+    // verified here only for the well-formed case (no false positive).
+
+    #[test]
+    fn ncomma_args_comma_separated() {
+        let source = "foo(a, b);\n";
+        let diags = lint(source);
+        assert!(!has_id(&diags, "NCOMMA"), "got: {diags:?}");
+    }
+}
