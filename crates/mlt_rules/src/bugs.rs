@@ -910,12 +910,11 @@ impl BugsEngine {
     /// IFBDUP: Duplicate if-branch bodies.
     fn check_if_branch_dup_bodies(&self, root: Node, source: &str) -> Vec<Diagnostic> {
         let mut diagnostics = Vec::new();
-        self.walk_if_branch_dup_bodies(root, source, &mut diagnostics);
+        Self::walk_if_branch_dup_bodies(root, source, &mut diagnostics);
         diagnostics
     }
 
     fn walk_if_branch_dup_bodies(
-        &self,
         node: Node,
         source: &str,
         diagnostics: &mut Vec<Diagnostic>,
@@ -959,19 +958,18 @@ impl BugsEngine {
 
         let mut cursor = node.walk();
         for child in node.children(&mut cursor) {
-            self.walk_if_branch_dup_bodies(child, source, diagnostics);
+            Self::walk_if_branch_dup_bodies(child, source, diagnostics);
         }
     }
 
     /// IFCDUP: Duplicate if-branch conditions.
     fn check_if_condition_dup(&self, root: Node, source: &str) -> Vec<Diagnostic> {
         let mut diagnostics = Vec::new();
-        self.walk_if_condition_dup(root, source, &mut diagnostics);
+        Self::walk_if_condition_dup(root, source, &mut diagnostics);
         diagnostics
     }
 
     fn walk_if_condition_dup(
-        &self,
         node: Node,
         source: &str,
         diagnostics: &mut Vec<Diagnostic>,
@@ -1021,19 +1019,18 @@ impl BugsEngine {
 
         let mut cursor = node.walk();
         for child in node.children(&mut cursor) {
-            self.walk_if_condition_dup(child, source, diagnostics);
+            Self::walk_if_condition_dup(child, source, diagnostics);
         }
     }
 
     /// LBODUP / MDUPC: Duplicate case values in switch.
     fn check_switch_dup_cases(&self, root: Node, source: &str) -> Vec<Diagnostic> {
         let mut diagnostics = Vec::new();
-        self.walk_switch_dup_cases(root, source, &mut diagnostics);
+        Self::walk_switch_dup_cases(root, source, &mut diagnostics);
         diagnostics
     }
 
     fn walk_switch_dup_cases(
-        &self,
         node: Node,
         source: &str,
         diagnostics: &mut Vec<Diagnostic>,
@@ -1086,19 +1083,18 @@ impl BugsEngine {
 
         let mut cursor = node.walk();
         for child in node.children(&mut cursor) {
-            self.walk_switch_dup_cases(child, source, diagnostics);
+            Self::walk_switch_dup_cases(child, source, diagnostics);
         }
     }
 
     /// NOPRC: Switch without `otherwise` clause.
     fn check_switch_no_otherwise(&self, root: Node, source: &str) -> Vec<Diagnostic> {
         let mut diagnostics = Vec::new();
-        self.walk_switch_no_otherwise(root, source, &mut diagnostics);
+        Self::walk_switch_no_otherwise(root, source, &mut diagnostics);
         diagnostics
     }
 
     fn walk_switch_no_otherwise(
-        &self,
         node: Node,
         _source: &str,
         diagnostics: &mut Vec<Diagnostic>,
@@ -1129,19 +1125,18 @@ impl BugsEngine {
 
         let mut cursor = node.walk();
         for child in node.children(&mut cursor) {
-            self.walk_switch_no_otherwise(child, _source, diagnostics);
+            Self::walk_switch_no_otherwise(child, _source, diagnostics);
         }
     }
 
     /// MEXCEP: Catch clause without an exception identifier.
     fn check_catch_without_id(&self, root: Node, source: &str) -> Vec<Diagnostic> {
         let mut diagnostics = Vec::new();
-        self.walk_catch_without_id(root, source, &mut diagnostics);
+        Self::walk_catch_without_id(root, source, &mut diagnostics);
         diagnostics
     }
 
     fn walk_catch_without_id(
-        &self,
         node: Node,
         source: &str,
         diagnostics: &mut Vec<Diagnostic>,
@@ -1162,7 +1157,7 @@ impl BugsEngine {
                     .strip_prefix("catch")
                     .map(|rest| {
                         let rest = rest.trim();
-                        !rest.is_empty() && rest.chars().next().map_or(false, |c| c.is_alphabetic())
+                        !rest.is_empty() && rest.chars().next().is_some_and(|c| c.is_alphabetic())
                     })
                     .unwrap_or(false);
 
@@ -1186,7 +1181,7 @@ impl BugsEngine {
             let mut cursor = node.walk();
             for child in node.children(&mut cursor) {
                 if child.kind() == "catch_clause" {
-                    self.walk_catch_without_id(child, source, diagnostics);
+                    Self::walk_catch_without_id(child, source, diagnostics);
                 }
             }
         }
@@ -1194,7 +1189,7 @@ impl BugsEngine {
         let mut cursor = node.walk();
         for child in node.children(&mut cursor) {
             if child.kind() != "catch_clause" {
-                self.walk_catch_without_id(child, source, diagnostics);
+                Self::walk_catch_without_id(child, source, diagnostics);
             }
         }
     }
@@ -1207,12 +1202,11 @@ impl BugsEngine {
         let mut diagnostics = Vec::new();
         // Collect function definitions in this file.
         let defined_functions = collect_defined_functions(root, source);
-        self.walk_rhs_function_name(root, source, &defined_functions, &mut diagnostics);
+        Self::walk_rhs_function_name(root, source, &defined_functions, &mut diagnostics);
         diagnostics
     }
 
     fn walk_rhs_function_name(
-        &self,
         node: Node,
         source: &str,
         defined_functions: &HashSet<String>,
@@ -1247,7 +1241,7 @@ impl BugsEngine {
 
         let mut cursor = node.walk();
         for child in node.children(&mut cursor) {
-            self.walk_rhs_function_name(child, source, defined_functions, diagnostics);
+            Self::walk_rhs_function_name(child, source, defined_functions, diagnostics);
         }
     }
 
@@ -1257,12 +1251,11 @@ impl BugsEngine {
     /// `varargout` in a function that doesn't have it as an output.
     fn check_vararg_misuse(&self, root: Node, source: &str) -> Vec<Diagnostic> {
         let mut diagnostics = Vec::new();
-        self.walk_vararg_misuse(root, source, &mut diagnostics);
+        Self::walk_vararg_misuse(root, source, &mut diagnostics);
         diagnostics
     }
 
     fn walk_vararg_misuse(
-        &self,
         node: Node,
         source: &str,
         diagnostics: &mut Vec<Diagnostic>,
@@ -1273,7 +1266,7 @@ impl BugsEngine {
             let has_varargout_output = func_text.contains("varargout");
 
             // Check body for varargin/varargout usage.
-            self.check_vararg_in_body(
+            Self::check_vararg_in_body(
                 node,
                 source,
                 has_varargin_param,
@@ -1285,13 +1278,12 @@ impl BugsEngine {
         let mut cursor = node.walk();
         for child in node.children(&mut cursor) {
             if child.kind() != "function_definition" {
-                self.walk_vararg_misuse(child, source, diagnostics);
+                Self::walk_vararg_misuse(child, source, diagnostics);
             }
         }
     }
 
     fn check_vararg_in_body(
-        &self,
         node: Node,
         source: &str,
         has_varargin: bool,
@@ -1332,13 +1324,13 @@ impl BugsEngine {
             let mut cursor = node.walk();
             for child in node.children(&mut cursor) {
                 if child.kind() != "function_definition" {
-                    self.check_vararg_in_body(child, source, has_varargin, has_varargout, diagnostics);
+                    Self::check_vararg_in_body(child, source, has_varargin, has_varargout, diagnostics);
                 }
             }
         } else {
             let mut cursor = node.walk();
             for child in node.children(&mut cursor) {
-                self.check_vararg_in_body(child, source, has_varargin, has_varargout, diagnostics);
+                Self::check_vararg_in_body(child, source, has_varargin, has_varargout, diagnostics);
             }
         }
     }
@@ -1346,12 +1338,11 @@ impl BugsEngine {
     /// Parfor-related checks: PFUIXE, PFBFN, PFWHOS, PFTUSE, PFRNC.
     fn check_parfor_issues(&self, root: Node, source: &str) -> Vec<Diagnostic> {
         let mut diagnostics = Vec::new();
-        self.walk_parfor_issues(root, source, &mut diagnostics);
+        Self::walk_parfor_issues(root, source, &mut diagnostics);
         diagnostics
     }
 
     fn walk_parfor_issues(
-        &self,
         node: Node,
         source: &str,
         diagnostics: &mut Vec<Diagnostic>,
@@ -1377,7 +1368,7 @@ impl BugsEngine {
                 // Recurse into children.
                 let mut cursor = node.walk();
                 for child in node.children(&mut cursor) {
-                    self.walk_parfor_issues(child, source, diagnostics);
+                    Self::walk_parfor_issues(child, source, diagnostics);
                 }
                 return;
             }
@@ -1389,7 +1380,7 @@ impl BugsEngine {
             let mut cursor = node.walk();
             for child in node.children(&mut cursor) {
                 if child.kind() == "block" {
-                    self.check_parfor_body(
+                    Self::check_parfor_body(
                         child,
                         source,
                         loop_var.as_deref(),
@@ -1416,12 +1407,11 @@ impl BugsEngine {
 
         let mut cursor = node.walk();
         for child in node.children(&mut cursor) {
-            self.walk_parfor_issues(child, source, diagnostics);
+            Self::walk_parfor_issues(child, source, diagnostics);
         }
     }
 
     fn check_parfor_body(
-        &self,
         node: Node,
         source: &str,
         loop_var: Option<&str>,
@@ -1547,7 +1537,7 @@ impl BugsEngine {
 
         let mut cursor = node.walk();
         for child in node.children(&mut cursor) {
-            self.check_parfor_body(child, source, loop_var, diagnostics);
+            Self::check_parfor_body(child, source, loop_var, diagnostics);
         }
     }
 }

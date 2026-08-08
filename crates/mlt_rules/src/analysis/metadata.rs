@@ -1148,7 +1148,7 @@ end
         let meta = FileMeta::build(&tree, source);
         let class = meta.class.as_ref().unwrap();
 
-        assert!(class.superclasses.len() >= 1);
+        assert!(!class.superclasses.is_empty());
         assert!(class.is_handle());
     }
 

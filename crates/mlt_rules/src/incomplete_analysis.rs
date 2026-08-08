@@ -182,14 +182,13 @@ impl IncompleteAnalysisEngine {
             metrics.last_node_is_error = last.is_error() || last.is_missing();
         }
 
-        self.walk_tree(root, &mut metrics, 0, 0, 0);
+        Self::walk_tree(root, &mut metrics, 0, 0, 0);
         metrics
     }
 
     /// Recursive DFS traversal that collects node counts, error counts, and
     /// nesting depths in a single pass.
     fn walk_tree(
-        &self,
         node: Node,
         metrics: &mut TreeMetrics,
         paren_depth: usize,
@@ -241,7 +240,7 @@ impl IncompleteAnalysisEngine {
         // Recurse into children.
         let mut cursor = node.walk();
         for child in node.children(&mut cursor) {
-            self.walk_tree(
+            Self::walk_tree(
                 child,
                 metrics,
                 new_paren_depth,

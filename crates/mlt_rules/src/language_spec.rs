@@ -1107,12 +1107,11 @@ impl LanguageSpecEngine {
     fn check_fvnst(&self, ctx: &FileContext, diagnostics: &mut Vec<Diagnostic>) {
         // Walk the tree to find nested function_definitions with arguments blocks
         let root = ctx.tree.root_node();
-        self.find_nested_functions_with_args(root, 0, diagnostics);
+        Self::find_nested_functions_with_args(root, 0, diagnostics);
     }
 
     /// Recursively find nested functions that have arguments blocks.
     fn find_nested_functions_with_args(
-        &self,
         node: tree_sitter::Node,
         depth: usize,
         diagnostics: &mut Vec<Diagnostic>,
@@ -1140,11 +1139,11 @@ impl LanguageSpecEngine {
                     }
                 }
                 // Recurse into the function definition at depth+1
-                self.find_nested_functions_with_args(child, depth + 1, diagnostics);
+                Self::find_nested_functions_with_args(child, depth + 1, diagnostics);
             } else if child.kind() != "methods" && child.kind() != "class_definition" {
                 // Continue recursing but don't increase depth for non-function nodes
                 // Skip methods blocks (class methods are not nested functions)
-                self.find_nested_functions_with_args(child, depth, diagnostics);
+                Self::find_nested_functions_with_args(child, depth, diagnostics);
             }
         }
     }
@@ -1324,12 +1323,11 @@ impl LanguageSpecEngine {
     fn check_gpnes(&self, ctx: &FileContext, diagnostics: &mut Vec<Diagnostic>) {
         // Walk the tree to find nested functions with global/persistent
         let root = ctx.tree.root_node();
-        self.find_gp_in_nested(root, 0, diagnostics);
+        Self::find_gp_in_nested(root, 0, diagnostics);
     }
 
     /// Recursively find global/persistent in nested functions.
     fn find_gp_in_nested(
-        &self,
         node: tree_sitter::Node,
         depth: usize,
         diagnostics: &mut Vec<Diagnostic>,
@@ -1339,18 +1337,17 @@ impl LanguageSpecEngine {
             if child.kind() == "function_definition" {
                 if depth > 0 {
                     // This is a nested function; check for global/persistent
-                    self.find_gp_statements(child, diagnostics);
+                    Self::find_gp_statements(child, diagnostics);
                 }
-                self.find_gp_in_nested(child, depth + 1, diagnostics);
+                Self::find_gp_in_nested(child, depth + 1, diagnostics);
             } else if child.kind() != "methods" && child.kind() != "class_definition" {
-                self.find_gp_in_nested(child, depth, diagnostics);
+                Self::find_gp_in_nested(child, depth, diagnostics);
             }
         }
     }
 
     /// Find global/persistent statements within a function definition.
     fn find_gp_statements(
-        &self,
         func_node: tree_sitter::Node,
         diagnostics: &mut Vec<Diagnostic>,
     ) {
@@ -1378,7 +1375,7 @@ impl LanguageSpecEngine {
                 }
                 "block" => {
                     // Recurse into the block to find global/persistent
-                    self.find_gp_statements(child, diagnostics);
+                    Self::find_gp_statements(child, diagnostics);
                 }
                 _ => {}
             }
@@ -1398,12 +1395,11 @@ impl LanguageSpecEngine {
         _source: &str,
         diagnostics: &mut Vec<Diagnostic>,
     ) {
-        self.check_break_continue_dfs(root, false, diagnostics);
+        Self::check_break_continue_dfs(root, false, diagnostics);
     }
 
     /// DFS to find break/continue outside loops.
     fn check_break_continue_dfs(
-        &self,
         node: tree_sitter::Node,
         in_loop: bool,
         diagnostics: &mut Vec<Diagnostic>,
@@ -1413,7 +1409,7 @@ impl LanguageSpecEngine {
                 // Inside a loop now
                 let mut cursor = node.walk();
                 for child in node.children(&mut cursor) {
-                    self.check_break_continue_dfs(child, true, diagnostics);
+                    Self::check_break_continue_dfs(child, true, diagnostics);
                 }
                 return;
             }
@@ -1421,7 +1417,7 @@ impl LanguageSpecEngine {
                 // Reset loop context for new function scope
                 let mut cursor = node.walk();
                 for child in node.children(&mut cursor) {
-                    self.check_break_continue_dfs(child, false, diagnostics);
+                    Self::check_break_continue_dfs(child, false, diagnostics);
                 }
                 return;
             }
@@ -1454,7 +1450,7 @@ impl LanguageSpecEngine {
 
         let mut cursor = node.walk();
         for child in node.children(&mut cursor) {
-            self.check_break_continue_dfs(child, in_loop, diagnostics);
+            Self::check_break_continue_dfs(child, in_loop, diagnostics);
         }
     }
 }
@@ -1618,12 +1614,11 @@ impl LanguageSpecEngine {
         _source: &str,
         diagnostics: &mut Vec<Diagnostic>,
     ) {
-        self.check_end_dfs(root, false, diagnostics);
+        Self::check_end_dfs(root, false, diagnostics);
     }
 
     /// DFS to find `end` keywords used as values outside of indexing contexts.
     fn check_end_dfs(
-        &self,
         node: tree_sitter::Node,
         in_index: bool,
         diagnostics: &mut Vec<Diagnostic>,
@@ -1635,7 +1630,7 @@ impl LanguageSpecEngine {
                 for child in node.children(&mut cursor) {
                     // Arguments inside function_call are in indexing context
                     // (since function_call is also used for array indexing)
-                    self.check_end_dfs(child, true, diagnostics);
+                    Self::check_end_dfs(child, true, diagnostics);
                 }
                 return;
             }
@@ -1643,7 +1638,7 @@ impl LanguageSpecEngine {
                 // Cell indexing — end is valid here
                 let mut cursor = node.walk();
                 for child in node.children(&mut cursor) {
-                    self.check_end_dfs(child, true, diagnostics);
+                    Self::check_end_dfs(child, true, diagnostics);
                 }
                 return;
             }
@@ -1697,7 +1692,7 @@ impl LanguageSpecEngine {
 
         let mut cursor = node.walk();
         for child in node.children(&mut cursor) {
-            self.check_end_dfs(child, in_index, diagnostics);
+            Self::check_end_dfs(child, in_index, diagnostics);
         }
     }
 }

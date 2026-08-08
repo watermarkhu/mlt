@@ -181,11 +181,10 @@ impl PerformanceEngine {
         }
 
         // EXIST: exist(..., 'file') or exist(..., 'dir')
-        if self.is_enabled("EXIST") && func_name == "exist" {
-            if has_exist_type_arg(node, source) {
+        if self.is_enabled("EXIST") && func_name == "exist"
+            && has_exist_type_arg(node, source) {
                 diags.push(make_diag("EXIST", node));
             }
-        }
 
         // ST2NM: str2num
         if self.is_enabled("ST2NM") && func_name == "str2num" {
@@ -374,27 +373,27 @@ impl PerformanceEngine {
         }
 
         // CLALL: clear all
-        if self.is_enabled("CLALL") && args.iter().any(|a| *a == "all") {
+        if self.is_enabled("CLALL") && args.contains(&"all") {
             diags.push(make_diag("CLALL", node));
         }
 
         // CLCLS: clear classes
-        if self.is_enabled("CLCLS") && args.iter().any(|a| *a == "classes") {
+        if self.is_enabled("CLCLS") && args.contains(&"classes") {
             diags.push(make_diag("CLCLS", node));
         }
 
         // CLFUNC: clear functions
-        if self.is_enabled("CLFUNC") && args.iter().any(|a| *a == "functions") {
+        if self.is_enabled("CLFUNC") && args.contains(&"functions") {
             diags.push(make_diag("CLFUNC", node));
         }
 
         // CLJAVA: clear java
-        if self.is_enabled("CLJAVA") && args.iter().any(|a| *a == "java") {
+        if self.is_enabled("CLJAVA") && args.contains(&"java") {
             diags.push(make_diag("CLJAVA", node));
         }
 
         // CLMEX: clear mex
-        if self.is_enabled("CLMEX") && args.iter().any(|a| *a == "mex") {
+        if self.is_enabled("CLMEX") && args.contains(&"mex") {
             diags.push(make_diag("CLMEX", node));
         }
 
@@ -411,18 +410,16 @@ impl PerformanceEngine {
         let op = extract_operator(node, source);
 
         // MINV: inv(A) * b or b * inv(A)
-        if self.is_enabled("MINV") && op == "*" {
-            if has_inv_operand(node, source) {
+        if self.is_enabled("MINV") && op == "*"
+            && has_inv_operand(node, source) {
                 diags.push(make_diag("MINV", node));
             }
-        }
 
         // MMTC: x .* x → x.^2
-        if self.is_enabled("MMTC") && op == ".*" {
-            if has_same_operands(node, source) {
+        if self.is_enabled("MMTC") && op == ".*"
+            && has_same_operands(node, source) {
                 diags.push(make_diag("MMTC", node));
             }
-        }
 
         diags
     }
