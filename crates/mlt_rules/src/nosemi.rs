@@ -218,3 +218,137 @@ fn has_trailing_semicolon(node: tree_sitter::Node, source: &str) -> bool {
 // ---------------------------------------------------------------------------
 
 inventory::submit!(crate::RuleRegistration::new("NOSEMI", Nosemi::from_config));
+
+// ---------------------------------------------------------------------------
+// Tests
+// ---------------------------------------------------------------------------
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::test_util::{has_id, lint_nodes};
+    use mlt_core::Config;
+
+    fn engine() -> Box<dyn Rule> {
+        Nosemi::from_config(&Config::default())
+    }
+
+    // -- assignment ----------------------------------------------------------
+
+    #[test]
+    fn assignment_without_semicolon_fires() {
+        let diags = lint_nodes(&*engine(), "x = 5\n");
+        assert!(has_id(&diags, "NOSEMI"), "got: {diags:?}");
+    }
+
+    #[test]
+    fn assignment_with_semicolon_ok() {
+        let diags = lint_nodes(&*engine(), "x = 5;\n");
+        assert!(!has_id(&diags, "NOSEMI"), "got: {diags:?}");
+    }
+
+    #[test]
+    fn assignment_in_function_without_semicolon_fires() {
+        let source = "function f()\n    x = compute_value()\nend\n";
+        let diags = lint_nodes(&*engine(), source);
+        assert!(has_id(&diags, "NOSEMI"), "got: {diags:?}");
+    }
+
+    #[test]
+    fn assignment_in_function_with_semicolon_ok() {
+        let source = "function f()\n    x = compute_value();\nend\n";
+        let diags = lint_nodes(&*engine(), source);
+        assert!(!has_id(&diags, "NOSEMI"), "got: {diags:?}");
+    }
+
+    // -- function_call -------------------------------------------------------
+
+    #[test]
+    fn function_call_without_semicolon_fires() {
+        let diags = lint_nodes(&*engine(), "compute_value()\n");
+        assert!(has_id(&diags, "NOSEMI"), "got: {diags:?}");
+    }
+
+    #[test]
+    fn function_call_with_semicolon_ok() {
+        let diags = lint_nodes(&*engine(), "compute_value();\n");
+        assert!(!has_id(&diags, "NOSEMI"), "got: {diags:?}");
+    }
+
+    #[test]
+    fn subexpression_call_not_flagged() {
+        let diags = lint_nodes(&*engine(), "x = compute_value(helper(1));\n");
+        assert!(!has_id(&diags, "NOSEMI"), "got: {diags:?}");
+    }
+
+    // -- command -------------------------------------------------------------
+
+    #[test]
+    fn command_without_semicolon_fires() {
+        let diags = lint_nodes(&*engine(), "disp hello\n");
+        assert!(has_id(&diags, "NOSEMI"), "got: {diags:?}");
+    }
+
+    // -- fix -----------------------------------------------------------------
+
+    #[test]
+    fn diagnostic_carries_semicolon_insertion_fix() {
+        let diags = lint_nodes(&*engine(), "x = 5\n");
+        let diag = diags
+            .iter()
+            .find(|d| d.rule_id == "NOSEMI")
+            .expect("NOSEMI should fire");
+        let fix = diag.fix.as_ref().expect("NOSEMI should carry an auto-fix");
+        assert_eq!(fix.replacement, ";");
+        assert_eq!(fix.byte_range.start, fix.byte_range.end, "insertion must be zero-width");
+    }
+
+    #[test]
+    fn fix_applied_result_has_semicolon() {
+        let source = "x = 5\n";
+        let diags = lint_nodes(&*engine(), source);
+        let diag = diags
+            .iter()
+            .find(|d| d.rule_id == "NOSEMI")
+            .expect("NOSEMI should fire");
+        let fix = diag.fix.as_ref().unwrap();
+        let mut fixed = String::from(source);
+        fixed.replace_range(fix.byte_range.clone(), &fix.replacement);
+        assert!(fixed.ends_with(";\n"), "got: {fixed:?}");
+    }
+
+    // -- ignore_functions config ---------------------------------------------
+
+    #[test]
+    fn ignored_function_call_not_flagged() {
+        let config = Config::from_toml(
+            "[lint.rules.NOSEMI]\nseverity = \"info\"\nignore_functions = [\"disp\", \"fprintf\"]\n",
+        )
+        .expect("valid config");
+        let rule = Nosemi::from_config(&config);
+        let diags = lint_nodes(&*rule, "disp('hello')\n");
+        assert!(!has_id(&diags, "NOSEMI"), "got: {diags:?}");
+    }
+
+    #[test]
+    fn ignored_function_command_not_flagged() {
+        let config = Config::from_toml(
+            "[lint.rules.NOSEMI]\nseverity = \"info\"\nignore_functions = [\"disp\", \"fprintf\"]\n",
+        )
+        .expect("valid config");
+        let rule = Nosemi::from_config(&config);
+        let diags = lint_nodes(&*rule, "disp hello\n");
+        assert!(!has_id(&diags, "NOSEMI"), "got: {diags:?}");
+    }
+
+    #[test]
+    fn non_ignored_function_still_flagged() {
+        let config = Config::from_toml(
+            "[lint.rules.NOSEMI]\nseverity = \"info\"\nignore_functions = [\"disp\", \"fprintf\"]\n",
+        )
+        .expect("valid config");
+        let rule = Nosemi::from_config(&config);
+        let diags = lint_nodes(&*rule, "disp('hello')\ncompute_value()\n");
+        assert!(has_id(&diags, "NOSEMI"), "got: {diags:?}");
+    }
+}

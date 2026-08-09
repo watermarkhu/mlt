@@ -395,11 +395,16 @@ fn extract_func_name<'a>(node: tree_sitter::Node<'a>, source: &'a str) -> Option
 
 /// Count the number of arguments in a `function_call` node.
 fn count_args(node: tree_sitter::Node) -> usize {
-    let args_node = match node.child_by_field_name("arguments") {
-        Some(n) => n,
-        None => return 0,
-    };
-    args_node.named_child_count()
+    // In tree-sitter-matlab call arguments are a child node of kind
+    // `arguments` rather than a named field, so `child_by_field_name` never
+    // matches. Locate them by child kind instead.
+    let mut cursor = node.walk();
+    for child in node.children(&mut cursor) {
+        if child.kind() == "arguments" {
+            return child.named_child_count();
+        }
+    }
+    0
 }
 
 /// Check if a function_call is the RHS of an assignment (has output).
@@ -441,3 +446,114 @@ inventory::submit!(crate::RuleRegistration::new(
     "SYSTEM_OBJECTS_ENGINE",
     SystemObjectsEngine::from_config
 ));
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::test_util::{has_id, lint_file, lint_nodes};
+    use mlt_core::Config;
+
+    fn engine() -> Box<dyn Rule> {
+        SystemObjectsEngine::from_config(&Config::default())
+    }
+
+    fn system_class(source: &str) -> String {
+        format!(
+            "classdef mySystem < matlab.System\n{}\nend\n",
+            source
+        )
+    }
+
+    // -- SONUMIN -------------------------------------------------------------
+
+    #[test]
+    fn sonumin_bare_step_no_args_fires() {
+        let diags = lint_nodes(&*engine(), "step();\n");
+        assert!(has_id(&diags, "SONUMIN"), "got: {diags:?}");
+    }
+
+    #[test]
+    fn sonumin_step_with_input_does_not_fire() {
+        let diags = lint_nodes(&*engine(), "step(input);\n");
+        assert!(!has_id(&diags, "SONUMIN"), "got: {diags:?}");
+    }
+
+    // -- SONUMOUT ------------------------------------------------------------
+
+    #[test]
+    fn sonumout_release_with_output_fires() {
+        let diags = lint_nodes(&*engine(), "out = release();\n");
+        assert!(has_id(&diags, "SONUMOUT"), "got: {diags:?}");
+    }
+
+    #[test]
+    fn sonumout_reset_with_output_fires() {
+        let diags = lint_nodes(&*engine(), "out = reset();\n");
+        assert!(has_id(&diags, "SONUMOUT"), "got: {diags:?}");
+    }
+
+    #[test]
+    fn sonumout_release_as_statement_does_not_fire() {
+        let diags = lint_nodes(&*engine(), "release(obj);\n");
+        assert!(!has_id(&diags, "SONUMOUT"), "got: {diags:?}");
+    }
+
+    #[test]
+    fn sonumout_step_with_output_does_not_fire() {
+        let diags = lint_nodes(&*engine(), "out = step();\n");
+        assert!(!has_id(&diags, "SONUMOUT"), "got: {diags:?}");
+    }
+
+    // -- SORSRVDNM -----------------------------------------------------------
+
+    #[test]
+    fn sorsrvdnm_reserved_method_name_fires() {
+        let source = system_class("    methods\n        function step(obj)\n        end\n    end");
+        let diags = lint_file(&*engine(), &source);
+        assert!(has_id(&diags, "SORSRVDNM"), "got: {diags:?}");
+    }
+
+    #[test]
+    fn sorsrvdnm_impl_suffixed_method_does_not_fire() {
+        let source = system_class("    methods\n        function stepImpl(obj)\n        end\n    end");
+        let diags = lint_file(&*engine(), &source);
+        assert!(!has_id(&diags, "SORSRVDNM"), "got: {diags:?}");
+    }
+
+    #[test]
+    fn sorsrvdnm_non_reserved_method_does_not_fire() {
+        let source = system_class("    methods\n        function doWork(obj)\n        end\n    end");
+        let diags = lint_file(&*engine(), &source);
+        assert!(!has_id(&diags, "SORSRVDNM"), "got: {diags:?}");
+    }
+
+    #[test]
+    fn sorsrvdnm_non_system_class_does_not_fire() {
+        let source = "classdef MyRegular\n    methods\n        function step(obj)\n        end\n    end\nend\n";
+        let diags = lint_file(&*engine(), source);
+        assert!(!has_id(&diags, "SORSRVDNM"), "got: {diags:?}");
+    }
+
+    // -- SODFLTVAL -----------------------------------------------------------
+
+    #[test]
+    fn sodfltval_function_call_default_fires() {
+        let source = system_class("    properties\n        Gain = rand();\n    end");
+        let diags = lint_file(&*engine(), &source);
+        assert!(has_id(&diags, "SODFLTVAL"), "got: {diags:?}");
+    }
+
+    #[test]
+    fn sodfltval_scalar_default_does_not_fire() {
+        let source = system_class("    properties\n        Gain = 5;\n    end");
+        let diags = lint_file(&*engine(), &source);
+        assert!(!has_id(&diags, "SODFLTVAL"), "got: {diags:?}");
+    }
+
+    #[test]
+    fn sodfltval_string_default_does_not_fire() {
+        let source = system_class("    properties\n        Name = 'rx';\n    end");
+        let diags = lint_file(&*engine(), &source);
+        assert!(!has_id(&diags, "SODFLTVAL"), "got: {diags:?}");
+    }
+}
