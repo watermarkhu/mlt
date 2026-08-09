@@ -141,7 +141,18 @@ This is the most common task. Follow these steps exactly:
 
 ### 1. Create the rule module
 
-Create `crates/mlt_rules/src/<rule_id_lowercase>.rs`:
+Most categories are now **directories** (`crates/mlt_rules/src/<category>/`) holding
+one file per check plus a `mod.rs` that owns the engine struct, config, the
+`impl Rule` dispatch, shared helpers (`pub(crate)`), and `inventory::submit!`.
+Before adding a check, look at the category's existing layout.
+
+- **Adding a check to an existing category directory** (the common case): create
+  `crates/mlt_rules/src/<category>/check_<name>.rs` containing
+  `use super::*; impl <Category>Engine { pub(crate) fn check_<name>(...) }` plus
+  that check's tests in a `#[cfg(test)] mod tests`. Add `mod check_<name>;` to the
+  directory's `mod.rs`, and dispatch from the engine's `check()`/`check_file()`.
+- **Adding a brand-new standalone rule** (rare; e.g. `NOSEMI`): create a flat
+  `crates/mlt_rules/src/<rule_id_lowercase>.rs`:
 
 ```rust
 //! # RULE_ID: Rule Description
@@ -184,15 +195,20 @@ impl Rule for RuleId {
 inventory::submit!(crate::RuleRegistration::new("RULE_ID", RuleId::from_config));
 ```
 
+For multi-check engines, the engine registers once; individual checks are
+`pub(crate)` methods emitted with their own check IDs. Keep shared helpers in the
+category's `mod.rs` as `pub(crate)` so check files can call them via `use super::*`.
+
 ### 2. Register the module
 
-In `crates/mlt_rules/src/lib.rs`, add only:
+In `crates/mlt_rules/src/lib.rs`, add only (for a brand-new flat module or category):
 
 ```rust
 pub mod rule_id_lowercase;
 ```
 
-No other changes needed — `inventory` handles the rest.
+No other changes needed — `inventory` handles the rest. For a directory category,
+`pub mod <category>;` resolves to `<category>/mod.rs` automatically.
 
 ### 3. Add documentation
 
