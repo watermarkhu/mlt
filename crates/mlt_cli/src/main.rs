@@ -1,11 +1,12 @@
 use std::fs;
-use std::path::PathBuf;
+use std::io;
+use std::path::{Path, PathBuf};
 use std::process;
 
 use anyhow::{Context, Result};
 use clap::Parser;
 
-use mlt_core::{Config, Linter, RuleRegistry, Severity};
+use mlt_core::{Config, Diagnostic, Linter, RuleRegistry, Severity};
 
 /// mlt — An ultra-fast, extensible linter for MATLAB.
 #[derive(Parser, Debug)]
@@ -46,8 +47,46 @@ fn run(cli: Cli) -> Result<()> {
     let mut files_with_issues = 0;
 
     for file_path in &cli.files {
-        let source = fs::read_to_string(file_path)
-            .with_context(|| format!("failed to read {}", file_path.display()))?;
+        let source = match fs::read_to_string(file_path) {
+            Ok(s) => s,
+            Err(e) if e.kind() == io::ErrorKind::NotFound => {
+                // NOFIL — file not found.
+                let diag = Diagnostic {
+                    rule_id: "NOFIL",
+                    message: format!(
+                        "Unable to open file {}. File is not found.",
+                        file_path.display()
+                    ),
+                    severity: Severity::Error,
+                    byte_range: 0..1,
+                    line: 1,
+                    column: 1,
+                    fix: None,
+                };
+                print_diagnostic(file_path, &diag);
+                total_diagnostics += 1;
+                files_with_issues += 1;
+                continue; // skip lint + fix; never write an empty file to a missing path
+            }
+            Err(_) => {
+                // RDERR — non-NotFound I/O error (permission denied, directory, etc.).
+                // Catch-all Err(_) is intentional: std::io::ErrorKind has no stable
+                // IsADirectory variant.
+                let diag = Diagnostic {
+                    rule_id: "RDERR",
+                    message: format!("Unable to read file {}.", file_path.display()),
+                    severity: Severity::Error,
+                    byte_range: 0..1,
+                    line: 1,
+                    column: 1,
+                    fix: None,
+                };
+                print_diagnostic(file_path, &diag);
+                total_diagnostics += 1;
+                files_with_issues += 1;
+                continue;
+            }
+        };
 
         let diagnostics = linter
             .lint(&source, file_path)
@@ -71,20 +110,7 @@ fn run(cli: Cli) -> Result<()> {
             );
         } else {
             for diag in &diagnostics {
-                let severity = match diag.severity {
-                    Severity::Error => "E",
-                    Severity::Warning => "W",
-                    Severity::Info => "I",
-                };
-                println!(
-                    "{}:{}:{} [{}] {}: {}",
-                    file_path.display(),
-                    diag.line,
-                    diag.column,
-                    severity,
-                    diag.rule_id,
-                    diag.message,
-                );
+                print_diagnostic(file_path, diag);
             }
         }
 
@@ -104,6 +130,24 @@ fn run(cli: Cli) -> Result<()> {
     }
 
     Ok(())
+}
+
+/// Print a diagnostic in the standard `file:line:col [E] ID: message` format.
+fn print_diagnostic(file_path: &Path, diag: &Diagnostic) {
+    let severity = match diag.severity {
+        Severity::Error => "E",
+        Severity::Warning => "W",
+        Severity::Info => "I",
+    };
+    println!(
+        "{}:{}:{} [{}] {}: {}",
+        file_path.display(),
+        diag.line,
+        diag.column,
+        severity,
+        diag.rule_id,
+        diag.message,
+    );
 }
 
 /// Discover and load the configuration file.

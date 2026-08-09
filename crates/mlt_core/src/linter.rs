@@ -1,3 +1,4 @@
+use std::panic::{catch_unwind, AssertUnwindSafe};
 use std::path::Path;
 
 use tree_sitter::Parser;
@@ -5,6 +6,7 @@ use tree_sitter::Parser;
 use crate::diagnostic::Diagnostic;
 use crate::registry::RuleRegistry;
 use crate::rule::{FileContext, NodeContext};
+use crate::Severity;
 
 // ---------------------------------------------------------------------------
 // Linter
@@ -66,29 +68,61 @@ impl Linter {
             .ok_or(LintError::ParseFailed)?;
 
         // Step 2: Single-pass DFS traversal using TreeCursor
-        let mut diagnostics = self.traverse(&tree, source, file_path);
+        // Steps 2-3 are wrapped in a panic guard: if any rule panics (an
+        // internal analyzer error), the analysis is considered incomplete and a
+        // single QUIT diagnostic is returned instead of crashing.
+        let result = catch_unwind(AssertUnwindSafe(|| {
+            let mut diagnostics = self.traverse(&tree, source, file_path);
 
-        // Step 3: File-level checks (only on rules that implement check_file)
-        let file_ctx = FileContext {
-            tree: &tree,
-            source,
-            file_path,
-        };
-        for &idx in self.registry.file_check_rules() {
-            let rule = self.registry.get_rule(idx);
-            let mut file_diags = rule.check_file(&file_ctx);
-            // Stamp effective severity on file-level diagnostics.
-            let effective_severity = self.registry.effective_severity(idx);
-            for diag in &mut file_diags {
-                diag.severity = effective_severity;
+            // Step 3: File-level checks (only on rules that implement check_file)
+            let file_ctx = FileContext {
+                tree: &tree,
+                source,
+                file_path,
+            };
+            for &idx in self.registry.file_check_rules() {
+                let rule = self.registry.get_rule(idx);
+                let mut file_diags = rule.check_file(&file_ctx);
+                // Stamp effective severity on file-level diagnostics.
+                let effective_severity = self.registry.effective_severity(idx);
+                for diag in &mut file_diags {
+                    diag.severity = effective_severity;
+                }
+                diagnostics.extend(file_diags);
             }
-            diagnostics.extend(file_diags);
-        }
+
+            diagnostics
+        }));
+
+        let mut diagnostics = match result {
+            Ok(diags) => diags,
+            // Internal analyzer failure — analysis did not complete.
+            Err(_) => vec![Self::quit_diagnostic(source)],
+        };
 
         // Step 4: Sort by position for deterministic output
         diagnostics.sort_by(|a, b| a.line.cmp(&b.line).then(a.column.cmp(&b.column)));
 
         Ok(diagnostics)
+    }
+
+    /// Build the QUIT diagnostic ("Code analysis did not complete...").
+    ///
+    /// Emitted when an internal analyzer error (a panicking rule) prevents the
+    /// analysis of a file from completing. Part of the Incomplete Analysis
+    /// checks; `can_be_disabled` is not applicable because this is an engine
+    /// guard, not a registered rule.
+    fn quit_diagnostic(source: &str) -> Diagnostic {
+        Diagnostic {
+            rule_id: "QUIT",
+            message: "Code analysis did not complete. Code Analyzer encountered an error."
+                .to_string(),
+            severity: Severity::Error,
+            byte_range: 0..source.len().min(1),
+            line: 1,
+            column: 1,
+            fix: None,
+        }
     }
 
     /// Perform the single-pass depth-first traversal.
@@ -151,5 +185,76 @@ impl Linter {
                 }
             }
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::{Category, Config, Rule};
+    use std::path::Path;
+
+    /// A test-only rule that panics during `check_file`, to exercise the QUIT guard.
+    struct PanicRule;
+
+    impl Rule for PanicRule {
+        fn id(&self) -> &'static str {
+            "PANIC_TEST_QUIT"
+        }
+
+        fn description(&self) -> &'static str {
+            "test-only panicking rule"
+        }
+
+        fn severity(&self) -> Severity {
+            Severity::Error
+        }
+
+        fn category(&self) -> Category {
+            Category::Bugs
+        }
+
+        fn target_node_types(&self) -> &'static [&'static str] {
+            &["identifier"]
+        }
+
+        fn has_file_check(&self) -> bool {
+            true
+        }
+
+        fn check_file(&self, _ctx: &FileContext) -> Vec<Diagnostic> {
+            panic!("intentional test panic");
+        }
+    }
+
+    #[test]
+    fn quit_fires_when_a_rule_panics() {
+        let registry = RuleRegistry::new(vec![Box::new(PanicRule)], &Config::default());
+        let mut linter = Linter::new(registry);
+        let diags = linter
+            .lint("x = 1;\n", Path::new("test.m"))
+            .expect("lint should not propagate the panic");
+        assert_eq!(diags.len(), 1, "got: {diags:?}");
+        assert_eq!(diags[0].rule_id, "QUIT");
+        assert_eq!(diags[0].severity, Severity::Error);
+        assert_eq!(
+            diags[0].message,
+            "Code analysis did not complete. Code Analyzer encountered an error."
+        );
+        assert_eq!(diags[0].line, 1);
+        assert_eq!(diags[0].column, 1);
+    }
+
+    #[test]
+    fn quit_does_not_fire_on_clean_file() {
+        let registry = RuleRegistry::new(Vec::new(), &Config::default());
+        let mut linter = Linter::new(registry);
+        let diags = linter
+            .lint("x = 1;\n", Path::new("test.m"))
+            .expect("lint should succeed");
+        assert!(
+            !diags.iter().any(|d| d.rule_id == "QUIT"),
+            "got: {diags:?}"
+        );
     }
 }

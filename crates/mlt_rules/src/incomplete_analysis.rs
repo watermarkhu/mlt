@@ -11,7 +11,7 @@
 //! | TMMSG    | More than 10,000 diagnostics generated       | Post-lint (diagnostic count > threshold)   |
 //! | TMSMS    | More than 1,000 parse errors generated       | Count ERROR nodes in tree                  |
 //! | MXASET   | File too complex to analyze                  | Node count > threshold                     |
-//! | QUIT     | Analysis did not complete                    | No-op (linter panic guard)                 |
+//! | QUIT     | Analysis did not complete                    | Engine panic guard (`catch_unwind` in `Linter::lint`) |
 //! | NOSPC    | File too complex (nesting)                   | Max nesting depth > threshold              |
 //! | MBIG     | File too large                               | Source length > threshold                  |
 //! | NOFIL    | File not found                               | No-op (handled by CLI)                     |
@@ -588,8 +588,9 @@ impl Rule for IncompleteAnalysisEngine {
             });
         }
 
-        // -- No-op checks (handled by CLI, documented here for completeness) --
-        // QUIT:  Analysis did not complete — linter panic guard (CLI level).
+        // -- No-op checks (handled elsewhere, documented here for completeness) --
+        // QUIT:  Analysis did not complete — engine panic guard (catch_unwind in
+        //        Linter::lint), emitted when an internal analyzer error occurs.
         // NOFIL: File not found — CLI handles file discovery.
         // RDERR: Unable to read file — CLI handles I/O errors.
 
@@ -827,5 +828,31 @@ mod tests {
     fn tmmsg_ok_with_default_limit() {
         let diags = lint_file(&*engine(), "x = 1;\n");
         assert!(!has_id(&diags, "TMMSG"), "got: {diags:?}");
+    }
+
+    // -- QUIT: engine panic guard (must NOT fire for parse-level problems) ----
+
+    #[test]
+    fn quit_does_not_fire_on_clean_file() {
+        let diags = lint_file(&*engine(), "x = 1;\n");
+        assert!(!has_id(&diags, "QUIT"), "got: {diags:?}");
+    }
+
+    #[test]
+    fn quit_does_not_fire_on_syntax_error() {
+        let diags = lint_file(&*engine(), "x = ;\n");
+        assert!(!has_id(&diags, "QUIT"), "got: {diags:?}");
+    }
+
+    #[test]
+    fn quit_does_not_fire_on_unterminated_if() {
+        let diags = lint_file(&*engine(), "if x > 0\n    y = 1;\n");
+        assert!(!has_id(&diags, "QUIT"), "got: {diags:?}");
+    }
+
+    #[test]
+    fn quit_does_not_fire_on_incomplete_tail() {
+        let diags = lint_file(&*engine(), "x = 1; 2");
+        assert!(!has_id(&diags, "QUIT"), "got: {diags:?}");
     }
 }

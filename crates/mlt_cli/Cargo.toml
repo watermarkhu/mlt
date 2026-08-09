@@ -15,3 +15,6 @@ mlt_core = { path = "../mlt_core" }
 mlt_rules = { path = "../mlt_rules" }
 clap.workspace = true
 anyhow.workspace = true
+
+[dev-dependencies]
+tempfile = "3"
