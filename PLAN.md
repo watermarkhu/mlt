@@ -153,7 +153,7 @@ Requires `gh` ≥ 2.90 and Git ≥ 2.20.
 | 6 | Naming Checks | 81 | Info | **Done** — 9 entities × 9 check types |
 | 7 | Compatibility Considerations | 891 | Error/Warning | **Partial** — 275 of 891 populated in data file |
 | 8 | Forward Compatibility | 7 | Error/Warning | In data file as generic (not matchable yet) |
-| 9 | Good Practices | 106 | Warning | Not started |
+| 9 | Good Practices | 106 | Warning | **81/106 done** — Wave D completed 39 checks (OOP 12, parfor/spmd 11, logical 3, function-call 6, structure/string 7); 24 deferred (type/flow-analysis dependent) |
 | 10 | Unset Variables | 6 | Warning | Needs symbol table |
 | 11 | Unused Constructions | 17 | Warning/Info | Needs symbol table + control flow |
 | 12 | Suggested Improvements | 243 | Info | Data-driven (function replacement suggestions) |

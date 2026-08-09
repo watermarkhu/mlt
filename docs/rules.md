@@ -159,6 +159,45 @@ mlt implements lint rules matching MATLAB's Code Analyzer checks for feature par
 | [PFUTVR](language-spec.md) | Language Specification | Variable VAR_NAME may have been intended as a reduction variable, but is an uninitialized temporary | Error | No |
 | [PFVARS](language-spec.md) | Language Specification | Parfor loop contains too many variables | Error | No |
 | [PFVSUB](language-spec.md) | Language Specification | Indexing parfor loop variables is not supported in parfor loops | Error | No |
+| [COMFS](good-practices.md) | Good Practices | This comma makes the file a script; all functions are local functions | Warning | No |
+| [DUALC](good-practices.md) | Good Practices | Command might be prematurely ended by comma | Warning | No |
+| [RMFLD](good-practices.md) | Good Practices | RMFIELD output must be assigned back to the structure | Warning | No |
+| [RMWRN](good-practices.md) | Good Practices | Warning with a removed tag has no effect | Warning | No |
+| [SEMFS](good-practices.md) | Good Practices | This semicolon makes the file a script; all functions are local functions | Warning | No |
+| [STFLD](good-practices.md) | Good Practices | SETFIELD output must be assigned back to the structure | Warning | No |
+| [STRSZ](good-practices.md) | Good Practices | Use STRCMP to compare character vectors that can have different sizes | Warning | No |
+| [COMPNOP](good-practices.md) | Good Practices | Comparison with `true` simplifies to the function call itself | Warning | Yes |
+| [COMPNOT](good-practices.md) | Good Practices | Comparison with `~= true` or `== false` simplifies to `~call(...)` | Warning | Yes |
+| [M3COL](good-practices.md) | Good Practices | Three colons (`a:b:c:d`) in an expression is probably unintended | Warning | No |
+| [CTPCT](good-practices.md) | Good Practices | The format might not agree with the argument count | Warning | No |
+| [FXSET](good-practices.md) | Good Practices | Loop index variable is changed inside of a FOR loop | Warning | No |
+| [SIMPT](good-practices.md) | Good Practices | Import statement does not run first in a function | Warning | No |
+| [TLEV](good-practices.md) | Good Practices | Dynamic-code function used as a sub-expression, not a top-level statement | Warning | No |
+| [UNONC](good-practices.md) | Good Practices | Assign the onCleanup output argument to a variable, not `~` | Warning | No |
+| [MIPC1](good-practices.md) | Good Practices | `computer('arch')` returns a platform-specific value | Warning | No |
+| [ATTF](good-practices.md) | Good Practices | Unable to determine if the expression assigned to the `Abstract` attribute evaluates to true or false | Warning | No |
+| [ATTOF](good-practices.md) | Good Practices | Setting the class attribute `Abstract` to false is not recommended | Info | No |
+| [MCPO](good-practices.md) | Good Practices | `SetObservable`/`GetObservable`/`AbortSet` property has no effect in a value class | Warning | No |
+| [MCSAC](good-practices.md) | Good Practices | `SetAccess` cannot be set on Constant properties | Warning | No |
+| [MOBSRV](good-practices.md) | Good Practices | `SetObservable`/`GetObservable` on a Constant property has no effect | Info | No |
+| [MDEPIN](good-practices.md) | Good Practices | Default values should not be assigned to dependent properties | Warning | No |
+| [MCCPI](good-practices.md) | Good Practices | Initialize the Constant property or make it an Abstract Constant property | Warning | No |
+| [MGMD](good-practices.md) | Good Practices | `get` method should be implemented for each dependent property without private `GetAccess` | Warning | No |
+| [MCCPE](good-practices.md) | Good Practices | Attempting to call a property or event as a function | Warning | No |
+| [MTHANS](good-practices.md) | Good Practices | Using `ANS` as a method name is not recommended | Info | No |
+| [MHERM](good-practices.md) | Good Practices | Parenthesize the multiplication of a variable and its transpose to ensure the result is Hermitian | Info | No |
+| [MNUML](good-practices.md) | Good Practices | To create a square matrix, use `VAR_NAME(numel(...), numel(...))` | Warning | No |
+| [PFEVB](good-practices.md) | Good Practices | Using EVALIN('base') or ASSIGNIN('base') inside a PARFOR loop refers to the worker machines' base workspaces | Warning | No |
+| [PFGP](good-practices.md) | Good Practices | Avoid assigning to GLOBAL or PERSISTENT variable inside a PARFOR loop | Warning | No |
+| [PFGV](good-practices.md) | Good Practices | Avoid using GLOBAL variable in a PARFOR loop | Warning | No |
+| [PFIIN](good-practices.md) | Good Practices | The input variable should be initialized before the PARFOR loop | Warning | No |
+| [PFOUS](good-practices.md) | Good Practices | The output variable might not be used after the PARFOR loop | Warning | No |
+| [PFRNI](good-practices.md) | Good Practices | Do not specify the increment explicitly; the parfor loop can only use an increment of one | Warning | Yes |
+| [PFTUSW](good-practices.md) | Good Practices | The temporary variable might be used after the PARFOR loop | Warning | No |
+| [PFUIXW](good-practices.md) | Good Practices | The index variable might be used after the PARFOR loop | Warning | No |
+| [SPEVB](good-practices.md) | Good Practices | Using EVALIN('base') or ASSIGNIN('base') inside an SPMD block refers to the worker machines' base workspaces | Warning | No |
+| [SPGV](good-practices.md) | Good Practices | Using the GLOBAL or PERSISTENT variable in an SPMD block might fail because it is accessed on a worker machine | Warning | No |
+| [DSPMDA](good-practices.md) | Good Practices | Distributed array must be created outside of an SPMD block | Warning | No |
 
 ## Rule Categories
 

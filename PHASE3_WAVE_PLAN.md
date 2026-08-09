@@ -24,7 +24,7 @@ read via Playwright; archive at `~/.local/share/opencode/tool-output/tool_fe291a
 | 3.2 Bugs | `bugs.rs` | 35 | 35 | 0 ✅ |
 | 3.3 Readability | `readability.rs` | 35 | 30 | **5** |
 | 3.4 Performance | `performance.rs` | 41 | 41 | 0 ✅ |
-| 3.5 Good Practices | `good_practices.rs` | 106 | 42 | **64** |
+| 3.5 Good Practices | `good_practices.rs` | 106 | 42 | **64** (39 done in Wave D, 24 deferred, 1 remaining) |
 | 3.6 Incomplete Analysis | `incomplete_analysis.rs` | 17 | 14 | **3** |
 | 3.7 Syntax Errors | `syntax_errors.rs` | 50 | 19 | **31** |
 | 3.8 Language Spec | `language_spec.rs` | 157 | 37 | **~120** |
@@ -260,7 +260,7 @@ feat
 | A | `feature/phase3-readability` | 8 | Readability(5) + Incomplete(3) |
 | B | `feature/phase3-syntax-errors` | 30 | NumberLiterals(7) + Strings(3) + ReservedWords(5) + AssignmentLHS(2) + Brackets(3) + MissingEnd(3) + CallSyntax(5) + VTPOD(1) |
 | C | `feature/phase3-language-spec` | 108 | Parfor(28) + Class(26) + FuncVal(38) + Other(16) — **done (Wave C complete)** |
-| D | `feature/phase3-good-practices` | ~64 | OOP(12) + General(~52) |
+| D | `feature/phase3-good-practices` | 39 done / 24 deferred | OOP(12) + Parfor/SPMD(11) + Logical(3) + FnCall(6) + Struct/String(7) — **Wave D complete** |
 | **Total** | | **~210** | 8 parallel batches |
 
 Completion moves mlt from **547/770 (71%)** to **770/770** for the Phase 3 rule
