@@ -13,6 +13,14 @@ mlt implements lint rules matching MATLAB's Code Analyzer checks for feature par
 | Rule ID | Category | Description | Default Severity | Auto-fix |
 | ------- | -------- | ----------- | ---------------- | -------- |
 | [NOSEMI](nosemi.md) | Formatting | Statement without trailing semicolon may produce unintended console output | Info | Yes |
+| [MFAMB](mfamb.md) | Readability | Cannot determine whether name is a variable or function; assumes function | Info | No |
+| [FLUDLR](fludlr.md) | Readability | Nested `flipud(fliplr(x))`/`fliplr(flipud(x))` should use `rot90(x, 2)` | Info | Yes |
+| [STLOW](stlow.md) | Readability | Unnecessary UPPER/LOWER call in a comparison | Info | Yes |
+| [COMNL](comnl.md) | Readability | Newline following comma acts as a row separator in a matrix; suggest semicolon or ellipsis | Info | Yes |
+| [FVINR](fvinr.md) | Readability | For readability, add Input attribute to the input arguments block | Info | Yes |
+| [NOFIL](nofil.md) | Incomplete Analysis | File not found | Error | No |
+| [RDERR](rderr.md) | Incomplete Analysis | Unable to read file | Error | No |
+| [QUIT](quit.md) | Incomplete Analysis | Code analysis did not complete; the analyzer encountered an internal error | Error | No |
 
 ## Rule Categories
 
