@@ -1092,3 +1092,285 @@ inventory::submit!(crate::RuleRegistration::new(
     "UNUSED_ENGINE",
     UnusedEngine::from_config
 ));
+
+// ---------------------------------------------------------------------------
+// Tests
+// ---------------------------------------------------------------------------
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::test_util::{has_id, lint_file};
+    use mlt_core::Config;
+
+    fn engine() -> Box<dyn Rule> {
+        UnusedEngine::from_config(&Config::default())
+    }
+
+    /// Build an engine with the given params (e.g., `disabled_checks = [...]`).
+    fn engine_with(params: &str) -> Box<dyn Rule> {
+        let config = Config::from_toml(&format!("[lint.rules.UNUSED_ENGINE]\n{params}\n")).unwrap();
+        UnusedEngine::from_config(&config)
+    }
+
+    // -- NASGU: assigned but never used -------------------------------------
+
+    #[test]
+    fn nasgu_fires_on_unused_assignment() {
+        let diags = lint_file(&*engine(), "function foo()\n    x = 1;\nend\n");
+        assert!(has_id(&diags, "NASGU"), "got: {diags:?}");
+    }
+
+    #[test]
+    fn nasgu_ok_when_used() {
+        let diags = lint_file(&*engine(), "function foo()\n    x = 1;\n    disp(x);\nend\n");
+        assert!(!has_id(&diags, "NASGU"), "got: {diags:?}");
+    }
+
+    // -- NUSED / INUSA / INUSD: unused input arguments ----------------------
+
+    #[test]
+    fn nused_fires_on_unused_input() {
+        let diags = lint_file(&*engine(), "function foo(x)\nend\n");
+        assert!(has_id(&diags, "NUSED"), "got: {diags:?}");
+    }
+
+    #[test]
+    fn nused_ok_when_input_used() {
+        let diags = lint_file(&*engine(), "function foo(x)\n    disp(x);\nend\n");
+        assert!(!has_id(&diags, "NUSED"), "got: {diags:?}");
+    }
+
+    #[test]
+    fn inusa_fires_on_unused_input() {
+        let diags = lint_file(&*engine(), "function foo(x)\nend\n");
+        assert!(has_id(&diags, "INUSA"), "got: {diags:?}");
+    }
+
+    #[test]
+    fn inusa_ok_when_input_used() {
+        let diags = lint_file(&*engine(), "function foo(x)\n    disp(x);\nend\n");
+        assert!(!has_id(&diags, "INUSA"), "got: {diags:?}");
+    }
+
+    #[test]
+    fn inusd_fires_on_unused_input() {
+        let diags = lint_file(&*engine(), "function foo(x)\nend\n");
+        assert!(has_id(&diags, "INUSD"), "got: {diags:?}");
+    }
+
+    #[test]
+    fn inusd_ok_when_input_used() {
+        let diags = lint_file(&*engine(), "function foo(x)\n    disp(x);\nend\n");
+        assert!(!has_id(&diags, "INUSD"), "got: {diags:?}");
+    }
+
+    // -- NOEFF: statement with no effect ------------------------------------
+
+    #[test]
+    fn noeff_fires_on_discarded_expression() {
+        let diags = lint_file(&*engine(), "function foo()\n    1 + 2;\nend\n");
+        assert!(has_id(&diags, "NOEFF"), "got: {diags:?}");
+    }
+
+    #[test]
+    fn noeff_ok_on_assignment() {
+        let diags = lint_file(&*engine(), "function foo()\n    x = 1 + 2;\nend\n");
+        assert!(!has_id(&diags, "NOEFF"), "got: {diags:?}");
+    }
+
+    // -- EQEFF: comparison with no effect -----------------------------------
+
+    #[test]
+    fn eqeff_fires_on_discarded_comparison() {
+        let diags = lint_file(&*engine(), "function foo()\n    a == b;\nend\n");
+        assert!(has_id(&diags, "EQEFF"), "got: {diags:?}");
+    }
+
+    #[test]
+    fn eqeff_ok_when_result_used() {
+        let diags = lint_file(&*engine(), "function foo(a, b)\n    x = (a == b);\n    disp(x);\nend\n");
+        assert!(!has_id(&diags, "EQEFF"), "got: {diags:?}");
+    }
+
+    // -- ASGLU: assignment immediately overwritten --------------------------
+
+    #[test]
+    fn asglu_fires_on_overwritten_assignment() {
+        let diags = lint_file(&*engine(), "function foo()\n    x = 1;\n    x = 2;\nend\n");
+        assert!(has_id(&diags, "ASGLU"), "got: {diags:?}");
+    }
+
+    #[test]
+    fn asglu_ok_when_used_between() {
+        let diags =
+            lint_file(&*engine(), "function foo()\n    x = 1;\n    disp(x);\n    x = 2;\nend\n");
+        assert!(!has_id(&diags, "ASGLU"), "got: {diags:?}");
+    }
+
+    // -- SETNU: output assigned but never used (only when NASGU off) --------
+
+    #[test]
+    fn setnu_fires_when_nasgu_disabled() {
+        let engine = engine_with("disabled_checks = [\"NASGU\"]");
+        let diags = lint_file(&*engine, "function foo()\n    x = 5;\nend\n");
+        assert!(has_id(&diags, "SETNU"), "got: {diags:?}");
+    }
+
+    #[test]
+    fn setnu_ok_when_nasgu_enabled() {
+        let diags = lint_file(&*engine(), "function foo()\n    x = 5;\nend\n");
+        assert!(!has_id(&diags, "SETNU"), "got: {diags:?}");
+    }
+
+    // -- PUSE: global/persistent declared but not used ----------------------
+
+    #[test]
+    fn puse_fires_on_unused_global() {
+        let diags = lint_file(&*engine(), "function foo()\n    global g;\nend\n");
+        assert!(has_id(&diags, "PUSE"), "got: {diags:?}");
+    }
+
+    #[test]
+    fn puse_ok_when_global_used() {
+        let diags = lint_file(&*engine(), "function foo()\n    global g;\n    disp(g);\nend\n");
+        assert!(!has_id(&diags, "PUSE"), "got: {diags:?}");
+    }
+
+    // -- PREALL: loop variable preallocated but unused ----------------------
+
+    #[test]
+    fn preall_fires_on_unused_loop_var() {
+        let diags = lint_file(&*engine(), "function foo()\n    for i = 1:10\n        disp('hi');\n    end\nend\n");
+        assert!(has_id(&diags, "PREALL"), "got: {diags:?}");
+    }
+
+    #[test]
+    fn preall_ok_when_loop_var_used() {
+        let diags = lint_file(&*engine(), "function foo()\n    for i = 1:10\n        disp(i);\n    end\nend\n");
+        assert!(!has_id(&diags, "PREALL"), "got: {diags:?}");
+    }
+
+    // -- VANUS: value assigned to `ans` unused ------------------------------
+
+    #[test]
+    fn vanus_fires_on_unused_ans_assignment() {
+        let diags = lint_file(&*engine(), "function foo()\n    ans = 5;\nend\n");
+        assert!(has_id(&diags, "VANUS"), "got: {diags:?}");
+    }
+
+    #[test]
+    fn vanus_ok_when_ans_used() {
+        let diags = lint_file(&*engine(), "function foo()\n    ans = 5;\n    disp(ans);\nend\n");
+        assert!(!has_id(&diags, "VANUS"), "got: {diags:?}");
+    }
+
+    // -- DEFNU: local function never called ---------------------------------
+
+    #[test]
+    fn defnu_fires_on_uncalled_local_function() {
+        let diags = lint_file(
+            &*engine(),
+            "function main()\n    disp(1);\nend\n\nfunction helper()\n    disp(2);\nend\n",
+        );
+        assert!(has_id(&diags, "DEFNU"), "got: {diags:?}");
+    }
+
+    #[test]
+    fn defnu_ok_when_local_function_called() {
+        let diags = lint_file(
+            &*engine(),
+            "function main()\n    helper();\nend\n\nfunction helper()\n    disp(2);\nend\n",
+        );
+        assert!(!has_id(&diags, "DEFNU"), "got: {diags:?}");
+    }
+
+    // -- UNRCH: unreachable code --------------------------------------------
+
+    #[test]
+    fn unrch_fires_after_return() {
+        let diags = lint_file(&*engine(), "function foo()\n    return;\n    x = 1;\nend\n");
+        assert!(has_id(&diags, "UNRCH"), "got: {diags:?}");
+    }
+
+    #[test]
+    fn unrch_ok_without_terminator() {
+        let diags = lint_file(&*engine(), "function foo()\n    x = 1;\n    disp(x);\nend\n");
+        assert!(!has_id(&diags, "UNRCH"), "got: {diags:?}");
+    }
+
+    // -- VUNUS: assigned in branches but unused after -----------------------
+
+    #[test]
+    fn vunus_fires_on_branch_assignment_unused() {
+        let diags = lint_file(
+            &*engine(),
+            "function foo(flag)\n    if flag\n        x = 1;\n    else\n        x = 2;\n    end\nend\n",
+        );
+        assert!(has_id(&diags, "VUNUS"), "got: {diags:?}");
+    }
+
+    #[test]
+    fn vunus_ok_when_used_after_branches() {
+        let diags = lint_file(
+            &*engine(),
+            "function foo(flag)\n    if flag\n        x = 1;\n    else\n        x = 2;\n    end\n    disp(x);\nend\n",
+        );
+        assert!(!has_id(&diags, "VUNUS"), "got: {diags:?}");
+    }
+
+    // -- MANU: method defined but never called ------------------------------
+
+    #[test]
+    fn manu_fires_on_uncalled_method() {
+        let diags = lint_file(
+            &*engine(),
+            "classdef Foo\n    methods\n        function y = bar()\n            y = 1;\n        end\n    end\nend\n",
+        );
+        assert!(has_id(&diags, "MANU"), "got: {diags:?}");
+    }
+
+    #[test]
+    fn manu_ok_when_method_called() {
+        let diags = lint_file(
+            &*engine(),
+            "classdef Foo\n    methods\n        function y = bar()\n            y = baz();\n        end\n        function y = baz()\n            y = bar();\n        end\n    end\nend\n",
+        );
+        assert!(!has_id(&diags, "MANU"), "got: {diags:?}");
+    }
+
+    // -- MSNU: struct field set but never read ------------------------------
+
+    #[test]
+    fn msnu_fires_on_field_never_read() {
+        let diags = lint_file(&*engine(), "function foo()\n    s.field = 1;\nend\n");
+        assert!(has_id(&diags, "MSNU"), "got: {diags:?}");
+    }
+
+    #[test]
+    fn msnu_ok_when_field_read() {
+        let diags =
+            lint_file(&*engine(), "function foo()\n    s.field = 1;\n    x = s.field;\n    disp(x);\nend\n");
+        assert!(!has_id(&diags, "MSNU"), "got: {diags:?}");
+    }
+
+    // -- MSNE: field assigned once and never read (possible typo) -----------
+
+    #[test]
+    fn msne_fires_on_typo_field() {
+        let diags = lint_file(
+            &*engine(),
+            "function foo()\n    s.a = 1;\n    s.b = 2;\n    x = s.a;\n    disp(x);\nend\n",
+        );
+        assert!(has_id(&diags, "MSNE"), "got: {diags:?}");
+    }
+
+    #[test]
+    fn msne_ok_when_all_fields_read() {
+        let diags = lint_file(
+            &*engine(),
+            "function foo()\n    s.a = 1;\n    s.b = 2;\n    x = s.a + s.b;\n    disp(x);\nend\n",
+        );
+        assert!(!has_id(&diags, "MSNE"), "got: {diags:?}");
+    }
+}

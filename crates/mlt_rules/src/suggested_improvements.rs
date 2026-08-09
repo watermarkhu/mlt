@@ -214,3 +214,259 @@ inventory::submit!(crate::RuleRegistration::new(
     "SUGGESTED_IMPROVEMENTS",
     SuggestedImprovementsEngine::from_config
 ));
+
+// ---------------------------------------------------------------------------
+// Tests
+// ---------------------------------------------------------------------------
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::test_util::{has_id, lint_nodes};
+    use mlt_core::Config;
+
+    fn engine() -> Box<dyn Rule> {
+        SuggestedImprovementsEngine::from_config(&Config::default())
+    }
+
+    // -- CSV-style file IO ---------------------------------------------------
+
+    #[test]
+    fn csvread_fires_csvrd() {
+        let diags = lint_nodes(&*engine(), "data = csvread('data.csv');\n");
+        assert!(has_id(&diags, "CSVRD"), "got: {diags:?}");
+    }
+
+    #[test]
+    fn csvwrite_fires_csvwt() {
+        let diags = lint_nodes(&*engine(), "csvwrite('out.csv', data);\n");
+        assert!(has_id(&diags, "CSVWT"), "got: {diags:?}");
+    }
+
+    #[test]
+    fn readmatrix_does_not_fire() {
+        let diags = lint_nodes(&*engine(), "data = readmatrix('data.csv');\n");
+        assert!(!has_id(&diags, "CSVRD"), "got: {diags:?}");
+        assert!(!has_id(&diags, "DLMRD"), "got: {diags:?}");
+    }
+
+    // -- Excel IO ------------------------------------------------------------
+
+    #[test]
+    fn xlsread_fires_xlsrd() {
+        let diags = lint_nodes(&*engine(), "data = xlsread('book.xlsx');\n");
+        assert!(has_id(&diags, "XLSRD"), "got: {diags:?}");
+    }
+
+    #[test]
+    fn xlswrite_fires_xlswt() {
+        let diags = lint_nodes(&*engine(), "xlswrite('out.xlsx', data);\n");
+        assert!(has_id(&diags, "XLSWT"), "got: {diags:?}");
+    }
+
+    #[test]
+    fn readtable_does_not_fire() {
+        let diags = lint_nodes(&*engine(), "data = readtable('book.xlsx');\n");
+        assert!(!has_id(&diags, "XLSRD"), "got: {diags:?}");
+    }
+
+    // -- dlmread / dlmwrite --------------------------------------------------
+
+    #[test]
+    fn dlmread_fires_dlmrd() {
+        let diags = lint_nodes(&*engine(), "data = dlmread('data.txt');\n");
+        assert!(has_id(&diags, "DLMRD"), "got: {diags:?}");
+    }
+
+    #[test]
+    fn dlmwrite_fires_dlmwt() {
+        let diags = lint_nodes(&*engine(), "dlmwrite('out.txt', data);\n");
+        assert!(has_id(&diags, "DLMWT"), "got: {diags:?}");
+    }
+
+    #[test]
+    fn writematrix_does_not_fire() {
+        let diags = lint_nodes(&*engine(), "writematrix(data, 'out.txt');\n");
+        assert!(!has_id(&diags, "DLMWT"), "got: {diags:?}");
+    }
+
+    // -- Statistics replacements ----------------------------------------------
+
+    #[test]
+    fn hist_fires_hist() {
+        let diags = lint_nodes(&*engine(), "hist(x, 20);\n");
+        assert!(has_id(&diags, "HIST"), "got: {diags:?}");
+    }
+
+    #[test]
+    fn histc_fires_histc() {
+        let diags = lint_nodes(&*engine(), "n = histc(x, edges);\n");
+        assert!(has_id(&diags, "HISTC"), "got: {diags:?}");
+    }
+
+    #[test]
+    fn histogram_does_not_fire() {
+        let diags = lint_nodes(&*engine(), "histogram(x, 20);\n");
+        assert!(!has_id(&diags, "HIST"), "got: {diags:?}");
+    }
+
+    #[test]
+    fn histcounts_does_not_fire() {
+        let diags = lint_nodes(&*engine(), "n = histcounts(x, edges);\n");
+        assert!(!has_id(&diags, "HISTC"), "got: {diags:?}");
+    }
+
+    // -- NaN-aware statistics --------------------------------------------------
+
+    #[test]
+    fn nanmean_fires_nanmean() {
+        let diags = lint_nodes(&*engine(), "m = nanmean(x);\n");
+        assert!(has_id(&diags, "NANMEAN"), "got: {diags:?}");
+    }
+
+    #[test]
+    fn nansum_fires_nansum() {
+        let diags = lint_nodes(&*engine(), "s = nansum(x);\n");
+        assert!(has_id(&diags, "NANSUM"), "got: {diags:?}");
+    }
+
+    #[test]
+    fn plain_mean_does_not_fire() {
+        let diags = lint_nodes(&*engine(), "m = mean(x);\n");
+        assert!(!has_id(&diags, "NANMEAN"), "got: {diags:?}");
+    }
+
+    // -- Filesystem -----------------------------------------------------------
+
+    #[test]
+    fn isdir_fires_isdir() {
+        let diags = lint_nodes(&*engine(), "if isdir(p), disp('yes'); end\n");
+        assert!(has_id(&diags, "ISDIR"), "got: {diags:?}");
+    }
+
+    #[test]
+    fn isfolder_does_not_fire() {
+        let diags = lint_nodes(&*engine(), "if isfolder(p), disp('yes'); end\n");
+        assert!(!has_id(&diags, "ISDIR"), "got: {diags:?}");
+    }
+
+    // -- String functions -----------------------------------------------------
+
+    #[test]
+    fn strmatch_fires_match2() {
+        let diags = lint_nodes(&*engine(), "i = strmatch(s, strs);\n");
+        assert!(has_id(&diags, "MATCH2"), "got: {diags:?}");
+    }
+
+    #[test]
+    fn findstr_fires_fstr() {
+        let diags = lint_nodes(&*engine(), "k = findstr(a, b);\n");
+        assert!(has_id(&diags, "FSTR"), "got: {diags:?}");
+    }
+
+    #[test]
+    fn strncmp_does_not_fire() {
+        let diags = lint_nodes(&*engine(), "i = strncmp(s, strs, 3);\n");
+        assert!(!has_id(&diags, "MATCH2"), "got: {diags:?}");
+    }
+
+    // -- Numeric integration ---------------------------------------------------
+
+    #[test]
+    fn quad_fires_dquad() {
+        let diags = lint_nodes(&*engine(), "q = quad(f, 0, 1);\n");
+        assert!(has_id(&diags, "DQUAD"), "got: {diags:?}");
+    }
+
+    #[test]
+    fn dblquad_fires_ddblqd() {
+        let diags = lint_nodes(&*engine(), "q = dblquad(f, 0, 1, 0, 1);\n");
+        assert!(has_id(&diags, "DDBLQD"), "got: {diags:?}");
+    }
+
+    #[test]
+    fn integral_does_not_fire() {
+        let diags = lint_nodes(&*engine(), "q = integral(f, 0, 1);\n");
+        assert!(!has_id(&diags, "DQUAD"), "got: {diags:?}");
+    }
+
+    // -- Plotting ---------------------------------------------------------------
+
+    #[test]
+    fn plotyy_fires_plotyy() {
+        let diags = lint_nodes(&*engine(), "plotyy(x, y1, x, y2);\n");
+        assert!(has_id(&diags, "PLOTYY"), "got: {diags:?}");
+    }
+
+    #[test]
+    fn polar_fires_polar() {
+        let diags = lint_nodes(&*engine(), "polar(theta, rho);\n");
+        assert!(has_id(&diags, "POLAR"), "got: {diags:?}");
+    }
+
+    #[test]
+    fn yyaxis_does_not_fire() {
+        let diags = lint_nodes(&*engine(), "yyaxis left\nplot(x, y1);\n");
+        assert!(!has_id(&diags, "PLOTYY"), "got: {diags:?}");
+    }
+
+    // -- Date/time -------------------------------------------------------------
+
+    #[test]
+    fn datestr_fires_datst() {
+        let diags = lint_nodes(&*engine(), "s = datestr(t);\n");
+        assert!(has_id(&diags, "DATST"), "got: {diags:?}");
+    }
+
+    #[test]
+    fn datenum_fires_datnm() {
+        let diags = lint_nodes(&*engine(), "n = datenum(t);\n");
+        assert!(has_id(&diags, "DATNM"), "got: {diags:?}");
+    }
+
+    #[test]
+    fn clock_fires_clock() {
+        let diags = lint_nodes(&*engine(), "c = clock();\n");
+        assert!(has_id(&diags, "CLOCK"), "got: {diags:?}");
+    }
+
+    // -- Other not-recommended functions ---------------------------------------
+
+    #[test]
+    fn plot_of_eval_fires_ev2in() {
+        let diags = lint_nodes(&*engine(), "eval('x = 1');\n");
+        assert!(has_id(&diags, "EV2IN"), "got: {diags:?}");
+    }
+
+    #[test]
+    fn lasterr_fires_lerr() {
+        let diags = lint_nodes(&*engine(), "s = lasterr();\n");
+        assert!(has_id(&diags, "LERR"), "got: {diags:?}");
+    }
+
+    #[test]
+    fn isequalwithequalnans_fires_diseqn() {
+        let diags = lint_nodes(&*engine(), "eq = isequalwithequalnans(a, b);\n");
+        assert!(has_id(&diags, "DISEQN"), "got: {diags:?}");
+    }
+
+    #[test]
+    fn mlint_fires_mlnt() {
+        let diags = lint_nodes(&*engine(), "r = mlint('file.m');\n");
+        assert!(has_id(&diags, "MLNT"), "got: {diags:?}");
+    }
+
+    // -- Command-syntax dispatch ------------------------------------------------
+
+    #[test]
+    fn format_command_fires_formatnoi() {
+        let diags = lint_nodes(&*engine(), "format short\n");
+        assert!(has_id(&diags, "FORMATNOI"), "got: {diags:?}");
+    }
+
+    #[test]
+    fn help_command_does_not_fire() {
+        let diags = lint_nodes(&*engine(), "help csvread\n");
+        assert!(!has_id(&diags, "FORMATNOI"), "got: {diags:?}");
+    }
+}

@@ -1282,3 +1282,437 @@ inventory::submit!(crate::RuleRegistration::new(
     "CUSTOM_CHECKS",
     CustomChecksEngine::from_config
 ));
+
+// ---------------------------------------------------------------------------
+// Tests
+// ---------------------------------------------------------------------------
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::test_util::{has_id, lint_file};
+    use mlt_core::Config;
+
+    fn engine() -> Box<dyn Rule> {
+        CustomChecksEngine::from_config(&Config::default())
+    }
+
+    /// Build an engine with custom thresholds set via TOML.
+    fn engine_with(params: &str) -> Box<dyn Rule> {
+        let config = Config::from_toml(&format!(
+            "[lint.rules.CUSTOM_CHECKS]\n{params}\n"
+        ))
+        .unwrap();
+        CustomChecksEngine::from_config(&config)
+    }
+
+    // -- SYSBANG ---------------------------------------------------------------
+
+    #[test]
+    fn sysbang_fires_on_bang_command() {
+        let diags = lint_file(&*engine(), "!ls -la\n");
+        assert!(has_id(&diags, "SYSBANG"), "got: {diags:?}");
+    }
+
+    #[test]
+    fn sysbang_ok_on_normal_code() {
+        let diags = lint_file(&*engine(), "disp('hello');\n");
+        assert!(!has_id(&diags, "SYSBANG"), "got: {diags:?}");
+    }
+
+    // -- LLMNC -----------------------------------------------------------------
+
+    #[test]
+    fn llnmc_fires_on_long_line() {
+        let source = format!("x = {};\n", "1".repeat(120));
+        let diags = lint_file(&*engine(), &source);
+        assert!(has_id(&diags, "LLMNC"), "got: {diags:?}");
+    }
+
+    #[test]
+    fn llnmc_ok_on_short_line() {
+        let diags = lint_file(&*engine(), "x = 1;\n");
+        assert!(!has_id(&diags, "LLMNC"), "got: {diags:?}");
+    }
+
+    #[test]
+    fn llnmc_fires_with_lowered_threshold() {
+        let engine = engine_with("max_line_length = 10");
+        let diags = lint_file(&*engine, "x = 1234567890;\n");
+        assert!(has_id(&diags, "LLMNC"), "got: {diags:?}");
+    }
+
+    // -- DAFSC -----------------------------------------------------------------
+
+    #[test]
+    fn dafsc_fires_on_many_semicolons() {
+        let diags = lint_file(&*engine(), "a = 1; b = 2; c = 3; d = 4;\n");
+        assert!(has_id(&diags, "DAFSC"), "got: {diags:?}");
+    }
+
+    #[test]
+    fn dafsc_ok_few_semicolons() {
+        let diags = lint_file(&*engine(), "a = 1; b = 2;\n");
+        assert!(!has_id(&diags, "DAFSC"), "got: {diags:?}");
+    }
+
+    // -- FCNIL -----------------------------------------------------------------
+
+    #[test]
+    fn fcnil_fires_when_inputs_exceed_limit() {
+        let engine = engine_with("max_function_inputs = 2");
+        let diags = lint_file(&*engine, "function f(a, b, c)\nend\n");
+        assert!(has_id(&diags, "FCNIL"), "got: {diags:?}");
+    }
+
+    #[test]
+    fn fcnil_ok_within_limit() {
+        let engine = engine_with("max_function_inputs = 2");
+        let diags = lint_file(&*engine, "function f(a, b)\nend\n");
+        assert!(!has_id(&diags, "FCNIL"), "got: {diags:?}");
+    }
+
+    // -- FCNOL -----------------------------------------------------------------
+
+    #[test]
+    fn fcnol_fires_when_outputs_exceed_limit() {
+        let engine = engine_with("max_function_outputs = 2");
+        let diags = lint_file(&*engine, "function [a, b, c] = f()\nend\n");
+        assert!(has_id(&diags, "FCNOL"), "got: {diags:?}");
+    }
+
+    #[test]
+    fn fcnol_ok_within_limit() {
+        let engine = engine_with("max_function_outputs = 2");
+        let diags = lint_file(&*engine, "function [a, b] = f()\nend\n");
+        assert!(!has_id(&diags, "FCNOL"), "got: {diags:?}");
+    }
+
+    // -- FCNLL -----------------------------------------------------------------
+
+    #[test]
+    fn fcnll_fires_when_function_is_too_long() {
+        let engine = engine_with("max_function_lines = 3");
+        let source = "function f()\n    x = 1;\n    y = 2;\n    z = 3;\nend\n";
+        let diags = lint_file(&*engine, source);
+        assert!(has_id(&diags, "FCNLL"), "got: {diags:?}");
+    }
+
+    #[test]
+    fn fcnll_ok_short_function() {
+        let engine = engine_with("max_function_lines = 3");
+        let diags = lint_file(&*engine, "function f()\nend\n");
+        assert!(!has_id(&diags, "FCNLL"), "got: {diags:?}");
+    }
+
+    // -- MNCSN -----------------------------------------------------------------
+
+    #[test]
+    fn mncsn_fires_on_deep_nesting() {
+        let engine = engine_with("max_nesting_depth = 2");
+        let source = "function f()\n    if a\n        if b\n            if c\n                x = 1;\n            end\n        end\n    end\nend\n";
+        let diags = lint_file(&*engine, source);
+        assert!(has_id(&diags, "MNCSN"), "got: {diags:?}");
+    }
+
+    #[test]
+    fn mncsn_ok_with_shallow_nesting() {
+        let engine = engine_with("max_nesting_depth = 2");
+        let source = "function f()\n    if a\n        if b\n            x = 1;\n        end\n    end\nend\n";
+        let diags = lint_file(&*engine, source);
+        assert!(!has_id(&diags, "MNCSN"), "got: {diags:?}");
+    }
+
+    // -- DAFTC -----------------------------------------------------------------
+
+    #[test]
+    fn daftc_fires_on_large_matrix() {
+        let engine = engine_with("max_tree_children = 6");
+        let source = "function f()\n    x = [1, 2, 3, 4, 5, 6];\nend\n";
+        let diags = lint_file(&*engine, source);
+        assert!(has_id(&diags, "DAFTC"), "got: {diags:?}");
+    }
+
+    #[test]
+    fn daftc_ok_on_small_nodes() {
+        let engine = engine_with("max_tree_children = 6");
+        let diags = lint_file(&*engine, "function f()\n    x = 1;\nend\n");
+        assert!(!has_id(&diags, "DAFTC"), "got: {diags:?}");
+    }
+
+    // -- DAFPV -----------------------------------------------------------------
+    //
+    // Skipped: `persistent a b c` parses as a `persistent_operator` node in
+    // tree-sitter-matlab, but the engine only matches `persistent_statement` /
+    // `persistent`, so DAFPV can never fire with any input.
+
+    // -- DAFCO -----------------------------------------------------------------
+
+    #[test]
+    fn dafco_fires_on_many_conditions() {
+        let engine = engine_with("max_conditions = 2");
+        let source = "function f()\n    if a && b && c && d\n        x = 1;\n    end\nend\n";
+        let diags = lint_file(&*engine, source);
+        assert!(has_id(&diags, "DAFCO"), "got: {diags:?}");
+    }
+
+    #[test]
+    fn dafco_ok_few_conditions() {
+        let engine = engine_with("max_conditions = 2");
+        let source = "function f()\n    if a && b && c\n        x = 1;\n    end\nend\n";
+        let diags = lint_file(&*engine, source);
+        assert!(!has_id(&diags, "DAFCO"), "got: {diags:?}");
+    }
+
+    // -- DAFBR -----------------------------------------------------------------
+
+    #[test]
+    fn dafbr_fires_on_many_branches() {
+        let engine = engine_with("max_branches = 3");
+        let source = "function f()\n    switch x\n        case 1\n            a = 1;\n        case 2\n            a = 2;\n        case 3\n            a = 3;\n        otherwise\n            a = 0;\n    end\nend\n";
+        let diags = lint_file(&*engine, source);
+        assert!(has_id(&diags, "DAFBR"), "got: {diags:?}");
+    }
+
+    #[test]
+    fn dafbr_ok_few_branches() {
+        let engine = engine_with("max_branches = 3");
+        let source = "function f()\n    switch x\n        case 1\n            a = 1;\n        case 2\n            a = 2;\n    end\nend\n";
+        let diags = lint_file(&*engine, source);
+        assert!(!has_id(&diags, "DAFBR"), "got: {diags:?}");
+    }
+
+    // -- DAFRT -----------------------------------------------------------------
+
+    #[test]
+    fn dafrt_fires_on_many_returns() {
+        let engine = engine_with("max_return_points = 2");
+        let source = "function f()\n    if a, return; end\n    if b, return; end\n    if c, return; end\nend\n";
+        let diags = lint_file(&*engine, source);
+        assert!(has_id(&diags, "DAFRT"), "got: {diags:?}");
+    }
+
+    #[test]
+    fn dafrt_ok_few_returns() {
+        let engine = engine_with("max_return_points = 2");
+        let source = "function f()\n    if a, return; end\nend\n";
+        let diags = lint_file(&*engine, source);
+        assert!(!has_id(&diags, "DAFRT"), "got: {diags:?}");
+    }
+
+    // -- DAFNF -----------------------------------------------------------------
+
+    #[test]
+    fn dafnf_fires_on_many_nested_functions() {
+        let engine = engine_with("max_nested_functions = 2");
+        let source = "function f()\n    function g()\n    end\n    function h()\n    end\n    function k()\n    end\nend\n";
+        let diags = lint_file(&*engine, source);
+        assert!(has_id(&diags, "DAFNF"), "got: {diags:?}");
+    }
+
+    #[test]
+    fn dafnf_ok_few_nested_functions() {
+        let engine = engine_with("max_nested_functions = 2");
+        let source = "function f()\n    function g()\n    end\nend\n";
+        let diags = lint_file(&*engine, source);
+        assert!(!has_id(&diags, "DAFNF"), "got: {diags:?}");
+    }
+
+    // -- DAFCF -----------------------------------------------------------------
+
+    #[test]
+    fn dafcf_fires_on_many_called_functions() {
+        let engine = engine_with("max_called_functions = 3");
+        let source = "function f()\n    foo();\n    bar();\n    baz();\n    qux();\nend\n";
+        let diags = lint_file(&*engine, source);
+        assert!(has_id(&diags, "DAFCF"), "got: {diags:?}");
+    }
+
+    #[test]
+    fn dafcf_ok_few_called_functions() {
+        let engine = engine_with("max_called_functions = 3");
+        let source = "function f()\n    foo();\n    bar();\n    baz();\nend\n";
+        let diags = lint_file(&*engine, source);
+        assert!(!has_id(&diags, "DAFCF"), "got: {diags:?}");
+    }
+
+    // -- DAFAF -----------------------------------------------------------------
+
+    #[test]
+    fn dafaf_fires_on_many_anonymous_functions() {
+        let engine = engine_with("max_anonymous_functions = 2");
+        let source = "function f()\n    g1 = @(x) x + 1;\n    g2 = @(x) x + 2;\n    g3 = @(x) x + 3;\nend\n";
+        let diags = lint_file(&*engine, source);
+        assert!(has_id(&diags, "DAFAF"), "got: {diags:?}");
+    }
+
+    #[test]
+    fn dafaf_ok_few_anonymous_functions() {
+        let engine = engine_with("max_anonymous_functions = 2");
+        let source = "function f()\n    g1 = @(x) x + 1;\nend\n";
+        let diags = lint_file(&*engine, source);
+        assert!(!has_id(&diags, "DAFAF"), "got: {diags:?}");
+    }
+
+    // -- DAFCV -----------------------------------------------------------------
+
+    #[test]
+    fn dafcv_fires_on_many_local_variables() {
+        let engine = engine_with("max_local_variables = 3");
+        let source = "function f()\n    a = 1;\n    b = 2;\n    c = 3;\n    d = 4;\nend\n";
+        let diags = lint_file(&*engine, source);
+        assert!(has_id(&diags, "DAFCV"), "got: {diags:?}");
+    }
+
+    #[test]
+    fn dafcv_ok_few_local_variables() {
+        let engine = engine_with("max_local_variables = 3");
+        let source = "function f()\n    a = 1;\n    b = 2;\nend\n";
+        let diags = lint_file(&*engine, source);
+        assert!(!has_id(&diags, "DAFCV"), "got: {diags:?}");
+    }
+
+    // -- DAFCVC ----------------------------------------------------------------
+
+    #[test]
+    fn dafcvc_fires_on_many_constants() {
+        let engine = engine_with("max_local_constants = 2");
+        let source = "function f()\n    CONST_A = 1;\n    CONST_B = 2;\n    CONST_C = 3;\nend\n";
+        let diags = lint_file(&*engine, source);
+        assert!(has_id(&diags, "DAFCVC"), "got: {diags:?}");
+    }
+
+    #[test]
+    fn dafcvc_ok_few_constants() {
+        let engine = engine_with("max_local_constants = 2");
+        let source = "function f()\n    CONST_A = 1;\n    CONST_B = 2;\nend\n";
+        let diags = lint_file(&*engine, source);
+        assert!(!has_id(&diags, "DAFCVC"), "got: {diags:?}");
+    }
+
+    // -- DAFVI -----------------------------------------------------------------
+
+    #[test]
+    fn dafvi_fires_on_many_inputs_used() {
+        let engine = engine_with("max_input_args_used = 2");
+        let source = "function f(a, b, c)\n    y = a + b + c;\nend\n";
+        let diags = lint_file(&*engine, source);
+        assert!(has_id(&diags, "DAFVI"), "got: {diags:?}");
+    }
+
+    #[test]
+    fn dafvi_ok_few_inputs_used() {
+        let engine = engine_with("max_input_args_used = 2");
+        let source = "function f(a, b)\n    y = a + b;\nend\n";
+        let diags = lint_file(&*engine, source);
+        assert!(!has_id(&diags, "DAFVI"), "got: {diags:?}");
+    }
+
+    // -- DAFVO -----------------------------------------------------------------
+
+    #[test]
+    fn dafvo_fires_on_many_outputs_used() {
+        let engine = engine_with("max_output_args_used = 2");
+        let source = "function [a, b, c] = f()\n    [a, b, c] = deal(1, 2, 3);\nend\n";
+        let diags = lint_file(&*engine, source);
+        assert!(has_id(&diags, "DAFVO"), "got: {diags:?}");
+    }
+
+    #[test]
+    fn dafvo_ok_few_outputs_used() {
+        let engine = engine_with("max_output_args_used = 2");
+        let source = "function [a, b] = f()\n    [a, b] = deal(1, 2);\nend\n";
+        let diags = lint_file(&*engine, source);
+        assert!(!has_id(&diags, "DAFVO"), "got: {diags:?}");
+    }
+
+    // -- CYCCOM ----------------------------------------------------------------
+
+    #[test]
+    fn cyccom_fires_when_complexity_exceeds() {
+        let engine = engine_with("max_cyclomatic_complexity = 3");
+        let source = "function f()\n    if a, x = 1; end\n    if b, x = 2; end\n    if c, x = 3; end\nend\n";
+        let diags = lint_file(&*engine, source);
+        assert!(has_id(&diags, "CYCCOM"), "got: {diags:?}");
+    }
+
+    #[test]
+    fn cyccom_ok_within_limit() {
+        let engine = engine_with("max_cyclomatic_complexity = 3");
+        let source = "function f()\n    if a, x = 1; end\n    if b, x = 2; end\nend\n";
+        let diags = lint_file(&*engine, source);
+        assert!(!has_id(&diags, "CYCCOM"), "got: {diags:?}");
+    }
+
+    // -- SCYCCOM ---------------------------------------------------------------
+
+    #[test]
+    fn scyccom_fires_on_many_comparisons() {
+        let engine = engine_with("max_strict_cyclomatic_complexity = 3");
+        let source = "function f()\n    if a > 1, x = 1; end\n    if b < 2, x = 2; end\n    if c == 3, x = 3; end\nend\n";
+        let diags = lint_file(&*engine, source);
+        assert!(has_id(&diags, "SCYCCOM"), "got: {diags:?}");
+    }
+
+    #[test]
+    fn scyccom_ok_few_comparisons() {
+        let engine = engine_with("max_strict_cyclomatic_complexity = 3");
+        let source = "function f()\n    if a, x = 1; end\nend\n";
+        let diags = lint_file(&*engine, source);
+        assert!(!has_id(&diags, "SCYCCOM"), "got: {diags:?}");
+    }
+
+    // -- ACYCCOM ---------------------------------------------------------------
+
+    #[test]
+    fn acyccom_fires_on_high_average() {
+        let engine = engine_with("max_avg_cyclomatic_complexity = 2");
+        let source = "function f()\n    if a, x = 1; end\n    if b, x = 2; end\nend\nfunction g()\n    if a, x = 1; end\n    if b, x = 2; end\nend\n";
+        let diags = lint_file(&*engine, source);
+        assert!(has_id(&diags, "ACYCCOM"), "got: {diags:?}");
+    }
+
+    #[test]
+    fn acyccom_ok_low_average() {
+        let engine = engine_with("max_avg_cyclomatic_complexity = 2");
+        let source = "function f()\n    if a, x = 1; end\nend\n";
+        let diags = lint_file(&*engine, source);
+        assert!(!has_id(&diags, "ACYCCOM"), "got: {diags:?}");
+    }
+
+    // -- MCYCCOM / MSCYCCOM / MACYCCOM (method variants) -----------------------
+
+    #[test]
+    fn mcyccom_fires_for_methods() {
+        let engine = engine_with("max_cyclomatic_complexity = 2");
+        let source = "classdef MyClass\n    methods\n        function out = compute(a)\n            if a > 0, x = 1; end\n            if a < 0, y = 2; end\n        end\n    end\nend\n";
+        let diags = lint_file(&*engine, source);
+        assert!(has_id(&diags, "MCYCCOM"), "got: {diags:?}");
+    }
+
+    #[test]
+    fn mscyccom_fires_for_methods() {
+        let engine = engine_with("max_strict_cyclomatic_complexity = 2");
+        let source = "classdef MyClass\n    methods\n        function out = compute(a)\n            if a > 0, x = 1; end\n        end\n    end\nend\n";
+        let diags = lint_file(&*engine, source);
+        assert!(has_id(&diags, "MSCYCCOM"), "got: {diags:?}");
+    }
+
+    #[test]
+    fn macyccom_fires_for_methods() {
+        let engine = engine_with("max_avg_cyclomatic_complexity = 2");
+        let source = "classdef MyClass\n    methods\n        function out = compute(a)\n            if a > 0, x = 1; end\n            if a < 0, y = 2; end\n        end\n    end\nend\n";
+        let diags = lint_file(&*engine, source);
+        assert!(has_id(&diags, "MACYCCOM"), "got: {diags:?}");
+    }
+
+    #[test]
+    fn method_variants_ok_for_low_complexity_methods() {
+        let engine = engine_with("max_cyclomatic_complexity = 2");
+        let source = "classdef MyClass\n    methods\n        function out = compute(a)\n            out = a;\n        end\n    end\nend\n";
+        let diags = lint_file(&*engine, source);
+        assert!(!has_id(&diags, "MCYCCOM"), "got: {diags:?}");
+        assert!(!has_id(&diags, "MSCYCCOM"), "got: {diags:?}");
+        assert!(!has_id(&diags, "MACYCCOM"), "got: {diags:?}");
+    }
+}
