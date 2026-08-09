@@ -147,7 +147,7 @@ Requires `gh` ≥ 2.90 and Git ≥ 2.20.
 |---|----------|-------|----------|-------|
 | 1 | Incomplete Analysis | 17 | Error | **17/17 done** — Wave A completed QUIT, NOFIL, RDERR; all `can_be_disabled = false`; linter-internal limits |
 | 2 | Syntax Errors | 50 | Error | **50/50 done** — Wave B completed 30 checks (BADCT, BADFP, BADHBH, BADHBB, BADHBHT, BADHBBT, HEXTOOLONG, BINARYTOOLONG, DOUQT, STRIN, INBLK, RESWD, UNSET, LHROW, NOPAR2, EOLPAR, ENDCT2, ENDCT3, ENDCT4, MCPLD, SBTMP, BADNOT, BADNOTLHS, ENDPAR, VTPOD, SYNEND, FVACI, FVACS, FVAMI, FVSYN) |
-| 3 | Language Specification Errors | 157 | Error | OOP, parfor, spmd, argument validation |
+| 3 | Language Specification Errors | 157 | Error | **145/157 done** — Wave C completed 108 checks (parfor/spmd 28, class/method 26, function validation 38, other 16) |
 | 4 | Bugs | 35 | Error | Suspicious patterns, logic errors |
 | 5 | Custom Checks | 25 | Warning | **Done** — complexity/style metrics |
 | 6 | Naming Checks | 81 | Info | **Done** — 9 entities × 9 check types |
