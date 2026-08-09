@@ -112,19 +112,16 @@ These three are linter-internal guards; the flow must decide module vs
 
 **Gate:** `cargo build` + `cargo clippy --all-targets` (zero warnings) + `cargo test`.
 
-### Wave B — Syntax Errors (31 checks) → `feature/phase3-syntax-errors`
+### Wave B — Syntax Errors (30 checks) → `feature/phase3-syntax-errors`
 
 `crates/mlt_rules/src/syntax_errors.rs`. Many of these are parser-adjacent
 validations that leverage tree-sitter `ERROR`/`MISSING` nodes.
 
-**B — Missing 31:**
+**B — Missing 30 (SEPEXC is not a real MathWorks check; FVNST already lives in `language_spec.rs`):**
 `BADCT`, `BADFP`, `BADHBH`, `BADHBB`, `BADHBHT`, `BADHBBT`, `HEXTOOLONG`,
 `BINARYTOOLONG`, `DOUQT`, `STRIN`, `INBLK`, `RESWD`, `UNSET`, `LHROW`, `NOPAR2`,
 `EOLPAR`, `ENDCT2`, `ENDCT3`, `ENDCT4`, `MCPLD`, `SBTMP`, `BADNOT`, `BADNOTLHS`,
-`ENDPAR`, `SEPEXC`, `VTPOD`, `SYNEND`, `FVACI`, `FVACS`, `FVAMI`, `FVNST`, `FVSYN`
-
-> `FVNST` is already implemented in `language_spec.rs` — confirm overlap and avoid
-> duplicating the check ID.
+`ENDPAR`, `VTPOD`, `SYNEND`, `FVACI`, `FVACS`, `FVAMI`, `FVSYN`
 
 **Triage rule:** before planning each check, verify whether tree-sitter already
 emits `ERROR`/`MISSING` for the pattern. If it does, the check is a
@@ -261,10 +258,10 @@ feat
 | Wave | Branch | Checks | Batch groups |
 |------|--------|-------:|--------------|
 | A | `feature/phase3-readability` | 8 | Readability(5) + Incomplete(3) |
-| B | `feature/phase3-syntax-errors` | 31 | Syntax triage(31) |
+| B | `feature/phase3-syntax-errors` | 30 | NumberLiterals(7) + Strings(3) + ReservedWords(5) + AssignmentLHS(2) + Brackets(3) + MissingEnd(3) + CallSyntax(5) + VTPOD(1) |
 | C | `feature/phase3-language-spec` | ~108 | Parfor(28) + Class(26) + FuncVal(38) + Other(16) |
 | D | `feature/phase3-good-practices` | ~64 | OOP(12) + General(~52) |
-| **Total** | | **~211** | 8 parallel batches |
+| **Total** | | **~210** | 8 parallel batches |
 
 Completion moves mlt from **547/770 (71%)** to **770/770** for the Phase 3 rule
 categories, with full docs and tests for every new rule.
