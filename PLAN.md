@@ -115,8 +115,10 @@ Requires `gh` ≥ 2.90 and Git ≥ 2.20.
 ### Phase 3 Waves A–D ✅ (merged into `feat` via PRs #8/#9/#10/#12)
 
 ~185 checks added across four stacked-PR waves using the rule-pipeline
-(`.opencode/skill/rule-pipeline/`). See the **Phase 3: Rule Implementation**
-section below for the summary and remaining-work list.
+(`.opencode/skill/rule-pipeline/`). Phase 3 categories now sit at **~730 of 771
+(94.7%)**; the full MATLAB inventory is **~730 of 2,680 (~27%)**. See the
+**Phase 3: Rule Implementation** section below for the summary and remaining-work
+list.
 
 | Wave | Branch (merged) | Checks | Modules |
 |------|-----------------|--------|---------|
@@ -128,6 +130,15 @@ section below for the summary and remaining-work list.
 **Remaining Phase 3 work:** ~39 checks (Good Practices 26, Language Spec 11,
 System Objects 2) plus 24 deferred Good Practices checks requiring type/flow analysis.
 
+### Coverage — two denominators
+
+- **Full MATLAB Code Analyzer inventory: ~730 of 2,680 checks (~27%).** The bulk of
+  the remaining 73% is **data-driven** categories (Compatibility ~1,803, Behavior
+  Changes ~905) that are Phase 4 data-file expansion, not Phase 3 rule code.
+- **Phase 3 in-scope categories only: ~730 of 771 (~94%).** The remaining ~41 checks
+  (Good Practices 26 + 11 Language Spec + 2 System Objects) plus 24 deferred Good
+  Practices checks.
+
 ### Implemented Engines (pre-wave baseline, now superseded by the table above)
 
 | Module | File | Functional Check IDs | Approach |
@@ -137,7 +148,9 @@ System Objects 2) plus 24 deferred Good Practices checks requiring type/flow ana
 | Naming | `naming.rs` | 81 (63 are no-ops without user config) | File-level traversal, configurable |
 | Custom Checks | `custom_checks.rs` | 25 | File-level metrics, configurable thresholds |
 
-**Total functional check IDs: ~726 of ~2,680 (27%)** after the Phase 3 waves.
+**Total functional check IDs: ~730 of 2,680 (~27%)** after the Phase 3 waves
+(≈94% of the Phase 3 in-scope categories; the remaining 73% of the full inventory
+is mostly Phase 4 data-file expansion for Compatibility/Behavior Changes).
 
 ### Core Infrastructure
 
@@ -343,6 +356,10 @@ subagents. ~185 checks landed.
   plus CLI integration tests (`crates/mlt_cli/tests/nofil_rderr.rs`).
 
 ### Remaining Phase 3 work (~39 checks + 24 deferred)
+
+> **Coverage:** ~730 of the full 2,680-check inventory (~27%) is implemented.
+> Phase 3 in-scope categories are ~94% done; the remaining 73% of the full
+> inventory is mostly Phase 4 data-file expansion (Compatibility, Behavior Changes).
 
 | Category | Remaining |
 |----------|-----------|
