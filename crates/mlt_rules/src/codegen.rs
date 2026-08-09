@@ -355,7 +355,7 @@ impl CodegenEngine {
 
         // EMNST: Nested function detection
         if self.is_enabled("EMNST") {
-            self.find_nested_functions(&root, 0, &mut diags);
+            Self::find_nested_functions(&root, 0, &mut diags);
         }
 
         diags
@@ -363,7 +363,6 @@ impl CodegenEngine {
 
     /// Recursively find nested function definitions (depth > 1).
     fn find_nested_functions(
-        &self,
         node: &tree_sitter::Node,
         depth: usize,
         diags: &mut Vec<Diagnostic>,
@@ -377,9 +376,9 @@ impl CodegenEngine {
                         diags.push(make_diag("EMNST", child));
                     }
                     // Recurse into this function to find deeper nesting
-                    self.find_nested_functions(&child, depth + 1, diags);
+                    Self::find_nested_functions(&child, depth + 1, diags);
                 } else {
-                    self.find_nested_functions(&child, depth, diags);
+                    Self::find_nested_functions(&child, depth, diags);
                 }
             }
         }

@@ -916,7 +916,7 @@ mod tests {
     }
 
     /// Find the first `function_definition` node in the tree.
-    fn first_function(tree: &Tree) -> Node {
+    fn first_function(tree: &Tree) -> Node<'_> {
         let root = tree.root_node();
         let mut cursor = root.walk();
         for child in root.children(&mut cursor) {

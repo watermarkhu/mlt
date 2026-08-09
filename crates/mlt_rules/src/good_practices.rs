@@ -1899,7 +1899,6 @@ fn count_children_of_kind(node: Node, kind: &str) -> usize {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use mlt_core::Config;
     use tree_sitter::Parser;
 
     /// Parse MATLAB source and return the tree.

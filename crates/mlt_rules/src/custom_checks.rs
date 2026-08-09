@@ -385,13 +385,12 @@ impl CustomChecksEngine {
     /// Check for system command usage (SYSBANG): the `command` node with `!` prefix.
     fn check_system_commands(&self, node: Node, source: &str) -> Vec<Diagnostic> {
         let mut diagnostics = Vec::new();
-        self.walk_for_system_commands(node, source, &mut diagnostics);
+        Self::walk_for_system_commands(node, source, &mut diagnostics);
         diagnostics
     }
 
     /// Recursively walk tree to find system commands.
     fn walk_for_system_commands(
-        &self,
         node: Node,
         source: &str,
         diagnostics: &mut Vec<Diagnostic>,
@@ -431,7 +430,7 @@ impl CustomChecksEngine {
 
         let mut cursor = node.walk();
         for child in node.children(&mut cursor) {
-            self.walk_for_system_commands(child, source, diagnostics);
+            Self::walk_for_system_commands(child, source, diagnostics);
         }
     }
 
@@ -760,7 +759,7 @@ impl CustomChecksEngine {
                 }
                 // Count conditions in the expression (DAFCO)
                 metrics.max_conditions = metrics.max_conditions.max(
-                    self.count_boolean_operators(node, source),
+                    Self::count_boolean_operators(node, source),
                 );
             }
             "comparison_operator" => {
@@ -836,7 +835,7 @@ impl CustomChecksEngine {
     }
 
     /// Count boolean operators in a boolean expression (for DAFCO).
-    fn count_boolean_operators(&self, node: Node, source: &str) -> usize {
+    fn count_boolean_operators(node: Node, source: &str) -> usize {
         let mut count = 0;
         if node.kind() == "boolean_operator" {
             let text = &source[node.start_byte()..node.end_byte()];
@@ -846,7 +845,7 @@ impl CustomChecksEngine {
         }
         let mut cursor = node.walk();
         for child in node.children(&mut cursor) {
-            count += self.count_boolean_operators(child, source);
+            count += Self::count_boolean_operators(child, source);
         }
         count
     }
@@ -904,7 +903,7 @@ impl CustomChecksEngine {
         let mut used_inputs: HashSet<&str> = HashSet::new();
         let mut used_outputs: HashSet<&str> = HashSet::new();
 
-        self.find_used_identifiers(
+        Self::find_used_identifiers(
             func_node,
             source,
             &input_names,
@@ -962,7 +961,6 @@ impl CustomChecksEngine {
 
     /// Find identifiers used in function body that match input/output arg names.
     fn find_used_identifiers<'a>(
-        &self,
         node: Node<'a>,
         source: &'a str,
         input_names: &[&'a str],
@@ -990,7 +988,7 @@ impl CustomChecksEngine {
             if child.kind() == "function_definition" && child != node {
                 continue;
             }
-            self.find_used_identifiers(child, source, input_names, output_names, used_inputs, used_outputs);
+            Self::find_used_identifiers(child, source, input_names, output_names, used_inputs, used_outputs);
         }
     }
 

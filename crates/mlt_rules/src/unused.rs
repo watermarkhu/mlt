@@ -720,7 +720,7 @@ impl UnusedEngine {
         let mut field_writes: Vec<FieldAccess> = Vec::new();
         let mut field_reads: HashSet<String> = HashSet::new();
 
-        self.collect_field_accesses(
+        Self::collect_field_accesses(
             ctx.tree.root_node(),
             ctx.source,
             &mut field_writes,
@@ -762,7 +762,7 @@ impl UnusedEngine {
         let mut field_writes: Vec<FieldAccess> = Vec::new();
         let mut field_reads: HashSet<String> = HashSet::new();
 
-        self.collect_field_accesses(
+        Self::collect_field_accesses(
             ctx.tree.root_node(),
             ctx.source,
             &mut field_writes,
@@ -813,7 +813,6 @@ impl UnusedEngine {
 
     /// Collect field accesses (both reads and writes) from the parse tree.
     fn collect_field_accesses(
-        &self,
         node: Node,
         source: &str,
         writes: &mut Vec<FieldAccess>,
@@ -830,7 +829,7 @@ impl UnusedEngine {
             }
             // Check RHS for field reads.
             if let Some(rhs) = node.child_by_field_name("right") {
-                self.collect_field_reads(rhs, source, reads);
+                Self::collect_field_reads(rhs, source, reads);
             }
         } else if node.kind() == "field_expression" {
             // A field_expression not on the LHS of assignment is a read.
@@ -845,7 +844,7 @@ impl UnusedEngine {
             let count = node.child_count();
             for i in 0..count {
                 if let Some(child) = node.child(i) {
-                    self.collect_field_accesses(child, source, writes, reads);
+                    Self::collect_field_accesses(child, source, writes, reads);
                 }
             }
         } else {
@@ -860,7 +859,7 @@ impl UnusedEngine {
                             }
                         }
                     }
-                    self.collect_field_accesses(child, source, writes, reads);
+                    Self::collect_field_accesses(child, source, writes, reads);
                 }
             }
         }
@@ -868,7 +867,6 @@ impl UnusedEngine {
 
     /// Collect field reads from an expression subtree.
     fn collect_field_reads(
-        &self,
         node: Node,
         source: &str,
         reads: &mut HashSet<String>,
@@ -883,7 +881,7 @@ impl UnusedEngine {
         let count = node.child_count();
         for i in 0..count {
             if let Some(child) = node.child(i) {
-                self.collect_field_reads(child, source, reads);
+                Self::collect_field_reads(child, source, reads);
             }
         }
     }

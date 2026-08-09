@@ -184,11 +184,9 @@ impl SystemObjectsEngine {
                 // SONUMOUT: Calling release()/reset() with output arguments
                 if self.is_enabled("SONUMOUT")
                     && (method_name == "release" || method_name == "reset")
-                {
-                    if has_output_assignment(node) {
+                    && has_output_assignment(node) {
                         diags.push(make_diag("SONUMOUT", node));
                     }
-                }
             }
         }
 
