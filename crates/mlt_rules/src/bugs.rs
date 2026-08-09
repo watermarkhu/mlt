@@ -42,8 +42,8 @@
 //! | PFWHOS     | who/whos in parfor                                             |
 //! | PFTUSE     | Temporary variable misuse in parfor                            |
 //! | PFRNC      | Reduction not consistent in parfor                             |
-//! | FWFORP     | For loop could be parfor                                       |
-//! | FPFORP     | Parfor could be for                                            |
+//! | FWPARF     | For loop could be parfor                                       |
+//! | PFTRIV     | Parfor could be for                                            |
 //!
 //! ## Configuration
 //!
@@ -1350,11 +1350,11 @@ impl BugsEngine {
         if node.kind() == "for_statement" {
             let stmt_text = node_text(node, source);
             if !stmt_text.starts_with("parfor") {
-                // Not a parfor — check if it could be one (FWFORP).
+                // Not a parfor — check if it could be one (FWPARF).
                 if could_be_parfor(node, source) {
                     let pos = node.start_position();
                     diagnostics.push(Diagnostic {
-                        rule_id: "FWFORP",
+                        rule_id: "FWPARF",
                         message: "For loop could potentially be converted to parfor for parallelism"
                             .to_string(),
                         severity: Severity::Error,
@@ -1389,11 +1389,11 @@ impl BugsEngine {
                 }
             }
 
-            // FPFORP: Check if parfor could just be a for loop (body is trivial).
+            // PFTRIV: Check if parfor could just be a for loop (body is trivial).
             if is_trivial_parfor(node, source) {
                 let pos = node.start_position();
                 diagnostics.push(Diagnostic {
-                    rule_id: "FPFORP",
+                    rule_id: "PFTRIV",
                     message: "Parfor loop body is trivial; consider using regular for loop"
                         .to_string(),
                     severity: Severity::Error,
@@ -2049,3 +2049,713 @@ inventory::submit!(crate::RuleRegistration::new(
     "BUGS_ENGINE",
     BugsEngine::from_config
 ));
+
+// ---------------------------------------------------------------------------
+// Tests
+// ---------------------------------------------------------------------------
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::test_util::{has_id, lint_file, lint_nodes, parse};
+    use mlt_core::Config;
+
+    fn engine() -> Box<dyn Rule> {
+        BugsEngine::from_config(&Config::default())
+    }
+
+    fn node_diags(src: &str) -> Vec<Diagnostic> {
+        lint_nodes(&*engine(), src)
+    }
+
+    fn file_diags(src: &str) -> Vec<Diagnostic> {
+        lint_file(&*engine(), src)
+    }
+
+    // -- CTRUE / CFALSE ------------------------------------------------------
+
+    #[test]
+    fn ctrue_fires_on_if_true() {
+        let src = "if true\n    x = 1;\nend\n";
+        let diags = node_diags(src);
+        assert!(has_id(&diags, "CTRUE"), "got: {diags:?}");
+    }
+
+    #[test]
+    fn ctrue_no_fire_on_real_condition() {
+        let src = "if x > 0\n    x = 1;\nend\n";
+        let diags = node_diags(src);
+        assert!(!has_id(&diags, "CTRUE"), "got: {diags:?}");
+    }
+
+    #[test]
+    fn cfalse_fires_on_while_zero() {
+        let src = "while 0\n    x = 1;\nend\n";
+        let diags = node_diags(src);
+        assert!(has_id(&diags, "CFALSE"), "got: {diags:?}");
+    }
+
+    #[test]
+    fn cfalse_no_fire_on_real_condition() {
+        let src = "while x > 0\n    x = 1;\nend\n";
+        let diags = node_diags(src);
+        assert!(!has_id(&diags, "CFALSE"), "got: {diags:?}");
+    }
+
+    // -- SHOCIRT / SHOCIRF ---------------------------------------------------
+
+    #[test]
+    fn shocirt_fires_on_zeros_short_circuit() {
+        let src = "y = zeros(3) && x;\n";
+        let diags = node_diags(src);
+        assert!(has_id(&diags, "SHOCIRT"), "got: {diags:?}");
+    }
+
+    #[test]
+    fn shocirt_no_fire_on_scalar_lhs() {
+        let src = "y = a && b;\n";
+        let diags = node_diags(src);
+        assert!(!has_id(&diags, "SHOCIRT"), "got: {diags:?}");
+    }
+
+    #[test]
+    fn shocirf_fires_on_ones_short_circuit() {
+        let src = "y = ones(3) || x;\n";
+        let diags = node_diags(src);
+        assert!(has_id(&diags, "SHOCIRF"), "got: {diags:?}");
+    }
+
+    #[test]
+    fn shocirf_no_fire_on_scalar_lhs() {
+        let src = "y = a || b;\n";
+        let diags = node_diags(src);
+        assert!(!has_id(&diags, "SHOCIRF"), "got: {diags:?}");
+    }
+
+    // -- DEBUGFUN ------------------------------------------------------------
+
+    #[test]
+    fn debugfun_fires_on_keyboard_call() {
+        let src = "keyboard();\n";
+        let diags = node_diags(src);
+        assert!(has_id(&diags, "DEBUGFUN"), "got: {diags:?}");
+    }
+
+    #[test]
+    fn debugfun_fires_on_dbcont_call() {
+        let src = "dbcont();\n";
+        let diags = node_diags(src);
+        assert!(has_id(&diags, "DEBUGFUN"), "got: {diags:?}");
+    }
+
+    #[test]
+    fn debugfun_no_fire_on_regular_call() {
+        let src = "disp('hello');\n";
+        let diags = node_diags(src);
+        assert!(!has_id(&diags, "DEBUGFUN"), "got: {diags:?}");
+    }
+
+    // -- INCR / DECR ---------------------------------------------------------
+
+    #[test]
+    fn incr_fires_on_self_increment_in_loop() {
+        let src = "for i = 1:10\n    x = x + 1;\nend\n";
+        let diags = node_diags(src);
+        assert!(has_id(&diags, "INCR"), "got: {diags:?}");
+    }
+
+    #[test]
+    fn incr_no_fire_outside_loop() {
+        let src = "x = x + 1;\n";
+        let diags = node_diags(src);
+        assert!(!has_id(&diags, "INCR"), "got: {diags:?}");
+    }
+
+    #[test]
+    fn decr_fires_on_self_decrement_in_loop() {
+        let src = "while x > 0\n    x = x - 1;\nend\n";
+        let diags = node_diags(src);
+        assert!(has_id(&diags, "DECR"), "got: {diags:?}");
+    }
+
+    #[test]
+    fn decr_no_fire_outside_loop() {
+        let src = "x = x - 1;\n";
+        let diags = node_diags(src);
+        assert!(!has_id(&diags, "DECR"), "got: {diags:?}");
+    }
+
+    // -- CMDAND / CMDOR ------------------------------------------------------
+
+    #[test]
+    fn cmdand_fires_on_ampersand_in_condition() {
+        let src = "if (a & b)\n    x = 1;\nend\n";
+        let diags = node_diags(src);
+        assert!(has_id(&diags, "CMDAND"), "got: {diags:?}");
+    }
+
+    #[test]
+    fn cmdand_no_fire_on_short_circuit() {
+        let src = "if (a && b)\n    x = 1;\nend\n";
+        let diags = node_diags(src);
+        assert!(!has_id(&diags, "CMDAND"), "got: {diags:?}");
+    }
+
+    #[test]
+    fn cmdor_fires_on_pipe_in_condition() {
+        let src = "while (a | b)\n    x = 1;\nend\n";
+        let diags = node_diags(src);
+        assert!(has_id(&diags, "CMDOR"), "got: {diags:?}");
+    }
+
+    #[test]
+    fn cmdor_no_fire_on_short_circuit() {
+        let src = "while (a || b)\n    x = 1;\nend\n";
+        let diags = node_diags(src);
+        assert!(!has_id(&diags, "CMDOR"), "got: {diags:?}");
+    }
+
+    // -- FNAN / MNANC --------------------------------------------------------
+
+    #[test]
+    fn fnan_fires_on_eq_nan() {
+        let src = "y = x == NaN;\n";
+        let diags = node_diags(src);
+        assert!(has_id(&diags, "FNAN"), "got: {diags:?}");
+    }
+
+    #[test]
+    fn fnan_no_fire_on_number_comparison() {
+        let src = "y = x == 5;\n";
+        let diags = node_diags(src);
+        assert!(!has_id(&diags, "FNAN"), "got: {diags:?}");
+    }
+
+    #[test]
+    fn mnanc_fires_on_ne_nan() {
+        let src = "y = x ~= NaN;\n";
+        let diags = node_diags(src);
+        assert!(has_id(&diags, "MNANC"), "got: {diags:?}");
+    }
+
+    #[test]
+    fn mnanc_no_fire_on_number_comparison() {
+        let src = "y = x ~= 5;\n";
+        let diags = node_diags(src);
+        assert!(!has_id(&diags, "MNANC"), "got: {diags:?}");
+    }
+
+    // -- LOGEMP --------------------------------------------------------------
+
+    #[test]
+    fn logemp_fires_on_length_eq_zero() {
+        let src = "y = length(x) == 0;\n";
+        let diags = node_diags(src);
+        assert!(has_id(&diags, "LOGEMP"), "got: {diags:?}");
+    }
+
+    #[test]
+    fn logemp_no_fire_on_nonzero_length() {
+        let src = "y = length(x) > 0;\n";
+        let diags = node_diags(src);
+        assert!(!has_id(&diags, "LOGEMP"), "got: {diags:?}");
+    }
+
+    // -- DEFSIZE -------------------------------------------------------------
+
+    #[test]
+    fn defsize_fires_on_size_eq_matrix() {
+        let src = "y = size(x) == [1 2];\n";
+        let diags = node_diags(src);
+        assert!(has_id(&diags, "DEFSIZE"), "got: {diags:?}");
+    }
+
+    #[test]
+    fn defsize_no_fire_on_size_eq_scalar() {
+        let src = "y = size(x) == 1;\n";
+        let diags = node_diags(src);
+        assert!(!has_id(&diags, "DEFSIZE"), "got: {diags:?}");
+    }
+
+    // -- STCUL ---------------------------------------------------------------
+
+    #[test]
+    fn stcul_fires_on_same_case_args() {
+        let src = "strcmpi('abc', 'abc');\n";
+        let diags = node_diags(src);
+        assert!(has_id(&diags, "STCUL"), "got: {diags:?}");
+    }
+
+    #[test]
+    fn stcul_no_fire_on_different_case_args() {
+        let src = "strcmpi('abc', 'ABC');\n";
+        let diags = node_diags(src);
+        assert!(!has_id(&diags, "STCUL"), "got: {diags:?}");
+    }
+
+    // -- STRCMPCSTR ----------------------------------------------------------
+
+    #[test]
+    fn strcmpcstr_fires_on_single_char_arg() {
+        let src = "strcmp('a', 'b');\n";
+        let diags = node_diags(src);
+        assert!(has_id(&diags, "STRCMPCSTR"), "got: {diags:?}");
+    }
+
+    #[test]
+    fn strcmpcstr_no_fire_on_multi_char_args() {
+        let src = "strcmp('ab', 'cd');\n";
+        let diags = node_diags(src);
+        assert!(!has_id(&diags, "STRCMPCSTR"), "got: {diags:?}");
+    }
+
+    // -- FUNFUN --------------------------------------------------------------
+
+    #[test]
+    fn funfun_fires_on_string_function_arg() {
+        let src = "cellfun('isempty', x);\n";
+        let diags = node_diags(src);
+        assert!(has_id(&diags, "FUNFUN"), "got: {diags:?}");
+    }
+
+    #[test]
+    fn funfun_no_fire_on_handle_arg() {
+        let src = "cellfun(@isempty, x);\n";
+        let diags = node_diags(src);
+        assert!(!has_id(&diags, "FUNFUN"), "got: {diags:?}");
+    }
+
+    // -- ASSRT ---------------------------------------------------------------
+
+    #[test]
+    fn assrt_fires_on_constant_true_assert() {
+        let src = "assert(true);\n";
+        let diags = node_diags(src);
+        assert!(has_id(&diags, "ASSRT"), "got: {diags:?}");
+    }
+
+    #[test]
+    fn assrt_no_fire_on_real_condition() {
+        let src = "assert(x > 0);\n";
+        let diags = node_diags(src);
+        assert!(!has_id(&diags, "ASSRT"), "got: {diags:?}");
+    }
+
+    // -- BDSCA2 --------------------------------------------------------------
+
+    #[test]
+    fn bdsca2_fires_on_array_times_scalar() {
+        let src = "y = zeros(3) * 2;\n";
+        let diags = node_diags(src);
+        assert!(has_id(&diags, "BDSCA2"), "got: {diags:?}");
+    }
+
+    #[test]
+    fn bdsca2_no_fire_on_identifier_ops() {
+        let src = "y = a * b;\n";
+        let diags = node_diags(src);
+        assert!(!has_id(&diags, "BDSCA2"), "got: {diags:?}");
+    }
+
+    // -- MOCUP ---------------------------------------------------------------
+
+    #[test]
+    fn mocup_fires_on_unparenthesized_comparison() {
+        let src = "y = a & b | c;\n";
+        let diags = node_diags(src);
+        assert!(has_id(&diags, "MOCUP"), "got: {diags:?}");
+    }
+
+    #[test]
+    fn mocup_no_fire_without_mix() {
+        let src = "y = a + b * c;\n";
+        let diags = node_diags(src);
+        assert!(!has_id(&diags, "MOCUP"), "got: {diags:?}");
+    }
+
+    // -- MULCC ---------------------------------------------------------------
+
+    #[test]
+    fn mulcc_fires_on_duplicate_conditions() {
+        let src = "if (a && a)\n    x = 1;\nend\n";
+        let diags = node_diags(src);
+        assert!(has_id(&diags, "MULCC"), "got: {diags:?}");
+    }
+
+    #[test]
+    fn mulcc_no_fire_on_distinct_conditions() {
+        let src = "if (a && b)\n    x = 1;\nend\n";
+        let diags = node_diags(src);
+        assert!(!has_id(&diags, "MULCC"), "got: {diags:?}");
+    }
+
+    // -- IFBDUP --------------------------------------------------------------
+
+    #[test]
+    fn ifbdup_fires_on_duplicate_branch_bodies() {
+        let src = "\
+if x
+    a = 1;
+    b = 2;
+elseif y
+    a = 1;
+    b = 2;
+end
+";
+        let diags = file_diags(src);
+        assert!(has_id(&diags, "IFBDUP"), "got: {diags:?}");
+    }
+
+    #[test]
+    fn ifbdup_no_fire_on_distinct_branch_bodies() {
+        let src = "\
+if x
+    a = 1;
+elseif y
+    b = 2;
+end
+";
+        let diags = file_diags(src);
+        assert!(!has_id(&diags, "IFBDUP"), "got: {diags:?}");
+    }
+
+    // -- IFCDUP --------------------------------------------------------------
+
+    #[test]
+    fn ifcdup_fires_on_duplicate_conditions() {
+        let src = "\
+if x
+    a = 1;
+elseif x
+    b = 2;
+end
+";
+        let diags = file_diags(src);
+        assert!(has_id(&diags, "IFCDUP"), "got: {diags:?}");
+    }
+
+    #[test]
+    fn ifcdup_no_fire_on_distinct_conditions() {
+        let src = "\
+if x
+    a = 1;
+elseif y
+    b = 2;
+end
+";
+        let diags = file_diags(src);
+        assert!(!has_id(&diags, "IFCDUP"), "got: {diags:?}");
+    }
+
+    // -- LBODUP / MDUPC ------------------------------------------------------
+
+    #[test]
+    fn lbodup_and_mdupc_fire_on_duplicate_case_values() {
+        let src = "\
+switch x
+    case 1
+        a = 1;
+    case 1
+        b = 2;
+    otherwise
+        c = 3;
+end
+";
+        let diags = file_diags(src);
+        assert!(has_id(&diags, "LBODUP"), "got: {diags:?}");
+        assert!(has_id(&diags, "MDUPC"), "got: {diags:?}");
+    }
+
+    #[test]
+    fn lbodup_and_mdupc_no_fire_on_distinct_cases() {
+        let src = "\
+switch x
+    case 1
+        a = 1;
+    case 2
+        b = 2;
+    otherwise
+        c = 3;
+end
+";
+        let diags = file_diags(src);
+        assert!(!has_id(&diags, "LBODUP"), "got: {diags:?}");
+        assert!(!has_id(&diags, "MDUPC"), "got: {diags:?}");
+    }
+
+    // -- NOPRC ---------------------------------------------------------------
+
+    #[test]
+    fn noprc_fires_on_switch_without_otherwise() {
+        let src = "\
+switch x
+    case 1
+        a = 1;
+end
+";
+        let diags = file_diags(src);
+        assert!(has_id(&diags, "NOPRC"), "got: {diags:?}");
+    }
+
+    #[test]
+    fn noprc_no_fire_with_otherwise() {
+        let src = "\
+switch x
+    case 1
+        a = 1;
+    otherwise
+        b = 2;
+end
+";
+        let diags = file_diags(src);
+        assert!(!has_id(&diags, "NOPRC"), "got: {diags:?}");
+    }
+
+    // -- MEXCEP --------------------------------------------------------------
+
+    #[test]
+    fn mexcep_fires_on_catch_without_identifier() {
+        let src = "\
+try
+    x = 1;
+catch
+end
+";
+        let diags = file_diags(src);
+        assert!(has_id(&diags, "MEXCEP"), "got: {diags:?}");
+    }
+
+    #[test]
+    fn mexcep_no_fire_on_catch_with_identifier() {
+        let src = "\
+try
+    x = 1;
+catch err
+    disp(err.message);
+end
+";
+        let diags = file_diags(src);
+        assert!(!has_id(&diags, "MEXCEP"), "got: {diags:?}");
+    }
+
+    // -- RHSFN ---------------------------------------------------------------
+
+    #[test]
+    fn rhsfn_fires_on_bare_function_reference() {
+        let src = "\
+function out = main()
+    h = helper;
+end
+function y = helper()
+    y = 1;
+end
+";
+        let diags = file_diags(src);
+        assert!(has_id(&diags, "RHSFN"), "got: {diags:?}");
+    }
+
+    #[test]
+    fn rhsfn_no_fire_on_function_call() {
+        let src = "\
+function out = main()
+    h = helper();
+end
+function y = helper()
+    y = 1;
+end
+";
+        let diags = file_diags(src);
+        assert!(!has_id(&diags, "RHSFN"), "got: {diags:?}");
+    }
+
+    // -- VARARG --------------------------------------------------------------
+    //
+    // Note: the reachability check computes `has_varargin` from the entire
+    // function text (`func_text.contains("varargin")`), which includes the
+    // body. Any in-body use of `varargin` therefore makes the function appear
+    // to declare it, so VARARG can never fire under the current implementation.
+
+    #[test]
+    fn vararg_no_fire_on_declared_varargin() {
+        let src = "\
+function f(varargin)
+    x = varargin{1};
+end
+";
+        let diags = file_diags(src);
+        assert!(!has_id(&diags, "VARARG"), "got: {diags:?}");
+    }
+
+    // -- PFUIXE --------------------------------------------------------------
+
+    #[test]
+    fn pfuixe_fires_on_eval_with_loop_var() {
+        let src = "\
+parfor i = 1:10
+    eval(sprintf('x%d', i));
+end
+";
+        let diags = file_diags(src);
+        assert!(has_id(&diags, "PFUIXE"), "got: {diags:?}");
+    }
+
+    #[test]
+    fn pfuixe_no_fire_outside_parfor() {
+        let src = "eval(sprintf('x%d', i));\n";
+        let diags = file_diags(src);
+        assert!(!has_id(&diags, "PFUIXE"), "got: {diags:?}");
+    }
+
+    // -- PFBFN ---------------------------------------------------------------
+
+    #[test]
+    fn pfbfn_fires_on_save_in_parfor() {
+        let src = "\
+parfor i = 1:10
+    save('data.mat');
+end
+";
+        let diags = file_diags(src);
+        assert!(has_id(&diags, "PFBFN"), "got: {diags:?}");
+    }
+
+    #[test]
+    fn pfbfn_no_fire_outside_parfor() {
+        let src = "save('data.mat');\n";
+        let diags = file_diags(src);
+        assert!(!has_id(&diags, "PFBFN"), "got: {diags:?}");
+    }
+
+    // -- PFWHOS --------------------------------------------------------------
+
+    #[test]
+    fn pfwhos_fires_on_who_in_parfor() {
+        let src = "\
+parfor i = 1:10
+    who('x');
+end
+";
+        let diags = file_diags(src);
+        assert!(has_id(&diags, "PFWHOS"), "got: {diags:?}");
+    }
+
+    #[test]
+    fn pfwhos_no_fire_outside_parfor() {
+        let src = "who('x');\n";
+        let diags = file_diags(src);
+        assert!(!has_id(&diags, "PFWHOS"), "got: {diags:?}");
+    }
+
+    // -- PFTUSE --------------------------------------------------------------
+
+    #[test]
+    fn pftuse_fires_on_self_use_non_reduction() {
+        let src = "\
+parfor i = 1:10
+    x = x(i);
+end
+";
+        let diags = file_diags(src);
+        assert!(has_id(&diags, "PFTUSE"), "got: {diags:?}");
+    }
+
+    #[test]
+    fn pftuse_no_fire_outside_parfor() {
+        let src = "x = x(i);\n";
+        let diags = file_diags(src);
+        assert!(!has_id(&diags, "PFTUSE"), "got: {diags:?}");
+    }
+
+    // -- PFRNC ---------------------------------------------------------------
+
+    #[test]
+    fn pfrnc_fires_on_mixed_reduction_operators() {
+        let src = "\
+parfor i = 1:10
+    x = x + x * 2;
+end
+";
+        let diags = file_diags(src);
+        assert!(has_id(&diags, "PFRNC"), "got: {diags:?}");
+    }
+
+    #[test]
+    fn pfrnc_no_fire_on_single_reduction_operator() {
+        let src = "\
+parfor i = 1:10
+    x = x + 2;
+end
+";
+        let diags = file_diags(src);
+        assert!(!has_id(&diags, "PFRNC"), "got: {diags:?}");
+    }
+
+    // -- FWPARF --------------------------------------------------------------
+
+    #[test]
+    fn fwparf_fires_on_simple_for_loop() {
+        let src = "\
+for i = 1:10
+    x(i) = i;
+end
+";
+        let diags = file_diags(src);
+        assert!(has_id(&diags, "FWPARF"), "got: {diags:?}");
+    }
+
+    #[test]
+    fn fwparf_no_fire_on_loop_with_break() {
+        let src = "\
+for i = 1:10
+    if i > 5
+        break;
+    end
+    x(i) = i;
+end
+";
+        let diags = file_diags(src);
+        assert!(!has_id(&diags, "FWPARF"), "got: {diags:?}");
+    }
+
+    // -- PFTRIV --------------------------------------------------------------
+
+    #[test]
+    fn pftriv_fires_on_trivial_parfor() {
+        let src = "\
+parfor i = 1:10
+    x(i) = i;
+end
+";
+        let diags = file_diags(src);
+        assert!(has_id(&diags, "PFTRIV"), "got: {diags:?}");
+    }
+
+    #[test]
+    fn pftriv_no_fire_on_non_trivial_parfor() {
+        let src = "\
+parfor i = 1:10
+    x(i) = i;
+    y(i) = i;
+end
+";
+        let diags = file_diags(src);
+        assert!(!has_id(&diags, "PFTRIV"), "got: {diags:?}");
+    }
+
+    /// Ensure representative test sources parse without syntax errors.
+    #[test]
+    fn test_sources_parse() {
+        let sources = [
+            "y = zeros(3) && x;\n",
+            "y = size(x) == [1 2];\n",
+            "assert(true);\n",
+            "cellfun('isempty', x);\n",
+            "try\n    x = 1;\ncatch\nend\n",
+            "parfor i = 1:10\n    eval(sprintf('x%d', i));\nend\n",
+        ];
+        for src in sources {
+            let tree = parse(src);
+            assert!(!tree.root_node().has_error(), "parse error for: {src:?}");
+        }
+    }
+}

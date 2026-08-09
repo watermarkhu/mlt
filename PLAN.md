@@ -10,6 +10,103 @@ parity with MATLAB's Code Analyzer (~2,680 checks).
 - Custom checks (25) use a single engine with per-check thresholds.
 - Rules auto-register via the `inventory` crate — no manual `lib.rs` arrays.
 - Category-level config is supported (`[lint.categories]` in `.mlt.toml`).
+- Changes land via **stacked pull requests** (see below).
+- Rule context (description, severity, examples) for every check MUST be looked up on the
+  official MATLAB Code Analyzer check index:
+  `https://www.mathworks.com/help/matlab/matlab_env/index-of-code-analyzer-checks.html`.
+  MathWorks blocks plain HTTP/webfetch with HTTP 403, so the page is read with the
+  **Playwright MCP browser** (`playwright_browser_navigate` → `playwright_browser_find` →
+  `playwright_browser_snapshot`). A local archive of the page also exists at
+  `~/.local/share/opencode/tool-output/tool_fe291ac62001Qy9pI2rEjqHVAK` as fallback.
+- Each new rule is implemented via the **rule-pipeline** (see
+  `.opencode/skill/rule-pipeline/`): planning happens in the main session (it owns the
+  single Playwright MCP instance), then each rule is reviewed and implemented via
+  independent parallel **Reviewer → Implementer** subagent flows (`.opencode/agent/`).
+  Subagents never use Playwright; rule context is passed to them as plan text.
+
+---
+
+## Development Workflow: Stacked Pull Requests
+
+This repository uses **stacked pull requests** to land changes as a chain of
+small, independently reviewable PRs instead of one large PR. Each PR targets
+the branch of the PR below it, forming an ordered stack that lands on `feat`.
+
+See the [GitHub stacked PRs quickstart](https://docs.github.com/en/pull-requests/get-started/stacked-prs-quickstart)
+for the official guide.
+
+### Setup (once per machine)
+
+```bash
+gh extension install github/gh-stack
+gh auth login
+```
+
+Requires `gh` ≥ 2.90 and Git ≥ 2.20.
+
+### Daily flow
+
+1. **Start a stack** from the trunk (`feat`):
+
+   ```bash
+   gh stack init --base feat        # prompts for the first branch name
+   ```
+
+   To turn existing branches into a stack, list them in dependency order:
+
+   ```bash
+   gh stack init --base feat feature/foo feature/bar feature/baz
+   ```
+
+2. **Work and commit** on the current branch:
+
+   ```bash
+   # ... write code ...
+   git add .
+   git commit -m "helpful message"
+   ```
+
+3. **Add the next logical unit** on top of the stack:
+
+   ```bash
+   gh stack add BRANCH-NAME
+   # ... write code ...
+   git add .
+   git commit -m "next unit"
+   ```
+
+   Or stage, commit, and branch in one step:
+
+   ```bash
+   gh stack add -Am "next unit"
+   ```
+
+4. **Push and submit** the PRs (each PR is auto-linked to its base branch):
+
+   ```bash
+   gh stack push
+   gh stack submit
+   ```
+
+5. **Inspect the stack** at any time:
+
+   ```bash
+   gh stack view
+   ```
+
+### Conventions
+
+- **Trunk:** `feat` is this repo's integration branch; the bottom PR of every
+  stack targets it.
+- **One logical unit per branch.** Split work so each branch is independently
+  reviewable — e.g., one branch for clippy cleanups, the next for a rule
+  engine plus its tests, and docs/plan updates on top.
+- **Keep stacks shallow** (2–4 branches). Deep stacks are hard to review and
+  prone to merge conflicts.
+- **Review and merge bottom-up.** Each PR's diff shrinks as its dependencies
+  land, keeping downstream PRs small.
+- **Sync with trunk** before merging: rebase the bottom branch onto `feat`,
+  then each branch onto its parent.
 
 ---
 
@@ -48,19 +145,19 @@ parity with MATLAB's Code Analyzer (~2,680 checks).
 
 | # | Category | Count | Severity | Notes |
 |---|----------|-------|----------|-------|
-| 1 | Incomplete Analysis | 17 | Error | All `can_be_disabled = false`; linter-internal limits |
-| 2 | Syntax Errors | 50 | Error | Parser-adjacent validation |
-| 3 | Language Specification Errors | 157 | Error | OOP, parfor, spmd, argument validation |
+| 1 | Incomplete Analysis | 17 | Error | **17/17 done** — Wave A completed QUIT, NOFIL, RDERR; all `can_be_disabled = false`; linter-internal limits |
+| 2 | Syntax Errors | 50 | Error | **50/50 done** — Wave B completed 30 checks (BADCT, BADFP, BADHBH, BADHBB, BADHBHT, BADHBBT, HEXTOOLONG, BINARYTOOLONG, DOUQT, STRIN, INBLK, RESWD, UNSET, LHROW, NOPAR2, EOLPAR, ENDCT2, ENDCT3, ENDCT4, MCPLD, SBTMP, BADNOT, BADNOTLHS, ENDPAR, VTPOD, SYNEND, FVACI, FVACS, FVAMI, FVSYN) |
+| 3 | Language Specification Errors | 157 | Error | **145/157 done** — Wave C completed 108 checks (parfor/spmd 28, class/method 26, function validation 38, other 16) |
 | 4 | Bugs | 35 | Error | Suspicious patterns, logic errors |
 | 5 | Custom Checks | 25 | Warning | **Done** — complexity/style metrics |
 | 6 | Naming Checks | 81 | Info | **Done** — 9 entities × 9 check types |
 | 7 | Compatibility Considerations | 891 | Error/Warning | **Partial** — 275 of 891 populated in data file |
 | 8 | Forward Compatibility | 7 | Error/Warning | In data file as generic (not matchable yet) |
-| 9 | Good Practices | 106 | Warning | Not started |
+| 9 | Good Practices | 106 | Warning | **81/106 done** — Wave D completed 39 checks (OOP 12, parfor/spmd 11, logical 3, function-call 6, structure/string 7); 24 deferred (type/flow-analysis dependent) |
 | 10 | Unset Variables | 6 | Warning | Needs symbol table |
 | 11 | Unused Constructions | 17 | Warning/Info | Needs symbol table + control flow |
 | 12 | Suggested Improvements | 243 | Info | Data-driven (function replacement suggestions) |
-| 13 | Readability Improvements | 35 | Info | Pattern matching on AST |
+| 13 | Readability Improvements | 35 | Info | **35/35 done** — Wave A completed COMNL, STLOW, FLUDLR, MFAMB, FVINR |
 | 14 | Formatting Suggestions | 8 | Info | **Partial** — NOSEMI done; 7 remaining |
 | 15 | Performance Improvements | 41 | Info | Pattern matching on AST |
 | 16 | MATLAB for Code Generation | 19 | Error | Specialized |

@@ -243,3 +243,160 @@ inventory::submit!(crate::RuleRegistration::new(
     "COMPAT",
     CompatibilityEngine::from_config
 ));
+
+// ---------------------------------------------------------------------------
+// Tests
+// ---------------------------------------------------------------------------
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::test_util::{has_id, lint_nodes};
+    use mlt_core::Config;
+
+    fn engine() -> Box<dyn Rule> {
+        CompatibilityEngine::from_config(&Config::default())
+    }
+
+    /// Assert that calling `name` (function-call form) emits a diagnostic with
+    /// the expected check ID and nothing else.
+    fn assert_call_fires(name: &str, expected_id: &str) {
+        let source = format!("{name}(x);\n");
+        let diags = lint_nodes(&*engine(), &source);
+        assert!(
+            has_id(&diags, expected_id),
+            "expected {expected_id} for `{name}(x)`; got: {diags:?}"
+        );
+        assert!(
+            !has_id(&diags, "COMPAT"),
+            "diagnostic should carry the specific check ID, not COMPAT; got: {diags:?}"
+        );
+    }
+
+    /// Assert that `name` in command form (`name arg`) emits the expected ID.
+    fn assert_command_fires(name: &str, expected_id: &str) {
+        let source = format!("{name} arg\n");
+        let diags = lint_nodes(&*engine(), &source);
+        assert!(
+            has_id(&diags, expected_id),
+            "expected {expected_id} for `{name} arg`; got: {diags:?}"
+        );
+        assert!(
+            !has_id(&diags, "COMPAT"),
+            "diagnostic should carry the specific check ID, not COMPAT; got: {diags:?}"
+        );
+    }
+
+    // -- function_call form: deprecated signal-processing names ---------------
+
+    #[test]
+    fn psd_fires_dpsd() {
+        assert_call_fires("psd", "DPSD");
+    }
+
+    #[test]
+    fn inline_fires_dinln() {
+        assert_call_fires("inline", "DINLN");
+    }
+
+    #[test]
+    fn fcnchk_fires_dfcnchk() {
+        assert_call_fires("fcnchk", "DFCNCHK");
+    }
+
+    #[test]
+    fn matlabpool_fires_matpool() {
+        assert_call_fires("matlabpool", "MATPOOL");
+    }
+
+    #[test]
+    fn treedisp_fires_treedisp() {
+        assert_call_fires("treedisp", "TREEDISP");
+    }
+
+    #[test]
+    fn treefit_fires_treefit() {
+        assert_call_fires("treefit", "TREEFIT");
+    }
+
+    #[test]
+    fn bitmax_fires_dbitmax() {
+        assert_call_fires("bitmax", "DBITMAX");
+    }
+
+    #[test]
+    fn colordef_fires_colordef() {
+        assert_call_fires("colordef", "COLORDEF");
+    }
+
+    #[test]
+    fn whitebg_fires_whitebg() {
+        assert_call_fires("whitebg", "WHITEBG");
+    }
+
+    #[test]
+    fn textread_fires_dtextread() {
+        assert_call_fires("textread", "DTEXTREAD");
+    }
+
+    // -- command form --------------------------------------------------------
+
+    #[test]
+    fn command_form_matlabpool_fires_matpool() {
+        assert_command_fires("matlabpool", "MATPOOL");
+    }
+
+    #[test]
+    fn command_form_whitebg_fires_whitebg() {
+        assert_command_fires("whitebg", "WHITEBG");
+    }
+
+    #[test]
+    fn command_form_colordef_fires_colordef() {
+        assert_command_fires("colordef", "COLORDEF");
+    }
+
+    #[test]
+    fn command_form_mupad_fires_mupad() {
+        assert_command_fires("mupad", "MUPAD");
+    }
+
+    // -- negative tests: modern replacements do not fire ---------------------
+
+    #[test]
+    fn modern_periodogram_not_flagged() {
+        let diags = lint_nodes(&*engine(), "periodogram(x);\n");
+        assert!(!has_id(&diags, "DPSD"), "got: {diags:?}");
+        assert!(diags.is_empty(), "got: {diags:?}");
+    }
+
+    #[test]
+    fn modern_strcmp_not_flagged() {
+        let diags = lint_nodes(&*engine(), "strcmp('a', 'b');\n");
+        assert!(diags.is_empty(), "got: {diags:?}");
+    }
+
+    #[test]
+    fn modern_plot_not_flagged() {
+        let diags = lint_nodes(&*engine(), "plot(x, y);\n");
+        assert!(diags.is_empty(), "got: {diags:?}");
+    }
+
+    #[test]
+    fn modern_fitctree_not_flagged() {
+        let diags = lint_nodes(&*engine(), "fitctree(x, y);\n");
+        assert!(!has_id(&diags, "TREEFIT"), "got: {diags:?}");
+    }
+
+    #[test]
+    fn modern_command_disp_not_flagged() {
+        let diags = lint_nodes(&*engine(), "disp hello\n");
+        assert!(diags.is_empty(), "got: {diags:?}");
+    }
+
+    #[test]
+    fn deprecated_name_as_variable_not_flagged() {
+        let diags = lint_nodes(&*engine(), "psd = 5;\n");
+        assert!(!has_id(&diags, "DPSD"), "got: {diags:?}");
+    }
+}

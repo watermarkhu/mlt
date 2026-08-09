@@ -8,7 +8,7 @@
 //!
 //! ## Checks
 //!
-//! This engine covers 35 readability checks across these patterns:
+//! This engine covers 36 readability checks across these patterns:
 //!
 //! - **Type checking simplification** (ISCHR, ISSTR, ISLOG, ISCEL, ISMAT):
 //!   prefer `ischar`, `isstring`, etc. over `isa(x, 'type')`.
@@ -17,20 +17,25 @@
 //! - **Variable shadowing** (IJCL): `i`/`j` as assignment LHS shadows the
 //!   complex unit.
 //! - **Unnecessary brackets** (NBRAK2): `[x]` where `x` is a scalar.
-//! - **String comparisons** (STREMP, STRCL1, STRCLFH, STRIFCND): prefer
-//!   modern string functions.
+//! - **String comparisons** (STREMP, STRCL1, STRCLFH, STRIFCND, STLOW):
+//!   prefer modern string functions; flag unnecessary UPPER/LOWER calls.
 //! - **Character literals** (CHARTEN): use `newline` instead of `char(10)`.
 //! - **Formatting** (SPRINTFN): use `num2str` over simple `sprintf`.
 //! - **Control flow style** (ASGSL): avoid inline assignment in conditions.
 //! - **Error/warning style** (SPERR, SPWRN): prefer message IDs.
 //! - **Input validation** (NCHKE): prefer `narginchk`/`nargoutchk`.
 //! - **Output style** (DSPSP, DSPSY): prefer `fprintf`/`disp` over wrappers.
-//! - **Path construction** (FLUDLR): prefer `fullfile`.
+//! - **Flip/rotate** (FLUDLR): prefer `rot90(x, 2)` over `flipud(fliplr(x))` /
+//!   `fliplr(flipud(x))`.
 //! - **Redundant arithmetic** (RPMT1, RPMT0, RPMTI, RPMTN): simplify trivial
 //!   multiplication/addition.
 //! - **Redundant logic** (RPMTT, RPMTF): simplify boolean tautologies.
 //! - **Size helpers** (PSIZE): prefer `numel` over `prod(size(x))`.
 //! - **Logical helpers** (LOGSUM, LOGL): prefer `any`/logical indexing.
+//! - **Arguments attribute** (FVINR): add an `(Input)` attribute to `arguments`
+//!   blocks that have no attribute for readability.
+//! - **Ambiguous identifiers** (MFAMB): flag identifiers used as function
+//!   calls that are also defined as variables.
 //!
 //! ## Configuration
 //!
@@ -40,8 +45,10 @@
 //! disabled_checks = ["IJCL", "NBRAK2"]
 //! ```
 
-use mlt_core::{Category, Config, Diagnostic, Fix, NodeContext, Rule, Severity};
+use mlt_core::{Category, Config, Diagnostic, FileContext, Fix, NodeContext, Rule, Severity};
 use serde::Deserialize;
+
+use crate::analysis::symbols::{DefKind, SymbolTable};
 
 // ---------------------------------------------------------------------------
 // Rule-specific configuration
@@ -84,13 +91,20 @@ const TARGET_NODES: &[&str] = &[
     "binary_operator",
     "assignment",
     "matrix",
+    "arguments_statement",
+];
+
+/// Built-in function names that are always treated as functions, never as
+/// ambiguous variable-or-function callees.
+const BUILTIN_DENYLIST: &[&str] = &[
+    "length", "size", "numel", "abs", "sum", "max", "min", "mean",
 ];
 
 // ---------------------------------------------------------------------------
 // Rule implementation
 // ---------------------------------------------------------------------------
 
-/// The readability engine — a single rule instance that checks 35 readability
+/// The readability engine — a single rule instance that checks 36 readability
 /// improvement patterns via dispatched per-check logic.
 ///
 /// Registered once with inventory. Each emitted diagnostic carries the specific
@@ -111,6 +125,21 @@ impl ReadabilityEngine {
     /// Check whether a specific sub-check is enabled.
     fn is_check_enabled(&self, check_id: &str) -> bool {
         !self.config.disabled_checks.iter().any(|d| d == check_id)
+    }
+
+    /// Run the file-level MFAMB check: flag bare-identifier callees that are
+    /// also defined as variables in scope.
+    fn check_mfamb(
+        &self,
+        tree: &tree_sitter::Tree,
+        source: &str,
+        results: &mut Vec<Diagnostic>,
+    ) {
+        if !self.is_check_enabled("MFAMB") {
+            return;
+        }
+        let table = SymbolTable::build(tree, source);
+        walk_for_mfamb(tree.root_node(), source, &table, results);
     }
 
     /// Emit a diagnostic for a given node with the specified check ID.
@@ -166,6 +195,7 @@ impl ReadabilityEngine {
             "prod" => self.check_prod_size(node, source, results),
             "sum" => self.check_sum_logical(node, source, results),
             "find" => self.check_find_logical(node, source, results),
+            "flipud" | "fliplr" => self.check_fludlr(node, source, func_name, results),
             _ => {}
         }
     }
@@ -234,6 +264,9 @@ impl ReadabilityEngine {
 
         // NBRAK2: unnecessary brackets [x] for scalar
         self.check_unnecessary_brackets(node, source, results);
+
+        // COMNL: newline after comma acts as a row separator
+        self.check_comnl(node, source, results);
     }
 
     // -----------------------------------------------------------------------
@@ -247,7 +280,7 @@ impl ReadabilityEngine {
         source: &str,
         results: &mut Vec<Diagnostic>,
     ) {
-        let args = match node.child_by_field_name("arguments") {
+        let args = match find_arguments(node) {
             Some(a) => a,
             None => return,
         };
@@ -296,7 +329,7 @@ impl ReadabilityEngine {
         ctx: &NodeContext,
         results: &mut Vec<Diagnostic>,
     ) {
-        let args = match node.child_by_field_name("arguments") {
+        let args = match find_arguments(node) {
             Some(a) => a,
             None => return,
         };
@@ -335,6 +368,72 @@ impl ReadabilityEngine {
                 node,
                 None,
             ));
+        }
+
+        // STLOW: unnecessary UPPER/LOWER call in a comparison
+        self.check_stlow(&named_children, source, results);
+    }
+
+    /// STLOW: `strcmp(upper(x), 'ABC')` — the UPPER/LOWER call is unnecessary
+    /// when the compared literal is already entirely in that case.
+    fn check_stlow(
+        &self,
+        named_children: &[tree_sitter::Node],
+        source: &str,
+        results: &mut Vec<Diagnostic>,
+    ) {
+        if !self.is_check_enabled("STLOW") {
+            return;
+        }
+
+        for i in 0..2 {
+            let arg = named_children[i];
+            if arg.kind() != "function_call" {
+                continue;
+            }
+
+            let func_name = match arg.child_by_field_name("name") {
+                Some(n) => &source[n.start_byte()..n.end_byte()],
+                None => continue,
+            };
+
+            let uppercase = match func_name {
+                "upper" => true,
+                "lower" => false,
+                _ => continue,
+            };
+
+            let inner_args = match find_arguments(arg) {
+                Some(a) => a,
+                None => continue,
+            };
+            if inner_args.named_child_count() != 1 {
+                continue;
+            }
+            let target = match inner_args.named_child(0) {
+                Some(c) => c,
+                None => continue,
+            };
+            let target_text = &source[target.start_byte()..target.end_byte()];
+
+            let other = named_children[1 - i];
+            if other.kind() != "string" {
+                continue;
+            }
+            let other_text = &source[other.start_byte()..other.end_byte()];
+            let literal = other_text.trim_matches('\'').trim_matches('"');
+
+            if is_all_case(literal, uppercase) {
+                results.push(self.diag(
+                    "STLOW",
+                    "In this comparison the call to UPPER/LOWER is unnecessary.",
+                    arg,
+                    Some(Fix::new(
+                        arg.start_byte()..arg.end_byte(),
+                        target_text.to_string(),
+                    )),
+                ));
+            }
         }
     }
 
@@ -389,7 +488,7 @@ impl ReadabilityEngine {
             return;
         }
 
-        let args = match node.child_by_field_name("arguments") {
+        let args = match find_arguments(node) {
             Some(a) => a,
             None => return,
         };
@@ -424,7 +523,7 @@ impl ReadabilityEngine {
             return;
         }
 
-        let args = match node.child_by_field_name("arguments") {
+        let args = match find_arguments(node) {
             Some(a) => a,
             None => return,
         };
@@ -472,7 +571,7 @@ impl ReadabilityEngine {
             return;
         }
 
-        let args = match node.child_by_field_name("arguments") {
+        let args = match find_arguments(node) {
             Some(a) => a,
             None => return,
         };
@@ -541,7 +640,7 @@ impl ReadabilityEngine {
             return;
         }
 
-        let args = match node.child_by_field_name("arguments") {
+        let args = match find_arguments(node) {
             Some(a) => a,
             None => return,
         };
@@ -560,7 +659,7 @@ impl ReadabilityEngine {
                 let inner_func = &source[inner_name.start_byte()..inner_name.end_byte()];
                 if inner_func == "sprintf" {
                     // Extract sprintf arguments to construct fprintf replacement
-                    if let Some(inner_args) = inner.child_by_field_name("arguments") {
+                    if let Some(inner_args) = find_arguments(inner) {
                         let inner_args_text =
                             &source[inner_args.start_byte()..inner_args.end_byte()];
                         results.push(self.diag(
@@ -607,7 +706,7 @@ impl ReadabilityEngine {
             return;
         }
 
-        let args = match node.child_by_field_name("arguments") {
+        let args = match find_arguments(node) {
             Some(a) => a,
             None => return,
         };
@@ -626,7 +725,7 @@ impl ReadabilityEngine {
                 let inner_func = &source[inner_name.start_byte()..inner_name.end_byte()];
                 if inner_func == "size" {
                     // Extract the variable passed to size
-                    if let Some(inner_args) = inner.child_by_field_name("arguments") {
+                    if let Some(inner_args) = find_arguments(inner) {
                         let inner_named: Vec<_> = (0..inner_args.named_child_count())
                             .filter_map(|i| inner_args.named_child(i))
                             .collect();
@@ -710,6 +809,81 @@ impl ReadabilityEngine {
         }
     }
 
+    /// FLUDLR: `flipud(fliplr(x))` / `fliplr(flipud(x))` → `rot90(x, 2)`
+    ///
+    /// Flipping both vertically and horizontally is a 180-degree rotation,
+    /// which reads more clearly as `rot90(x, 2)`.
+    fn check_fludlr(
+        &self,
+        node: tree_sitter::Node,
+        source: &str,
+        func_name: &str,
+        results: &mut Vec<Diagnostic>,
+    ) {
+        if !self.is_check_enabled("FLUDLR") {
+            return;
+        }
+
+        let args = match find_arguments(node) {
+            Some(a) => a,
+            None => return,
+        };
+
+        let named_children: Vec<_> = (0..args.named_child_count())
+            .filter_map(|i| args.named_child(i))
+            .collect();
+
+        // Outer call must have exactly one argument: the nested flip call
+        if named_children.len() != 1 {
+            return;
+        }
+
+        let inner = named_children[0];
+        if inner.kind() != "function_call" {
+            return;
+        }
+
+        let inner_name = match inner.child_by_field_name("name") {
+            Some(n) => &source[n.start_byte()..n.end_byte()],
+            None => return,
+        };
+
+        // Match the exact flipud/fliplr pair, each with exactly one argument
+        let is_pair = match func_name {
+            "flipud" => inner_name == "fliplr",
+            "fliplr" => inner_name == "flipud",
+            _ => false,
+        };
+        if !is_pair {
+            return;
+        }
+
+        let inner_args = match find_arguments(inner) {
+            Some(a) => a,
+            None => return,
+        };
+
+        let inner_named: Vec<_> = (0..inner_args.named_child_count())
+            .filter_map(|i| inner_args.named_child(i))
+            .collect();
+
+        if inner_named.len() != 1 {
+            return;
+        }
+
+        let inner_arg_text = &source[inner_named[0].start_byte()..inner_named[0].end_byte()];
+
+        results.push(self.diag(
+            "FLUDLR",
+            "Use 'rot90(x, 2)' instead of 'flipud(fliplr(x))' or 'fliplr(flipud(x))'",
+            node,
+            Some(Fix::new(
+                node.start_byte()..node.end_byte(),
+                format!("rot90({inner_arg_text}, 2)"),
+            )),
+        ));
+    }
+
     /// ISROW / ISCOL: `size(x, dim) == 1` patterns
     fn check_size_comparison(
         &self,
@@ -763,7 +937,7 @@ impl ReadabilityEngine {
         }
 
         // Extract the dimension argument from size(x, dim)
-        let args = match size_node.child_by_field_name("arguments") {
+        let args = match find_arguments(size_node) {
             Some(a) => a,
             None => return,
         };
@@ -924,6 +1098,54 @@ impl ReadabilityEngine {
                         )),
                     ));
                 }
+            }
+        }
+    }
+
+    /// COMNL: A newline following a comma in a matrix acts as a row
+    /// separator; suggest replacing the comma with a semicolon or using an
+    /// ellipsis to continue the row.
+    fn check_comnl(
+        &self,
+        node: tree_sitter::Node,
+        source: &str,
+        results: &mut Vec<Diagnostic>,
+    ) {
+        if !self.is_check_enabled("COMNL") {
+            return;
+        }
+
+        // Collect `row` children in source order using children() + kind
+        // filter (NOT named_children): `line_continuation`/`...` is a NAMED
+        // extra and would leak into named_children().
+        let rows: Vec<tree_sitter::Node> = node
+            .children(&mut node.walk())
+            .filter(|c| c.kind() == "row")
+            .collect();
+
+        for i in 0..rows.len().saturating_sub(1) {
+            let row = rows[i];
+            let next_row = rows[i + 1];
+
+            let Some(comma) = find_trailing_comma(row) else { continue };
+
+            // Source gap between this row and the next row.
+            let gap = &source[row.end_byte()..next_row.start_byte()];
+
+            // Fire ONLY when a NEWLINE acts as the row separator:
+            //   - gap contains '\n' (row separator is a newline), AND
+            //   - gap does NOT contain ';' (semicolon is explicit row
+            //     separator; replacing the comma would create a broken `;;`),
+            //   AND
+            //   - gap does NOT contain '...' (ellipsis escapes the newline).
+            if gap.contains('\n') && !gap.contains(';') && !gap.contains("...") {
+                let range = comma.start_byte()..comma.end_byte();
+                results.push(self.diag(
+                    "COMNL",
+                    "Newline following comma acts as a row separator. Replace the comma with a semicolon to make the row separation clearer. Alternatively, use an ellipsis (...) to continue the current row on the next line.",
+                    comma,
+                    Some(Fix::new(range, ";")),
+                ));
             }
         }
     }
@@ -1090,6 +1312,39 @@ impl ReadabilityEngine {
             _ => {}
         }
     }
+
+    /// FVINR: Add `(Input)` attribute to `arguments` block for readability.
+    fn check_fvinr(&self, ctx: &NodeContext, results: &mut Vec<Diagnostic>) {
+        if !self.is_check_enabled("FVINR") {
+            return;
+        }
+        let node = ctx.node;
+
+        // If any `attributes` child exists, the block already has (Input) or (Output).
+        let has_attributes = node
+            .named_children(&mut node.walk())
+            .any(|c| c.kind() == "attributes");
+        if has_attributes {
+            return;
+        }
+
+        // The `arguments` keyword is the first (unnamed) child.
+        let arguments_keyword = match node.child(0) {
+            Some(c) if c.kind() == "arguments" => c,
+            _ => return,
+        };
+
+        // CRITICAL: fix text is " (Input)" — LEADING space, no trailing space.
+        // The keyword is immediately followed by a newline, so inserting a
+        // trailing space would produce `arguments(Input)` (invalid).
+        let fix = Fix::insert(arguments_keyword.end_byte(), " (Input)");
+        results.push(self.diag(
+            "FVINR",
+            "For readability, add Input attribute to the input arguments block.",
+            arguments_keyword,
+            Some(fix),
+        ));
+    }
 }
 
 // ---------------------------------------------------------------------------
@@ -1117,6 +1372,16 @@ impl Rule for ReadabilityEngine {
         TARGET_NODES
     }
 
+    fn has_file_check(&self) -> bool {
+        true
+    }
+
+    fn check_file(&self, ctx: &FileContext) -> Vec<Diagnostic> {
+        let mut results = Vec::new();
+        self.check_mfamb(ctx.tree, ctx.source, &mut results);
+        results
+    }
+
     fn check(&self, ctx: &NodeContext) -> Vec<Diagnostic> {
         let mut results = Vec::new();
 
@@ -1127,6 +1392,7 @@ impl Rule for ReadabilityEngine {
             "assignment" => self.check_assignment(ctx, &mut results),
             "binary_operator" => self.check_binary_operator(ctx, &mut results),
             "matrix" => self.check_matrix(ctx, &mut results),
+            "arguments_statement" => self.check_fvinr(ctx, &mut results),
             // `identifier` nodes are handled via `assignment` LHS check (IJCL)
             // rather than standalone identifier dispatch, to avoid false
             // positives on identifier reads.
@@ -1141,9 +1407,34 @@ impl Rule for ReadabilityEngine {
 // Helpers
 // ---------------------------------------------------------------------------
 
+/// Find the `arguments` child of a `function_call` node.
+///
+/// In tree-sitter-matlab the call arguments are a child node of kind
+/// `arguments` rather than a named field, so `child_by_field_name("arguments")`
+/// never matches. This helper locates them by child kind instead.
+fn find_arguments(node: tree_sitter::Node) -> Option<tree_sitter::Node> {
+    node.named_children(&mut node.walk())
+        .find(|c| c.kind() == "arguments")
+}
+
 /// Check if a string literal represents an empty string (`''` or `""`).
 fn is_empty_string(s: &str) -> bool {
     s == "''" || s == "\"\""
+}
+
+/// Return true when `s` contains at least one alphabetic character and every
+/// alphabetic character is in the case requested by `uppercase`.
+fn is_all_case(s: &str, uppercase: bool) -> bool {
+    let mut has_alpha = false;
+    for c in s.chars() {
+        if c.is_alphabetic() {
+            has_alpha = true;
+            if c.is_lowercase() == uppercase {
+                return false;
+            }
+        }
+    }
+    has_alpha
 }
 
 /// Check if a node is inside an `if_statement` condition.
@@ -1182,6 +1473,109 @@ fn extract_operator_text<'a>(node: tree_sitter::Node<'a>, source: &'a str) -> &'
     ""
 }
 
+/// Find the trailing comma of a `row` node, skipping trailing `comment` and
+/// `line_continuation` children.
+///
+/// The comma token is unnamed, so all children (not just named children) must
+/// be inspected. Returns `None` when the row does not end in a comma.
+fn find_trailing_comma(row: tree_sitter::Node) -> Option<tree_sitter::Node> {
+    for j in (0..row.child_count()).rev() {
+        let child = row.child(j)?;
+        match child.kind() {
+            "comment" | "line_continuation" => continue,
+            "," => return Some(child),
+            _ => return None,
+        }
+    }
+    None
+}
+
+// ---------------------------------------------------------------------------
+// MFAMB helpers
+// ---------------------------------------------------------------------------
+
+/// Recursively walk the tree looking for `function_call` nodes.
+fn walk_for_mfamb(
+    node: tree_sitter::Node,
+    source: &str,
+    table: &SymbolTable,
+    results: &mut Vec<Diagnostic>,
+) {
+    if node.kind() == "function_call" {
+        check_one_mfamb(node, source, table, results);
+    }
+    let mut cursor = node.walk();
+    for child in node.children(&mut cursor) {
+        walk_for_mfamb(child, source, table, results);
+    }
+}
+
+/// MFAMB: flag a `function_call` whose bare-identifier callee is also a
+/// defined variable in scope.
+fn check_one_mfamb(
+    node: tree_sitter::Node,
+    source: &str,
+    table: &SymbolTable,
+    results: &mut Vec<Diagnostic>,
+) {
+    let name_node = match node.child_by_field_name("name") {
+        Some(n) => n,
+        None => return,
+    };
+    // Only bare-identifier callees are ambiguous.
+    if name_node.kind() != "identifier" {
+        return;
+    }
+    // Skip indexed assignments: `x(i) = ...` — function_call is the LHS.
+    if let Some(parent) = node.parent() {
+        if parent.kind() == "assignment" {
+            if let Some(left) = parent.child_by_field_name("left") {
+                if left.id() == node.id() {
+                    return;
+                }
+            }
+        }
+    }
+    let name = &source[name_node.start_byte()..name_node.end_byte()];
+    if BUILTIN_DENYLIST.contains(&name) {
+        return;
+    }
+    // Primary gate: name is a variable (non-function) in this scope or an
+    // enclosing scope.
+    if !is_variable_in_scope(name, name_node.start_byte(), table) {
+        return;
+    }
+    let pos = name_node.start_position();
+    results.push(Diagnostic {
+        rule_id: "MFAMB",
+        message: format!(
+            "Code Analyzer cannot determine whether {name} is a variable or a function, and assumes it is a function."
+        ),
+        severity: Severity::Info,
+        byte_range: name_node.start_byte()..name_node.end_byte(),
+        line: pos.row + 1,
+        column: pos.column + 1,
+        fix: None,
+    });
+}
+
+/// Check whether `name` is defined as a variable (not a nested function) in
+/// the scope containing `byte_offset` or any enclosing scope.
+fn is_variable_in_scope(name: &str, byte_offset: usize, table: &SymbolTable) -> bool {
+    let mut current = table.scope_at(byte_offset);
+    while let Some(scope) = current {
+        if scope
+            .defs
+            .iter()
+            .any(|d| d.name == name && d.kind != DefKind::NestedFunction)
+        {
+            return true;
+        }
+        current = scope.parent.and_then(|idx| table.scopes.get(idx));
+    }
+    false
+}
+
 // ---------------------------------------------------------------------------
 // Auto-registration
 // ---------------------------------------------------------------------------
@@ -1190,3 +1584,739 @@ inventory::submit!(crate::RuleRegistration::new(
     "READABILITY_ENGINE",
     ReadabilityEngine::from_config
 ));
+
+// ---------------------------------------------------------------------------
+// Tests
+// ---------------------------------------------------------------------------
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::test_util::{has_id, lint_file, lint_nodes};
+    use mlt_core::Config;
+
+    fn engine() -> Box<dyn Rule> {
+        ReadabilityEngine::from_config(&Config::default())
+    }
+
+    // -- MFAMB ---------------------------------------------------------------
+
+    #[test]
+    fn mfamb_fires_when_name_assigned_and_called() {
+        let diags = lint_file(&*engine(), "somevar = 5;\ny = somevar(1);\n");
+        assert!(has_id(&diags, "MFAMB"), "got: {diags:?}");
+    }
+
+    #[test]
+    fn mfamb_does_not_fire_for_builtin_call() {
+        let diags = lint_file(&*engine(), "y = length(x);\n");
+        assert!(!has_id(&diags, "MFAMB"), "got: {diags:?}");
+    }
+
+    #[test]
+    fn mfamb_does_not_fire_for_field_expression_call() {
+        let diags = lint_file(&*engine(), "somevar = 5;\ny = somevar.method();\n");
+        assert!(!has_id(&diags, "MFAMB"), "got: {diags:?}");
+    }
+
+    #[test]
+    fn mfamb_does_not_fire_when_name_not_a_variable() {
+        let diags = lint_file(&*engine(), "y = mylocal(x);\n");
+        assert!(!has_id(&diags, "MFAMB"), "got: {diags:?}");
+    }
+
+    #[test]
+    fn mfamb_does_not_fire_for_indexed_assignment_lhs() {
+        let diags = lint_file(&*engine(), "x = 1:10;\nx(1) = 5;\n");
+        assert!(!has_id(&diags, "MFAMB"), "got: {diags:?}");
+    }
+
+    #[test]
+    fn mfamb_disabled_in_config_does_not_fire() {
+        let config = Config::from_toml(
+            "[lint.rules.READABILITY_ENGINE]\ndisabled_checks = [\"MFAMB\"]\n",
+        )
+        .expect("valid config");
+        let rule = ReadabilityEngine::from_config(&config);
+        let diags = lint_file(&*rule, "somevar = 5;\ny = somevar(1);\n");
+        assert!(!has_id(&diags, "MFAMB"), "got: {diags:?}");
+    }
+
+    // -- ISCHR ---------------------------------------------------------------
+
+    #[test]
+    fn ischr_isa_char_fires() {
+        let diags = lint_nodes(&*engine(), "x = isa(a, 'char');\n");
+        assert!(has_id(&diags, "ISCHR"), "got: {diags:?}");
+    }
+
+    #[test]
+    fn ischr_isa_other_type_does_not_fire() {
+        let diags = lint_nodes(&*engine(), "x = isa(a, 'numeric');\n");
+        assert!(!has_id(&diags, "ISCHR"), "got: {diags:?}");
+    }
+
+    // -- ISSTR ---------------------------------------------------------------
+
+    #[test]
+    fn isstr_isa_string_fires() {
+        let diags = lint_nodes(&*engine(), "x = isa(a, 'string');\n");
+        assert!(has_id(&diags, "ISSTR"), "got: {diags:?}");
+    }
+
+    #[test]
+    fn isstr_isa_other_type_does_not_fire() {
+        let diags = lint_nodes(&*engine(), "x = isa(a, 'numeric');\n");
+        assert!(!has_id(&diags, "ISSTR"), "got: {diags:?}");
+    }
+
+    // -- ISLOG ---------------------------------------------------------------
+
+    #[test]
+    fn islog_isa_logical_fires() {
+        let diags = lint_nodes(&*engine(), "x = isa(a, 'logical');\n");
+        assert!(has_id(&diags, "ISLOG"), "got: {diags:?}");
+    }
+
+    #[test]
+    fn islog_isa_other_type_does_not_fire() {
+        let diags = lint_nodes(&*engine(), "x = isa(a, 'numeric');\n");
+        assert!(!has_id(&diags, "ISLOG"), "got: {diags:?}");
+    }
+
+    // -- ISCEL ---------------------------------------------------------------
+
+    #[test]
+    fn iscel_isa_cell_fires() {
+        let diags = lint_nodes(&*engine(), "x = isa(a, 'cell');\n");
+        assert!(has_id(&diags, "ISCEL"), "got: {diags:?}");
+    }
+
+    #[test]
+    fn iscel_isa_other_type_does_not_fire() {
+        let diags = lint_nodes(&*engine(), "x = isa(a, 'numeric');\n");
+        assert!(!has_id(&diags, "ISCEL"), "got: {diags:?}");
+    }
+
+    // -- ISMAT ---------------------------------------------------------------
+
+    #[test]
+    fn ismat_isa_double_fires() {
+        let diags = lint_nodes(&*engine(), "x = isa(a, 'double');\n");
+        assert!(has_id(&diags, "ISMAT"), "got: {diags:?}");
+    }
+
+    #[test]
+    fn ismat_isa_other_type_does_not_fire() {
+        let diags = lint_nodes(&*engine(), "x = isa(a, 'numeric');\n");
+        assert!(!has_id(&diags, "ISMAT"), "got: {diags:?}");
+    }
+
+    // -- ISROW ---------------------------------------------------------------
+
+    #[test]
+    fn isrow_size_dim1_equals_one_fires() {
+        let diags = lint_nodes(&*engine(), "x = size(a, 1) == 1;\n");
+        assert!(has_id(&diags, "ISROW"), "got: {diags:?}");
+    }
+
+    #[test]
+    fn isrow_size_dim1_equals_two_does_not_fire() {
+        let diags = lint_nodes(&*engine(), "x = size(a, 1) == 2;\n");
+        assert!(!has_id(&diags, "ISROW"), "got: {diags:?}");
+    }
+
+    // -- ISCOL ---------------------------------------------------------------
+
+    #[test]
+    fn iscol_size_dim2_equals_one_fires() {
+        let diags = lint_nodes(&*engine(), "x = size(a, 2) == 1;\n");
+        assert!(has_id(&diags, "ISCOL"), "got: {diags:?}");
+    }
+
+    #[test]
+    fn iscol_size_dim2_equals_zero_does_not_fire() {
+        let diags = lint_nodes(&*engine(), "x = size(a, 2) == 0;\n");
+        assert!(!has_id(&diags, "ISCOL"), "got: {diags:?}");
+    }
+
+    // -- IJCL ----------------------------------------------------------------
+
+    #[test]
+    fn ijcl_assign_to_i_fires() {
+        let diags = lint_nodes(&*engine(), "i = 5;\n");
+        assert!(has_id(&diags, "IJCL"), "got: {diags:?}");
+    }
+
+    #[test]
+    fn ijcl_assign_to_j_fires() {
+        let diags = lint_nodes(&*engine(), "j = zeros(3);\n");
+        assert!(has_id(&diags, "IJCL"), "got: {diags:?}");
+    }
+
+    #[test]
+    fn ijcl_assign_to_other_name_does_not_fire() {
+        let diags = lint_nodes(&*engine(), "k = 5;\n");
+        assert!(!has_id(&diags, "IJCL"), "got: {diags:?}");
+    }
+
+    // -- NBRAK2 --------------------------------------------------------------
+
+    #[test]
+    fn nbrak2_brackets_around_scalar_fires() {
+        let diags = lint_nodes(&*engine(), "x = [5];\n");
+        assert!(has_id(&diags, "NBRAK2"), "got: {diags:?}");
+    }
+
+    #[test]
+    fn nbrak2_brackets_around_identifier_fires() {
+        let diags = lint_nodes(&*engine(), "x = [v];\n");
+        assert!(has_id(&diags, "NBRAK2"), "got: {diags:?}");
+    }
+
+    #[test]
+    fn nbrak2_multi_element_matrix_does_not_fire() {
+        let diags = lint_nodes(&*engine(), "x = [1 2];\n");
+        assert!(!has_id(&diags, "NBRAK2"), "got: {diags:?}");
+    }
+
+    // -- STREMP --------------------------------------------------------------
+
+    #[test]
+    fn stremp_strcmp_empty_fires() {
+        let diags = lint_nodes(&*engine(), "x = strcmp(s, '');\n");
+        assert!(has_id(&diags, "STREMP"), "got: {diags:?}");
+    }
+
+    #[test]
+    fn stremp_strcmp_nonempty_does_not_fire() {
+        let diags = lint_nodes(&*engine(), "x = strcmp(s, 'a');\n");
+        assert!(!has_id(&diags, "STREMP"), "got: {diags:?}");
+    }
+
+    // -- STRIFCND ------------------------------------------------------------
+
+    #[test]
+    fn strifcnd_strcmp_in_if_condition_fires() {
+        let source = "if strcmp(a, b)\n    x = 1;\nend\n";
+        let diags = lint_nodes(&*engine(), source);
+        assert!(has_id(&diags, "STRIFCND"), "got: {diags:?}");
+    }
+
+    #[test]
+    fn strifcnd_strcmp_at_statement_level_does_not_fire() {
+        let diags = lint_nodes(&*engine(), "x = strcmp(a, b);\n");
+        assert!(!has_id(&diags, "STRIFCND"), "got: {diags:?}");
+    }
+
+    // -- STRCL1 --------------------------------------------------------------
+
+    #[test]
+    fn strcl1_strncmp_fires() {
+        let diags = lint_nodes(&*engine(), "x = strncmp(a, b, 3);\n");
+        assert!(has_id(&diags, "STRCL1"), "got: {diags:?}");
+    }
+
+    #[test]
+    fn strcl1_strncmpi_fires() {
+        let diags = lint_nodes(&*engine(), "x = strncmpi(a, b, 3);\n");
+        assert!(has_id(&diags, "STRCL1"), "got: {diags:?}");
+    }
+
+    #[test]
+    fn strcl1_starts_with_does_not_fire() {
+        let diags = lint_nodes(&*engine(), "x = startsWith(a, b);\n");
+        assert!(!has_id(&diags, "STRCL1"), "got: {diags:?}");
+    }
+
+    // -- STRCLFH -------------------------------------------------------------
+
+    #[test]
+    fn strclfh_strfind_fires() {
+        let diags = lint_nodes(&*engine(), "x = strfind(a, b);\n");
+        assert!(has_id(&diags, "STRCLFH"), "got: {diags:?}");
+    }
+
+    #[test]
+    fn strclfh_contains_does_not_fire() {
+        let diags = lint_nodes(&*engine(), "x = contains(a, b);\n");
+        assert!(!has_id(&diags, "STRCLFH"), "got: {diags:?}");
+    }
+
+    // -- CHARTEN -------------------------------------------------------------
+
+    #[test]
+    fn charten_char_10_fires() {
+        let diags = lint_nodes(&*engine(), "x = char(10);\n");
+        assert!(has_id(&diags, "CHARTEN"), "got: {diags:?}");
+    }
+
+    #[test]
+    fn charten_char_other_value_does_not_fire() {
+        let diags = lint_nodes(&*engine(), "x = char(9);\n");
+        assert!(!has_id(&diags, "CHARTEN"), "got: {diags:?}");
+    }
+
+    // -- SPRINTFN ------------------------------------------------------------
+
+    #[test]
+    fn sprintfn_simple_numeric_format_fires() {
+        let diags = lint_nodes(&*engine(), "x = sprintf('%d', y);\n");
+        assert!(has_id(&diags, "SPRINTFN"), "got: {diags:?}");
+    }
+
+    #[test]
+    fn sprintfn_string_format_does_not_fire() {
+        let diags = lint_nodes(&*engine(), "x = sprintf('%s', y);\n");
+        assert!(!has_id(&diags, "SPRINTFN"), "got: {diags:?}");
+    }
+
+    // -- SPERR ---------------------------------------------------------------
+
+    #[test]
+    fn sperr_error_without_message_id_fires() {
+        let diags = lint_nodes(&*engine(), "error('my message');\n");
+        assert!(has_id(&diags, "SPERR"), "got: {diags:?}");
+    }
+
+    #[test]
+    fn sperr_error_with_message_id_does_not_fire() {
+        let diags = lint_nodes(&*engine(), "error('MyComp:myID', 'message');\n");
+        assert!(!has_id(&diags, "SPERR"), "got: {diags:?}");
+    }
+
+    // -- SPWRN ---------------------------------------------------------------
+
+    #[test]
+    fn spwrn_warning_without_message_id_fires() {
+        let diags = lint_nodes(&*engine(), "warning('my message');\n");
+        assert!(has_id(&diags, "SPWRN"), "got: {diags:?}");
+    }
+
+    #[test]
+    fn spwrn_warning_with_message_id_does_not_fire() {
+        let diags = lint_nodes(&*engine(), "warning('MyComp:myID', 'message');\n");
+        assert!(!has_id(&diags, "SPWRN"), "got: {diags:?}");
+    }
+
+    // -- NCHKE ---------------------------------------------------------------
+
+    #[test]
+    fn nchke_nargchk_fires() {
+        let diags = lint_nodes(&*engine(), "x = nargchk(1, 2, nargin);\n");
+        assert!(has_id(&diags, "NCHKE"), "got: {diags:?}");
+    }
+
+    #[test]
+    fn nchke_narginchk_does_not_fire() {
+        let diags = lint_nodes(&*engine(), "x = narginchk(1, 2);\n");
+        assert!(!has_id(&diags, "NCHKE"), "got: {diags:?}");
+    }
+
+    // -- DSPSP ---------------------------------------------------------------
+
+    #[test]
+    fn dspsp_disp_sprintf_fires() {
+        let diags = lint_nodes(&*engine(), "disp(sprintf('%d', x));\n");
+        assert!(has_id(&diags, "DSPSP"), "got: {diags:?}");
+    }
+
+    #[test]
+    fn dspsp_disp_direct_does_not_fire() {
+        let diags = lint_nodes(&*engine(), "disp(x);\n");
+        assert!(!has_id(&diags, "DSPSP"), "got: {diags:?}");
+    }
+
+    // -- DSPSY ---------------------------------------------------------------
+
+    #[test]
+    fn dspsy_display_fires() {
+        let diags = lint_nodes(&*engine(), "display(x);\n");
+        assert!(has_id(&diags, "DSPSY"), "got: {diags:?}");
+    }
+
+    #[test]
+    fn dspsy_disp_does_not_fire() {
+        let diags = lint_nodes(&*engine(), "disp(x);\n");
+        assert!(!has_id(&diags, "DSPSY"), "got: {diags:?}");
+    }
+
+    // -- PSIZE ---------------------------------------------------------------
+
+    #[test]
+    fn psize_prod_size_fires() {
+        let diags = lint_nodes(&*engine(), "x = prod(size(a));\n");
+        assert!(has_id(&diags, "PSIZE"), "got: {diags:?}");
+    }
+
+    #[test]
+    fn psize_prod_without_size_does_not_fire() {
+        let diags = lint_nodes(&*engine(), "x = prod(a);\n");
+        assert!(!has_id(&diags, "PSIZE"), "got: {diags:?}");
+    }
+
+    // -- LOGSUM --------------------------------------------------------------
+
+    #[test]
+    fn logsum_sum_greater_than_zero_fires() {
+        let diags = lint_nodes(&*engine(), "x = sum(y) > 0;\n");
+        assert!(has_id(&diags, "LOGSUM"), "got: {diags:?}");
+    }
+
+    #[test]
+    fn logsum_sum_alone_does_not_fire() {
+        let diags = lint_nodes(&*engine(), "x = sum(y);\n");
+        assert!(!has_id(&diags, "LOGSUM"), "got: {diags:?}");
+    }
+
+    // -- LOGL ----------------------------------------------------------------
+
+    #[test]
+    fn logl_find_in_indexing_fires() {
+        let diags = lint_nodes(&*engine(), "x = m(find(c));\n");
+        assert!(has_id(&diags, "LOGL"), "got: {diags:?}");
+    }
+
+    #[test]
+    fn logl_find_at_statement_level_does_not_fire() {
+        let diags = lint_nodes(&*engine(), "y = find(c);\n");
+        assert!(!has_id(&diags, "LOGL"), "got: {diags:?}");
+    }
+
+    // -- RPMTT ---------------------------------------------------------------
+
+    #[test]
+    fn rpmtt_or_true_fires() {
+        let diags = lint_nodes(&*engine(), "x = a || true;\n");
+        assert!(has_id(&diags, "RPMTT"), "got: {diags:?}");
+    }
+
+    #[test]
+    fn rpmtt_or_other_variable_does_not_fire() {
+        let diags = lint_nodes(&*engine(), "x = a || b;\n");
+        assert!(!has_id(&diags, "RPMTT"), "got: {diags:?}");
+    }
+
+    // -- RPMTF ---------------------------------------------------------------
+
+    #[test]
+    fn rpmtf_and_false_fires() {
+        let diags = lint_nodes(&*engine(), "x = a && false;\n");
+        assert!(has_id(&diags, "RPMTF"), "got: {diags:?}");
+    }
+
+    #[test]
+    fn rpmtf_and_other_variable_does_not_fire() {
+        let diags = lint_nodes(&*engine(), "x = a && b;\n");
+        assert!(!has_id(&diags, "RPMTF"), "got: {diags:?}");
+    }
+
+    // -- RPMT1 ---------------------------------------------------------------
+
+    #[test]
+    fn rpmt1_mul_by_one_fires() {
+        let diags = lint_nodes(&*engine(), "x = a * 1;\n");
+        assert!(has_id(&diags, "RPMT1"), "got: {diags:?}");
+    }
+
+    #[test]
+    fn rpmt1_one_times_x_fires() {
+        let diags = lint_nodes(&*engine(), "x = 1 * a;\n");
+        assert!(has_id(&diags, "RPMT1"), "got: {diags:?}");
+    }
+
+    #[test]
+    fn rpmt1_mul_by_two_does_not_fire() {
+        let diags = lint_nodes(&*engine(), "x = a * 2;\n");
+        assert!(!has_id(&diags, "RPMT1"), "got: {diags:?}");
+    }
+
+    // -- RPMT0 ---------------------------------------------------------------
+
+    #[test]
+    fn rpmt0_mul_by_zero_fires() {
+        let diags = lint_nodes(&*engine(), "x = a * 0;\n");
+        assert!(has_id(&diags, "RPMT0"), "got: {diags:?}");
+    }
+
+    #[test]
+    fn rpmt0_mul_by_two_does_not_fire() {
+        let diags = lint_nodes(&*engine(), "x = a * 2;\n");
+        assert!(!has_id(&diags, "RPMT0"), "got: {diags:?}");
+    }
+
+    // -- RPMTI ---------------------------------------------------------------
+
+    #[test]
+    fn rpmti_add_zero_fires() {
+        let diags = lint_nodes(&*engine(), "x = a + 0;\n");
+        assert!(has_id(&diags, "RPMTI"), "got: {diags:?}");
+    }
+
+    #[test]
+    fn rpmti_add_two_does_not_fire() {
+        let diags = lint_nodes(&*engine(), "x = a + 2;\n");
+        assert!(!has_id(&diags, "RPMTI"), "got: {diags:?}");
+    }
+
+    // -- RPMTN ---------------------------------------------------------------
+
+    #[test]
+    fn rpmtn_sub_zero_fires() {
+        let diags = lint_nodes(&*engine(), "x = a - 0;\n");
+        assert!(has_id(&diags, "RPMTN"), "got: {diags:?}");
+    }
+
+    #[test]
+    fn rpmtn_sub_two_does_not_fire() {
+        let diags = lint_nodes(&*engine(), "x = a - 2;\n");
+        assert!(!has_id(&diags, "RPMTN"), "got: {diags:?}");
+    }
+
+    // -- FVINR ---------------------------------------------------------------
+
+    #[test]
+    fn fvinr_no_attribute_fires() {
+        let source = "function f(a)\n    arguments\n        a (1,1)\n    end\nend\n";
+        let diags = lint_nodes(&*engine(), source);
+        assert!(has_id(&diags, "FVINR"), "got: {diags:?}");
+    }
+
+    #[test]
+    fn fvinr_with_input_attribute_does_not_fire() {
+        let source = "function f(a)\n    arguments (Input)\n        a (1,1)\n    end\nend\n";
+        let diags = lint_nodes(&*engine(), source);
+        assert!(!has_id(&diags, "FVINR"), "got: {diags:?}");
+    }
+
+    #[test]
+    fn fvinr_with_output_attribute_does_not_fire() {
+        let source = "function f(a)\n    arguments (Output)\n        a\n    end\nend\n";
+        let diags = lint_nodes(&*engine(), source);
+        assert!(!has_id(&diags, "FVINR"), "got: {diags:?}");
+    }
+
+    #[test]
+    fn fvinr_disabled_in_config_does_not_fire() {
+        let config = Config::from_toml(
+            "[lint.rules.READABILITY_ENGINE]\ndisabled_checks = [\"FVINR\"]\n",
+        )
+        .expect("valid config");
+        let rule = ReadabilityEngine::from_config(&config);
+        let source = "function f(a)\n    arguments\n        a (1,1)\n    end\nend\n";
+        let diags = lint_nodes(&*rule, source);
+        assert!(!has_id(&diags, "FVINR"), "got: {diags:?}");
+    }
+
+    #[test]
+    fn fvinr_fix_inserts_input_attribute() {
+        let source = "function f(a)\n    arguments\n        a (1,1)\n    end\nend\n";
+        let diags = lint_nodes(&*engine(), source);
+        let diag = diags
+            .iter()
+            .find(|d| d.rule_id == "FVINR")
+            .expect("FVINR should fire");
+        let fix = diag.fix.as_ref().expect("FVINR should carry an auto-fix");
+        assert_eq!(fix.replacement, " (Input)");
+        let mut fixed = String::from(source);
+        fixed.replace_range(fix.byte_range.clone(), &fix.replacement);
+        assert!(
+            fixed.contains("arguments (Input)"),
+            "got: {fixed:?}"
+        );
+    }
+
+    // -- FLUDLR --------------------------------------------------------------
+
+    #[test]
+    fn fludlr_flipud_fliplr_fires() {
+        let diags = lint_nodes(&*engine(), "y = flipud(fliplr(x));\n");
+        assert!(has_id(&diags, "FLUDLR"), "got: {diags:?}");
+    }
+
+    #[test]
+    fn fludlr_fliplr_flipud_fires() {
+        let diags = lint_nodes(&*engine(), "y = fliplr(flipud(x));\n");
+        assert!(has_id(&diags, "FLUDLR"), "got: {diags:?}");
+    }
+
+    #[test]
+    fn fludlr_single_flipud_does_not_fire() {
+        let diags = lint_nodes(&*engine(), "y = flipud(x);\n");
+        assert!(!has_id(&diags, "FLUDLR"), "got: {diags:?}");
+    }
+
+    #[test]
+    fn fludlr_single_fliplr_does_not_fire() {
+        let diags = lint_nodes(&*engine(), "y = fliplr(x);\n");
+        assert!(!has_id(&diags, "FLUDLR"), "got: {diags:?}");
+    }
+
+    #[test]
+    fn fludlr_two_arg_outer_does_not_fire() {
+        let diags = lint_nodes(&*engine(), "y = flipud(fliplr(x), 2);\n");
+        assert!(!has_id(&diags, "FLUDLR"), "got: {diags:?}");
+    }
+
+    #[test]
+    fn fludlr_same_flip_pair_does_not_fire() {
+        let diags = lint_nodes(&*engine(), "y = flipud(flipud(x));\n");
+        assert!(!has_id(&diags, "FLUDLR"), "got: {diags:?}");
+    }
+
+    #[test]
+    fn fludlr_fix_replaces_with_rot90() {
+        let source = "y = flipud(fliplr(x));\n";
+        let diags = lint_nodes(&*engine(), source);
+        let diag = diags
+            .iter()
+            .find(|d| d.rule_id == "FLUDLR")
+            .expect("FLUDLR should fire");
+        let fix = diag.fix.as_ref().expect("FLUDLR should carry an auto-fix");
+        assert_eq!(fix.replacement, "rot90(x, 2)");
+        let mut fixed = String::from(source);
+        fixed.replace_range(fix.byte_range.clone(), &fix.replacement);
+        assert_eq!(fixed, "y = rot90(x, 2);\n", "got: {fixed:?}");
+    }
+
+    #[test]
+    fn fludlr_disabled_in_config_does_not_fire() {
+        let config = Config::from_toml(
+            "[lint.rules.READABILITY_ENGINE]\ndisabled_checks = [\"FLUDLR\"]\n",
+        )
+        .expect("valid config");
+        let rule = ReadabilityEngine::from_config(&config);
+        let diags = lint_nodes(&*rule, "y = flipud(fliplr(x));\n");
+        assert!(!has_id(&diags, "FLUDLR"), "got: {diags:?}");
+    }
+
+    // -- STLOW ---------------------------------------------------------------
+
+    #[test]
+    fn stlow_upper_with_uppercase_literal_fires() {
+        let diags = lint_nodes(&*engine(), "x = strcmp(upper(str), 'ABC');\n");
+        assert!(has_id(&diags, "STLOW"), "got: {diags:?}");
+    }
+
+    #[test]
+    fn stlow_lower_with_lowercase_literal_fires() {
+        let diags = lint_nodes(&*engine(), "x = strcmp(lower(str), 'abc');\n");
+        assert!(has_id(&diags, "STLOW"), "got: {diags:?}");
+    }
+
+    #[test]
+    fn stlow_mixed_case_does_not_fire() {
+        let diags = lint_nodes(&*engine(), "x = strcmp(upper(str), 'AbC');\n");
+        assert!(!has_id(&diags, "STLOW"), "got: {diags:?}");
+    }
+
+    #[test]
+    fn stlow_opposite_case_does_not_fire() {
+        let diags = lint_nodes(&*engine(), "x = strcmp(upper(str), 'abc');\n");
+        assert!(!has_id(&diags, "STLOW"), "got: {diags:?}");
+    }
+
+    #[test]
+    fn stlow_no_conversion_call_does_not_fire() {
+        let diags = lint_nodes(&*engine(), "x = strcmp(str, 'ABC');\n");
+        assert!(!has_id(&diags, "STLOW"), "got: {diags:?}");
+    }
+
+    #[test]
+    fn stlow_non_literal_other_side_does_not_fire() {
+        let diags = lint_nodes(&*engine(), "x = strcmp(upper(x), y);\n");
+        assert!(!has_id(&diags, "STLOW"), "got: {diags:?}");
+    }
+
+    #[test]
+    fn stlow_fix_replaces_call_with_inner_arg() {
+        let source = "x = strcmp(upper(x), 'ABC');\n";
+        let diags = lint_nodes(&*engine(), source);
+        let diag = diags
+            .iter()
+            .find(|d| d.rule_id == "STLOW")
+            .expect("STLOW should fire");
+        let fix = diag.fix.as_ref().expect("STLOW should carry an auto-fix");
+        assert_eq!(fix.replacement, "x");
+        assert_eq!(&source[fix.byte_range.clone()], "upper(x)");
+    }
+
+    #[test]
+    fn stlow_disabled_in_config_does_not_fire() {
+        let config = Config::from_toml(
+            "[lint.rules.READABILITY_ENGINE]\ndisabled_checks = [\"STLOW\"]\n",
+        )
+        .expect("valid config");
+        let rule = ReadabilityEngine::from_config(&config);
+        let diags = lint_nodes(&*rule, "x = strcmp(upper(str), 'ABC');\n");
+        assert!(!has_id(&diags, "STLOW"), "got: {diags:?}");
+    }
+
+    // -- COMNL ---------------------------------------------------------------
+
+    #[test]
+    fn comnl_trailing_comma_before_newline_fires() {
+        let diags = lint_nodes(&*engine(), "x = [1, 2,\n3, 4];\n");
+        assert!(has_id(&diags, "COMNL"), "got: {diags:?}");
+    }
+
+    #[test]
+    fn comnl_multiple_rows_fires_each_comma() {
+        let diags = lint_nodes(&*engine(), "x = [1, 2,\n3, 4,\n5, 6];\n");
+        let count = diags.iter().filter(|d| d.rule_id == "COMNL").count();
+        assert_eq!(count, 2, "got: {diags:?}");
+    }
+
+    #[test]
+    fn comnl_single_row_does_not_fire() {
+        let diags = lint_nodes(&*engine(), "x = [1, 2, 3, 4];\n");
+        assert!(!has_id(&diags, "COMNL"), "got: {diags:?}");
+    }
+
+    #[test]
+    fn comnl_no_trailing_comma_does_not_fire() {
+        let diags = lint_nodes(&*engine(), "x = [1, 2, 3\n4, 5, 6];\n");
+        assert!(!has_id(&diags, "COMNL"), "got: {diags:?}");
+    }
+
+    #[test]
+    fn comnl_semicolon_separator_does_not_fire() {
+        let diags = lint_nodes(&*engine(), "x = [1, 2;\n3, 4];\n");
+        assert!(!has_id(&diags, "COMNL"), "got: {diags:?}");
+    }
+
+    #[test]
+    fn comnl_ellipsis_continuation_does_not_fire() {
+        let diags = lint_nodes(&*engine(), "x = [1, 2, ...\n3, 4];\n");
+        assert!(!has_id(&diags, "COMNL"), "got: {diags:?}");
+    }
+
+    #[test]
+    fn comnl_semicolon_after_trailing_comma_does_not_fire() {
+        let diags = lint_nodes(&*engine(), "x = [1, 2,;\n3, 4];\n");
+        assert!(!has_id(&diags, "COMNL"), "got: {diags:?}");
+    }
+
+    #[test]
+    fn comnl_disabled_via_config_does_not_fire() {
+        let config = Config::from_toml(
+            "[lint.rules.READABILITY_ENGINE]\ndisabled_checks = [\"COMNL\"]\n",
+        )
+        .expect("valid config");
+        let rule = ReadabilityEngine::from_config(&config);
+        let diags = lint_nodes(&*rule, "x = [1, 2,\n3, 4];\n");
+        assert!(!has_id(&diags, "COMNL"), "got: {diags:?}");
+    }
+
+    #[test]
+    fn comnl_fix_replaces_comma_with_semicolon() {
+        let source = "x = [1, 2,\n3, 4];\n";
+        let diags = lint_nodes(&*engine(), source);
+        let comnl: Vec<_> = diags.iter().filter(|d| d.rule_id == "COMNL").collect();
+        assert_eq!(comnl.len(), 1, "got: {diags:?}");
+        let fix = comnl[0].fix.as_ref().expect("COMNL should provide a fix");
+        assert_eq!(&source[fix.byte_range.clone()], ",");
+        assert_eq!(fix.replacement, ";");
+    }
+}
+

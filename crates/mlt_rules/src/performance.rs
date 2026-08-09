@@ -511,7 +511,7 @@ impl PerformanceEngine {
             if let Some(name) = extract_func_name(operand, source) {
                 if name == "isempty" {
                     // Check if the argument to isempty is strfind(...)
-                    if let Some(args_node) = operand.child_by_field_name("arguments") {
+                    if let Some(args_node) = find_arguments(operand) {
                         if let Some(first_arg) = first_named_child(args_node) {
                             if first_arg.kind() == "function_call" {
                                 if let Some(inner_name) = extract_func_name(first_arg, source) {
@@ -858,29 +858,26 @@ fn first_named_child(node: tree_sitter::Node) -> Option<tree_sitter::Node> {
 /// Count the number of arguments in a `function_call` node.
 fn count_args(node: tree_sitter::Node) -> usize {
     // Arguments are in the `arguments` child node.
-    let args_node = match node.child_by_field_name("arguments") {
-        Some(n) => n,
-        None => {
-            // Fallback: iterate children looking for argument list.
-            let count = node.child_count();
-            let mut arg_count = 0;
-            for i in 0..count {
-                if let Some(child) = node.child(i) {
-                    let kind = child.kind();
-                    if kind != "(" && kind != ")" && kind != "," && kind != "identifier" {
-                        // Skip the function name (first identifier child)
-                        if i > 0 {
-                            arg_count += 1;
-                        }
-                    }
-                }
-            }
-            return arg_count;
-        }
-    };
+    match find_arguments(node) {
+        Some(args_node) => args_node.named_child_count(),
+        None => 0,
+    }
+}
 
-    // Count named children inside the arguments node (skipping commas).
-    args_node.named_child_count()
+/// Find the `arguments` child node of a `function_call` node.
+///
+/// tree-sitter-matlab does not attach a field name to this child, so the
+/// arguments list is located by node kind.
+fn find_arguments<'a>(node: tree_sitter::Node<'a>) -> Option<tree_sitter::Node<'a>> {
+    let count = node.child_count();
+    for i in 0..count {
+        if let Some(child) = node.child(i) {
+            if child.kind() == "arguments" {
+                return Some(child);
+            }
+        }
+    }
+    None
 }
 
 /// Check if a function_call has a specific string argument.
@@ -920,7 +917,7 @@ fn has_exist_type_arg(node: tree_sitter::Node, source: &str) -> bool {
 fn has_simple_regex_pattern(node: tree_sitter::Node, source: &str) -> bool {
     // Look for the second argument (the pattern) and check if it's purely alphanumeric
     // (meaning a simple `contains` or `strcmp` would suffice).
-    let args_node = match node.child_by_field_name("arguments") {
+    let args_node = match find_arguments(node) {
         Some(n) => n,
         None => return false,
     };
@@ -945,7 +942,7 @@ fn has_simple_regex_pattern(node: tree_sitter::Node, source: &str) -> bool {
 
 /// Check if the first argument to lower/upper is a strcmp call (STNCI pattern).
 fn has_strcmp_arg(node: tree_sitter::Node, source: &str) -> bool {
-    let args_node = match node.child_by_field_name("arguments") {
+    let args_node = match find_arguments(node) {
         Some(n) => n,
         None => return false,
     };
@@ -967,7 +964,7 @@ fn has_strcmp_arg(node: tree_sitter::Node, source: &str) -> bool {
 /// Check if the function_call is a nested call of the same function.
 /// e.g., max(max(x)) — the outer call's first argument is the same function.
 fn is_nested_same_call(node: tree_sitter::Node, source: &str, func_name: &str) -> bool {
-    let args_node = match node.child_by_field_name("arguments") {
+    let args_node = match find_arguments(node) {
         Some(n) => n,
         None => return false,
     };
@@ -1210,3 +1207,667 @@ inventory::submit!(crate::RuleRegistration::new(
     "PERFORMANCE_ENGINE",
     PerformanceEngine::from_config
 ));
+
+// ---------------------------------------------------------------------------
+// Tests
+// ---------------------------------------------------------------------------
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::test_util::{has_id, lint_file, lint_nodes};
+    use mlt_core::Config;
+
+    fn engine() -> Box<dyn Rule> {
+        PerformanceEngine::from_config(&Config::default())
+    }
+
+    // -- AGROW (file-level) --------------------------------------------------
+
+    #[test]
+    fn agrow_fires_on_concatenation_growth() {
+        let src = "for i = 1:10\n    x = [x, i];\nend\n";
+        let diags = lint_file(&*engine(), src);
+        assert!(has_id(&diags, "AGROW"), "got: {diags:?}");
+    }
+
+    #[test]
+    fn agrow_fires_on_end_plus_one() {
+        let src = "for i = 1:10\n    x(end+1) = i;\nend\n";
+        let diags = lint_file(&*engine(), src);
+        assert!(has_id(&diags, "AGROW"), "got: {diags:?}");
+    }
+
+    #[test]
+    fn agrow_not_fire_on_indexed_assignment() {
+        let src = "for i = 1:10\n    x(i) = i;\nend\n";
+        let diags = lint_file(&*engine(), src);
+        assert!(!has_id(&diags, "AGROW"), "got: {diags:?}");
+    }
+
+    // -- SAGROW (file-level) -------------------------------------------------
+
+    #[test]
+    fn sagrow_fires_on_struct_field_growth() {
+        let src = "for i = 1:10\n    s.data(end+1) = i;\nend\n";
+        let diags = lint_file(&*engine(), src);
+        assert!(has_id(&diags, "SAGROW"), "got: {diags:?}");
+    }
+
+    #[test]
+    fn sagrow_fires_on_struct_field_concatenation() {
+        let src = "for i = 1:10\n    s.data = [s.data, i];\nend\n";
+        let diags = lint_file(&*engine(), src);
+        assert!(has_id(&diags, "SAGROW"), "got: {diags:?}");
+    }
+
+    #[test]
+    fn sagrow_not_fire_on_struct_indexed_assignment() {
+        let src = "for i = 1:10\n    s.data(i) = i;\nend\n";
+        let diags = lint_file(&*engine(), src);
+        assert!(!has_id(&diags, "SAGROW"), "got: {diags:?}");
+    }
+
+    // -- AND2 / OR2 ----------------------------------------------------------
+
+    #[test]
+    fn and2_fires_on_elementwise_and_in_condition() {
+        let src = "if a & b\n    c = 1;\nend\n";
+        let diags = lint_nodes(&*engine(), src);
+        assert!(has_id(&diags, "AND2"), "got: {diags:?}");
+    }
+
+    #[test]
+    fn and2_not_fire_on_short_circuit() {
+        let src = "if a && b\n    c = 1;\nend\n";
+        let diags = lint_nodes(&*engine(), src);
+        assert!(!has_id(&diags, "AND2"), "got: {diags:?}");
+    }
+
+    #[test]
+    fn or2_fires_on_elementwise_or_in_condition() {
+        let src = "if a | b\n    c = 1;\nend\n";
+        let diags = lint_nodes(&*engine(), src);
+        assert!(has_id(&diags, "OR2"), "got: {diags:?}");
+    }
+
+    #[test]
+    fn or2_not_fire_on_short_circuit() {
+        let src = "if a || b\n    c = 1;\nend\n";
+        let diags = lint_nodes(&*engine(), src);
+        assert!(!has_id(&diags, "OR2"), "got: {diags:?}");
+    }
+
+    // -- MINV -----------------------------------------------------------------
+
+    #[test]
+    fn minv_fires_on_inv_times_vector() {
+        let src = "x = inv(A) * b;\n";
+        let diags = lint_nodes(&*engine(), src);
+        assert!(has_id(&diags, "MINV"), "got: {diags:?}");
+    }
+
+    #[test]
+    fn minv_fires_on_vector_times_inv() {
+        let src = "x = b * inv(A);\n";
+        let diags = lint_nodes(&*engine(), src);
+        assert!(has_id(&diags, "MINV"), "got: {diags:?}");
+    }
+
+    #[test]
+    fn minv_not_fire_on_backslash_solve() {
+        let src = "x = A \\ b;\n";
+        let diags = lint_nodes(&*engine(), src);
+        assert!(!has_id(&diags, "MINV"), "got: {diags:?}");
+    }
+
+    // -- GFLD / SFLD ----------------------------------------------------------
+
+    #[test]
+    fn gfld_fires_on_getfield() {
+        let src = "v = getfield(s, 'field');\n";
+        let diags = lint_nodes(&*engine(), src);
+        assert!(has_id(&diags, "GFLD"), "got: {diags:?}");
+    }
+
+    #[test]
+    fn gfld_not_fire_on_dot_access() {
+        let src = "v = s.field;\n";
+        let diags = lint_nodes(&*engine(), src);
+        assert!(!has_id(&diags, "GFLD"), "got: {diags:?}");
+    }
+
+    #[test]
+    fn sfld_fires_on_setfield() {
+        let src = "setfield(s, 'field', v);\n";
+        let diags = lint_nodes(&*engine(), src);
+        assert!(has_id(&diags, "SFLD"), "got: {diags:?}");
+    }
+
+    #[test]
+    fn sfld_not_fire_on_dot_assignment() {
+        let src = "s.field = v;\n";
+        let diags = lint_nodes(&*engine(), src);
+        assert!(!has_id(&diags, "SFLD"), "got: {diags:?}");
+    }
+
+    // -- EXIST ----------------------------------------------------------------
+
+    #[test]
+    fn exist_fires_with_type_argument() {
+        let src = "if exist('foo', 'file')\n    y = 1;\nend\n";
+        let diags = lint_nodes(&*engine(), src);
+        assert!(has_id(&diags, "EXIST"), "got: {diags:?}");
+    }
+
+    #[test]
+    fn exist_not_fire_without_type_argument() {
+        let src = "if exist('foo')\n    y = 1;\nend\n";
+        let diags = lint_nodes(&*engine(), src);
+        assert!(!has_id(&diags, "EXIST"), "got: {diags:?}");
+    }
+
+    // -- ST2NM ----------------------------------------------------------------
+
+    #[test]
+    fn st2nm_fires_on_str2num() {
+        let src = "x = str2num('1 2');\n";
+        let diags = lint_nodes(&*engine(), src);
+        assert!(has_id(&diags, "ST2NM"), "got: {diags:?}");
+    }
+
+    #[test]
+    fn st2nm_not_fire_on_str2double() {
+        let src = "x = str2double('1 2');\n";
+        let diags = lint_nodes(&*engine(), src);
+        assert!(!has_id(&diags, "ST2NM"), "got: {diags:?}");
+    }
+
+    // -- FLPST ----------------------------------------------------------------
+
+    #[test]
+    fn flpst_fires_on_flipud() {
+        let src = "x = flipud(y);\n";
+        let diags = lint_nodes(&*engine(), src);
+        assert!(has_id(&diags, "FLPST"), "got: {diags:?}");
+    }
+
+    #[test]
+    fn flpst_fires_on_fliplr() {
+        let src = "x = fliplr(y);\n";
+        let diags = lint_nodes(&*engine(), src);
+        assert!(has_id(&diags, "FLPST"), "got: {diags:?}");
+    }
+
+    #[test]
+    fn flpst_not_fire_on_flip() {
+        let src = "x = flip(y);\n";
+        let diags = lint_nodes(&*engine(), src);
+        assert!(!has_id(&diags, "FLPST"), "got: {diags:?}");
+    }
+
+    // -- CCAT -----------------------------------------------------------------
+
+    #[test]
+    fn ccat_fires_on_strcat() {
+        let src = "s = strcat('a', 'b');\n";
+        let diags = lint_nodes(&*engine(), src);
+        assert!(has_id(&diags, "CCAT"), "got: {diags:?}");
+    }
+
+    #[test]
+    fn ccat_not_fire_on_bracket_concatenation() {
+        let src = "s = ['a', 'b'];\n";
+        let diags = lint_nodes(&*engine(), src);
+        assert!(!has_id(&diags, "CCAT"), "got: {diags:?}");
+    }
+
+    // -- ISMT / ISCL ----------------------------------------------------------
+
+    #[test]
+    fn ismt_fires_on_length_zero() {
+        let src = "y = (length(x) == 0);\n";
+        let diags = lint_nodes(&*engine(), src);
+        assert!(has_id(&diags, "ISMT"), "got: {diags:?}");
+    }
+
+    #[test]
+    fn ismt_not_fire_on_other_length() {
+        let src = "y = (length(x) == 2);\n";
+        let diags = lint_nodes(&*engine(), src);
+        assert!(!has_id(&diags, "ISMT"), "got: {diags:?}");
+    }
+
+    #[test]
+    fn iscl_fires_on_length_one() {
+        let src = "y = (length(x) == 1);\n";
+        let diags = lint_nodes(&*engine(), src);
+        assert!(has_id(&diags, "ISCL"), "got: {diags:?}");
+    }
+
+    #[test]
+    fn iscl_not_fire_on_other_length() {
+        let src = "y = (length(x) == 2);\n";
+        let diags = lint_nodes(&*engine(), src);
+        assert!(!has_id(&diags, "ISCL"), "got: {diags:?}");
+    }
+
+    // -- MXFND ----------------------------------------------------------------
+
+    #[test]
+    fn mxfnd_fires_on_nested_max() {
+        let src = "x = max(max(y));\n";
+        let diags = lint_nodes(&*engine(), src);
+        assert!(has_id(&diags, "MXFND"), "got: {diags:?}");
+    }
+
+    #[test]
+    fn mxfnd_fires_on_nested_min() {
+        let src = "x = min(min(y));\n";
+        let diags = lint_nodes(&*engine(), src);
+        assert!(has_id(&diags, "MXFND"), "got: {diags:?}");
+    }
+
+    #[test]
+    fn mxfnd_not_fire_on_single_max() {
+        let src = "x = max(y, z);\n";
+        let diags = lint_nodes(&*engine(), src);
+        assert!(!has_id(&diags, "MXFND"), "got: {diags:?}");
+    }
+
+    // -- EFIND ----------------------------------------------------------------
+
+    #[test]
+    fn efind_fires_on_find_as_subscript() {
+        let src = "x = y(find(z));\n";
+        let diags = lint_nodes(&*engine(), src);
+        assert!(has_id(&diags, "EFIND"), "got: {diags:?}");
+    }
+
+    #[test]
+    fn efind_not_fire_on_standalone_find() {
+        let src = "idx = find(z);\n";
+        let diags = lint_nodes(&*engine(), src);
+        assert!(!has_id(&diags, "EFIND"), "got: {diags:?}");
+    }
+
+    // -- UDIM -----------------------------------------------------------------
+
+    #[test]
+    fn udim_fires_on_single_argument_reduction() {
+        let src = "s = sum(x);\n";
+        let diags = lint_nodes(&*engine(), src);
+        assert!(has_id(&diags, "UDIM"), "got: {diags:?}");
+    }
+
+    #[test]
+    fn udim_fires_on_single_argument_mean() {
+        let src = "m = mean(x);\n";
+        let diags = lint_nodes(&*engine(), src);
+        assert!(has_id(&diags, "UDIM"), "got: {diags:?}");
+    }
+
+    #[test]
+    fn udim_not_fire_with_dimension_argument() {
+        let src = "s = sum(x, 2);\n";
+        let diags = lint_nodes(&*engine(), src);
+        assert!(!has_id(&diags, "UDIM"), "got: {diags:?}");
+    }
+
+    // -- FREAD ----------------------------------------------------------------
+
+    #[test]
+    fn fread_fires_without_precision() {
+        let src = "d = fread(fid, 100);\n";
+        let diags = lint_nodes(&*engine(), src);
+        assert!(has_id(&diags, "FREAD"), "got: {diags:?}");
+    }
+
+    #[test]
+    fn fread_not_fire_with_precision() {
+        let src = "d = fread(fid, 100, 'uint8');\n";
+        let diags = lint_nodes(&*engine(), src);
+        assert!(!has_id(&diags, "FREAD"), "got: {diags:?}");
+    }
+
+    // -- N2UNI ----------------------------------------------------------------
+
+    #[test]
+    fn n2uni_fires_on_setdiff() {
+        let src = "c = setdiff(a, b);\n";
+        let diags = lint_nodes(&*engine(), src);
+        assert!(has_id(&diags, "N2UNI"), "got: {diags:?}");
+    }
+
+    #[test]
+    fn n2uni_fires_on_union() {
+        let src = "c = union(a, b);\n";
+        let diags = lint_nodes(&*engine(), src);
+        assert!(has_id(&diags, "N2UNI"), "got: {diags:?}");
+    }
+
+    #[test]
+    fn n2uni_not_fire_on_unique() {
+        let src = "c = unique(a);\n";
+        let diags = lint_nodes(&*engine(), src);
+        assert!(!has_id(&diags, "N2UNI"), "got: {diags:?}");
+    }
+
+    // -- TNMLP ----------------------------------------------------------------
+
+    #[test]
+    fn tnmlp_fires_on_tic_inside_loop() {
+        let src = "for i = 1:10\n    tic();\n    y = i;\nend\n";
+        let diags = lint_nodes(&*engine(), src);
+        assert!(has_id(&diags, "TNMLP"), "got: {diags:?}");
+    }
+
+    #[test]
+    fn tnmlp_fires_on_toc_inside_loop() {
+        let src = "for i = 1:10\n    y = i;\n    toc();\nend\n";
+        let diags = lint_nodes(&*engine(), src);
+        assert!(has_id(&diags, "TNMLP"), "got: {diags:?}");
+    }
+
+    #[test]
+    fn tnmlp_not_fire_outside_loop() {
+        let src = "tic();\ny = 1;\ntoc();\n";
+        let diags = lint_nodes(&*engine(), src);
+        assert!(!has_id(&diags, "TNMLP"), "got: {diags:?}");
+    }
+
+    // -- LAXES ----------------------------------------------------------------
+
+    #[test]
+    fn laxes_fires_on_gca() {
+        let src = "ax = gca();\n";
+        let diags = lint_nodes(&*engine(), src);
+        assert!(has_id(&diags, "LAXES"), "got: {diags:?}");
+    }
+
+    #[test]
+    fn laxes_fires_on_gcf() {
+        let src = "f = gcf();\n";
+        let diags = lint_nodes(&*engine(), src);
+        assert!(has_id(&diags, "LAXES"), "got: {diags:?}");
+    }
+
+    #[test]
+    fn laxes_not_fire_on_other_calls() {
+        let src = "ax = axes();\n";
+        let diags = lint_nodes(&*engine(), src);
+        assert!(!has_id(&diags, "LAXES"), "got: {diags:?}");
+    }
+
+    // -- MMTC -----------------------------------------------------------------
+
+    #[test]
+    fn mmtc_fires_on_same_operand_dot_star() {
+        let src = "z = x .* x;\n";
+        let diags = lint_nodes(&*engine(), src);
+        assert!(has_id(&diags, "MMTC"), "got: {diags:?}");
+    }
+
+    #[test]
+    fn mmtc_not_fire_on_different_operands() {
+        let src = "z = x .* y;\n";
+        let diags = lint_nodes(&*engine(), src);
+        assert!(!has_id(&diags, "MMTC"), "got: {diags:?}");
+    }
+
+    // -- MRPBW ----------------------------------------------------------------
+
+    #[test]
+    fn mrp_bw_fires_on_im2bw() {
+        let src = "bw = im2bw(I, 0.5);\n";
+        let diags = lint_nodes(&*engine(), src);
+        assert!(has_id(&diags, "MRPBW"), "got: {diags:?}");
+    }
+
+    #[test]
+    fn mrp_bw_not_fire_on_imbinarize() {
+        let src = "bw = imbinarize(I);\n";
+        let diags = lint_nodes(&*engine(), src);
+        assert!(!has_id(&diags, "MRPBW"), "got: {diags:?}");
+    }
+
+    // -- SPRIX ----------------------------------------------------------------
+
+    #[test]
+    fn sprix_fires_on_sparse_in_subscript() {
+        let src = "idx = A(sparse(1));\n";
+        let diags = lint_nodes(&*engine(), src);
+        assert!(has_id(&diags, "SPRIX"), "got: {diags:?}");
+    }
+
+    #[test]
+    fn sprix_not_fire_on_standalone_sparse() {
+        let src = "S = sparse(1);\n";
+        let diags = lint_nodes(&*engine(), src);
+        assert!(!has_id(&diags, "SPRIX"), "got: {diags:?}");
+    }
+
+    // -- TRSRT ----------------------------------------------------------------
+
+    #[test]
+    fn trsrt_fires_on_sort_in_subscript() {
+        let src = "x = y(sort(z));\n";
+        let diags = lint_nodes(&*engine(), src);
+        assert!(has_id(&diags, "TRSRT"), "got: {diags:?}");
+    }
+
+    #[test]
+    fn trsrt_not_fire_on_standalone_sort() {
+        let src = "s = sort(z);\n";
+        let diags = lint_nodes(&*engine(), src);
+        assert!(!has_id(&diags, "TRSRT"), "got: {diags:?}");
+    }
+
+    // -- GRIDD ----------------------------------------------------------------
+
+    #[test]
+    fn gridd_fires_on_repmat() {
+        let src = "M = repmat(x, 1, 3);\n";
+        let diags = lint_nodes(&*engine(), src);
+        assert!(has_id(&diags, "GRIDD"), "got: {diags:?}");
+    }
+
+    #[test]
+    fn gridd_not_fire_on_ones() {
+        let src = "M = ones(3);\n";
+        let diags = lint_nodes(&*engine(), src);
+        assert!(!has_id(&diags, "GRIDD"), "got: {diags:?}");
+    }
+
+    // -- clear-family commands -------------------------------------------------
+
+    #[test]
+    fn clear0args_fires_on_bare_clear() {
+        let src = "clear;\n";
+        let diags = lint_nodes(&*engine(), src);
+        assert!(has_id(&diags, "CLEAR0ARGS"), "got: {diags:?}");
+    }
+
+    #[test]
+    fn clall_fires_on_clear_all() {
+        let src = "clear all;\n";
+        let diags = lint_nodes(&*engine(), src);
+        assert!(has_id(&diags, "CLALL"), "got: {diags:?}");
+    }
+
+    #[test]
+    fn clcls_fires_on_clear_classes() {
+        let src = "clear classes;\n";
+        let diags = lint_nodes(&*engine(), src);
+        assert!(has_id(&diags, "CLCLS"), "got: {diags:?}");
+    }
+
+    #[test]
+    fn clfunc_fires_on_clear_functions() {
+        let src = "clear functions;\n";
+        let diags = lint_nodes(&*engine(), src);
+        assert!(has_id(&diags, "CLFUNC"), "got: {diags:?}");
+    }
+
+    #[test]
+    fn cljava_fires_on_clear_java() {
+        let src = "clear java;\n";
+        let diags = lint_nodes(&*engine(), src);
+        assert!(has_id(&diags, "CLJAVA"), "got: {diags:?}");
+    }
+
+    #[test]
+    fn clmex_fires_on_clear_mex() {
+        let src = "clear mex;\n";
+        let diags = lint_nodes(&*engine(), src);
+        assert!(has_id(&diags, "CLMEX"), "got: {diags:?}");
+    }
+
+    #[test]
+    fn clear_checks_not_fire_on_named_clear() {
+        let src = "clear x;\n";
+        let diags = lint_nodes(&*engine(), src);
+        assert!(!has_id(&diags, "CLEAR0ARGS"), "got: {diags:?}");
+        assert!(!has_id(&diags, "CLALL"), "got: {diags:?}");
+        assert!(!has_id(&diags, "CLCLS"), "got: {diags:?}");
+        assert!(!has_id(&diags, "CLFUNC"), "got: {diags:?}");
+        assert!(!has_id(&diags, "CLJAVA"), "got: {diags:?}");
+        assert!(!has_id(&diags, "CLMEX"), "got: {diags:?}");
+    }
+
+    // -- RGXP1 / RGXPI ----------------------------------------------------------
+
+    #[test]
+    fn rgxp1_fires_on_simple_regex_pattern() {
+        let src = "m = regexp(s, 'foo');\n";
+        let diags = lint_nodes(&*engine(), src);
+        assert!(has_id(&diags, "RGXP1"), "got: {diags:?}");
+    }
+
+    #[test]
+    fn rgxp1_not_fire_on_metacharacter_pattern() {
+        let src = "m = regexp(s, 'a+b');\n";
+        let diags = lint_nodes(&*engine(), src);
+        assert!(!has_id(&diags, "RGXP1"), "got: {diags:?}");
+    }
+
+    #[test]
+    fn rgxpi_fires_on_ignorecase_option() {
+        let src = "m = regexp(s, 'foo', 'ignorecase');\n";
+        let diags = lint_nodes(&*engine(), src);
+        assert!(has_id(&diags, "RGXPI"), "got: {diags:?}");
+    }
+
+    #[test]
+    fn rgxpi_not_fire_without_ignorecase() {
+        let src = "m = regexp(s, 'a+b');\n";
+        let diags = lint_nodes(&*engine(), src);
+        assert!(!has_id(&diags, "RGXPI"), "got: {diags:?}");
+    }
+
+    // -- TRIM1 / TRIM2 ----------------------------------------------------------
+
+    #[test]
+    fn trim1_fires_on_deblank() {
+        let src = "x = deblank(s);\n";
+        let diags = lint_nodes(&*engine(), src);
+        assert!(has_id(&diags, "TRIM1"), "got: {diags:?}");
+    }
+
+    #[test]
+    fn trim1_not_fire_on_strtrim() {
+        let src = "x = strtrim(s);\n";
+        let diags = lint_nodes(&*engine(), src);
+        assert!(!has_id(&diags, "TRIM1"), "got: {diags:?}");
+    }
+
+    #[test]
+    fn trim2_fires_on_strtrim() {
+        let src = "x = strtrim(s);\n";
+        let diags = lint_nodes(&*engine(), src);
+        assert!(has_id(&diags, "TRIM2"), "got: {diags:?}");
+    }
+
+    #[test]
+    fn trim2_not_fire_on_strip() {
+        let src = "x = strip(s);\n";
+        let diags = lint_nodes(&*engine(), src);
+        assert!(!has_id(&diags, "TRIM2"), "got: {diags:?}");
+    }
+
+    // -- STTOK ----------------------------------------------------------------
+
+    #[test]
+    fn sttok_fires_on_strtok_in_loop() {
+        let src = "for i = 1:10\n    [t, r] = strtok(s);\nend\n";
+        let diags = lint_nodes(&*engine(), src);
+        assert!(has_id(&diags, "STTOK"), "got: {diags:?}");
+    }
+
+    #[test]
+    fn sttok_not_fire_outside_loop() {
+        let src = "[t, r] = strtok(s);\n";
+        let diags = lint_nodes(&*engine(), src);
+        assert!(!has_id(&diags, "STTOK"), "got: {diags:?}");
+    }
+
+    // -- STNCI ----------------------------------------------------------------
+
+    #[test]
+    fn stnci_fires_on_lower_strcmp() {
+        let src = "x = lower(strcmp(a, b));\n";
+        let diags = lint_nodes(&*engine(), src);
+        assert!(has_id(&diags, "STNCI"), "got: {diags:?}");
+    }
+
+    #[test]
+    fn stnci_not_fire_on_bare_strcmp() {
+        let src = "x = strcmp(a, b);\n";
+        let diags = lint_nodes(&*engine(), src);
+        assert!(!has_id(&diags, "STNCI"), "got: {diags:?}");
+    }
+
+    // -- FNDSB ----------------------------------------------------------------
+
+    #[test]
+    fn fndsb_fires_on_findstr() {
+        let src = "k = findstr(s, 'x');\n";
+        let diags = lint_nodes(&*engine(), src);
+        assert!(has_id(&diags, "FNDSB"), "got: {diags:?}");
+    }
+
+    #[test]
+    fn fndsb_not_fire_on_contains() {
+        let src = "k = contains(s, 'x');\n";
+        let diags = lint_nodes(&*engine(), src);
+        assert!(!has_id(&diags, "FNDSB"), "got: {diags:?}");
+    }
+
+    // -- Config-respected test --------------------------------------------------
+
+    #[test]
+    fn config_skip_checks_disables_individual_checks() {
+        let config = Config::from_toml(
+            r#"
+[lint.rules.PERFORMANCE_ENGINE]
+skip_checks = ["AGROW", "ST2NM"]
+"#,
+        )
+        .unwrap();
+        let rule = PerformanceEngine::from_config(&config);
+
+        // Skipped check no longer fires.
+        let src = "for i = 1:10\n    x = [x, i];\nend\n";
+        let diags = lint_file(&*rule, src);
+        assert!(!has_id(&diags, "AGROW"), "got: {diags:?}");
+
+        let src = "x = str2num('1 2');\n";
+        let diags = lint_nodes(&*rule, src);
+        assert!(!has_id(&diags, "ST2NM"), "got: {diags:?}");
+
+        // Non-skipped checks still fire.
+        let src = "x = inv(A) * b;\n";
+        let diags = lint_nodes(&*rule, src);
+        assert!(has_id(&diags, "MINV"), "got: {diags:?}");
+    }
+}

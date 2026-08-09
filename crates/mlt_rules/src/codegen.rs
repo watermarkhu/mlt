@@ -554,3 +554,299 @@ inventory::submit!(crate::RuleRegistration::new(
     "CODEGEN_ENGINE",
     CodegenEngine::from_config
 ));
+
+// ---------------------------------------------------------------------------
+// Tests
+// ---------------------------------------------------------------------------
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::test_util::{has_id, lint_file, lint_nodes};
+    use mlt_core::Config;
+
+    fn engine() -> Box<dyn Rule> {
+        CodegenEngine::from_config(&Config::default())
+    }
+
+    // -- EMFCN ---------------------------------------------------------------
+
+    #[test]
+    fn emfcn_fires_on_unsupported_function_call() {
+        let src = "eval('x');\n";
+        let diags = lint_nodes(&*engine(), src);
+        assert!(has_id(&diags, "EMFCN"), "got: {diags:?}");
+    }
+
+    #[test]
+    fn emfcn_fires_on_unsupported_command() {
+        let src = "clear all;\n";
+        let diags = lint_nodes(&*engine(), src);
+        assert!(has_id(&diags, "EMFCN"), "got: {diags:?}");
+    }
+
+    #[test]
+    fn emfcn_fires_on_plot() {
+        let src = "plot(x, y);\n";
+        let diags = lint_nodes(&*engine(), src);
+        assert!(has_id(&diags, "EMFCN"), "got: {diags:?}");
+    }
+
+    #[test]
+    fn emfcn_not_fire_on_supported_function() {
+        let src = "y = sum(x);\n";
+        let diags = lint_nodes(&*engine(), src);
+        assert!(!has_id(&diags, "EMFCN"), "got: {diags:?}");
+    }
+
+    // -- EMLOAD ---------------------------------------------------------------
+
+    #[test]
+    fn emload_fires_on_load_function() {
+        let src = "load('file.mat');\n";
+        let diags = lint_nodes(&*engine(), src);
+        assert!(has_id(&diags, "EMLOAD"), "got: {diags:?}");
+    }
+
+    #[test]
+    fn emload_not_fire_on_save() {
+        let src = "save('file.mat');\n";
+        let diags = lint_nodes(&*engine(), src);
+        assert!(!has_id(&diags, "EMLOAD"), "got: {diags:?}");
+    }
+
+    // -- EMS2N ----------------------------------------------------------------
+
+    #[test]
+    fn ems2n_fires_on_str2num() {
+        let src = "x = str2num('1 2');\n";
+        let diags = lint_nodes(&*engine(), src);
+        assert!(has_id(&diags, "EMS2N"), "got: {diags:?}");
+    }
+
+    #[test]
+    fn ems2n_not_fire_on_str2double() {
+        let src = "x = str2double('1 2');\n";
+        let diags = lint_nodes(&*engine(), src);
+        assert!(!has_id(&diags, "EMS2N"), "got: {diags:?}");
+    }
+
+    // -- PRMNOIN --------------------------------------------------------------
+
+    #[test]
+    fn prmnoin_fires_on_validateattributes() {
+        let src = "validateattributes(x, {'numeric'}, {'scalar'});\n";
+        let diags = lint_nodes(&*engine(), src);
+        assert!(has_id(&diags, "PRMNOIN"), "got: {diags:?}");
+    }
+
+    #[test]
+    fn prmnoin_fires_on_inputparser() {
+        let src = "p = inputParser();\n";
+        let diags = lint_nodes(&*engine(), src);
+        assert!(has_id(&diags, "PRMNOIN"), "got: {diags:?}");
+    }
+
+    #[test]
+    fn prmnoin_not_fire_on_plain_call() {
+        let src = "x = fcn(1, 2);\n";
+        let diags = lint_nodes(&*engine(), src);
+        assert!(!has_id(&diags, "PRMNOIN"), "got: {diags:?}");
+    }
+
+    // -- EMIMP ----------------------------------------------------------------
+
+    #[test]
+    fn emimp_fires_on_import_command() {
+        let src = "import pkg.fcn;\n";
+        let diags = lint_nodes(&*engine(), src);
+        assert!(has_id(&diags, "EMIMP"), "got: {diags:?}");
+    }
+
+    #[test]
+    fn emimp_not_fire_on_plain_statement() {
+        let src = "x = 1;\n";
+        let diags = lint_nodes(&*engine(), src);
+        assert!(!has_id(&diags, "EMIMP"), "got: {diags:?}");
+    }
+
+    // -- EMTC -----------------------------------------------------------------
+
+    #[test]
+    fn emtc_fires_on_try_catch() {
+        let src = "try\n    x = 1;\ncatch\n    y = 2;\nend\n";
+        let diags = lint_nodes(&*engine(), src);
+        assert!(has_id(&diags, "EMTC"), "got: {diags:?}");
+    }
+
+    #[test]
+    fn emtc_not_fire_on_plain_block() {
+        let src = "if x > 0\n    y = 1;\nend\n";
+        let diags = lint_nodes(&*engine(), src);
+        assert!(!has_id(&diags, "EMTC"), "got: {diags:?}");
+    }
+
+    // -- EMPFR ----------------------------------------------------------------
+
+    #[test]
+    fn empfr_fires_on_parfor() {
+        let src = "parfor i = 1:10\n    x = i;\nend\n";
+        let diags = lint_nodes(&*engine(), src);
+        assert!(has_id(&diags, "EMPFR"), "got: {diags:?}");
+    }
+
+    #[test]
+    fn empfr_not_fire_on_regular_for() {
+        let src = "for i = 1:10\n    x = i;\nend\n";
+        let diags = lint_nodes(&*engine(), src);
+        assert!(!has_id(&diags, "EMPFR"), "got: {diags:?}");
+    }
+
+    // -- EMVDF ----------------------------------------------------------------
+
+    #[test]
+    fn emvdf_fires_on_empty_init_in_loop() {
+        let src = "for i = 1:10\n    x = [];\nend\n";
+        let diags = lint_nodes(&*engine(), src);
+        assert!(has_id(&diags, "EMVDF"), "got: {diags:?}");
+    }
+
+    #[test]
+    fn emvdf_not_fire_outside_loop() {
+        let src = "x = [];\n";
+        let diags = lint_nodes(&*engine(), src);
+        assert!(!has_id(&diags, "EMVDF"), "got: {diags:?}");
+    }
+
+    // -- EMGRO ----------------------------------------------------------------
+
+    #[test]
+    fn emgro_fires_on_end_plus_one_growth() {
+        let src = "for i = 1:10\n    x(end+1) = i;\nend\n";
+        let diags = lint_nodes(&*engine(), src);
+        assert!(has_id(&diags, "EMGRO"), "got: {diags:?}");
+    }
+
+    #[test]
+    fn emgro_fires_on_concatenation_growth() {
+        let src = "for i = 1:10\n    x = [x, i];\nend\n";
+        let diags = lint_nodes(&*engine(), src);
+        assert!(has_id(&diags, "EMGRO"), "got: {diags:?}");
+    }
+
+    #[test]
+    fn emgro_not_fire_on_indexed_assignment() {
+        let src = "for i = 1:10\n    x(i) = i;\nend\n";
+        let diags = lint_nodes(&*engine(), src);
+        assert!(!has_id(&diags, "EMGRO"), "got: {diags:?}");
+    }
+
+    // -- FPASE ----------------------------------------------------------------
+
+    #[test]
+    fn fpase_fires_on_fi_rhs() {
+        let src = "x = fi(y, 1, 16);\n";
+        let diags = lint_nodes(&*engine(), src);
+        assert!(has_id(&diags, "FPASE"), "got: {diags:?}");
+    }
+
+    #[test]
+    fn fpase_not_fire_on_plain_rhs() {
+        let src = "x = y + 1;\n";
+        let diags = lint_nodes(&*engine(), src);
+        assert!(!has_id(&diags, "FPASE"), "got: {diags:?}");
+    }
+
+    // -- EMCEL ----------------------------------------------------------------
+
+    #[test]
+    fn emcel_fires_on_cell_literal() {
+        let src = "x = {1, 2};\n";
+        let diags = lint_nodes(&*engine(), src);
+        assert!(has_id(&diags, "EMCEL"), "got: {diags:?}");
+    }
+
+    #[test]
+    fn emcel_not_fire_on_matrix_literal() {
+        let src = "x = [1, 2];\n";
+        let diags = lint_nodes(&*engine(), src);
+        assert!(!has_id(&diags, "EMCEL"), "got: {diags:?}");
+    }
+
+    // -- EMRIFAV ---------------------------------------------------------------
+
+    #[test]
+    fn emrifav_fires_on_arguments_block() {
+        let src = "function f(a)\n    arguments\n        a (1,1) double\n    end\n    x = a;\nend\n";
+        let diags = lint_nodes(&*engine(), src);
+        assert!(has_id(&diags, "EMRIFAV"), "got: {diags:?}");
+    }
+
+    #[test]
+    fn emrifav_not_fire_without_arguments_block() {
+        let src = "function f(a)\n    x = a;\nend\n";
+        let diags = lint_nodes(&*engine(), src);
+        assert!(!has_id(&diags, "EMRIFAV"), "got: {diags:?}");
+    }
+
+    // -- EMSCR (file-level) -----------------------------------------------------
+
+    #[test]
+    fn emscr_fires_on_script_file() {
+        let src = "x = 1;\n";
+        let diags = lint_file(&*engine(), src);
+        assert!(has_id(&diags, "EMSCR"), "got: {diags:?}");
+    }
+
+    #[test]
+    fn emscr_not_fire_on_function_file() {
+        let src = "function f()\n    x = 1;\nend\n";
+        let diags = lint_file(&*engine(), src);
+        assert!(!has_id(&diags, "EMSCR"), "got: {diags:?}");
+    }
+
+    // -- EMNST (file-level) -------------------------------------------------------
+
+    #[test]
+    fn emnst_fires_on_nested_function() {
+        let src = "function a()\n    function b()\n        x = 1;\n    end\nend\n";
+        let diags = lint_file(&*engine(), src);
+        assert!(has_id(&diags, "EMNST"), "got: {diags:?}");
+    }
+
+    #[test]
+    fn emnst_not_fire_on_flat_functions() {
+        let src = "function a()\n    x = 1;\nend\n";
+        let diags = lint_file(&*engine(), src);
+        assert!(!has_id(&diags, "EMNST"), "got: {diags:?}");
+    }
+
+    // -- Config-respected test -----------------------------------------------------
+
+    #[test]
+    fn config_skip_checks_disables_individual_checks() {
+        let config = Config::from_toml(
+            r#"
+[lint.rules.CODEGEN_ENGINE]
+skip_checks = ["EMSCR", "EMFCN"]
+"#,
+        )
+        .unwrap();
+        let rule = CodegenEngine::from_config(&config);
+
+        // Skipped file-level check no longer fires.
+        let src = "x = 1;\n";
+        let diags = lint_file(&*rule, src);
+        assert!(!has_id(&diags, "EMSCR"), "got: {diags:?}");
+
+        // Skipped node-level check no longer fires.
+        let src = "eval('x');\n";
+        let diags = lint_nodes(&*rule, src);
+        assert!(!has_id(&diags, "EMFCN"), "got: {diags:?}");
+
+        // Non-skipped checks still fire.
+        let src = "try\n    x = 1;\ncatch\n    y = 2;\nend\n";
+        let diags = lint_nodes(&*rule, src);
+        assert!(has_id(&diags, "EMTC"), "got: {diags:?}");
+    }
+}

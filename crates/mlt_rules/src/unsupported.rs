@@ -370,3 +370,228 @@ inventory::submit!(crate::RuleRegistration::new(
     "UNSUPPORTED_ENGINE",
     UnsupportedEngine::from_config
 ));
+
+// ---------------------------------------------------------------------------
+// Tests
+// ---------------------------------------------------------------------------
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::test_util::{has_id, lint_nodes, parse};
+    use mlt_core::Config;
+
+    fn engine() -> Box<dyn Rule> {
+        UnsupportedEngine::from_config(&Config::default())
+    }
+
+    // -- MCADE ---------------------------------------------------------------
+
+    #[test]
+    fn mcade_fires_on_deploytool_call() {
+        let src = "deploytool();\n";
+        let diags = lint_nodes(&*engine(), src);
+        assert!(has_id(&diags, "MCADE"), "got: {diags:?}");
+    }
+
+    #[test]
+    fn mcade_no_fire_on_regular_call() {
+        let src = "disp('hello');\n";
+        let diags = lint_nodes(&*engine(), src);
+        assert!(!has_id(&diags, "MCADE"), "got: {diags:?}");
+    }
+
+    // -- AWTIUD --------------------------------------------------------------
+    //
+    // Note: `parfeval(...).fetchOutputs()` parses as a `field_expression`
+    // whose `fetchOutputs()` call has a `name` field of just "fetchOutputs".
+    // The name never contains "parfeval", so `is_chained_parfeval` can never
+    // return true and AWTIUD is unreachable under the current grammar.
+
+    // -- AXCHUD --------------------------------------------------------------
+
+    #[test]
+    fn axchud_fires_on_actxserver_call() {
+        let src = "ex = actxserver('Excel.Application');\n";
+        let diags = lint_nodes(&*engine(), src);
+        assert!(has_id(&diags, "AXCHUD"), "got: {diags:?}");
+    }
+
+    #[test]
+    fn axchud_no_fire_on_regular_call() {
+        let src = "ex = fopen('file.txt');\n";
+        let diags = lint_nodes(&*engine(), src);
+        assert!(!has_id(&diags, "AXCHUD"), "got: {diags:?}");
+    }
+
+    // -- FEATUD --------------------------------------------------------------
+
+    #[test]
+    fn featud_fires_on_feature_call() {
+        let src = "v = feature('version');\n";
+        let diags = lint_nodes(&*engine(), src);
+        assert!(has_id(&diags, "FEATUD"), "got: {diags:?}");
+    }
+
+    #[test]
+    fn featud_no_fire_on_regular_call() {
+        let src = "v = version;\n";
+        let diags = lint_nodes(&*engine(), src);
+        assert!(!has_id(&diags, "FEATUD"), "got: {diags:?}");
+    }
+
+    // -- FNDPUD --------------------------------------------------------------
+
+    #[test]
+    fn fndpud_fires_on_findprop_call() {
+        let src = "p = findprop(obj, 'Name');\n";
+        let diags = lint_nodes(&*engine(), src);
+        assert!(has_id(&diags, "FNDPUD"), "got: {diags:?}");
+    }
+
+    #[test]
+    fn fndpud_no_fire_on_regular_call() {
+        let src = "p = findobj(obj);\n";
+        let diags = lint_nodes(&*engine(), src);
+        assert!(!has_id(&diags, "FNDPUD"), "got: {diags:?}");
+    }
+
+    // -- HGCNUD --------------------------------------------------------------
+
+    #[test]
+    fn hgcnud_fires_on_uicontainer_call() {
+        let src = "h = uicontainer('Parent', f);\n";
+        let diags = lint_nodes(&*engine(), src);
+        assert!(has_id(&diags, "HGCNUD"), "got: {diags:?}");
+    }
+
+    #[test]
+    fn hgcnud_no_fire_on_regular_call() {
+        let src = "h = uipanel('Parent', f);\n";
+        let diags = lint_nodes(&*engine(), src);
+        assert!(!has_id(&diags, "HGCNUD"), "got: {diags:?}");
+    }
+
+    // -- IMPKG ---------------------------------------------------------------
+
+    #[test]
+    fn impkg_fires_on_import_command() {
+        let src = "import pkg.sub.*;\n";
+        let diags = lint_nodes(&*engine(), src);
+        assert!(has_id(&diags, "IMPKG"), "got: {diags:?}");
+    }
+
+    #[test]
+    fn impkg_no_fire_on_regular_command() {
+        let src = "disp('hello');\n";
+        let diags = lint_nodes(&*engine(), src);
+        assert!(!has_id(&diags, "IMPKG"), "got: {diags:?}");
+    }
+
+    // -- ISMBUD --------------------------------------------------------------
+
+    #[test]
+    fn ismbud_fires_on_is_member_call() {
+        let src = "tf = isMember(x, y);\n";
+        let diags = lint_nodes(&*engine(), src);
+        assert!(has_id(&diags, "ISMBUD"), "got: {diags:?}");
+    }
+
+    #[test]
+    fn ismbud_no_fire_on_lowercase_ismember() {
+        let src = "tf = ismember(x, y);\n";
+        let diags = lint_nodes(&*engine(), src);
+        assert!(!has_id(&diags, "ISMBUD"), "got: {diags:?}");
+    }
+
+    // -- MIPKG ---------------------------------------------------------------
+    //
+    // Note: `meta.package(...)` parses as a `field_expression` wrapping a
+    // `function_call` whose `name` field is just "package". The name never
+    // equals "meta.package", so MIPKG is unreachable under the current grammar.
+
+    // -- SEPTUD --------------------------------------------------------------
+
+    #[test]
+    fn septud_fires_on_serial_call() {
+        let src = "s = serial('COM1');\n";
+        let diags = lint_nodes(&*engine(), src);
+        assert!(has_id(&diags, "SEPTUD"), "got: {diags:?}");
+    }
+
+    #[test]
+    fn septud_no_fire_on_serialport_call() {
+        let src = "s = serialport('COM1', 9600);\n";
+        let diags = lint_nodes(&*engine(), src);
+        assert!(!has_id(&diags, "SEPTUD"), "got: {diags:?}");
+    }
+
+    // -- SYDEUD --------------------------------------------------------------
+    //
+    // Note: `System.Data.DataTable()` parses as a `field_expression` wrapping
+    // a `function_call` whose `name` field is just "DataTable". The name never
+    // starts with "System.Data", so SYDEUD is unreachable under the current
+    // grammar.
+
+    // -- UIRSUD --------------------------------------------------------------
+
+    #[test]
+    fn uirsud_fires_on_uiresume_at_script_level() {
+        let src = "uiresume(gcf);\n";
+        let diags = lint_nodes(&*engine(), src);
+        assert!(has_id(&diags, "UIRSUD"), "got: {diags:?}");
+    }
+
+    #[test]
+    fn uirsud_no_fire_inside_function() {
+        let src = "function f()\n    uiresume(gcf);\nend\n";
+        let diags = lint_nodes(&*engine(), src);
+        assert!(!has_id(&diags, "UIRSUD"), "got: {diags:?}");
+    }
+
+    // -- UISUUD --------------------------------------------------------------
+
+    #[test]
+    fn uisuud_fires_on_guidata_call() {
+        let src = "guidata(h, data);\n";
+        let diags = lint_nodes(&*engine(), src);
+        assert!(has_id(&diags, "UISUUD"), "got: {diags:?}");
+    }
+
+    #[test]
+    fn uisuud_no_fire_on_regular_call() {
+        let src = "disp('hello');\n";
+        let diags = lint_nodes(&*engine(), src);
+        assert!(!has_id(&diags, "UISUUD"), "got: {diags:?}");
+    }
+
+    // -- skip_checks configuration -------------------------------------------
+
+    #[test]
+    fn skip_checks_disables_check() {
+        let config = Config::from_toml(
+            "[lint.rules.UNSUPPORTED_ENGINE]\nskip_checks = [\"FEATUD\"]\n",
+        )
+        .expect("valid config");
+        let rule = UnsupportedEngine::from_config(&config);
+        let src = "v = feature('version');\n";
+        let diags = lint_nodes(&*rule, src);
+        assert!(!has_id(&diags, "FEATUD"), "got: {diags:?}");
+    }
+
+    /// Ensure the test sources parse without syntax errors (sanity check).
+    #[test]
+    fn test_sources_parse() {
+        let sources = [
+            "deploytool();\n",
+            "ex = actxserver('Excel.Application');\n",
+            "import pkg.sub.*;\n",
+            "pkg = meta.package('my.pkg');\n",
+            "dt = System.Data.DataTable();\n",
+        ];
+        for src in sources {
+            let tree = parse(src);
+            assert!(!tree.root_node().has_error(), "parse error for: {src:?}");
+        }
+    }
+}

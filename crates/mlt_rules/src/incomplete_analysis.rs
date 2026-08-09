@@ -11,7 +11,7 @@
 //! | TMMSG    | More than 10,000 diagnostics generated       | Post-lint (diagnostic count > threshold)   |
 //! | TMSMS    | More than 1,000 parse errors generated       | Count ERROR nodes in tree                  |
 //! | MXASET   | File too complex to analyze                  | Node count > threshold                     |
-//! | QUIT     | Analysis did not complete                    | No-op (linter panic guard)                 |
+//! | QUIT     | Analysis did not complete                    | Engine panic guard (`catch_unwind` in `Linter::lint`) |
 //! | NOSPC    | File too complex (nesting)                   | Max nesting depth > threshold              |
 //! | MBIG     | File too large                               | Source length > threshold                  |
 //! | NOFIL    | File not found                               | No-op (handled by CLI)                     |
@@ -588,8 +588,9 @@ impl Rule for IncompleteAnalysisEngine {
             });
         }
 
-        // -- No-op checks (handled by CLI, documented here for completeness) --
-        // QUIT:  Analysis did not complete — linter panic guard (CLI level).
+        // -- No-op checks (handled elsewhere, documented here for completeness) --
+        // QUIT:  Analysis did not complete — engine panic guard (catch_unwind in
+        //        Linter::lint), emitted when an internal analyzer error occurs.
         // NOFIL: File not found — CLI handles file discovery.
         // RDERR: Unable to read file — CLI handles I/O errors.
 
@@ -619,3 +620,239 @@ inventory::submit!(crate::RuleRegistration::new(
     "INCOMPLETE_ANALYSIS",
     IncompleteAnalysisEngine::from_config
 ));
+
+// ---------------------------------------------------------------------------
+// Tests
+// ---------------------------------------------------------------------------
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::test_util::{has_id, lint_file};
+    use mlt_core::Config;
+
+    fn engine() -> Box<dyn Rule> {
+        IncompleteAnalysisEngine::from_config(&Config::default())
+    }
+
+    /// Build an engine with a lowered/raised threshold in the config.
+    fn engine_with(params: &str) -> Box<dyn Rule> {
+        let config = Config::from_toml(&format!(
+            "[lint.rules.INCOMPLETE_ANALYSIS]\n{params}\n"
+        ))
+        .unwrap();
+        IncompleteAnalysisEngine::from_config(&config)
+    }
+
+    // -- MBIG: file too large -----------------------------------------------
+
+    #[test]
+    fn mbig_fires_when_file_exceeds_limit() {
+        let engine = engine_with("max_file_size = 8");
+        let diags = lint_file(&*engine, "x = 12345;\n");
+        assert!(has_id(&diags, "MBIG"), "got: {diags:?}");
+    }
+
+    #[test]
+    fn mbig_ok_with_default_limit() {
+        let diags = lint_file(&*engine(), "x = 1;\n");
+        assert!(!has_id(&diags, "MBIG"), "got: {diags:?}");
+    }
+
+    // -- TEXTL: line too long -----------------------------------------------
+
+    #[test]
+    fn textl_fires_on_long_line() {
+        let engine = engine_with("max_line_length = 10");
+        let diags = lint_file(&*engine, "x = 1234567890;\n");
+        assert!(has_id(&diags, "TEXTL"), "got: {diags:?}");
+    }
+
+    #[test]
+    fn textl_ok_on_short_line() {
+        let diags = lint_file(&*engine(), "x = 1;\n");
+        assert!(!has_id(&diags, "TEXTL"), "got: {diags:?}");
+    }
+
+    // -- TMSMS / EOFER: too many parse errors -------------------------------
+
+    #[test]
+    fn tmsms_fires_on_parse_errors() {
+        let engine = engine_with("max_parse_errors = 0");
+        let diags = lint_file(&*engine, "x = ;\n");
+        assert!(has_id(&diags, "TMSMS"), "got: {diags:?}");
+    }
+
+    #[test]
+    fn tmsms_ok_on_valid_source() {
+        let diags = lint_file(&*engine(), "x = 1;\n");
+        assert!(!has_id(&diags, "TMSMS"), "got: {diags:?}");
+    }
+
+    #[test]
+    fn eofer_fires_on_parse_errors() {
+        let engine = engine_with("max_parse_errors = 0");
+        let diags = lint_file(&*engine, "x = ;\n");
+        assert!(has_id(&diags, "EOFER"), "got: {diags:?}");
+    }
+
+    #[test]
+    fn eofer_ok_on_valid_source() {
+        let diags = lint_file(&*engine(), "x = 1;\n");
+        assert!(!has_id(&diags, "EOFER"), "got: {diags:?}");
+    }
+
+    // -- EOFMI: incomplete file ---------------------------------------------
+
+    #[test]
+    fn eofmi_fires_on_incomplete_file() {
+        let diags = lint_file(&*engine(), "x = 1; 2");
+        assert!(has_id(&diags, "EOFMI"), "got: {diags:?}");
+    }
+
+    #[test]
+    fn eofmi_ok_on_complete_file() {
+        let diags = lint_file(&*engine(), "x = 1;\n");
+        assert!(!has_id(&diags, "EOFMI"), "got: {diags:?}");
+    }
+
+    // -- MXASET: file too complex (node count) ------------------------------
+
+    #[test]
+    fn mxaset_fires_when_node_count_exceeds() {
+        let engine = engine_with("max_node_count = 1");
+        let diags = lint_file(&*engine, "x = 1;\n");
+        assert!(has_id(&diags, "MXASET"), "got: {diags:?}");
+    }
+
+    #[test]
+    fn mxaset_ok_with_default_limit() {
+        let diags = lint_file(&*engine(), "x = 1;\n");
+        assert!(!has_id(&diags, "MXASET"), "got: {diags:?}");
+    }
+
+    // -- NOSPC: nesting depth -----------------------------------------------
+
+    #[test]
+    fn nospc_fires_on_deep_nesting() {
+        let engine = engine_with("max_statement_depth = 2");
+        let diags = lint_file(
+            &*engine,
+            "if x\n    if x\n        if x\n            y = 1;\n        end\n    end\nend\n",
+        );
+        assert!(has_id(&diags, "NOSPC"), "got: {diags:?}");
+    }
+
+    #[test]
+    fn nospc_ok_on_shallow_nesting() {
+        let diags = lint_file(&*engine(), "if x\n    y = 1;\nend\n");
+        assert!(!has_id(&diags, "NOSPC"), "got: {diags:?}");
+    }
+
+    // -- MDEEP: parens/brackets too deeply nested ---------------------------
+
+    #[test]
+    fn mdeep_fires_on_deep_parens() {
+        let engine = engine_with("max_paren_depth = 2");
+        let diags = lint_file(&*engine, "y = ((((1))));\n");
+        assert!(has_id(&diags, "MDEEP"), "got: {diags:?}");
+    }
+
+    #[test]
+    fn mdeep_ok_on_shallow_parens() {
+        let diags = lint_file(&*engine(), "y = (1);\n");
+        assert!(!has_id(&diags, "MDEEP"), "got: {diags:?}");
+    }
+
+    // -- DEEPN: functions nested too deeply ---------------------------------
+
+    #[test]
+    fn deepn_fires_on_deep_function_nesting() {
+        let engine = engine_with("max_function_depth = 2");
+        let diags = lint_file(
+            &*engine,
+            "function a()\n    function b()\n        function c()\n        end\n    end\nend\n",
+        );
+        assert!(has_id(&diags, "DEEPN"), "got: {diags:?}");
+    }
+
+    #[test]
+    fn deepn_ok_on_single_function() {
+        let diags = lint_file(&*engine(), "function foo()\nend\n");
+        assert!(!has_id(&diags, "DEEPN"), "got: {diags:?}");
+    }
+
+    // -- DEEPS: statements nested too deeply --------------------------------
+
+    #[test]
+    fn deepe_fires_on_deep_statement_nesting() {
+        let engine = engine_with("max_statement_depth = 2");
+        let diags = lint_file(
+            &*engine,
+            "if x\n    if x\n        if x\n            y = 1;\n        end\n    end\nend\n",
+        );
+        assert!(has_id(&diags, "DEEPS"), "got: {diags:?}");
+    }
+
+    #[test]
+    fn deeps_ok_on_shallow_statement_nesting() {
+        let diags = lint_file(&*engine(), "if x\n    y = 1;\nend\n");
+        assert!(!has_id(&diags, "DEEPS"), "got: {diags:?}");
+    }
+
+    // -- DEEPC: nested block comments ---------------------------------------
+
+    #[test]
+    fn deepc_fires_on_nested_block_comments() {
+        let diags = lint_file(&*engine(), "%{\n%{\n%}\n%}\n");
+        assert!(has_id(&diags, "DEEPC"), "got: {diags:?}");
+    }
+
+    #[test]
+    fn deepc_ok_on_single_block_comment() {
+        let diags = lint_file(&*engine(), "%{\ncomment\n%}\n");
+        assert!(!has_id(&diags, "DEEPC"), "got: {diags:?}");
+    }
+
+    // -- TMMSG: too many diagnostics ----------------------------------------
+
+    #[test]
+    fn tmmsg_fires_when_diagnostics_exceed() {
+        // Force at least one diagnostic (a too-long line), then check TMMSG.
+        let engine = engine_with("max_diagnostics = 0\nmax_line_length = 4");
+        let diags = lint_file(&*engine, "x = 12345;\n");
+        assert!(has_id(&diags, "TMMSG"), "got: {diags:?}");
+    }
+
+    #[test]
+    fn tmmsg_ok_with_default_limit() {
+        let diags = lint_file(&*engine(), "x = 1;\n");
+        assert!(!has_id(&diags, "TMMSG"), "got: {diags:?}");
+    }
+
+    // -- QUIT: engine panic guard (must NOT fire for parse-level problems) ----
+
+    #[test]
+    fn quit_does_not_fire_on_clean_file() {
+        let diags = lint_file(&*engine(), "x = 1;\n");
+        assert!(!has_id(&diags, "QUIT"), "got: {diags:?}");
+    }
+
+    #[test]
+    fn quit_does_not_fire_on_syntax_error() {
+        let diags = lint_file(&*engine(), "x = ;\n");
+        assert!(!has_id(&diags, "QUIT"), "got: {diags:?}");
+    }
+
+    #[test]
+    fn quit_does_not_fire_on_unterminated_if() {
+        let diags = lint_file(&*engine(), "if x > 0\n    y = 1;\n");
+        assert!(!has_id(&diags, "QUIT"), "got: {diags:?}");
+    }
+
+    #[test]
+    fn quit_does_not_fire_on_incomplete_tail() {
+        let diags = lint_file(&*engine(), "x = 1; 2");
+        assert!(!has_id(&diags, "QUIT"), "got: {diags:?}");
+    }
+}
