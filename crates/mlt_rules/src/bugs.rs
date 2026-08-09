@@ -42,8 +42,8 @@
 //! | PFWHOS     | who/whos in parfor                                             |
 //! | PFTUSE     | Temporary variable misuse in parfor                            |
 //! | PFRNC      | Reduction not consistent in parfor                             |
-//! | FWFORP     | For loop could be parfor                                       |
-//! | FPFORP     | Parfor could be for                                            |
+//! | FWPARF     | For loop could be parfor                                       |
+//! | PFTRIV     | Parfor could be for                                            |
 //!
 //! ## Configuration
 //!
@@ -1350,11 +1350,11 @@ impl BugsEngine {
         if node.kind() == "for_statement" {
             let stmt_text = node_text(node, source);
             if !stmt_text.starts_with("parfor") {
-                // Not a parfor — check if it could be one (FWFORP).
+                // Not a parfor — check if it could be one (FWPARF).
                 if could_be_parfor(node, source) {
                     let pos = node.start_position();
                     diagnostics.push(Diagnostic {
-                        rule_id: "FWFORP",
+                        rule_id: "FWPARF",
                         message: "For loop could potentially be converted to parfor for parallelism"
                             .to_string(),
                         severity: Severity::Error,
@@ -1389,11 +1389,11 @@ impl BugsEngine {
                 }
             }
 
-            // FPFORP: Check if parfor could just be a for loop (body is trivial).
+            // PFTRIV: Check if parfor could just be a for loop (body is trivial).
             if is_trivial_parfor(node, source) {
                 let pos = node.start_position();
                 diagnostics.push(Diagnostic {
-                    rule_id: "FPFORP",
+                    rule_id: "PFTRIV",
                     message: "Parfor loop body is trivial; consider using regular for loop"
                         .to_string(),
                     severity: Severity::Error,
@@ -2690,21 +2690,21 @@ end
         assert!(!has_id(&diags, "PFRNC"), "got: {diags:?}");
     }
 
-    // -- FWFORP --------------------------------------------------------------
+    // -- FWPARF --------------------------------------------------------------
 
     #[test]
-    fn fwforp_fires_on_simple_for_loop() {
+    fn fwparf_fires_on_simple_for_loop() {
         let src = "\
 for i = 1:10
     x(i) = i;
 end
 ";
         let diags = file_diags(src);
-        assert!(has_id(&diags, "FWFORP"), "got: {diags:?}");
+        assert!(has_id(&diags, "FWPARF"), "got: {diags:?}");
     }
 
     #[test]
-    fn fwforp_no_fire_on_loop_with_break() {
+    fn fwparf_no_fire_on_loop_with_break() {
         let src = "\
 for i = 1:10
     if i > 5
@@ -2714,24 +2714,24 @@ for i = 1:10
 end
 ";
         let diags = file_diags(src);
-        assert!(!has_id(&diags, "FWFORP"), "got: {diags:?}");
+        assert!(!has_id(&diags, "FWPARF"), "got: {diags:?}");
     }
 
-    // -- FPFORP --------------------------------------------------------------
+    // -- PFTRIV --------------------------------------------------------------
 
     #[test]
-    fn fpforp_fires_on_trivial_parfor() {
+    fn pftriv_fires_on_trivial_parfor() {
         let src = "\
 parfor i = 1:10
     x(i) = i;
 end
 ";
         let diags = file_diags(src);
-        assert!(has_id(&diags, "FPFORP"), "got: {diags:?}");
+        assert!(has_id(&diags, "PFTRIV"), "got: {diags:?}");
     }
 
     #[test]
-    fn fpforp_no_fire_on_non_trivial_parfor() {
+    fn pftriv_no_fire_on_non_trivial_parfor() {
         let src = "\
 parfor i = 1:10
     x(i) = i;
@@ -2739,7 +2739,7 @@ parfor i = 1:10
 end
 ";
         let diags = file_diags(src);
-        assert!(!has_id(&diags, "FPFORP"), "got: {diags:?}");
+        assert!(!has_id(&diags, "PFTRIV"), "got: {diags:?}");
     }
 
     /// Ensure representative test sources parse without syntax errors.

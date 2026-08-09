@@ -259,7 +259,7 @@ feat
 |------|--------|-------:|--------------|
 | A | `feature/phase3-readability` | 8 | Readability(5) + Incomplete(3) |
 | B | `feature/phase3-syntax-errors` | 30 | NumberLiterals(7) + Strings(3) + ReservedWords(5) + AssignmentLHS(2) + Brackets(3) + MissingEnd(3) + CallSyntax(5) + VTPOD(1) |
-| C | `feature/phase3-language-spec` | ~108 | Parfor(28) + Class(26) + FuncVal(38) + Other(16) |
+| C | `feature/phase3-language-spec` | 108 | Parfor(28) + Class(26) + FuncVal(38) + Other(16) — **done (Wave C complete)** |
 | D | `feature/phase3-good-practices` | ~64 | OOP(12) + General(~52) |
 | **Total** | | **~210** | 8 parallel batches |
 
