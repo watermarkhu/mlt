@@ -1,3 +1,7 @@
+---
+icon: lucide/code
+---
+
 # NOSEMI - Trailing Semicolon Missing
 
 **Default severity:** Info

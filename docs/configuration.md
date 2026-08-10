@@ -23,14 +23,19 @@ If no config file is found and `--config` is not specified, mlt uses default set
 # Global lint settings
 exclude = ["vendor/**", "third_party/**"]
 
+[lint.categories]
+# Per-category severity overrides
+performance = "off"            # Disable every performance rule
+compatibility = "warn"         # All compatibility checks warn
+
 [lint.rules]
 # Per-rule configuration (shorthand or full table)
-M001 = "warn"           # Shorthand: just set severity
-M002 = "off"            # Disable a rule
-M003 = "error"          # Escalate to error
+NOSEMI = "warn"                # Shorthand: just set severity
+AGROW = "off"                  # Disable a rule
+COMPAT = "error"               # Escalate to error
 
-[lint.rules.M001]       # Full table: severity + rule parameters
-severity = "warn"
+[lint.rules.NOSEMI]            # Full table: severity + rule parameters
+severity = "error"
 ignore_functions = ["disp", "fprintf"]
 ```
 
@@ -52,9 +57,49 @@ exclude = [
 **Type:** Array of strings (glob patterns)
 **Default:** `[]` (no exclusions)
 
+## `[lint.categories]` Section
+
+Set the severity for **every** rule in a category at once. Keys are category slugs; values are severity strings. This is resolved *below* per-rule config: a rule-level override always wins over its category-level setting.
+
+```toml
+[lint.categories]
+performance = "off"            # Disable all performance rules
+compatibility = "warn"         # All compatibility rules warn
+formatting = "info"            # All formatting rules are informational
+```
+
+**Available categories:**
+
+| Category | Config Key | Includes |
+| -------- | ---------- | -------- |
+| Incomplete Analysis | `incomplete-analysis` | QUIT, NOFIL, RDERR, MBIG, MDEEP … |
+| Syntax Errors | `syntax-errors` | BADCT, RESWD, DOUQT, NOPAR2, SYNEND … |
+| Language Specification | `language-specification` | PF\*, FV\*, MC\*, AT\* checks |
+| Bugs | `bugs` | IFBDUP, CTRUE, LOGEMP, INCR, DECR … |
+| Custom Checks | `custom-checks` | Cyclomatic complexity, nesting, line metrics |
+| Naming | `naming` | `naming.*` checks (81) |
+| Compatibility | `compatibility` | Deprecated/removed function checks |
+| Forward Compatibility | `forward-compatibility` | FCLEN, FCCPV, FCDQS, FCFAV … |
+| Good Practices | `good-practices` | eval, error handling, OOP practices |
+| Unset Variables | `unset-variables` | NODEF, PSET, USENS … |
+| Unused Constructions | `unused-constructions` | NOEFF, NUSED, EQEFF, UNRCH … |
+| Suggested Improvements | `suggested-improvements` | Function replacement suggestions |
+| Readability | `readability` | ISCHR, IJCL, NBRAK2, STREMP … |
+| Formatting | `formatting` | NOSEMI, NOCOMMA, ALIGN, NOPRT … |
+| Performance | `performance` | AGROW, PFBNS, AND2, MINV … |
+| Code Generation | `code-generation` | MATLAB Coder constraints |
+| Fixed-Point | `fixed-point` | FPASE |
+| Deployment | `deployment` | MATLAB Compiler constraints |
+| System Objects | `system-objects` | SONUMIN, SOTUNPROP\* … |
+| Unsupported | `unsupported` | MCADE, AWTIUD, FEATUD … |
+| Behavior Changes | `behavior-changes` | Version behavior-change checks |
+| Configuration Issues | `configuration-issues` | BDCFG, CFERR, BDOPT, CFIG |
+
 ## `[lint.rules]` Section
 
-Configure individual rules. Each key is a rule ID (e.g., `M001`). Values can be either a **severity shorthand** (string) or a **full configuration table**.
+Configure individual rules. Each key is a **rule ID**. Values can be either a **severity shorthand** (string) or a **full configuration table**.
+
+Most rule *engines* are registered under their engine ID (e.g. `GOOD_PRACTICES_ENGINE`, `LANGUAGE_SPEC_ENGINE`, `COMPAT`), and each engine exposes its individual check IDs through its parameters. See **Per-Engine Parameters** below.
 
 ### Severity Shorthand
 
@@ -62,10 +107,10 @@ Set a rule's severity with a single string value:
 
 ```toml
 [lint.rules]
-M001 = "warn"       # Override severity to warning
-M002 = "error"      # Override severity to error
-M003 = "info"       # Override severity to info
-M004 = "off"        # Disable the rule entirely
+NOSEMI = "warn"       # Override severity to warning
+AGROW = "error"       # Override severity to error
+COMPAT = "info"       # Override severity to info
+CUSTOM_CHECKS = "off" # Disable the rule entirely
 ```
 
 ### Valid Severity Values
@@ -82,7 +127,7 @@ M004 = "off"        # Disable the rule entirely
 For rules that accept parameters, use a full TOML table:
 
 ```toml
-[lint.rules.M001]
+[lint.rules.NOSEMI]
 severity = "error"
 ignore_functions = ["disp", "fprintf", "warning", "error"]
 ```
@@ -91,12 +136,12 @@ Or equivalently as an inline table:
 
 ```toml
 [lint.rules]
-M001 = { severity = "error", ignore_functions = ["disp", "fprintf"] }
+NOSEMI = { severity = "error", ignore_functions = ["disp", "fprintf"] }
 ```
 
 The `severity` key is always optional in a full table. If omitted, the rule uses its default severity.
 
-All other keys in the table are rule-specific parameters. See each rule's documentation page for available options.
+All other keys in the table are rule-specific parameters (see **Per-Engine Parameters**).
 
 ## Default Behavior
 
@@ -111,10 +156,44 @@ When no `.mlt.toml` is present:
 
 The effective severity for each rule is resolved as:
 
-1. Config override (if `[lint.rules.XXXX]` specifies `severity` or shorthand)
-2. Rule's built-in default (if no config override)
+1. **Per-rule override** (if `[lint.rules.XXXX]` specifies `severity` or uses the shorthand)
+2. **Per-category override** (if `[lint.categories.XXXX]` is set for the rule's category)
+3. **Rule's built-in default** (if neither override is present)
 
 The config override applies to all diagnostics produced by that rule — rules themselves always emit their default severity, and the engine stamps the override afterward.
+
+## Per-Engine Parameters
+
+Multi-check engines take their parameters through their **engine ID**. Every engine also accepts `disabled_checks` (or `skip_checks`) to turn off specific check IDs.
+
+```toml
+[lint.rules.LANGUAGE_SPEC_ENGINE]
+disabled_checks = ["PFEVC", "PFANSLP"]   # Turn off specific checks
+```
+
+| Engine ID | Category | Parameters |
+| --------- | -------- | ---------- |
+| `INCOMPLETE_ANALYSIS` | incomplete-analysis | `max_diagnostics`, `max_parse_errors`, `max_node_count` (linter-internal limits) |
+| `SYNTAX_ERRORS_ENGINE` | syntax-errors | `disabled_checks` |
+| `LANGUAGE_SPEC_ENGINE` | language-specification | `disabled_checks` |
+| `BUGS_ENGINE` | bugs | `debug_functions`, `higher_order_functions` (extra function names to treat as debug/higher-order) |
+| `CUSTOM_CHECKS` | custom-checks | `max_function_inputs`, `max_function_outputs`, `max_function_lines`, `max_line_length`, `max_nesting_depth`, `max_cyclomatic_complexity`, `max_strict_cyclomatic_complexity`, `max_avg_cyclomatic_complexity`, `max_branches`, `max_return_points`, `max_nested_functions`, `max_anonymous_functions`, `max_local_variables`, `max_local_constants`, `max_called_functions`, `max_semicolons_per_line`, `max_tree_children`, `max_persistent_variables`, `max_conditions`, `max_input_args_used`, `max_output_args_used` |
+| `NAMING_ENGINE` | naming | `max`, `min`, `pattern`, `prefix`, `phrase`, `suffix`, `style` — per-entity check config via `[lint.rules.naming.<entity>.<check>]` |
+| `COMPAT` | compatibility | *(data-driven lookup; no params)* |
+| `GOOD_PRACTICES_ENGINE` | good-practices | `disabled_checks`, `max_variable_name_length` |
+| `UNSET_VARIABLES_ENGINE` | unset-variables | `ignore` (variable names to ignore) |
+| `UNUSED_ENGINE` | unused-constructions | `disabled_checks`, `ignore_patterns` |
+| `READABILITY_ENGINE` | readability | `disabled_checks` |
+| `FORMATTING_ENGINE` | formatting | `indent_size` (used by NO4LP) |
+| `PERFORMANCE_ENGINE` | performance | `skip_checks` |
+| `CODEGEN_ENGINE` | code-generation | `skip_checks` |
+| `DEPLOYMENT_ENGINE` | deployment | `skip_checks` |
+| `UNSUPPORTED_ENGINE` | unsupported | `skip_checks` |
+| `SYSTEM_OBJECTS_ENGINE` | system-objects | `skip_checks` |
+| `CONFIG_ISSUES_ENGINE` | configuration-issues | `disabled_checks` |
+| `NOSEMI` | formatting | `ignore_functions` (calls after which a missing semicolon is tolerated) |
+| `NO4LP` | formatting | `indent_size` (indent width expected for loop bodies) |
+| `SUGGESTED_IMPROVEMENTS` | suggested-improvements | *(data-driven lookup; no params)* |
 
 ## Complete Example
 
@@ -127,21 +206,28 @@ exclude = [
     "*.generated.m",
 ]
 
-[lint.rules]
-# Disable rules that don't apply to this project
-# M002 = "off"   # (example: when M002 exists)
+[lint.categories]
+# Keep compatibility warnings visible but don't gate the build on them
+compatibility = "warn"
 
+# Performance and formatting suggestions are noise during development
+performance = "info"
+formatting = "info"
+
+[lint.rules]
 # Escalate missing semicolons to errors in production code
-[lint.rules.M001]
+[lint.rules.NOSEMI]
 severity = "error"
 ignore_functions = ["disp", "fprintf", "warning", "error", "assert"]
+
+# Turn off a noisy sub-check of the language-spec engine
+[lint.rules.LANGUAGE_SPEC_ENGINE]
+disabled_checks = ["PFANSLP"]
+
+# Raise the cyclomatic-complexity threshold for this project
+[lint.rules.CUSTOM_CHECKS]
+max_cyclomatic_complexity = 12
 ```
-
-## Per-Rule Parameters
-
-Each rule can define its own configuration parameters. These are deserialized from the rule's config table into a typed struct. See individual rule documentation for available options:
-
-- [M001 - Trailing Semicolon](m001.md#configuration)
 
 ## Next Steps
 

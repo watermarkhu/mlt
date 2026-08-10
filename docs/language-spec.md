@@ -1,4 +1,8 @@
-# Language Specification - Function Validation Checks
+---
+icon: lucide/book-marked
+---
+
+# Language Specification
 
 **Default severity:** Error
 **Auto-fix:** No

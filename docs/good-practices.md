@@ -1,4 +1,8 @@
-# Good Practices - Function-Call Convention Checks
+---
+icon: lucide/check-circle
+---
+
+# Good Practices
 
 **Default severity:** Warning
 **Auto-fix:** No

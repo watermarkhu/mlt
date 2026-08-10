@@ -13,44 +13,44 @@ mlt implements lint rules matching MATLAB's Code Analyzer checks for feature par
 | Rule ID | Category | Description | Default Severity | Auto-fix |
 | ------- | -------- | ----------- | ---------------- | -------- |
 | [NOSEMI](nosemi.md) | Formatting | Statement without trailing semicolon may produce unintended console output | Info | Yes |
-| [MFAMB](mfamb.md) | Readability | Cannot determine whether name is a variable or function; assumes function | Info | No |
-| [FLUDLR](fludlr.md) | Readability | Nested `flipud(fliplr(x))`/`fliplr(flipud(x))` should use `rot90(x, 2)` | Info | Yes |
-| [STLOW](stlow.md) | Readability | Unnecessary UPPER/LOWER call in a comparison | Info | Yes |
-| [COMNL](comnl.md) | Readability | Newline following comma acts as a row separator in a matrix; suggest semicolon or ellipsis | Info | Yes |
-| [FVINR](fvinr.md) | Readability | For readability, add Input attribute to the input arguments block | Info | Yes |
-| [NOFIL](nofil.md) | Incomplete Analysis | File not found | Error | No |
-| [RDERR](rderr.md) | Incomplete Analysis | Unable to read file | Error | No |
-| [QUIT](quit.md) | Incomplete Analysis | Code analysis did not complete; the analyzer encountered an internal error | Error | No |
-| [NOPAR2](nopar2.md) | Syntax Errors | A `(` might be missing a closing `)`, causing invalid syntax at `(` on a line | Error | No |
-| [EOLPAR](eolpar.md) | Syntax Errors | A `(` might be missing a closing `)`, causing invalid syntax at end of line | Error | No |
-| [ENDPAR](endpar.md) | Syntax Errors | A `(` might be missing a closing `)`, causing invalid syntax at end of file | Error | No |
-| [UNSET](unset.md) | Syntax Errors | Invalid use of operator on the left side of an assignment | Error | No |
-| [LHROW](lhrow.md) | Syntax Errors | The left side of an assignment cannot have multiple rows (';') | Error | No |
-| [RESWD](reswd.md) | Syntax Errors | Invalid use of a reserved word | Error | No |
-| [SYNEND](synend.md) | Syntax Errors | Invalid use for END operator | Error | No |
-| [MCPLD](mcpld.md) | Syntax Errors | Invalid property syntax | Error | No |
-| [BADNOT](badnot.md) | Syntax Errors | Using ~ to ignore a value is not permitted in this context | Error | No |
-| [BADNOTLHS](badnotlhs.md) | Syntax Errors | Invalid use of logical not operator (~) on left side of an assignment | Error | No |
-| [BADCT](badct.md) | Syntax Errors | Unicode explicit directional formatting characters are not supported | Error | No |
-| [ENDCT2](endct2.md) | Syntax Errors | An END might be missing after a block-opening keyword | Error | No |
-| [ENDCT3](endct3.md) | Syntax Errors | An END might be missing before a block-opening keyword | Error | No |
-| [ENDCT4](endct4.md) | Syntax Errors | A METHODS block or END might be missing before a function definition | Error | No |
-| [STRIN](strin.md) | Syntax Errors | A quoted character vector is unterminated | Error | No |
-| [DOUQT](douqt.md) | Syntax Errors | A double quoted string is unterminated | Error | No |
-| [INBLK](inblk.md) | Syntax Errors | A block comment is unterminated at the end of the file | Error | No |
-| [BADFP](badfp.md) | Syntax Errors | Invalid floating-point constant | Error | No |
-| [BADHBH](badhbh.md) | Syntax Errors | Invalid digit in hexadecimal literal | Error | No |
-| [BADHBB](badhbb.md) | Syntax Errors | Invalid digit in binary literal | Error | No |
-| [BADHBHT](badhbht.md) | Syntax Errors | Hexadecimal literal has too many digits for specified type suffix | Error | No |
-| [BADHBBT](badhbbt.md) | Syntax Errors | Binary literal has too many digits for specified type suffix | Error | No |
-| [HEXTOOLONG](hextoolong.md) | Syntax Errors | Hexadecimal literal has too many digits | Error | No |
-| [BINARYTOOLONG](binarytoolong.md) | Syntax Errors | Binary literal has too many digits | Error | No |
-| [SBTMP](sbtmp.md) | Syntax Errors | Invalid array indexing or function call; chaining outputs after parenthesis is not supported | Error | No |
-| [FVSYN](fvsyn.md) | Syntax Errors | Invalid function argument syntax | Error | No |
-| [FVACI](fvaci.md) | Syntax Errors | Use of name-value arguments in cell indexing is not supported | Error | No |
-| [FVACS](fvacs.md) | Syntax Errors | Using a character vector or string as a name in name=value syntax is not supported | Error | No |
-| [FVAMI](fvami.md) | Syntax Errors | Name in name-value argument syntax must be a valid MATLAB identifier | Error | No |
-| [VTPOD](vtpod.md) | Syntax Errors | Specify validation in the following order: size, then class, then functions | Error | No |
+| [MFAMB](readability.md) | Readability | Cannot determine whether name is a variable or function; assumes function | Info | No |
+| [FLUDLR](readability.md) | Readability | Nested `flipud(fliplr(x))`/`fliplr(flipud(x))` should use `rot90(x, 2)` | Info | Yes |
+| [STLOW](readability.md) | Readability | Unnecessary UPPER/LOWER call in a comparison | Info | Yes |
+| [COMNL](readability.md) | Readability | Newline following comma acts as a row separator in a matrix; suggest semicolon or ellipsis | Info | Yes |
+| [FVINR](readability.md) | Readability | For readability, add Input attribute to the input arguments block | Info | Yes |
+| [NOFIL](incomplete-analysis.md) | Incomplete Analysis | File not found | Error | No |
+| [RDERR](incomplete-analysis.md) | Incomplete Analysis | Unable to read file | Error | No |
+| [QUIT](incomplete-analysis.md) | Incomplete Analysis | Code analysis did not complete; the analyzer encountered an internal error | Error | No |
+| [NOPAR2](syntax-errors.md) | Syntax Errors | A `(` might be missing a closing `)`, causing invalid syntax at `(` on a line | Error | No |
+| [EOLPAR](syntax-errors.md) | Syntax Errors | A `(` might be missing a closing `)`, causing invalid syntax at end of line | Error | No |
+| [ENDPAR](syntax-errors.md) | Syntax Errors | A `(` might be missing a closing `)`, causing invalid syntax at end of file | Error | No |
+| [UNSET](syntax-errors.md) | Syntax Errors | Invalid use of operator on the left side of an assignment | Error | No |
+| [LHROW](syntax-errors.md) | Syntax Errors | The left side of an assignment cannot have multiple rows (';') | Error | No |
+| [RESWD](syntax-errors.md) | Syntax Errors | Invalid use of a reserved word | Error | No |
+| [SYNEND](syntax-errors.md) | Syntax Errors | Invalid use for END operator | Error | No |
+| [MCPLD](syntax-errors.md) | Syntax Errors | Invalid property syntax | Error | No |
+| [BADNOT](syntax-errors.md) | Syntax Errors | Using ~ to ignore a value is not permitted in this context | Error | No |
+| [BADNOTLHS](syntax-errors.md) | Syntax Errors | Invalid use of logical not operator (~) on left side of an assignment | Error | No |
+| [BADCT](syntax-errors.md) | Syntax Errors | Unicode explicit directional formatting characters are not supported | Error | No |
+| [ENDCT2](syntax-errors.md) | Syntax Errors | An END might be missing after a block-opening keyword | Error | No |
+| [ENDCT3](syntax-errors.md) | Syntax Errors | An END might be missing before a block-opening keyword | Error | No |
+| [ENDCT4](syntax-errors.md) | Syntax Errors | A METHODS block or END might be missing before a function definition | Error | No |
+| [STRIN](syntax-errors.md) | Syntax Errors | A quoted character vector is unterminated | Error | No |
+| [DOUQT](syntax-errors.md) | Syntax Errors | A double quoted string is unterminated | Error | No |
+| [INBLK](syntax-errors.md) | Syntax Errors | A block comment is unterminated at the end of the file | Error | No |
+| [BADFP](syntax-errors.md) | Syntax Errors | Invalid floating-point constant | Error | No |
+| [BADHBH](syntax-errors.md) | Syntax Errors | Invalid digit in hexadecimal literal | Error | No |
+| [BADHBB](syntax-errors.md) | Syntax Errors | Invalid digit in binary literal | Error | No |
+| [BADHBHT](syntax-errors.md) | Syntax Errors | Hexadecimal literal has too many digits for specified type suffix | Error | No |
+| [BADHBBT](syntax-errors.md) | Syntax Errors | Binary literal has too many digits for specified type suffix | Error | No |
+| [HEXTOOLONG](syntax-errors.md) | Syntax Errors | Hexadecimal literal has too many digits | Error | No |
+| [BINARYTOOLONG](syntax-errors.md) | Syntax Errors | Binary literal has too many digits | Error | No |
+| [SBTMP](syntax-errors.md) | Syntax Errors | Invalid array indexing or function call; chaining outputs after parenthesis is not supported | Error | No |
+| [FVSYN](syntax-errors.md) | Syntax Errors | Invalid function argument syntax | Error | No |
+| [FVACI](syntax-errors.md) | Syntax Errors | Use of name-value arguments in cell indexing is not supported | Error | No |
+| [FVACS](syntax-errors.md) | Syntax Errors | Using a character vector or string as a name in name=value syntax is not supported | Error | No |
+| [FVAMI](syntax-errors.md) | Syntax Errors | Name in name-value argument syntax must be a valid MATLAB identifier | Error | No |
+| [VTPOD](syntax-errors.md) | Syntax Errors | Specify validation in the following order: size, then class, then functions | Error | No |
 | [FVAPN](language-spec.md) | Language Specification | Move name-value arguments that use the name=value syntax to the end of the argument list | Error | No |
 | [FVATF](language-spec.md) | Language Specification | Attribute values in arguments blocks must be logical constants | Error | No |
 | [FVBTN](language-spec.md) | Language Specification | Use of this function is not supported in arguments blocks | Error | No |
@@ -198,6 +198,62 @@ mlt implements lint rules matching MATLAB's Code Analyzer checks for feature par
 | [SPEVB](good-practices.md) | Good Practices | Using EVALIN('base') or ASSIGNIN('base') inside an SPMD block refers to the worker machines' base workspaces | Warning | No |
 | [SPGV](good-practices.md) | Good Practices | Using the GLOBAL or PERSISTENT variable in an SPMD block might fail because it is accessed on a worker machine | Warning | No |
 | [DSPMDA](good-practices.md) | Good Practices | Distributed array must be created outside of an SPMD block | Warning | No |
+| [ADMTHDINV](good-practices.md) | Good Practices | Use `VAR_NAME(app, ...)` to call this function | Warning | No |
+| [ADPROP](good-practices.md) | Good Practices | Use `app.VAR_NAME` to refer to this property | Warning | No |
+| [ADPROPLC](good-practices.md) | Good Practices | Use `app.VAR_NAME` to reference a property of app | Warning | No |
+| [CTOINW](good-practices.md) | Good Practices | Use of constructed object as input to constructor is not necessary | Warning | No |
+| [FXUP](good-practices.md) | Good Practices | Outer loop index is set inside a nested function | Warning | No |
+| [MCCSPS](good-practices.md) | Good Practices | Constant property is not modified; `VAR_NAME.VAR_NAME` creates a struct | Warning | No |
+| [MCNPN](good-practices.md) | Good Practices | Referenced but is not a property, method, or event name defined in this class | Warning | No |
+| [MCNPR](good-practices.md) | Good Practices | Not a property, but is the target of an assignment | Warning | No |
+| [MCSNOV](good-practices.md) | Good Practices | Set function in value class must return the modified object | Warning | No |
+| [MCSOH](good-practices.md) | Good Practices | Set function in handle class does not need to return the modified object | Warning | No |
+| [MCSUP](good-practices.md) | Good Practices | The set method for a property should not access another property | Warning | No |
+| [MCVM](good-practices.md) | Good Practices | Value class method that modifies the object must return the modified object | Warning | No |
+| [PFRIN](good-practices.md) | Good Practices | The reduction variable might not be set before the PARFOR loop | Warning | No |
+| [PFRUS](good-practices.md) | Good Practices | The reduction variable might not be used after the PARFOR loop | Warning | No |
+| [SUBSINDEX](good-practices.md) | Good Practices | Do not overload `subsindex` for fundamental data types | Warning | No |
+| [VTFIN](good-practices.md) | Good Practices | The validated value should be the first input argument to the validator function | Warning | No |
+| [SOINITPROP](system-objects.md) | System Objects | Initialize DiscreteState property within a `resetImpl` method | Warning | No |
+| [SOTUNPROP1](system-objects.md) | System Objects | Logical attribute not supported for tunable properties on MATLAB System blocks | Warning | No |
+| [SOTUNPROP3](system-objects.md) | System Objects | Tunable properties on System blocks must be numeric; char property is made Nontunable | Warning | No |
+| [SOTUNPROP4](system-objects.md) | System Objects | Tunable properties on System blocks must be numeric; string property is made Nontunable | Warning | No |
+| [ATAS](language-spec.md) | Language Specification | The attribute value is unexpected. Use a single meta-class object or a cell array of meta-class objects | Error | No |
+| [ATLAB](language-spec.md) | Language Specification | Attribute 'Input' and 'Output' must not be assigned a value or negated | Error | No |
+| [ATNAS](language-spec.md) | Language Specification | Set attribute to a single meta-class object or a cell array of meta-class objects | Error | No |
+| [ATNPI](language-spec.md) | Language Specification | Set attribute to 'public', 'private', 'protected', 'immutable', or a cell array of meta-classes instead | Error | No |
+| [ATNPP](language-spec.md) | Language Specification | Set attribute to 'public', 'private', 'protected', or a cell array of meta-classes instead | Error | No |
+| [ATPPI](language-spec.md) | Language Specification | The attribute value is unexpected. Use 'public', 'private', 'protected', 'immutable', or a cell array of meta-classes instead | Error | No |
+| [ATPPP](language-spec.md) | Language Specification | The attribute value is unexpected. Use 'public', 'private', 'protected', or a cell array of meta-classes instead | Error | No |
+| [ATUNK](language-spec.md) | Language Specification | Unknown attribute name | Error | No |
+| [ATVIZE](language-spec.md) | Language Specification | The 'Visible' attribute is invalid for classes and events. Use the '~Hidden' attribute instead | Error | No |
+| [CLSAT](language-spec.md) | Language Specification | Specify class attributes before the name of the class | Error | No |
+| [CLSUNK](language-spec.md) | Language Specification | This class, or one of its superclasses, could not be found on MATLAB's path | Error | No |
+| [NOPRV](language-spec.md) | Language Specification | A class definition cannot be inside a private directory | Error | No |
+| [PFANSRE](language-spec.md) | Language Specification | 'ans' is not supported as a reduction variable in parfor loops | Error | No |
+| [PFANSSL](language-spec.md) | Language Specification | 'ans' is not supported as a sliced variable in parfor loops | Error | No |
+| [PFDF](language-spec.md) | Language Specification | FOR with DRANGE (old PARFOR) becomes a conventional FOR when used inside a PARFOR loop | Error | No |
+| [PFPIE](language-spec.md) | Language Specification | Valid indices for the variable are restricted in PARFOR loops | Error | No |
+| [PFSAME](language-spec.md) | Language Specification | In a PARFOR loop, the variable is indexed in different ways, potentially causing dependencies between iterations | Error | No |
+| [PFTIN](language-spec.md) | Language Specification | The temporary variable must be set inside the PARFOR loop before it is used | Error | No |
+| [VTPCON](language-spec.md) | Language Specification | For properties, validation functions must only use the property being validated or literals | Error | No |
+| [VTPEAL](language-spec.md) | Language Specification | Specify at least one input argument for validator | Error | No |
+| [VTPIN](language-spec.md) | Language Specification | Validation function must use the property as an input | Error | No |
+
+## Data-Driven Check IDs
+
+These tables are generated at build time from the TOML data files by
+[markdown-exec](https://zensical.org/docs/setup/extensions/markdown-exec/); the
+source generator lives in `tools/gen_rules_docs.py`. Rebuild the docs (`zensical
+build`) to refresh them whenever `data/compatibility.toml` or
+`data/suggested_improvements.toml` changes.
+
+```python exec="on"
+import sys
+sys.path.insert(0, "tools")
+from gen_rules_docs import render_data_driven_tables
+print(render_data_driven_tables())
+```
 
 ## Rule Categories
 

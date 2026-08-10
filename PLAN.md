@@ -664,21 +664,43 @@ Current totals: **1,390 mlt_rules + 3 mlt_cli + 10 mlt_core = 1,403 tests passin
 
 ---
 
-## Phase 6: Documentation
+## Phase 6: Documentation ✅ DONE
 
-### 6.1 — Rule Documentation Pages
+### 6.1 — Rule Documentation Pages ✅
 - One `docs/<rule_id>.md` page per non-data-driven rule (or per category for data-driven engines)
 - Follow template from `docs/nosemi.md`
 - Data-driven engines get a single page explaining the engine + a table of all check IDs
+- **Delivered:** 17 category-engine pages added (bugs, performance, readability,
+  formatting, unset-variables, unused, codegen, deployment, system-objects,
+  unsupported, config-issues, incomplete-analysis, syntax-errors, compatibility,
+  suggested-improvements, naming, custom-checks), wired into the `zensical.toml`
+  Rules nav as one entry per category. The former per-rule deep-dive pages
+  (`strin.md`, `badct.md`, etc.) were removed — the category pages and the
+  generated `rules.md` tables cover them. `nosemi.md` is kept as the standalone
+  example rule.
 
-### 6.2 — Update `docs/rules.md`
-- Complete rule table with all ~2,680 check IDs
-- Sortable/filterable by category, severity, auto-fix status
+### 6.2 — Update `docs/rules.md` ✅
+- Complete rule table with all check IDs
+- **Delivered:** `tools/gen_rules_docs.py` generator. The full data-driven
+  check-ID tables (1,012 compatibility + 7 forward + 905 behavior + 243
+  suggested-improvements = **2,167 rows**) are produced **at build time** from the
+  TOML data files via a `markdown-exec` code block in `docs/rules.md` (enabled as
+  `[project.plugins.markdown-exec]` in `zensical.toml`), so the tables always
+  reflect the live data. The 41 Phase-4.5/Part-B checks were added to the main
+  Rule Table with links to their category pages.
 
-### 6.3 — Update `docs/configuration.md`
+### 6.3 — Update `docs/configuration.md` ✅
 - Document `[lint.categories]` feature
 - Document all rule-specific parameters
 - Examples for common workflows
+- **Delivered:** rewritten with the full category slug table, the real engine rule
+  IDs (e.g. `GOOD_PRACTICES_ENGINE`, `LANGUAGE_SPEC_ENGINE`), the per-engine
+  parameter table (from each `Config` struct), and corrected severity precedence
+  (per-rule > per-category > default).
+
+**Gate:** `zensical build` (no issues; run via the local venv — see
+`pyproject.toml` `[dependency-groups].docs`), `cargo build`,
+`cargo clippy --all-targets` (zero warnings), `cargo test` (1,403 passing).
 
 ---
 

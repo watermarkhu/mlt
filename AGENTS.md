@@ -340,8 +340,15 @@ Documentation uses [Zensical](https://zensical.org) (successor to Material for M
 
 - Config: `zensical.toml` at repo root
 - Content: `docs/` directory (Markdown)
-- Preview: `zensical serve` (requires `pip install zensical`)
-- Build: `zensical build`
+- Dependencies: `pyproject.toml` `[dependency-groups].docs` (`zensical`, `markdown-exec`)
+- Preview: `zensical serve` (run from the local venv)
+- Build: `.venv/bin/zensical build`
+- Generated tables: the "Data-Driven Check IDs" section of `docs/rules.md` is
+  produced at build time by a `markdown-exec` code block (plugin enabled as
+  `[project.plugins.markdown-exec]`) that calls `tools/gen_rules_docs.py`. The
+  same script regenerates the category engine pages (`--write-pages`).
+- Editing rule docs: after changing `data/*.toml` or an engine's doc-comment
+  table, rebuild with `.venv/bin/zensical build` to refresh the generated tables.
 
 ### Documentation Structure
 
