@@ -38,6 +38,25 @@ These checks cover function-call conventions: `sprintf`/`fprintf` format strings
 | `SEMFS` | This semicolon makes the file a script. Therefore, all functions in the file are local functions. |
 | `STFLD` | SETFIELD output must be assigned back to the structure. |
 | `STRSZ` | Use STRCMP to compare character vectors that can have different sizes. |
+| `SUBSINDEX` | Do not overload 'subsindex' for fundamental data types. |
+| `VTFIN` | VAR_NAME should be the first input argument to the VAR_NAME function. |
+| `CTOINW` | Use of constructed object as input to constructor is not necessary. |
+| `FXUP` | Outer loop index VAR_NAME is set inside a nested function. |
+
+### App Designer / OOP practice
+
+| Check ID | Message |
+| -------- | ------- |
+| `ADMTHDINV` | Use VAR_NAME(app, ...) to call this function. |
+| `ADPROP` | Use app.VAR_NAME to refer to this property. |
+| `ADPROPLC` | Use app.VAR_NAME to reference a property of app. |
+| `MCNPN` | VAR_NAME is referenced but is not a property, method, or event name defined in this class. |
+| `MCNPR` | VAR_NAME is not a property, but is the target of an assignment. |
+| `MCSNOV` | Set function in value class must return the modified object. |
+| `MCSOH` | Set function in handle class does not need to return the modified object. |
+| `MCVM` | Value class method that modifies the object must return the modified object. |
+| `MCCSPS` | Constant property VAR_NAME is not modified. 'VAR_NAME.VAR_NAME' creates a struct named VAR_NAME with a field named VAR_NAME. |
+| `MCSUP` | The set method for the property VAR_NAME should not access another property (VAR_NAME). |
 
 ### Logical / comparison / range
 
@@ -57,6 +76,8 @@ These checks cover function-call conventions: `sprintf`/`fprintf` format strings
 | `PFIIN` | The input variable `VAR_NAME` should be initialized before the PARFOR loop. |
 | `PFOUS` | The output variable `VAR_NAME` might not be used after the PARFOR loop. |
 | `PFRNI` | Do not specify the increment explicitly. The parfor loop can only use an increment of one. |
+| `PFRIN` | The reduction variable `VAR_NAME` might not be set before the PARFOR loop. |
+| `PFRUS` | The reduction variable `VAR_NAME` might not be used after the PARFOR loop. |
 | `PFTUSW` | The temporary variable `VAR_NAME` might be used after the PARFOR loop on line `VAR_NUMBER`. |
 | `PFUIXW` | The index variable `VAR_NAME` might be used after the PARFOR loop on line `VAR_NUMBER`. |
 | `SPEVB` | Using EVALIN('base') or ASSIGNIN('base') inside an SPMD block refers to the worker machines' base workspaces. |

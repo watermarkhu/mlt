@@ -53,6 +53,47 @@
 //! | PFVARS   | Parfor loop contains too many variables          |
 //! | PFVSUB   | Indexing the parfor loop variable                |
 //!
+//! ### Parfor additions (PF* checks)
+//!
+//! | Check ID | Description                                      |
+//! |----------|--------------------------------------------------|
+//! | PFANSRE  | 'ans' is not supported as a reduction variable   |
+//! | PFANSSL  | 'ans' is not supported as a sliced variable      |
+//! | PFDF     | FOR with DRANGE becomes a conventional FOR inside a PARFOR |
+//! | PFPIE    | Valid indices for a sliced variable are restricted |
+//! | PFSAME   | Sliced variable indexed in different ways        |
+//! | PFTIN    | Temporary variable must be set before it is used |
+//!
+//! ### Class attribute checks (AT* checks)
+//!
+//! | Check ID | Description                                      |
+//! |----------|--------------------------------------------------|
+//! | ATUNK    | Unknown attribute name                           |
+//! | ATLAB    | 'Input'/'Output' attribute must not be valued or negated |
+//! | ATNAS    | Meta-class attribute must be a meta-class or cell array |
+//! | ATNPI    | Class access attribute has an unexpected value   |
+//! | ATNPP    | Events access attribute has an unexpected value  |
+//! | ATPPI    | Property access attribute has an unexpected value |
+//! | ATPPP    | Method access attribute has an unexpected value  |
+//! | ATAS     | Meta-class attribute value is unexpected         |
+//! | ATVIZE   | 'Visible' attribute is invalid for classes/events |
+//!
+//! ### Class file checks (CLS* / NOPRV checks)
+//!
+//! | Check ID | Description                                      |
+//! |----------|--------------------------------------------------|
+//! | CLSAT    | Specify class attributes before the class name   |
+//! | CLSUNK   | Class or superclass could not be found on the path |
+//! | NOPRV    | Class definition cannot be inside a private directory |
+//!
+//! ### Property validation function checks (VTP* checks)
+//!
+//! | Check ID | Description                                      |
+//! |----------|--------------------------------------------------|
+//! | VTPCON   | Validation functions must only use the property or literals |
+//! | VTPEAL   | Specify at least one input argument for validator |
+//! | VTPIN    | Validation function must use the property as an input |
+//!
 //! ### SPMD restrictions (SP* checks)
 //!
 //! | Check ID | Description                                      |
@@ -279,10 +320,12 @@ pub(crate) struct ParforAnalysis {
     parfor_end: usize,
     /// Nested `for` loops inside the parfor body.
     nested_fors: Vec<NestedForInfo>,
-    /// Sliced output assignments `v(i,...) = ...`: var -> (arguments text, start, end).
-    sliced_lhs: HashMap<String, Vec<(String, usize, usize)>>,
-    /// Indexed reads `v(...)` used as a value: var -> (arguments text, start, end).
-    indexed_reads: HashMap<String, Vec<(String, usize, usize)>>,
+    /// Sliced output assignments `v(i,...) = ...`:
+    /// var -> (arguments text, start, end, is_cell_indexing).
+    sliced_lhs: HashMap<String, Vec<(String, usize, usize, bool)>>,
+    /// Indexed reads `v(...)` used as a value:
+    /// var -> (arguments text, start, end, is_cell_indexing).
+    indexed_reads: HashMap<String, Vec<(String, usize, usize, bool)>>,
     /// Plain (temporary) assignments: var -> assignment start bytes.
     temp_assigns: HashMap<String, Vec<usize>>,
     /// Whole (non-indexed) reads of a variable: var -> read start bytes.
@@ -381,28 +424,34 @@ impl Rule for LanguageSpecEngine {
             self.check_class_rules(class, &meta, ctx, &mut diagnostics);
         }
 
-        // 3. Function validation checks
+        // 3. Class-file level checks (CLSAT, CLSUNK, NOPRV)
+        self.check_class_file_rules(&meta, ctx, &mut diagnostics);
+
+        // 4. ATLAB: Input/Output arguments-block attributes with values/negation
+        self.check_atlab(ctx.tree.root_node(), ctx.source, &mut diagnostics);
+
+        // 5. Function validation checks
         self.check_function_validation(&meta, ctx, &mut diagnostics);
 
-        // 4. Script-level checks
+        // 6. Script-level checks
         self.check_script_rules(&meta, &symbol_table, ctx, &mut diagnostics);
 
-        // 5. Global/persistent ordering checks
+        // 7. Global/persistent ordering checks
         self.check_global_persistent_rules(&symbol_table, ctx, &mut diagnostics);
 
-        // 6. break/continue outside loop (top-level check)
+        // 8. break/continue outside loop (top-level check)
         self.check_break_continue_outside_loop(root, ctx.source, &mut diagnostics);
 
-        // 7. Matrix row length checks
+        // 9. Matrix row length checks
         self.check_matrix_rows(root, ctx.source, &mut diagnostics);
 
-        // 8. Function/class named 'ans'
+        // 10. Function/class named 'ans'
         self.check_ans_naming(&meta, ctx, &mut diagnostics);
 
-        // 9. END operator outside index expression
+        // 11. END operator outside index expression
         self.check_end_operator(root, ctx.source, &mut diagnostics);
 
-        // 10. Local function name same as file name
+        // 12. Local function name same as file name
         self.check_local_function_name_conflict(&meta, ctx, &mut diagnostics);
 
         diagnostics
@@ -971,6 +1020,17 @@ impl LanguageSpecEngine {
             );
         }
 
+        // PFDF: a FOR loop with DRANGE (old PARFOR syntax) nested inside a
+        // parfor becomes a conventional FOR loop.
+        if self.nested_for_uses_drange(node, source) {
+            self.push_diag(
+                node,
+                "PFDF",
+                "FOR with DRANGE (old PARFOR) becomes a conventional FOR when used inside a PARFOR loop.",
+                diagnostics,
+            );
+        }
+
         let (range_start, range_end, is_const_pos) = self.nested_for_range_info(node, source);
         if let Some(analysis) = current_parfor_analysis_mut(context_stack) {
             analysis.nested_fors.push(NestedForInfo {
@@ -983,6 +1043,25 @@ impl LanguageSpecEngine {
             });
             analysis.var_names.insert(var);
         }
+    }
+
+    /// Whether a nested `for` loop's iterator is a `drange(...)` expression
+    /// (old PARFOR syntax).
+    fn nested_for_uses_drange(&self, node: tree_sitter::Node, source: &str) -> bool {
+        let mut cursor = node.walk();
+        for child in node.children(&mut cursor) {
+            if child.kind() == "iterator" {
+                let mut inner = child.walk();
+                for c in child.children(&mut inner) {
+                    if c.kind() == "function_call"
+                        && callee_name(c, source).as_deref() == Some("drange")
+                    {
+                        return true;
+                    }
+                }
+            }
+        }
+        false
     }
 
     /// Record an assignment inside a parfor body: variable classification
@@ -1004,6 +1083,21 @@ impl LanguageSpecEngine {
         }
         let lhs_name = node_text(lhs_node, source).to_string();
         let rhs = node.child_by_field_name("right");
+
+        // PFANSRE: 'ans' is not supported as a reduction variable in parfor
+        // loops (e.g. `ans = ans + x`).
+        if lhs_name == "ans" {
+            if let Some(rhs_node) = rhs {
+                if contains_identifier(rhs_node, source, "ans") {
+                    self.push_diag(
+                        node,
+                        "PFANSRE",
+                        "'ans' is not supported as a reduction variable in parfor loops.",
+                        diagnostics,
+                    );
+                }
+            }
+        }
 
         let Some(analysis) = current_parfor_analysis_mut(context_stack) else {
             return;
@@ -1254,6 +1348,17 @@ impl LanguageSpecEngine {
             }
         }
 
+        // PFANSSL: 'ans' is not supported as a sliced variable in parfor loops.
+        // In MATLAB, `ans(...)` / `ans{...}` always indexes the `ans` variable.
+        if name == "ans" {
+            self.push_diag(
+                node,
+                "PFANSSL",
+                "'ans' is not supported as a sliced variable in parfor loops.",
+                diagnostics,
+            );
+        }
+
         // Loop-variable indexing and indexed-access recording.
         if name == parfor_var {
             self.push_diag(
@@ -1278,19 +1383,24 @@ impl LanguageSpecEngine {
         } else if !node_is_inside_lambda(node) {
             if let Some(analysis) = current_parfor_analysis_mut(context_stack) {
                 let args = arguments_text(node, source);
+                // `v(...)` uses `(` while `v{...}` uses `{` for cell indexing.
+                let is_cell = node
+                    .child(1)
+                    .map(|c| node_text(c, source) == "{")
+                    .unwrap_or(false);
                 analysis.var_names.insert(name.clone());
                 if is_assign_lhs {
                     analysis
                         .sliced_lhs
                         .entry(name)
                         .or_default()
-                        .push((args, node.start_byte(), node.end_byte()));
+                        .push((args, node.start_byte(), node.end_byte(), is_cell));
                 } else {
                     analysis
                         .indexed_reads
                         .entry(name)
                         .or_default()
-                        .push((args, node.start_byte(), node.end_byte()));
+                        .push((args, node.start_byte(), node.end_byte(), is_cell));
                 }
             }
         }
@@ -1466,7 +1576,7 @@ impl LanguageSpecEngine {
                 read_starts.extend(rs.iter().copied());
             }
             if let Some(rs) = analysis.indexed_reads.get(var) {
-                read_starts.extend(rs.iter().map(|(_, s, _)| *s));
+                read_starts.extend(rs.iter().map(|(_, s, _, _)| *s));
             }
             if let (Some(fs), Some(fr)) = (first_set, read_starts.into_iter().min()) {
                 if fr < fs {
@@ -1482,6 +1592,108 @@ impl LanguageSpecEngine {
                         diagnostics,
                     );
                 }
+            }
+        }
+
+        // PFTIN: temporary variable must be set inside the PARFOR-loop before
+        // it is used (same detection as PFUTMP).
+        for (var, set_starts) in &analysis.temp_assigns {
+            if predefined.contains(var) {
+                continue;
+            }
+            let first_set = set_starts.iter().min().copied();
+            let mut read_starts: Vec<usize> = Vec::new();
+            if let Some(rs) = analysis.whole_reads.get(var) {
+                read_starts.extend(rs.iter().copied());
+            }
+            if let Some(rs) = analysis.indexed_reads.get(var) {
+                read_starts.extend(rs.iter().map(|(_, s, _, _)| *s));
+            }
+            if let (Some(fs), Some(fr)) = (first_set, read_starts.into_iter().min()) {
+                if fr < fs {
+                    self.push_diag_bytes(
+                        source,
+                        fr,
+                        fr + 1,
+                        "PFTIN",
+                        &format!(
+                            "The temporary variable '{var}' must be set inside the \
+                             PARFOR-loop before it is used."
+                        ),
+                        diagnostics,
+                    );
+                }
+            }
+        }
+
+        // PFPIE: valid indices for a sliced variable are restricted in parfor
+        // loops (nested indexing or arithmetic on indices).
+        {
+            let mut reported_pie = HashSet::new();
+            for (var, writes) in &analysis.sliced_lhs {
+                for (args, start, end, _) in writes {
+                    if parfor_index_is_complex(args) && reported_pie.insert(var.clone()) {
+                        self.push_diag_bytes(
+                            source,
+                            *start,
+                            *end,
+                            "PFPIE",
+                            &format!("Valid indices for {var} are restricted in PARFOR loops."),
+                            diagnostics,
+                        );
+                        break;
+                    }
+                }
+            }
+            for (var, reads) in &analysis.indexed_reads {
+                if !analysis.sliced_lhs.contains_key(var) {
+                    continue;
+                }
+                for (args, start, end, _) in reads {
+                    if parfor_index_is_complex(args) && reported_pie.insert(var.clone()) {
+                        self.push_diag_bytes(
+                            source,
+                            *start,
+                            *end,
+                            "PFPIE",
+                            &format!("Valid indices for {var} are restricted in PARFOR loops."),
+                            diagnostics,
+                        );
+                        break;
+                    }
+                }
+            }
+        }
+
+        // PFSAME: a sliced variable indexed in different ways (different number
+        // of subscripts, or mixed `()`/`{}` indexing).
+        for (var, writes) in &analysis.sliced_lhs {
+            let mut sigs: Vec<(usize, bool)> = writes
+                .iter()
+                .map(|(args, _, _, cell)| (subscript_count(args), *cell))
+                .collect();
+            if let Some(reads) = analysis.indexed_reads.get(var) {
+                sigs.extend(
+                    reads
+                        .iter()
+                        .map(|(args, _, _, cell)| (subscript_count(args), *cell)),
+                );
+            }
+            sigs.sort();
+            sigs.dedup();
+            if sigs.len() > 1 {
+                let first = writes.iter().map(|(_, s, _, _)| *s).min().unwrap_or(0);
+                self.push_diag_bytes(
+                    source,
+                    first,
+                    first + 1,
+                    "PFSAME",
+                    &format!(
+                        "In a PARFOR loop, variable {var} is indexed in different ways, \
+                         potentially causing dependencies between iterations."
+                    ),
+                    diagnostics,
+                );
             }
         }
 
@@ -1503,7 +1715,7 @@ impl LanguageSpecEngine {
                 || analysis
                     .sliced_lhs
                     .get(var)
-                    .map(|v| v.iter().any(|(_, s, _)| *s < first_red))
+                    .map(|v| v.iter().any(|(_, s, _, _)| *s < first_red))
                     .unwrap_or(false);
             if !prior_set && reported_utvr.insert(var.clone()) {
                 self.push_diag_bytes(
@@ -1526,8 +1738,8 @@ impl LanguageSpecEngine {
             {
                 if let Some(first) = reads
                     .iter()
-                    .filter(|(args, _, _)| args_tokens(args).contains(&parfor_var))
-                    .map(|(_, s, _)| *s)
+                    .filter(|(args, _, _, _)| args_tokens(args).contains(&parfor_var))
+                    .map(|(_, s, _, _)| *s)
                     .min()
                 {
                     self.push_diag_bytes(
@@ -1566,14 +1778,15 @@ impl LanguageSpecEngine {
 
         // PFSLW: multiple sliced accesses with different subscripts
         for (var, writes) in &analysis.sliced_lhs {
-            let mut sigs: Vec<String> = writes.iter().map(|(args, _, _)| args.clone()).collect();
+            let mut sigs: Vec<String> =
+                writes.iter().map(|(args, _, _, _)| args.clone()).collect();
             if let Some(reads) = analysis.indexed_reads.get(var) {
-                sigs.extend(reads.iter().map(|(args, _, _)| args.clone()));
+                sigs.extend(reads.iter().map(|(args, _, _, _)| args.clone()));
             }
             sigs.sort();
             sigs.dedup();
             if sigs.len() > 1 {
-                let first = writes.iter().map(|(_, s, _)| *s).min().unwrap_or(0);
+                let first = writes.iter().map(|(_, s, _, _)| *s).min().unwrap_or(0);
                 self.push_diag_bytes(
                     source,
                     first,
@@ -1624,13 +1837,13 @@ impl LanguageSpecEngine {
         // inside the for loop that defines its range.
         let mut accesses: Vec<(String, String, usize, usize)> = Vec::new();
         for (var, writes) in &analysis.sliced_lhs {
-            for (args, start, end) in writes {
+            for (args, start, end, _) in writes {
                 accesses.push((var.clone(), args.clone(), *start, *end));
             }
         }
         for (var, reads) in &analysis.indexed_reads {
             if analysis.sliced_lhs.contains_key(var) {
-                for (args, start, end) in reads {
+                for (args, start, end, _) in reads {
                     accesses.push((var.clone(), args.clone(), *start, *end));
                 }
             }
@@ -1667,7 +1880,7 @@ impl LanguageSpecEngine {
                 .any(|(_, writes)| {
                     writes
                         .iter()
-                        .any(|(args, _, _)| args_tokens(args).contains(&nf.var))
+                        .any(|(args, _, _, _)| args_tokens(args).contains(&nf.var))
                 })
                 || analysis
                     .indexed_reads
@@ -1676,7 +1889,7 @@ impl LanguageSpecEngine {
                         analysis.sliced_lhs.contains_key(v)
                             && reads
                                 .iter()
-                                .any(|(args, _, _)| args_tokens(args).contains(&nf.var))
+                                .any(|(args, _, _, _)| args_tokens(args).contains(&nf.var))
                     });
             if indexes_sliced && !nf.range_is_const_pos {
                 self.push_diag_bytes(
@@ -1865,6 +2078,7 @@ impl LanguageSpecEngine {
         self.check_mcmio(class, diagnostics);
         self.check_mcmtp(class, diagnostics);
         self.check_mcpin(class, diagnostics);
+        self.check_class_attributes(class, diagnostics);
     }
 }
 
@@ -1913,6 +2127,9 @@ impl LanguageSpecEngine {
     ) {
         self.check_fvnst(ctx, diagnostics);
         self.check_vtpod(meta, diagnostics);
+
+        // VTP* property-validation function checks (class methods blocks).
+        self.check_property_validation_functions(ctx, diagnostics);
 
         // Walk the tree to collect top-level function definitions (matched to
         // metadata by byte range) and the names of nested functions.
@@ -2145,6 +2362,19 @@ pub(crate) fn args_tokens(args: &str) -> Vec<String> {
         .filter(|s| !s.is_empty())
         .map(|s| s.to_string())
         .collect()
+}
+
+/// Whether an index expression is complex (nested indexing or arithmetic on
+/// the indices) — used by PFPIE.
+pub(crate) fn parfor_index_is_complex(args: &str) -> bool {
+    args.chars()
+        .any(|c| matches!(c, '+' | '-' | '*' | '/' | '^' | '(' | ')'))
+}
+
+/// Number of subscripts in an index expression (comma-separated parts) — used
+/// by PFSAME.
+pub(crate) fn subscript_count(args: &str) -> usize {
+    args.split(',').count()
 }
 
 /// Whether `name` occurs as an identifier anywhere inside `node`.
@@ -2924,6 +3154,8 @@ inventory::submit!(crate::RuleRegistration::new(
 
 mod check_ans_naming;
 mod check_break_continue_outside_loop;
+mod check_class_attributes;
+mod check_class_file_rules;
 mod check_ctoine;
 mod check_ctoro;
 mod check_end_operator;
@@ -2999,6 +3231,7 @@ mod check_nchkos_output_use;
 mod check_npers;
 mod check_parfor_command;
 mod check_parfor_header;
+mod check_property_validation_functions;
 mod check_script_rules;
 mod check_setter_getter_signatures;
 mod check_spmd_command;
@@ -4622,6 +4855,216 @@ end
 ";
         let diags = check_source(source, "f.m");
         assert!(filter_by_id(&diags, "PFVSUB").is_empty(), "PFVSUB should NOT fire for indexing a sliced variable");
+    }
+
+    // -- PFANSRE -------------------------------------------------------------
+
+    #[test]
+    fn test_pfansre_fires_ans_reduction() {
+        let source = "\
+function f()
+    parfor i = 1:10
+        ans = ans + i;
+    end
+end
+";
+        let diags = check_source(source, "f.m");
+        assert!(!filter_by_id(&diags, "PFANSRE").is_empty(), "PFANSRE should fire for 'ans = ans + i' in a parfor");
+    }
+
+    #[test]
+    fn test_pfansre_no_fire_plain_temp() {
+        let source = "\
+function f()
+    parfor i = 1:10
+        y = i;
+    end
+end
+";
+        let diags = check_source(source, "f.m");
+        assert!(filter_by_id(&diags, "PFANSRE").is_empty(), "PFANSRE should NOT fire for a plain temporary assignment");
+    }
+
+    // -- PFANSSL -------------------------------------------------------------
+
+    #[test]
+    fn test_pfanssl_fires_ans_indexing() {
+        let source = "\
+function f()
+    parfor i = 1:10
+        ans(i) = i;
+        q = ans(i);
+    end
+end
+";
+        let diags = check_source(source, "f.m");
+        assert!(!filter_by_id(&diags, "PFANSSL").is_empty(), "PFANSSL should fire when 'ans' is indexed in a parfor");
+    }
+
+    #[test]
+    fn test_pfanssl_no_fire_plain_ans_read() {
+        let source = "\
+function f()
+    parfor i = 1:10
+        y = ans;
+    end
+end
+";
+        let diags = check_source(source, "f.m");
+        assert!(filter_by_id(&diags, "PFANSSL").is_empty(), "PFANSSL should NOT fire for a non-indexed read of 'ans'");
+    }
+
+    // -- PFDF ----------------------------------------------------------------
+
+    #[test]
+    fn test_pfdf_fires_drange_nested_for() {
+        let source = "\
+function f()
+    parfor i = 1:10
+        for j = drange(1:5)
+            x(i, j) = i;
+        end
+    end
+end
+";
+        let diags = check_source(source, "f.m");
+        assert!(!filter_by_id(&diags, "PFDF").is_empty(), "PFDF should fire for a nested for with DRANGE inside a parfor");
+    }
+
+    #[test]
+    fn test_pfdf_no_fire_plain_nested_for() {
+        let source = "\
+function f()
+    parfor i = 1:10
+        for j = 1:5
+            x(i, j) = i;
+        end
+    end
+end
+";
+        let diags = check_source(source, "f.m");
+        assert!(filter_by_id(&diags, "PFDF").is_empty(), "PFDF should NOT fire for a plain nested for inside a parfor");
+    }
+
+    // -- PFPIE ---------------------------------------------------------------
+
+    #[test]
+    fn test_pfpie_fires_complex_index() {
+        let source = "\
+function f()
+    parfor i = 1:10
+        x(i + 1) = i;
+        x(A(i)) = i;
+    end
+end
+";
+        let diags = check_source(source, "f.m");
+        assert!(!filter_by_id(&diags, "PFPIE").is_empty(), "PFPIE should fire for complex index expressions on a sliced variable");
+    }
+
+    #[test]
+    fn test_pfpie_no_fire_simple_index() {
+        let source = "\
+function f()
+    parfor i = 1:10
+        x(i, :) = i;
+    end
+end
+";
+        let diags = check_source(source, "f.m");
+        assert!(filter_by_id(&diags, "PFPIE").is_empty(), "PFPIE should NOT fire for simple index expressions");
+    }
+
+    // -- PFSAME --------------------------------------------------------------
+
+    #[test]
+    fn test_pfsame_fires_different_indexing() {
+        let source = "\
+function f()
+    parfor i = 1:10
+        x(i) = i;
+        x(i, :) = i;
+    end
+end
+";
+        let diags = check_source(source, "f.m");
+        assert!(!filter_by_id(&diags, "PFSAME").is_empty(), "PFSAME should fire when a sliced variable is indexed in different ways");
+    }
+
+    #[test]
+    fn test_pfsame_no_fire_consistent_indexing() {
+        let source = "\
+function f()
+    parfor i = 1:10
+        x(i) = i;
+        y = x(i);
+    end
+end
+";
+        let diags = check_source(source, "f.m");
+        assert!(filter_by_id(&diags, "PFSAME").is_empty(), "PFSAME should NOT fire when a sliced variable is always indexed the same way");
+    }
+
+    // -- PFTIN ---------------------------------------------------------------
+
+    #[test]
+    fn test_pftin_fires_temp_used_before_set() {
+        let source = "\
+function f()
+    parfor i = 1:10
+        y = t + i;
+        t = i;
+    end
+end
+";
+        let diags = check_source(source, "f.m");
+        assert!(!filter_by_id(&diags, "PFTIN").is_empty(), "PFTIN should fire when a temporary is used before it is set");
+    }
+
+    #[test]
+    fn test_pftin_no_fire_set_before_use() {
+        let source = "\
+function f()
+    parfor i = 1:10
+        t = i;
+        y = t + 1;
+    end
+end
+";
+        let diags = check_source(source, "f.m");
+        assert!(filter_by_id(&diags, "PFTIN").is_empty(), "PFTIN should NOT fire when the temporary is set before use");
+    }
+
+    // -- New PF* checks respect disabled config ------------------------------
+
+    #[test]
+    fn test_new_pf_checks_respect_disabled_config() {
+        let mut rule_config = LanguageSpecConfig::default();
+        rule_config.disabled_checks.push("PFANSRE".to_string());
+        rule_config.disabled_checks.push("PFDF".to_string());
+        let engine = LanguageSpecEngine {
+            config: rule_config,
+        };
+        let source = "\
+function f()
+    parfor i = 1:10
+        ans = ans + i;
+        for j = drange(1:5)
+            x(i, j) = i;
+        end
+    end
+end
+";
+        let tree = parse_matlab(source);
+        let path = Path::new("f.m");
+        let ctx = FileContext {
+            tree: &tree,
+            source,
+            file_path: path,
+        };
+        let diags = engine.check_file(&ctx);
+        assert!(filter_by_id(&diags, "PFANSRE").is_empty(), "PFANSRE should be disabled via config disabled_checks");
+        assert!(filter_by_id(&diags, "PFDF").is_empty(), "PFDF should be disabled via config disabled_checks");
     }
 
     // -- plan MUST-fire / MUST-NOT-fire examples -----------------------------
