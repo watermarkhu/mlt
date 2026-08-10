@@ -83,23 +83,26 @@ static COMPAT_DATA: LazyLock<CompatData> = LazyLock::new(|| {
     toml::from_str(COMPAT_TOML_SOURCE).expect("failed to parse data/compatibility.toml")
 });
 
-/// Lookup table: function_name → index into `COMPAT_DATA.checks`.
+/// Lookup table: function_name → matching `CompatEntry` list.
 ///
 /// Only entries with a non-empty `function_name` and no "generic" pattern are
-/// included. For function names that map to multiple check IDs (e.g., "tcpip"
-/// maps to both TCPC and TCPS), only the first entry is stored — the engine
-/// will emit the first matching diagnostic.
-static COMPAT_TABLE: LazyLock<HashMap<&'static str, &'static CompatEntry>> = LazyLock::new(|| {
-    let data = &*COMPAT_DATA;
-    let mut map = HashMap::with_capacity(data.checks.len());
-    for entry in &data.checks {
-        if !entry.function_name.is_empty() && entry.pattern != "generic" {
-            // Use the first entry for a given function_name (don't overwrite).
-            map.entry(entry.function_name.as_str()).or_insert(entry);
+/// included. A function name may map to multiple check IDs (e.g., "tcpip"
+/// maps to both TCPC and TCPS); all matching entries are stored so the engine
+/// emits every applicable diagnostic.
+static COMPAT_TABLE: LazyLock<HashMap<&'static str, Vec<&'static CompatEntry>>> =
+    LazyLock::new(|| {
+        let data = &*COMPAT_DATA;
+        let mut map: HashMap<&'static str, Vec<&'static CompatEntry>> =
+            HashMap::with_capacity(data.checks.len());
+        for entry in &data.checks {
+            if !entry.function_name.is_empty() && entry.pattern != "generic" {
+                map.entry(entry.function_name.as_str())
+                    .or_default()
+                    .push(entry);
+            }
         }
-    }
-    map
-});
+        map
+    });
 
 // ---------------------------------------------------------------------------
 // Rule implementation
@@ -154,31 +157,37 @@ impl Rule for CompatibilityEngine {
         };
 
         // Lookup in the compatibility table.
-        let entry = match COMPAT_TABLE.get(func_name) {
+        let entries = match COMPAT_TABLE.get(func_name) {
             Some(e) => e,
             None => return Vec::new(),
         };
 
         let start = ctx.node.start_position();
-        let severity = parse_severity(&entry.severity);
+        let mut diagnostics = Vec::with_capacity(entries.len());
 
-        // The entry's `id` field is a &str pointing into the static CompatData.
-        // Since COMPAT_DATA is a LazyLock static, the String's backing memory
-        // lives for 'static, so we can safely transmute the &str lifetime.
-        // SAFETY: COMPAT_DATA is a static LazyLock; its contents are never
-        // deallocated, so the &str reference is valid for 'static.
-        let rule_id: &'static str =
-            unsafe { &*(entry.id.as_str() as *const str) };
+        for entry in entries {
+            let severity = parse_severity(&entry.severity);
 
-        vec![Diagnostic {
-            rule_id,
-            message: entry.message.clone(),
-            severity,
-            byte_range: ctx.node.start_byte()..ctx.node.end_byte(),
-            line: start.row + 1,
-            column: start.column + 1,
-            fix: None,
-        }]
+            // The entry's `id` field is a &str pointing into the static CompatData.
+            // Since COMPAT_DATA is a LazyLock static, the String's backing memory
+            // lives for 'static, so we can safely transmute the &str lifetime.
+            // SAFETY: COMPAT_DATA is a static LazyLock; its contents are never
+            // deallocated, so the &str reference is valid for 'static.
+            let rule_id: &'static str =
+                unsafe { &*(entry.id.as_str() as *const str) };
+
+            diagnostics.push(Diagnostic {
+                rule_id,
+                message: entry.message.clone(),
+                severity,
+                byte_range: ctx.node.start_byte()..ctx.node.end_byte(),
+                line: start.row + 1,
+                column: start.column + 1,
+                fix: None,
+            });
+        }
+
+        diagnostics
     }
 }
 
@@ -359,6 +368,24 @@ mod tests {
     #[test]
     fn command_form_mupad_fires_mupad() {
         assert_command_fires("mupad", "MUPAD");
+    }
+
+    // -- multi-function names emit ALL matching check IDs --------------------
+
+    #[test]
+    fn multi_function_name_emits_all_matching_ids() {
+        // `tcpip` maps to both TCPC (removed) and TCPS (behavior change); both
+        // diagnostics must be emitted now that the lookup table stores a Vec.
+        let diags = lint_nodes(&*engine(), "tcpip('host', 80);\n");
+        assert!(has_id(&diags, "TCPC"), "expected TCPC; got: {diags:?}");
+        assert!(has_id(&diags, "TCPS"), "expected TCPS; got: {diags:?}");
+    }
+
+    #[test]
+    fn multi_function_name_linprog_emits_all() {
+        // `linprog` maps to LINPROGS (option) and LINPROGD/LINPROGA (algorithms).
+        let diags = lint_nodes(&*engine(), "x = linprog(f, A, b);\n");
+        assert!(has_id(&diags, "LINPROGS"), "got: {diags:?}");
     }
 
     // -- negative tests: modern replacements do not fire ---------------------
