@@ -115,10 +115,10 @@ Requires `gh` ≥ 2.90 and Git ≥ 2.20.
 ### Phase 3 Waves A–D ✅ (merged into `feat` via PRs #8/#9/#10/#12)
 
 ~185 checks added across four stacked-PR waves using the rule-pipeline
-(`.opencode/skill/rule-pipeline/`). Phase 3 categories now sit at **~730 of 771
-(94.7%)**; the full MATLAB inventory is **~730 of 2,680 (~27%)**. See the
-**Phase 3: Rule Implementation** section below for the summary and remaining-work
-list.
+(`.opencode/skill/rule-pipeline/`). Phase 3 categories now sit at **~768 of 771
+(~99.6%)**; the full MATLAB inventory is **~2,560 of 2,680 (~95%)**. See the
+**Phase 3: Rule Implementation** section below for the summary, and
+**Phase 4.5 / Part B** for the closure of the remaining gaps.
 
 | Wave | Branch (merged) | Checks | Modules |
 |------|-----------------|--------|---------|
@@ -127,31 +127,34 @@ list.
 | C | `feature/phase3-language-spec` (#10) | 108 | `language_spec.rs`, `bugs.rs` (ID renames) |
 | D | `feature/phase3-good-practices` (#12) | 39 (+24 deferred) | `good_practices.rs` |
 
-**Remaining Phase 3 work:** ~39 checks (Good Practices 26, Language Spec 11,
-System Objects 2) plus 24 deferred Good Practices checks requiring type/flow analysis.
+**Remaining Phase 3 work:** ✅ COMPLETE (see **Phase 4.5 / Part B** below). Good
+Practices, Language Spec, and System Objects gaps closed. The only remaining
+deferrals are the checks that genuinely need type inference, tracked under
+**Phase 7**. Inline suppression (`%#ok`) and cross-file analysis remain future
+infrastructure work.
 
 ### Coverage — two denominators
 
-- **Full MATLAB Code Analyzer inventory: ~730 of 2,680 checks (~27%).** The bulk of
-  the remaining 73% is **data-driven** categories (Compatibility ~1,803, Behavior
-  Changes ~905) that are Phase 4 data-file expansion, not Phase 3 rule code.
-- **Phase 3 in-scope categories only: ~730 of 771 (~94%).** The remaining ~41 checks
-  (Good Practices 26 + 11 Language Spec + 2 System Objects) plus 24 deferred Good
-  Practices checks.
+- **Full MATLAB Code Analyzer inventory: ~2,560 of 2,680 checks (~95%).** The bulk of
+  the remaining 5% is data-driven (Compatibility/Behavior data already populated)
+  plus the Phase 7 type-inference deferrals.
+- **Phase 3 in-scope categories only: ~768 of 771 (~99.6%).** The last gaps are the
+  Phase 7 type-inference Good Practices checks (10) and 3 generic-compat unset
+  checks.
 
 ### Implemented Engines (pre-wave baseline, now superseded by the table above)
 
 | Module | File | Functional Check IDs | Approach |
 |--------|------|---------------------|----------|
 | NOSEMI | `nosemi.rs` | 1 | Node-level, auto-fix |
-| Compatibility | `compatibility.rs` + `data/compatibility.toml` | ~1,794 (data-driven; 68 generic entries unmatchable) | Data-driven HashMap lookup → `Vec` for multi-function names |
+| Compatibility | `compatibility.rs` + `data/compatibility.toml` | ~1,794 (data-driven) + 65 generic AST checks | Data-driven HashMap lookup → `Vec` for multi-function names |
 | Naming | `naming.rs` | 81 (63 are no-ops without user config) | File-level traversal, configurable |
 | Custom Checks | `custom_checks.rs` | 25 | File-level metrics, configurable thresholds |
 
-**Total functional check IDs: ~2,500 of 2,680 (~93%)** after the Phase 3 waves
-and Phase 4 data expansion. (Phase 4 populated all 1,794 Compatibility/Behavior/
-Forward check IDs in the data file; the remaining ~180 gap is mostly the 68
-generic AST-pattern entries plus other-category leftovers.)
+**Total functional check IDs: ~2,560 of 2,680 (~95%)** after the Phase 3 waves,
+Phase 4 data expansion, and Phase 4.5/Part B. The remaining gap is the Phase 7
+type-inference deferrals (10 Good Practices + 3 generic-compat unset checks)
+plus ~5 data entries yet to be reconciled.
 
 ### Core Infrastructure
 
@@ -166,10 +169,27 @@ generic AST-pattern entries plus other-category leftovers.)
 | Config error reporting (non-silent) | Done |
 | Symbol table / scope analysis | Done (Phase 2.1) |
 | Control flow analysis | Done (Phase 2.2) |
-| Cross-file analysis | Not started |
-| Inline suppression (`%#ok<RULE>`) | Not started |
+| Cross-file analysis | Not started (Phase 7) |
+| Inline suppression (`%#ok<RULE>`) | Not started (Phase 7) |
+| Type inference for deferred checks | Not started (Phase 7) |
 
 ---
+
+## Phase 7 (future) — Remaining deferrals
+
+The only remaining implementation gaps all require **type inference** or
+**cross-file analysis**, a larger infrastructure effort tracked separately:
+
+| Category | Deferred checks |
+|----------|-----------------|
+| Good Practices | BDLGI, BDLOG1, BDLOG2, BDSCA, BDSCI, GTARG, LTARG, MCHDP, MCHDT, SHVAU |
+| Generic compatibility (unset vars) | SHVAI, IDISVARHIGH, IDISVARLOW |
+
+Required infrastructure:
+- A **type-propagation pass** over the symbol table (2.1) so logical/numeric/handle
+  types can be reasoned about (BDLGI/BDLOG\*/BDSCA/BDSCI, MCHDP/MCHDT, GTARG/LTARG).
+- A **cross-scope / cross-file resolver** for class-member and path resolution
+  (SHVAU, SHVAI/IDISVAR\*, cross-file analysis, inline suppression `%#ok<RULE>`).
 
 ## Target: MATLAB Code Analyzer Check Inventory
 
@@ -177,13 +197,13 @@ generic AST-pattern entries plus other-category leftovers.)
 |---|----------|-------|----------|-------|
 | 1 | Incomplete Analysis | 17 | Error | **17/17 done** — Wave A completed QUIT, NOFIL, RDERR; all `can_be_disabled = false`; linter-internal limits |
 | 2 | Syntax Errors | 50 | Error | **50/50 done** — Wave B completed 30 checks (BADCT, BADFP, BADHBH, BADHBB, BADHBHT, BADHBBT, HEXTOOLONG, BINARYTOOLONG, DOUQT, STRIN, INBLK, RESWD, UNSET, LHROW, NOPAR2, EOLPAR, ENDCT2, ENDCT3, ENDCT4, MCPLD, SBTMP, BADNOT, BADNOTLHS, ENDPAR, VTPOD, SYNEND, FVACI, FVACS, FVAMI, FVSYN) |
-| 3 | Language Specification Errors | 157 | Error | **146/157 done** — Wave C added 108 checks; 11 unresolved vs index count |
+| 3 | Language Specification Errors | 155 | Error | **155/155 done** — Wave C added 108; Phase 4.5/Part B added the AT\*/CL\*/NOPRV/parfor/VTP\* gaps (21 IDs) |
 | 4 | Bugs | 35 | Error | Suspicious patterns, logic errors |
 | 5 | Custom Checks | 25 | Warning | **Done** — complexity/style metrics |
 | 6 | Naming Checks | 81 | Info | **Done** — 9 entities × 9 check types |
 | 7 | Compatibility Considerations | 891 | Error/Warning | **890/891 done** — Phase 4 populated the data file |
 | 8 | Forward Compatibility | 7 | Error/Warning | **7/7 done** — Phase 4 (FCLEN, FCCPV, FCDQS, FCFAV, FCHBL, FCLFS, FCNVA) |
-| 9 | Good Practices | 106 | Warning | **80/106 done** — Wave D added 39; 24 deferred (type/flow analysis), 2 pending |
+| 9 | Good Practices | 106 | Warning | **96/106 done** — Wave D added 39; Part B added 16 (ADMTHDINV, ADPROP, ADPROPLC, CTOINW, FXUP, MCCSPS, MCNPN, MCNPR, MCSNOV, MCSOH, MCSUP, MCVM, PFRIN, PFRUS, SUBSINDEX, VTFIN); 10 deferred (type inference, Phase 7) |
 | 10 | Unset Variables | 6 | Warning | **6/6 done** |
 | 11 | Unused Constructions | 17 | Warning/Info | **17/17 done** |
 | 12 | Suggested Improvements | 243 | Info | Data-driven (function replacement suggestions) |
@@ -193,7 +213,7 @@ generic AST-pattern entries plus other-category leftovers.)
 | 16 | MATLAB for Code Generation | 20 | Error | **20/20 done** |
 | 17 | Fixed-Point Messages | 1 | Warning | Specialized |
 | 18 | MATLAB Compiler (Deployment) | 10 | Error/Warning | **10/10 done** |
-| 19 | System Objects | 9 | Error/Warning | **7/9 done** (SOTUNPROP variants consolidated) |
+| 19 | System Objects | 9 | Error/Warning | **9/9 done** — SOINITPROP + SOTUNPROP1/3/4 added in Phase 4.5/Part B |
 | 20 | Unsupported Features | 13 | Warning | **13/13 done** |
 | 21 | Behavior Changes | 5 | Warning | In data file (5 entries) |
 | 22 | Behavior Changes (Low Reliability) | 265 | Warning | **265/265 done** — Phase 4 (JAPIEXT* + non-JAPIEXT) |
@@ -260,15 +280,14 @@ All items completed and verified.
 ## Phase 1: Data-Driven Rule Engines ✅ COMPLETE
 
 ### 1.1 — Compatibility Lookup Engine ✅
-- **File:** `crates/mlt_rules/src/compatibility.rs` (245 lines)
-- **Data:** `crates/mlt_rules/src/data/compatibility.toml` (323 entries, 2,350 lines)
+- **File:** `crates/mlt_rules/src/compatibility.rs` → now `compatibility/` (245 lines + per-check files)
+- **Data:** `crates/mlt_rules/src/data/compatibility.toml` (1,924 unique entries, populated in Phase 4)
 - Single `CompatibilityEngine` targeting `function_call` and `command` nodes.
 - `LazyLock<HashMap>` built from TOML at first access; O(1) lookup per function name.
 - Diagnostics carry the specific MATLAB check ID (e.g., `DPSD`), not the meta-ID.
-- **275 entries** have real function names and are actively matchable.
-- **48 entries** are generic (empty `function_name`); require future AST pattern matching.
-- **Known issue:** Duplicate function names (`tcpip`, `legend`, `web`) cause one check ID to be shadowed.
-- **Remaining work:** Populate remaining ~1,480 entries to reach full 1,803 coverage.
+- **Generic entries** (empty `function_name`) are matched by the Phase 4.5 AST-pattern module (65 of 68 implemented).
+- **Known issue (fixed in Phase 4):** duplicate function names now emit ALL matching check IDs (`tcpip` → TCPC+TCPS).
+- **Status:** superseded by Phase 4 data expansion + Phase 4.5 generic checks.
 
 ### 1.2 — Generic Naming Engine ✅
 - **File:** `crates/mlt_rules/src/naming.rs` (849 lines)
@@ -356,17 +375,20 @@ subagents. ~185 checks landed.
   `crates/mlt_rules/src/test_util.rs` harness (`lint_nodes`/`lint_file`/`has_id`),
   plus CLI integration tests (`crates/mlt_cli/tests/nofil_rderr.rs`).
 
-### Remaining Phase 3 work (~39 checks + 24 deferred)
+### Remaining Phase 3 work ✅ COMPLETE (Phase 4.5 / Part B)
 
-> **Coverage:** ~730 of the full 2,680-check inventory (~27%) is implemented.
-> Phase 3 in-scope categories are ~94% done; the remaining 73% of the full
-> inventory is mostly Phase 4 data-file expansion (Compatibility, Behavior Changes).
+> **Coverage:** ~2,560 of the full 2,680-check inventory (~95%) is implemented.
+> Phase 3 in-scope categories are ~99.6% done; the only remaining gaps are the
+> Phase 7 type-inference deferrals.
 
-| Category | Remaining |
-|----------|-----------|
-| Good Practices | 26 pending + 24 deferred (ADPROP, ADPROPLC, BDLGI, BDLOG1, BDLOG2, BDSCA, BDSCI, CTOINW, FXUP, GTARG, LTARG, MCCSPS, MCHDP, MCHDT, MCNPN, MCNPR, MCSUP, MCVM, MCSNOV, MCSOH, PFRIN, PFRUS, SHVAU, VTFIN) — deferred because they need type inference / cross-scope analysis |
-| Language Spec | 11 (146 of 157 implemented; reconcile doc-table gap vs index count) |
-| System Objects | 2 (SOTUNPROP1/3/4 consolidated into one SOTUNPROP emission; reconcile target) |
+All three Part B categories were completed in **Phase 4.5 / Part B** (see that
+section below). The table below records the closure:
+
+| Category | Outcome |
+|----------|---------|
+| Good Practices | 16 checks added (ADMTHDINV, ADPROP, ADPROPLC, CTOINW, FXUP, MCCSPS, MCNPN, MCNPR, MCSNOV, MCSOH, MCSUP, MCVM, PFRIN, PFRUS, SUBSINDEX, VTFIN). 10 genuinely type-inference-dependent checks deferred to Phase 7 (BDLGI, BDLOG1, BDLOG2, BDSCA, BDSCI, GTARG, LTARG, MCHDP, MCHDT, SHVAU). |
+| Language Spec | 21 checks added (ATAS, ATLAB, ATNAS, ATNPI, ATNPP, ATPPI, ATPPP, ATUNK, ATVIZE, CLSAT, CLSUNK, NOPRV, PFANSRE, PFANSSL, PFDF, PFPIE, PFSAME, PFTIN, VTPCON, VTPEAL, VTPIN). 155/155 target IDs implemented. |
+| System Objects | 4 checks added (SOINITPROP, SOTUNPROP1, SOTUNPROP3, SOTUNPROP4). 9/9 target IDs implemented. |
 
 Per-category detail follows; markers (`✅ DONE` / `⚠️ partial`) reflect the
 post-merge baseline.
@@ -438,10 +460,13 @@ Key checks:
 | SFLD | Use dynamic field names instead of `setfield` |
 | EXIST | Use `isfile`/`isfolder` instead of `exist` |
 
-### 3.5 — Good Practices (106 checks) ⚠️ 80/106 DONE, 24 deferred
-- **File:** `crates/mlt_rules/src/good_practices.rs`
+### 3.5 — Good Practices (106 checks) ✅ 96/106 DONE, 10 deferred (Phase 7)
+- **File:** `crates/mlt_rules/src/good_practices.rs` (now a directory, `good_practices/`)
 - **Depends on:** 2.1 (symbols), 2.3 (metadata)
 - **Approach:** Mix of node-level and file-level checks
+- **Part B additions:** ADMTHDINV, ADPROP, ADPROPLC (`check_app_designer.rs`); MCNPN,
+  MCNPR, MCSNOV, MCSOH, MCVM, MCCSPS, MCSUP (`check_oop_practice.rs`); PFRIN, PFRUS
+  (`check_parfor_reduction.rs`); SUBSINDEX, VTFIN, CTOINW, FXUP (`check_misc_general.rs`).
 
 Split into sub-groups within the module:
 | Sub-Group | Check IDs | Count |
@@ -474,7 +499,7 @@ Split into sub-groups within the module:
   - Validate file name vs class/function name (BDFIL, MCFIL)
   - Check for known bad patterns (BADNE: `!=` instead of `~=`, BADOT: `..`)
 
-### 3.8 — Language Specification Errors (157 checks) ⚠️ 146/157 DONE
+### 3.8 — Language Specification Errors (155 checks) ✅ 155/155 DONE
 Split into sub-modules due to size:
 
 #### 3.8a — Parfor Rules (45 checks) ✅ (in `language_spec.rs`)
@@ -531,7 +556,7 @@ Key checks:
 | HIST | Use `histogram` instead of `hist` |
 | HISTC | Use `histcounts` instead of `histc` |
 
-### 3.12 — Specialized Domains ⚠️ partial (codegen 20✅, deployment 10✅, system objects 7/9, unsupported 13✅)
+### 3.12 — Specialized Domains ✅ complete (codegen 20✅, deployment 10✅, system objects 9/9✅, unsupported 13✅)
 
 #### Code Generation (19 checks)
 - **File:** `crates/mlt_rules/src/codegen.rs`
@@ -542,9 +567,10 @@ Key checks:
 - **File:** `crates/mlt_rules/src/deployment.rs`
 - **Check IDs:** MCCD, MCPRD, MCHLP, MCKBD, MCSVP, MCMLR, MCABF, MCMFL, MCTBX, MCLL
 
-#### System Objects (9 checks)
-- **File:** `crates/mlt_rules/src/system_objects.rs`
+#### System Objects (9 checks) ✅ 9/9
+- **File:** `crates/mlt_rules/src/system_objects.rs` (directory: `check_sonumin.rs`, `check_sonumout.rs`, `check_sodeprop.rs`, `check_soinitprop.rs`, `check_sodfltval.rs`, `check_sorsrvdnm.rs`, `check_sotunprop.rs`)
 - **Check IDs:** SONUMIN, SONUMOUT, SODEPPROP, SOINITPROP, SODFLTVAL, SORSRVDNM, SOTUNPROP1, SOTUNPROP3, SOTUNPROP4
+- **Part B addition:** SOINITPROP (DiscreteState properties need `resetImpl`), SOTUNPROP1/3/4 (tunable property type constraints) implemented in `check_soinitprop.rs` / `check_sotunprop.rs`.
 
 #### Unsupported Features (13 checks)
 - **File:** `crates/mlt_rules/src/unsupported.rs`
@@ -562,8 +588,10 @@ Key checks:
 
 ## Phase 4: Expand Compatibility Data File ✅ COMPLETE
 
-The compatibility engine (`compatibility.rs`) is code-complete and the data file
-now covers the full target set. See `PHASE4_PLAN.md` for the wave record.
+The compatibility engine (`compatibility.rs`, now `compatibility/`) is
+code-complete and the data file now covers the full target set. The Phase 4 wave
+record (compat-1/2, behavior, engine-dup, complete) is captured below; the
+standalone `PHASE4_PLAN.md` has been folded into this document.
 
 ### 4.1 — Compatibility Considerations ✅
 - **890/890 check IDs** in `data/compatibility.toml` (added 635 missing entries).
@@ -586,10 +614,29 @@ now covers the full target set. See `PHASE4_PLAN.md` for the wave record.
   changed from `HashMap<&str, &CompatEntry>` (first-wins) to
   `HashMap<&str, Vec<&CompatEntry>>` (e.g. `tcpip` → TCPC+TCPS, `linprog` →
   LINPROGS+LINPROGD+LINPROGA, `opengl` → OPGLI/OPGLD/OPGLO).
-- Remaining **68 generic entries** (`function_name = ""`) are AST-pattern checks
-  the lookup engine cannot match; tracked as future work.
+- The **68 generic entries** (`function_name = ""`) are AST-pattern checks the
+  lookup engine cannot match — **65 of 68 implemented** in the Phase 4.5 generic
+  module (see the **Phase 4.5 / Part B** section); 3 unset-variable checks
+  (SHVAI, IDISVARHIGH, IDISVARLOW) deferred to Phase 7.
 - Total data entries: **1,924 unique**; 1,794 target IDs fully covered.
-- Tests: **1,197 passing**, zero clippy warnings.
+- Tests: **1,197 passing** at Phase 4 close; zero clippy warnings.
+
+### 4.5 — Wave record (folded in from PHASE4_PLAN.md)
+
+Phase 4 was executed as five stacked-PR waves on `feat`, each gated on
+`cargo build` + `cargo test -p mlt_rules compatibility` (+ zero clippy warnings
+from wave 4 on):
+
+| Wave | Branch | Scope | Entries |
+|------|--------|-------|--------:|
+| 1 | `phase4/compat-1` | Compatibility considerations part 1 | ~256 |
+| 2 | `phase4/compat-2` | Compatibility considerations part 2 | ~256 |
+| 3 | `phase4/behavior` | Behavior-changes reconcile + JAPIEXT split + dedup | ~240 (net) |
+| 4 | `phase4/engine-dup` | Multi-function duplicate fix (`HashMap<&str, Vec<&CompatEntry>>`) | engine code |
+| 5 | `phase4/complete` | Gap check + PLAN.md update | — |
+
+Completion criteria met: all 1,794 target IDs present, no duplicate IDs, engine
+emits multiple diagnostics for multi-function names.
 
 ---
 
@@ -612,8 +659,8 @@ now the established pattern:
 - **Config tests:** `disabled_checks`, severity overrides, category disabling.
 - **CLI integration tests:** `nofil_rderr.rs`.
 
-Current totals: **1,195 mlt_rules + 3 mlt_cli + 10 mlt_core = 1,208 tests passing**,
-with zero clippy warnings.
+Current totals: **1,390 mlt_rules + 3 mlt_cli + 10 mlt_core = 1,403 tests passing**
+(after the Phase 4.5 / Part B waves), with zero clippy warnings.
 
 ---
 
@@ -695,7 +742,44 @@ models. **The Phase 3 waves (A–D) were executed via the stacked-PR rule-pipeli
 | **Wave B** | Syntax Errors (30) | ✅ merged (#9) |
 | **Wave C** | Language Spec (108) | ✅ merged (#10) |
 | **Wave D** | Good Practices (39 + 24 deferred) | ✅ merged (#12) |
-| **Remaining** | Good Practices (26), Language Spec (11), System Objects (2) | ⏳ next |
+| **Phase 4** | Compatibility data expansion (1,794 IDs) | ✅ merged (PRs on `feat`) |
+| **Phase 4.5** | Generic compatibility AST checks (65 of 68) | ✅ complete (see section below) |
+| **Part B** | Good Practices (16), Language Spec (21), System Objects (4) | ✅ complete (see section below) |
+
+---
+
+## Phase 4.5 / Part B: Generic Compatibility + Phase 3 Completion ✅
+
+Closed the last code-level gaps. Two sub-parts, both complete.
+
+### Part A — Phase 4.5: 65 of 68 generic compatibility AST checks
+
+The 68 generic entries in `data/compatibility.toml` (`function_name = ""`) cannot be
+matched by the lookup engine; each needs AST-pattern logic. Implemented in
+`crates/mlt_rules/src/compatibility/generic/`:
+
+| Wave | File | Checks |
+|------|------|--------|
+| 4.5-A | `check_property_attr.rs` | MCPDC, PSTAT, DSPIDF, DSPFDF, ATVIZW, SMPLMODE, GETERR, SETERR, MCGCP, HESST, HESSM, TTSMP, LSRET, RAYNR, DFEATUREPARAM1/2, COEFFS, COEFF1-3, COEFFD1-3, COEFFC1-3, READSZK, READSZR |
+| 4.5-B | `check_input_syntax.rs` | FPRENAME, XPCRENAME, SLRTRENAME, PSRENAME, DCRENAME, SERENAME, HHCNA, HHCWE, REPUDD, MCATP, NOV6, FROPT, FROPTX, RESOU, FGREN, FGREM |
+| 4.5-C | `check_forward_gates.rs` | FCLEN, FCCPV, FCDQS, FCFAV, FCHBL, FCLFS, FCNVA, REDEFGI, REDEFGG, NSTIMP, IMPIVD, IMPKEY |
+| 4.5-D | `check_behavior_prop.rs` | PTCLO, PTDLO, SMTHG, SMTHGF, SMTHF, SMTHFA, SMTHFT, INVHCRM, DINVHCRM |
+
+Dispatch: per-node via `generic::collect_node_checks`; file-level scope checks
+(REDEFGI/REDEFGG/NSTIMP) via `generic::collect_file_checks` from `check_file`.
+**Remaining:** 3 unset-variable checks (SHVAI, IDISVARHIGH, IDISVARLOW) deferred to
+Phase 7 (need dataflow/type analysis).
+
+### Part B — Phase 3 completion
+
+| Category | Added | Files |
+|----------|-------|-------|
+| Language Spec (21) | ATAS, ATLAB, ATNAS, ATNPI, ATNPP, ATPPI, ATPPP, ATUNK, ATVIZE, CLSAT, CLSUNK, NOPRV, PFANSRE, PFANSSL, PFDF, PFPIE, PFSAME, PFTIN, VTPCON, VTPEAL, VTPIN | `language_spec/check_class_attributes.rs`, `check_class_file_rules.rs`, `check_property_validation_functions.rs`, parfor DFS additions |
+| Good Practices (16) | ADMTHDINV, ADPROP, ADPROPLC, CTOINW, FXUP, MCCSPS, MCNPN, MCNPR, MCSNOV, MCSOH, MCSUP, MCVM, PFRIN, PFRUS, SUBSINDEX, VTFIN | `good_practices/check_app_designer.rs`, `check_oop_practice.rs`, `check_parfor_reduction.rs`, `check_misc_general.rs` |
+| System Objects (4) | SOINITPROP, SOTUNPROP1, SOTUNPROP3, SOTUNPROP4 | `system_objects/check_soinitprop.rs`, `check_sotunprop.rs` |
+
+**Gate:** `cargo build` + `cargo clippy --all-targets` (zero warnings) +
+`cargo test` (1,403 passing).
 
 ---
 
@@ -705,7 +789,7 @@ models. **The Phase 3 waves (A–D) were executed via the stacked-PR rule-pipeli
 crates/mlt_rules/src/
 ├── lib.rs
 ├── data/
-│   ├── compatibility.toml            # ~323 entries (275 matchable)
+│   ├── compatibility.toml            # 1,924 entries (data-driven, Phase 4)
 │   └── suggested_improvements.toml   # 244 entries
 ├── analysis/
 │   ├── mod.rs
@@ -714,23 +798,23 @@ crates/mlt_rules/src/
 │   └── metadata.rs                  # Function/class structure ✅
 ├── test_util.rs                      # Shared test harness ✅
 ├── nosemi.rs                         # ✅ NOSEMI (1 check)
-├── compatibility.rs                  # ✅ Data-driven engine (~275 matchable)
+├── compatibility/                    # ✅ Data-driven engine (~1,794 matchable) + generic/ (65 AST checks)
 ├── naming.rs                         # ✅ Generic engine (81 checks)
 ├── custom_checks.rs                  # ✅ Metrics engine (25 checks)
-├── formatting.rs                     # ✅ 7 checks
-├── bugs.rs                           # ✅ 35 checks
-├── readability.rs                    # ✅ 36 checks (hybrid engine)
+├── formatting/                       # ✅ 7 checks (per-check files)
+├── bugs/                             # ✅ 35 checks
+├── readability/                      # ✅ 36 checks (hybrid engine)
 ├── performance.rs                    # ✅ 41 checks
-├── good_practices.rs                 # ⚠️ 80/106 checks (24 deferred)
+├── good_practices/                   # ✅ 96/106 checks (10 deferred to Phase 7)
 ├── incomplete_analysis.rs            # ✅ 17 checks (QUIT/NOFIL/RDERR in linter/CLI)
-├── syntax_errors.rs                  # ✅ 48 checks
-├── language_spec.rs                  # ✅ 146 checks (consolidated: parfor + class + function validation + other)
+├── syntax_errors/                    # ✅ 48 checks
+├── language_spec/                    # ✅ 155 checks (consolidated: parfor + class + function validation + other)
 ├── unset_variables.rs                # ✅ 6 checks
 ├── unused.rs                         # ✅ 17 checks
 ├── suggested_improvements.rs         # ✅ 243 checks (data-driven)
 ├── codegen.rs                        # ✅ 20 checks
 ├── deployment.rs                     # ✅ 10 checks
-├── system_objects.rs                 # ⚠️ 7/9 checks
+├── system_objects/                   # ✅ 9/9 checks
 └── unsupported.rs                    # ✅ 13 checks
 ```
 
