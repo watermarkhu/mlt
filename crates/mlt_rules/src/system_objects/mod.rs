@@ -47,9 +47,11 @@
 
 mod check_sodeprop;
 mod check_sodfltval;
+mod check_soinitprop;
 mod check_sonumin;
 mod check_sonumout;
 mod check_sorsrvdnm;
+mod check_sotunprop;
 
 use mlt_core::{Category, Config, Diagnostic, FileContext, NodeContext, Rule, Severity};
 use serde::Deserialize;
@@ -85,11 +87,12 @@ pub(crate) const CHECKS: &[CheckMeta] = &[
     CheckMeta { id: "SONUMOUT", severity: Severity::Error, description: "System object method called with wrong number of outputs" },
     CheckMeta { id: "SODEPPROP", severity: Severity::Warning, description: "Deprecated system object property; use the recommended replacement" },
     CheckMeta { id: "SOINITPROP", severity: Severity::Warning, description: "System object property should be set in the constructor, not after construction" },
-    CheckMeta { id: "SODFLTVAL", severity: Severity::Warning, description: "System object property default value may cause unexpected behavior" },
+    CheckMeta { id: "SODFLTVAL", severity: Severity::Error, description: "Invalid initialization of DiscreteState property; initialize it within a 'resetImpl' method" },
     CheckMeta { id: "SORSRVDNM", severity: Severity::Warning, description: "Reserved name used for system object member; choose a different name" },
-    CheckMeta { id: "SOTUNPROP1", severity: Severity::Warning, description: "Tunable property constraint may be violated" },
-    CheckMeta { id: "SOTUNPROP3", severity: Severity::Warning, description: "Non-tunable property should not be modified after setup() is called" },
-    CheckMeta { id: "SOTUNPROP4", severity: Severity::Error, description: "Non-tunable property must not be modified inside the step() method" },
+    CheckMeta { id: "SOINITPROP", severity: Severity::Warning, description: "Initialize DiscreteState property within a 'resetImpl' method" },
+    CheckMeta { id: "SOTUNPROP1", severity: Severity::Warning, description: "Logical attribute not supported for tunable properties on MATLAB System blocks" },
+    CheckMeta { id: "SOTUNPROP3", severity: Severity::Warning, description: "Tunable properties on MATLAB System blocks must be numeric; char property is made Nontunable" },
+    CheckMeta { id: "SOTUNPROP4", severity: Severity::Warning, description: "Tunable properties on MATLAB System blocks must be numeric; string property is made Nontunable" },
 ];
 
 /// System object lifecycle methods.
@@ -252,8 +255,16 @@ impl SystemObjectsEngine {
                 if self.is_enabled("SODFLTVAL") && child.kind() == "properties" {
                     self.check_sodfltval(child, source, diags);
                 }
+
+                // SOTUNPROP1/3/4: tunable property type constraints
+                if child.kind() == "properties" {
+                    self.check_sotunprop(child, source, diags);
+                }
             }
         }
+
+        // SOINITPROP: DiscreteState properties need a resetImpl method.
+        self.check_soinitprop(class_node, source, diags);
     }
 }
 
@@ -380,6 +391,78 @@ pub(crate) fn is_system_object_class(class_node: tree_sitter::Node, source: &str
         }
     }
     false
+}
+
+/// The `property` child nodes of a class definition, across all its
+/// `properties` blocks.
+pub(crate) fn class_properties(class_node: tree_sitter::Node) -> Vec<tree_sitter::Node> {
+    let mut result = Vec::new();
+    let mut cursor = class_node.walk();
+    for child in class_node.children(&mut cursor) {
+        if child.kind() == "properties" {
+            let mut inner = child.walk();
+            for prop in child.children(&mut inner) {
+                if prop.kind() == "property" {
+                    result.push(prop);
+                }
+            }
+        }
+    }
+    result
+}
+
+/// True when the class defines a method with the given name.
+pub(crate) fn class_has_method(
+    class_node: tree_sitter::Node,
+    method_name: &str,
+    source: &str,
+) -> bool {
+    let mut stack = vec![class_node];
+    while let Some(node) = stack.pop() {
+        if node.kind() == "function_definition" {
+            // Function name is the first identifier child (or after a
+            // function_output like `function y = resetImpl(...)`).
+            if let Some(name) = function_name(node, source) {
+                if name == method_name {
+                    return true;
+                }
+            }
+        }
+        let mut cursor = node.walk();
+        for child in node.children(&mut cursor) {
+            stack.push(child);
+        }
+    }
+    false
+}
+
+/// The name of a `function_definition` node.
+fn function_name<'a>(func: tree_sitter::Node<'a>, source: &'a str) -> Option<&'a str> {
+    let mut cursor = func.walk();
+    for child in func.children(&mut cursor) {
+        match child.kind() {
+            "function_output" => {
+                // `function y = name(...)`: the name is the next identifier
+                // sibling of the function_output.
+                if let Some(next) = child.next_named_sibling() {
+                    if next.kind() == "identifier" {
+                        return Some(&source[next.start_byte()..next.end_byte()]);
+                    }
+                }
+            }
+            "identifier" => {
+                // `function name(...)`: first plain identifier after `function`.
+                return Some(&source[child.start_byte()..child.end_byte()]);
+            }
+            _ => {}
+        }
+    }
+    None
+}
+
+/// True when the raw text of a node contains `needle`.
+pub(crate) fn block_text_has(node: tree_sitter::Node, needle: &str, source: &str) -> bool {
+    node_text(node, source).contains(needle)
 }
 
 // ---------------------------------------------------------------------------

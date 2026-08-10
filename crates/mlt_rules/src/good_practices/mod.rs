@@ -1,6 +1,6 @@
 //! # Good Practices: Common best-practice checks for MATLAB code
 //!
-//! This module implements 43 good-practice checks from MATLAB's Code Analyzer,
+//! This module implements 59 good-practice checks from MATLAB's Code Analyzer,
 //! handled by a single hybrid engine (`GoodPracticesEngine`). Node-level checks
 //! cover simple pattern matches (error handling, eval usage, string comparisons,
 //! parfor/spmd usage), while file-level checks use metadata extraction and the
@@ -79,6 +79,8 @@
 //! | PFIIN     | The input variable should be initialized before the PARFOR loop |
 //! | PFOUS     | The output variable might not be used after the PARFOR loop |
 //! | PFRNI     | Do not specify the increment explicitly; parfor can only use an increment of one |
+//! | PFRIN     | The reduction variable might not be set before the PARFOR loop |
+//! | PFRUS     | The reduction variable might not be used after the PARFOR loop |
 //! | PFTUSW    | The temporary variable might be used after the PARFOR loop |
 //! | PFUIXW    | The index variable might be used after the PARFOR loop |
 //! | SPEVB     | Using EVALIN('base') or ASSIGNIN('base') inside an SPMD block refers to the worker machines' base workspaces |
@@ -132,6 +134,30 @@
 //! | TLEV     | Dynamic-code function used as a sub-expression, not a top-level statement |
 //! | UNONC    | `onCleanup` output must be assigned to a variable, not `~` |
 //! | MIPC1    | `computer('arch')` is platform-specific |
+//! | SUBSINDEX | Do not overload `subsindex` for fundamental data types |
+//! | VTFIN    | Validated value should be the first input to a `validate*` function |
+//! | CTOINW   | Constructed object passed to its own constructor |
+//! | FXUP     | Outer loop index set inside a nested function |
+//!
+//! ### App Designer
+//!
+//! | Check ID | Description |
+//! |----------|-------------|
+//! | ADMTHDINV | Class method called without `app` as the first argument |
+//! | ADPROP   | Property assigned through a bare identifier instead of `app.PROP` |
+//! | ADPROPLC | Property read through a bare identifier instead of `app.PROP` |
+//!
+//! ### OOP practice
+//!
+//! | Check ID | Description |
+//! |----------|-------------|
+//! | MCNPN    | Member access on the object that is not declared in the class |
+//! | MCNPR    | Assignment target on the object that is not a property |
+//! | MCSNOV   | Value-class setter does not return the modified object |
+//! | MCSOH    | Handle-class setter unnecessarily returns the modified object |
+//! | MCVM     | Value-class method modifying the object has no output |
+//! | MCCSPS   | Constant property name used as a struct in a dot-access chain |
+//! | MCSUP    | Setter accesses a property other than the one it sets |
 //!
 //! ## Configuration
 //!
@@ -150,6 +176,7 @@ use crate::analysis::metadata::{ClassMeta, FileMeta};
 use crate::analysis::symbols::SymbolTable;
 
 mod check_attf_attof;
+mod check_app_designer;
 mod check_chain;
 mod check_comfs_semfs;
 mod check_comnc;
@@ -183,16 +210,19 @@ mod check_mexcep;
 mod check_mgmd;
 mod check_mherm;
 mod check_mipc1;
+mod check_misc_general;
 mod check_mnuml;
 mod check_mobsrv;
 mod check_mthans;
 mod check_nbrak1;
 mod check_noans;
 mod check_noin;
+mod check_oop_practice;
 mod check_pfevb;
 mod check_pfgp;
 mod check_pfgv;
 mod check_pfrni;
+mod check_parfor_reduction;
 mod check_prop_validation;
 mod check_rmwrn;
 mod check_sepex;
@@ -714,6 +744,16 @@ impl Rule for GoodPracticesEngine {
 
         // Parfor / SPMD file-level checks.
         diagnostics.extend(self.check_parfor_file_level(ctx.tree, ctx.source));
+
+        // Parfor reduction-variable checks.
+        diagnostics.extend(self.check_parfor_reduction(ctx.tree, ctx.source));
+
+        // App Designer and OOP practice checks.
+        diagnostics.extend(self.check_app_designer(ctx.tree, ctx.source));
+        diagnostics.extend(self.check_oop_practice(ctx.tree, ctx.source));
+
+        // Miscellaneous general practice checks.
+        diagnostics.extend(self.check_misc_general(ctx.tree, ctx.source));
 
         diagnostics
     }

@@ -37,8 +37,13 @@
 use std::collections::HashMap;
 use std::sync::LazyLock;
 
-use mlt_core::{Category, Config, Diagnostic, NodeContext, Rule, Severity};
+use mlt_core::{Category, Config, Diagnostic, FileContext, NodeContext, Rule, Severity};
 use serde::Deserialize;
+
+/// Generic (AST-pattern) compatibility checks that the name-lookup table cannot
+/// match. Each check is implemented in its own `check_*.rs` module and
+/// registered here.
+mod generic;
 
 // ---------------------------------------------------------------------------
 // Data types for TOML deserialization
@@ -75,7 +80,7 @@ struct CompatData {
 // ---------------------------------------------------------------------------
 
 /// Raw TOML source embedded at compile time.
-const COMPAT_TOML_SOURCE: &str = include_str!("data/compatibility.toml");
+const COMPAT_TOML_SOURCE: &str = include_str!("../data/compatibility.toml");
 
 /// Parsed compatibility data. All strings inside are owned and live for 'static
 /// because this is a `LazyLock` static.
@@ -109,7 +114,9 @@ static COMPAT_TABLE: LazyLock<HashMap<&'static str, Vec<&'static CompatEntry>>> 
 // ---------------------------------------------------------------------------
 
 /// The compatibility engine — a single rule instance that checks all
-/// deprecated/removed function usage via a data-driven lookup table.
+/// deprecated/removed function usage via a data-driven lookup table, plus the
+/// generic (AST-pattern) compatibility checks that cannot be matched by
+/// function name alone.
 ///
 /// This is registered once with inventory. Each emitted diagnostic carries the
 /// specific check ID from the data file (e.g., "DPSD"), not a generic ID.
@@ -125,6 +132,47 @@ impl CompatibilityEngine {
         // parse errors surface early rather than on first lint invocation.
         let _ = &*COMPAT_TABLE;
         Box::new(Self)
+    }
+
+    /// Run the generic (AST-pattern) compatibility checks over a file.
+    ///
+    /// Dispatched from `check_file`. The per-check implementations live in the
+    /// sibling `check_*.rs` modules and are `pub(crate)` methods on
+    /// `CompatibilityEngine`; this walker invokes each one.
+    fn check_generic(&self, tree: &tree_sitter::Tree, source: &str) -> Vec<Diagnostic> {
+        let mut diagnostics = Vec::new();
+        // Each generic check registers a subtree of the walk via a visitor;
+        // implemented in the per-check modules below.
+        let root = tree.root_node();
+        let mut cursor = root.walk();
+        self.visit_generic_checks(root, source, &mut cursor, &mut diagnostics);
+        // File-level checks that need whole-tree scope analysis (e.g. global
+        // redeclaration, nested-import inheritance).
+        crate::compatibility::generic::collect_file_checks(self, tree, source, &mut diagnostics);
+        diagnostics
+    }
+
+    /// DFS that hands each node to the generic check methods.
+    fn visit_generic_checks(
+        &self,
+        node: tree_sitter::Node,
+        source: &str,
+        cursor: &mut tree_sitter::TreeCursor,
+        diagnostics: &mut Vec<Diagnostic>,
+    ) {
+        // Per-group check dispatch is added by the check_*.rs modules via a
+        // single `collect_generic_node_checks` free function (defined in
+        // `generic.rs`) so this walker stays independent of individual checks.
+        crate::compatibility::generic::collect_node_checks(self, node, source, diagnostics);
+        if cursor.goto_first_child() {
+            loop {
+                self.visit_generic_checks(cursor.node(), source, cursor, diagnostics);
+                if !cursor.goto_next_sibling() {
+                    break;
+                }
+            }
+            cursor.goto_parent();
+        }
     }
 }
 
@@ -147,6 +195,14 @@ impl Rule for CompatibilityEngine {
 
     fn target_node_types(&self) -> &'static [&'static str] {
         TARGET_NODES
+    }
+
+    fn has_file_check(&self) -> bool {
+        true
+    }
+
+    fn check_file(&self, ctx: &FileContext) -> Vec<Diagnostic> {
+        self.check_generic(ctx.tree, ctx.source)
     }
 
     fn check(&self, ctx: &NodeContext) -> Vec<Diagnostic> {
