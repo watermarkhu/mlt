@@ -1964,14 +1964,6 @@ message = "Starting in R2020a, interfaces created by 'clibgen.buildInterface' re
 category = "behavior-changes"
 
 [[checks]]
-id = "CLBARY"
-function_name = ""
-severity = "warning"
-message = "Starting in R2020a, clib.array object is the default return value, instead of the equivalent MATLAB array for primitive types."
-category = "behavior-changes"
-pattern = "generic"
-
-[[checks]]
 id = "COLMP"
 function_name = "colormap"
 severity = "warning"
@@ -2139,13 +2131,6 @@ message = "'org.ros.internal' Java package and subpackages are not available in 
 category = "behavior-changes"
 
 [[checks]]
-id = "JAPIEXT20"
-function_name = "org.ros.log"
-severity = "warning"
-message = "'org.ros.log' Java package and subpackages are not available in MATLAB. To continue using this package, install its JAR file and add the JAR file to the static path in MATLAB."
-category = "behavior-changes"
-
-[[checks]]
 id = "JAPIEXT21"
 function_name = "org.ros.master"
 severity = "warning"
@@ -2171,91 +2156,6 @@ id = "JAPIEXT24"
 function_name = "org.ros.node"
 severity = "warning"
 message = "'org.ros.node' Java package and subpackages are not available in MATLAB. To continue using this package, install its JAR file and add the JAR file to the static path in MATLAB."
-category = "behavior-changes"
-
-[[checks]]
-id = "JAPIEXT25"
-function_name = "org.ros.osgi"
-severity = "warning"
-message = "'org.ros.osgi' Java package and subpackages are not available in MATLAB. To continue using this package, install its JAR file and add the JAR file to the static path in MATLAB."
-category = "behavior-changes"
-
-# --- Upcoming Behavior Changes (3 checks) ---
-
-[[checks]]
-id = "ROSDFOBJECT"
-function_name = ""
-severity = "warning"
-message = "ROS data format object usage will change in a future release."
-category = "behavior-changes"
-pattern = "generic"
-
-[[checks]]
-id = "ROSSCFUN"
-function_name = ""
-severity = "warning"
-message = "ROS service client function usage will change in a future release."
-category = "behavior-changes"
-pattern = "generic"
-
-[[checks]]
-id = "ROSSCPKG"
-function_name = ""
-severity = "warning"
-message = "ROS service client package usage will change in a future release."
-category = "behavior-changes"
-pattern = "generic"
-
-# --- Upcoming Behavior Changes with Low Reliability Messages (632 checks - selected JAPIEXT entries) ---
-
-[[checks]]
-id = "ROSDFMISSING"
-function_name = ""
-severity = "warning"
-message = "ROS data format missing field usage will change in a future release."
-category = "behavior-changes"
-pattern = "generic"
-
-[[checks]]
-id = "JAPIEXT2"
-function_name = "com.google.common"
-severity = "warning"
-message = "'com.google.common' Java package and subpackages will be removed in a future release. To continue using this package, install its JAR file and add the JAR file to the static path in MATLAB."
-category = "behavior-changes"
-
-[[checks]]
-id = "JAPIEXT3"
-function_name = "com.google.protobuf"
-severity = "warning"
-message = "'com.google.protobuf' Java package and subpackages will be removed in a future release. To continue using this package, install its JAR file and add the JAR file to the static path in MATLAB."
-category = "behavior-changes"
-
-[[checks]]
-id = "JAPIEXT6"
-function_name = "javax.xml.bind"
-severity = "warning"
-message = "'javax.xml.bind' Java package and subpackages will be removed in a future release. To continue using this package, install its JAR file and add the JAR file to the static path in MATLAB."
-category = "behavior-changes"
-
-[[checks]]
-id = "JAPIEXT12"
-function_name = "org.json"
-severity = "warning"
-message = "'org.json' Java package and subpackages will be removed in a future release. To continue using this package, install its JAR file and add the JAR file to the static path in MATLAB."
-category = "behavior-changes"
-
-[[checks]]
-id = "JAPIEXT13"
-function_name = "org.yaml.snakeyaml"
-severity = "warning"
-message = "'org.yaml.snakeyaml' Java package and subpackages will be removed in a future release. To continue using this package, install its JAR file and add the JAR file to the static path in MATLAB."
-category = "behavior-changes"
-
-[[checks]]
-id = "JAPIEXT30"
-function_name = "io.netty"
-severity = "warning"
-message = "'io.netty' Java package and subpackages will be removed in a future release. To continue using this package, install its JAR file and add the JAR file to the static path in MATLAB."
 category = "behavior-changes"
 
 [[checks]]
@@ -2322,62 +2222,6 @@ message = "'org.apache.xerces' Java package and subpackages will be removed in a
 category = "behavior-changes"
 
 [[checks]]
-id = "JAPIEXT45"
-function_name = "org.eclipse.paho"
-severity = "warning"
-message = "'org.eclipse.paho' Java package and subpackages will be removed in a future release. To continue using this package, install its JAR file and add the JAR file to the static path in MATLAB."
-category = "behavior-changes"
-
-[[checks]]
-id = "JAPIEXT46"
-function_name = "org.ietf.jgss"
-severity = "warning"
-message = "'org.ietf.jgss' Java package and subpackages will be removed in a future release. To continue using this package, install its JAR file and add the JAR file to the static path in MATLAB."
-category = "behavior-changes"
-
-[[checks]]
-id = "JAPIEXT48"
-function_name = "org.omg.CORBA"
-severity = "warning"
-message = "'org.omg.CORBA' Java package and subpackages will be removed in a future release. To continue using this package, install its JAR file and add the JAR file to the static path in MATLAB."
-category = "behavior-changes"
-
-[[checks]]
-id = "JAPIEXT49"
-function_name = "org.w3c.dom"
-severity = "warning"
-message = "'org.w3c.dom' Java package and subpackages will be removed in a future release. To continue using this package, install its JAR file and add the JAR file to the static path in MATLAB."
-category = "behavior-changes"
-# Behavior Changes with Low Reliability and Upcoming Behavior Changes
-# with Low Reliability - compatibility data for mlt.
-#
-# These entries represent MATLAB Code Analyzer checks for Java API packages
-# being removed from MATLAB (JAPIEXT*) and other behavior change checks.
-#
-# Section 1: Behavior Changes with Low Reliability Messages (268 checks)
-# Section 2: Upcoming Behavior Changes with Low Reliability Messages (632 checks)
-
-# =============================================================================
-# Behavior Changes with Low Reliability Messages (268 checks)
-# =============================================================================
-
-[[checks]]
-id = "CLBGEN"
-function_name = "clibgen.generateLibraryDefinition"
-severity = "warning"
-message = "Starting in R2020a, interfaces created by 'clibgen.generateLibraryDefinition' return clib.array object instead of the equivalent MATLAB array for primitive types. Notify your users to update their code to use clib arrays. To revert to the old behavior, call 'clibgen.generateLibraryDefinition' with the 'ReturnCArrays' argument set to false."
-category = "behavior-changes"
-pattern = "generic"
-
-[[checks]]
-id = "CLBBLD"
-function_name = "clibgen.buildInterface"
-severity = "warning"
-message = "Starting in R2020a, interfaces created by 'clibgen.buildInterface' return clib.array object instead of the equivalent MATLAB array for primitive types. Notify your users to update their code to use clib arrays. To revert to the old behavior, call 'clibgen.buildInterface' with the 'ReturnCArrays' argument set to false."
-category = "behavior-changes"
-pattern = "generic"
-
-[[checks]]
 id = "CLBARY"
 function_name = "clibgen.generateLibraryDefinition"
 severity = "warning"
@@ -2386,208 +2230,10 @@ category = "behavior-changes"
 pattern = "generic"
 
 [[checks]]
-id = "COLMP"
-function_name = ""
-severity = "warning"
-message = "In R2019a and previous releases, the default colormap size is 64. Starting in R2019b, colormaps have 256 colors by default. If your code depends on a colormap having 64 colors, specify the number of colors when querying the colormap. For example, parula(64) queries the 64-color parula colormap."
-category = "behavior-changes"
-pattern = "generic"
-
-[[checks]]
-id = "FDTAG"
-function_name = ""
-severity = "warning"
-message = "'findall' with 'Exploration.Pan', 'Exploration.ZoomIn', 'Exploration.ZoomOut', 'Exploration.DataCursor', 'Exploration.Brushing', or 'Exploration.Rotate' might return empty because the data exploration buttons have moved from the figure toolbar to the axes toolbar. To customize the axes interactions, use the 'axtoolbar' and 'axtoolbarbtn' functions."
-category = "behavior-changes"
-pattern = "generic"
-
-[[checks]]
-id = "PTCLO"
-function_name = ""
-severity = "warning"
-message = "Changing the axes LineStyleOrder or ColorOrder properties of an existing chart now affects the chart immediately. To revert to the old behavior, set either the axes LineStyleOrderIndex or ColorOrderIndex to any value (such as its current value) before changing LineStyleOrder or ColorOrder."
-category = "behavior-changes"
-pattern = "generic"
-
-[[checks]]
-id = "PTDLO"
-function_name = ""
-severity = "warning"
-message = "Specifying multiple line styles in the axes LineStyleOrder might result in charts that render differently than in the previous releases. MATLAB uses a new indexing scheme to select colors and line styles. To revert to the old behavior, set either the axes LineStyleOrderIndex or ColorOrderIndex to any value (such as its current value) and call 'hold on' before creating your chart."
-category = "behavior-changes"
-pattern = "generic"
-
-[[checks]]
-id = "NSTIMP"
-function_name = ""
-severity = "warning"
-message = "Nested functions now inherit import statements from this parent function. If the nested functions intend to call functions on the path, ensure that the imported namespaces do not contain functions with the same name."
-category = "behavior-changes"
-pattern = "generic"
-
-[[checks]]
-id = "IDISVARLOW"
-function_name = ""
-severity = "warning"
-message = "To avoid a potential conflict with functions on the path, explicitly define the variable before indexing into it."
-category = "behavior-changes"
-pattern = "generic"
-
-[[checks]]
-id = "WEBBEHAVE"
-function_name = "web"
-severity = "warning"
-message = "The 'web' function now opens external sites in your system browser by default. In a future release, 'web' will open all pages using the system browser. Consider specifying the '-browser' option to open all pages in your system browser."
-category = "behavior-changes"
-pattern = "generic"
-
-[[checks]]
-id = "GLGRI"
-function_name = "geoloc2grid"
-severity = "warning"
-message = "Starting R2021a, the second output of 'geoloc2grid' is a geographic raster reference object instead of a referencing vector. Most Mapping Toolbox functions that accept referencing vectors as input also accept geographic raster reference objects, so existing code is unlikely to be affected."
-category = "behavior-changes"
-pattern = "generic"
-
-[[checks]]
-id = "V2MTX"
-function_name = "vec2mtx"
-severity = "warning"
-message = "Starting R2021a, the second output of 'vec2mtx' is a geographic raster reference object instead of a referencing vector. '[Z,R] = vec2mtx(LAT,LON,Z1,R1,...)' is an exception, where R1 is a referencing vector or matrix. Most Mapping Toolbox functions that accept referencing vectors as input also accept geographic raster reference objects, so existing code is unlikely to be affected."
-category = "behavior-changes"
-pattern = "generic"
-
-[[checks]]
-id = "JAPIEXT1"
-function_name = "com.teamdev.jxbrowser"
-severity = "warning"
-message = "'com.teamdev.jxbrowser' Java package and subpackages are not available in MATLAB. To continue using this package, install its JAR file and add the JAR file to the static path in MATLAB."
-category = "behavior-changes"
-
-[[checks]]
-id = "JAPIEXT4"
-function_name = "javax.security.auth"
-severity = "warning"
-message = "'javax.security.auth' Java package and subpackages are not available in MATLAB. To continue using this package, install its JAR file and add the JAR file to the static path in MATLAB."
-category = "behavior-changes"
-
-[[checks]]
-id = "JAPIEXT5"
-function_name = "javax.transaction.xa"
-severity = "warning"
-message = "'javax.transaction.xa' Java package and subpackages are not available in MATLAB. To continue using this package, install its JAR file and add the JAR file to the static path in MATLAB."
-category = "behavior-changes"
-
-[[checks]]
-id = "JAPIEXT7"
-function_name = "org.apache.el"
-severity = "warning"
-message = "'org.apache.el' Java package and subpackages are not available in MATLAB. To continue using this package, install its JAR file and add the JAR file to the static path in MATLAB."
-category = "behavior-changes"
-
-[[checks]]
-id = "JAPIEXT8"
-function_name = "org.apache.juli"
-severity = "warning"
-message = "'org.apache.juli' Java package and subpackages are not available in MATLAB. To continue using this package, install its JAR file and add the JAR file to the static path in MATLAB."
-category = "behavior-changes"
-
-[[checks]]
-id = "JAPIEXT9"
-function_name = "org.apache.tomcat"
-severity = "warning"
-message = "'org.apache.tomcat' Java package and subpackages are not available in MATLAB. To continue using this package, install its JAR file and add the JAR file to the static path in MATLAB."
-category = "behavior-changes"
-
-[[checks]]
-id = "JAPIEXT10"
-function_name = "org.apache.xmlrpc"
-severity = "warning"
-message = "'org.apache.xmlrpc' Java package and subpackages are not available in MATLAB. To continue using this package, install its JAR file and add the JAR file to the static path in MATLAB."
-category = "behavior-changes"
-
-[[checks]]
-id = "JAPIEXT11"
-function_name = "org.jboss.netty"
-severity = "warning"
-message = "'org.jboss.netty' Java package and subpackages are not available in MATLAB. To continue using this package, install its JAR file and add the JAR file to the static path in MATLAB."
-category = "behavior-changes"
-
-[[checks]]
-id = "JAPIEXT14"
-function_name = "org.ros.actionlib"
-severity = "warning"
-message = "'org.ros.actionlib' Java package and subpackages are not available in MATLAB. To continue using this package, install its JAR file and add the JAR file to the static path in MATLAB."
-category = "behavior-changes"
-
-[[checks]]
-id = "JAPIEXT15"
-function_name = "org.ros.address"
-severity = "warning"
-message = "'org.ros.address' Java package and subpackages are not available in MATLAB. To continue using this package, install its JAR file and add the JAR file to the static path in MATLAB."
-category = "behavior-changes"
-
-[[checks]]
-id = "JAPIEXT16"
-function_name = "org.ros.concurrent"
-severity = "warning"
-message = "'org.ros.concurrent' Java package and subpackages are not available in MATLAB. To continue using this package, install its JAR file and add the JAR file to the static path in MATLAB."
-category = "behavior-changes"
-
-[[checks]]
-id = "JAPIEXT17"
-function_name = "org.ros.exception"
-severity = "warning"
-message = "'org.ros.exception' Java package and subpackages are not available in MATLAB. To continue using this package, install its JAR file and add the JAR file to the static path in MATLAB."
-category = "behavior-changes"
-
-[[checks]]
-id = "JAPIEXT18"
-function_name = "org.ros.gradle_plugins"
-severity = "warning"
-message = "'org.ros.gradle_plugins' Java package and subpackages are not available in MATLAB. To continue using this package, install its JAR file and add the JAR file to the static path in MATLAB."
-category = "behavior-changes"
-
-[[checks]]
-id = "JAPIEXT19"
-function_name = "org.ros.internal"
-severity = "warning"
-message = "'org.ros.internal' Java package and subpackages are not available in MATLAB. To continue using this package, install its JAR file and add the JAR file to the static path in MATLAB."
-category = "behavior-changes"
-
-[[checks]]
 id = "JAPIEXT20"
 function_name = "org.ros.master"
 severity = "warning"
 message = "'org.ros.master' Java package and subpackages are not available in MATLAB. To continue using this package, install its JAR file and add the JAR file to the static path in MATLAB."
-category = "behavior-changes"
-
-[[checks]]
-id = "JAPIEXT21"
-function_name = "org.ros.math"
-severity = "warning"
-message = "'org.ros.math' Java package and subpackages are not available in MATLAB. To continue using this package, install its JAR file and add the JAR file to the static path in MATLAB."
-category = "behavior-changes"
-
-[[checks]]
-id = "JAPIEXT22"
-function_name = "org.ros.message"
-severity = "warning"
-message = "'org.ros.message' Java package and subpackages are not available in MATLAB. To continue using this package, install its JAR file and add the JAR file to the static path in MATLAB."
-category = "behavior-changes"
-
-[[checks]]
-id = "JAPIEXT23"
-function_name = "org.ros.namespace"
-severity = "warning"
-message = "'org.ros.namespace' Java package and subpackages are not available in MATLAB. To continue using this package, install its JAR file and add the JAR file to the static path in MATLAB."
-category = "behavior-changes"
-
-[[checks]]
-id = "JAPIEXT24"
-function_name = "org.ros.node"
-severity = "warning"
-message = "'org.ros.node' Java package and subpackages are not available in MATLAB. To continue using this package, install its JAR file and add the JAR file to the static path in MATLAB."
 category = "behavior-changes"
 
 [[checks]]
@@ -4305,69 +3951,6 @@ id = "JAPIEXT30"
 function_name = "com.jidesoft.icons"
 severity = "warning"
 message = "'com.jidesoft.icons' Java package and subpackages will not be available in MATLAB in a future release. To continue using this package, install its JAR file and add the JAR file to the static path in MATLAB."
-category = "behavior-changes"
-
-[[checks]]
-id = "JAPIEXT31"
-function_name = "com.sun.jini"
-severity = "warning"
-message = "'com.sun.jini' Java package and subpackages will not be available in MATLAB in a future release. To continue using this package, install its JAR file and add the JAR file to the static path in MATLAB."
-category = "behavior-changes"
-
-[[checks]]
-id = "JAPIEXT35"
-function_name = "javax.xml.namespace"
-severity = "warning"
-message = "'javax.xml.namespace' Java package and subpackages will not be available in MATLAB in a future release. To continue using this package, install its JAR file and add the JAR file to the static path in MATLAB."
-category = "behavior-changes"
-
-[[checks]]
-id = "JAPIEXT36"
-function_name = "javax.xml.stream"
-severity = "warning"
-message = "'javax.xml.stream' Java package and subpackages will not be available in MATLAB in a future release. To continue using this package, install its JAR file and add the JAR file to the static path in MATLAB."
-category = "behavior-changes"
-
-[[checks]]
-id = "JAPIEXT38"
-function_name = "org.jdom2.internal"
-severity = "warning"
-message = "'org.jdom2.internal' Java package and subpackages will not be available in MATLAB in a future release. To continue using this package, install its JAR file and add the JAR file to the static path in MATLAB."
-category = "behavior-changes"
-
-[[checks]]
-id = "JAPIEXT39"
-function_name = "org.hamcrest.collection"
-severity = "warning"
-message = "'org.hamcrest.collection' Java package and subpackages will not be available in MATLAB in a future release. To continue using this package, install its JAR file and add the JAR file to the static path in MATLAB."
-category = "behavior-changes"
-
-[[checks]]
-id = "JAPIEXT40"
-function_name = "org.openxml4j.opc"
-severity = "warning"
-message = "'org.openxml4j.opc' Java package and subpackages will not be available in MATLAB in a future release. To continue using this package, install its JAR file and add the JAR file to the static path in MATLAB."
-category = "behavior-changes"
-
-[[checks]]
-id = "JAPIEXT41"
-function_name = "net.jini.entry"
-severity = "warning"
-message = "'net.jini.entry' Java package and subpackages will not be available in MATLAB in a future release. To continue using this package, install its JAR file and add the JAR file to the static path in MATLAB."
-category = "behavior-changes"
-
-[[checks]]
-id = "JAPIEXT42"
-function_name = "org.apache.html"
-severity = "warning"
-message = "'org.apache.html' Java package and subpackages will not be available in MATLAB in a future release. To continue using this package, install its JAR file and add the JAR file to the static path in MATLAB."
-category = "behavior-changes"
-
-[[checks]]
-id = "JAPIEXT43"
-function_name = "org.eclipse.paho"
-severity = "warning"
-message = "'org.eclipse.paho' Java package and subpackages will not be available in MATLAB in a future release. To continue using this package, install its JAR file and add the JAR file to the static path in MATLAB."
 category = "behavior-changes"
 
 [[checks]]
@@ -9329,13 +8912,6 @@ id = "DISPREF"
 function_name = "ispref"
 severity = "warning"
 message = "'ispref' is not recommended. Use 'matlab.settings' or 'settings' instead."
-category = "compatibility"
-
-[[checks]]
-id = "DFCNCHK"
-function_name = "fcnchk"
-severity = "error"
-message = "'fcnchk' has been removed. Use function handles (@) instead."
 category = "compatibility"
 
 [[checks]]
