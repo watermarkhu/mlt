@@ -124,6 +124,21 @@
 //! | COMPNOT   | Comparison with `~= true` or `== false` simplifies to `~call(...)` |
 //! | M3COL     | Three colons (`a:b:c:d`) in an expression is probably unintended |
 //!
+//! ### Logical usage / handle defaults / shared variables / arity
+//!
+//! | Check ID | Description |
+//! |----------|-------------|
+//! | BDLGI    | Variable might be set by a nonlogical operator |
+//! | BDLOG1   | Non-scalar logical value used in a conditional expression |
+//! | BDLOG2   | Scalar non-logical value used in a conditional expression |
+//! | BDSCA    | `&&`/`||` used in a scalar context with a non-scalar operand |
+//! | BDSCI    | Variable might be set by a nonscalar operator |
+//! | MCHDP    | Property default that directly constructs a handle is shared by all instances |
+//! | MCHDT    | Property default that resolves to a handle is shared by all instances |
+//! | SHVAU    | Ambiguous shared-variable usage between a nested function and its parent |
+//! | GTARG    | Function might be called with too many arguments |
+//! | LTARG    | Function might be called with too few arguments |
+//!
 //! ### Function-call conventions
 //!
 //! | Check ID | Description |
@@ -175,8 +190,9 @@ use tree_sitter::Node;
 use crate::analysis::metadata::{ClassMeta, FileMeta};
 use crate::analysis::symbols::SymbolTable;
 
-mod check_attf_attof;
 mod check_app_designer;
+mod check_arity;
+mod check_attf_attof;
 mod check_chain;
 mod check_comfs_semfs;
 mod check_comnc;
@@ -196,10 +212,12 @@ mod check_fndef;
 mod check_fval;
 mod check_fxset;
 mod check_gvmis;
+mod check_handle_defaults;
 mod check_iters;
 mod check_lngnm;
 mod check_load;
 mod check_logical_aggregation;
+mod check_logical_usage;
 mod check_m3col;
 mod check_mccpe;
 mod check_mccpi;
@@ -227,6 +245,7 @@ mod check_prop_validation;
 mod check_rmwrn;
 mod check_sepex;
 mod check_shociraa;
+mod check_shared_vars;
 mod check_simpt;
 mod check_spevb;
 mod check_spgv;
@@ -754,6 +773,12 @@ impl Rule for GoodPracticesEngine {
 
         // Miscellaneous general practice checks.
         diagnostics.extend(self.check_misc_general(ctx.tree, ctx.source));
+
+        // Logical-usage, handle-default, shared-variable, and arity checks.
+        diagnostics.extend(self.check_logical_usage(ctx.tree, ctx.source));
+        diagnostics.extend(self.check_handle_defaults(ctx.tree, ctx.source));
+        diagnostics.extend(self.check_shared_vars(ctx.tree, ctx.source));
+        diagnostics.extend(self.check_arity(ctx.tree, ctx.source));
 
         diagnostics
     }

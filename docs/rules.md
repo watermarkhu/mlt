@@ -214,6 +214,16 @@ mlt implements lint rules matching MATLAB's Code Analyzer checks for feature par
 | [PFRUS](good-practices.md) | Good Practices | The reduction variable might not be used after the PARFOR loop | Warning | No |
 | [SUBSINDEX](good-practices.md) | Good Practices | Do not overload `subsindex` for fundamental data types | Warning | No |
 | [VTFIN](good-practices.md) | Good Practices | The validated value should be the first input argument to the validator function | Warning | No |
+| [BDLGI](good-practices.md) | Good Practices | Variable might be set by a nonlogical operator | Warning | No |
+| [BDLOG1](good-practices.md) | Good Practices | A scalar logical value is expected in the conditional expression; use `any` or `all` to reduce the array to a logical scalar | Warning | No |
+| [BDLOG2](good-practices.md) | Good Practices | A scalar logical value is expected in the conditional expression; use `any` or `all`, or compare the scalar value to 0 | Warning | No |
+| [BDSCA](good-practices.md) | Good Practices | Unexpected use of `&&`/`||` in a scalar context | Warning | No |
+| [BDSCI](good-practices.md) | Good Practices | Variable might be set by a nonscalar operator | Warning | No |
+| [MCHDP](good-practices.md) | Good Practices | Property default value that is a handle is shared by all instances | Warning | No |
+| [MCHDT](good-practices.md) | Good Practices | Property default value that resolves to a handle is shared by all instances | Warning | No |
+| [SHVAU](good-practices.md) | Good Practices | Confusing usage of a name assigned after a nested function definition | Warning | No |
+| [GTARG](good-practices.md) | Good Practices | Function might be called with too many arguments | Warning | No |
+| [LTARG](good-practices.md) | Good Practices | Function might be called with too few arguments | Warning | No |
 | [SOINITPROP](system-objects.md) | System Objects | Initialize DiscreteState property within a `resetImpl` method | Warning | No |
 | [SOTUNPROP1](system-objects.md) | System Objects | Logical attribute not supported for tunable properties on MATLAB System blocks | Warning | No |
 | [SOTUNPROP3](system-objects.md) | System Objects | Tunable properties on System blocks must be numeric; char property is made Nontunable | Warning | No |

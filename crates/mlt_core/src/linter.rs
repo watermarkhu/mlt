@@ -6,6 +6,7 @@ use tree_sitter::Parser;
 use crate::diagnostic::Diagnostic;
 use crate::registry::RuleRegistry;
 use crate::rule::{FileContext, NodeContext};
+use crate::suppression;
 use crate::Severity;
 
 // ---------------------------------------------------------------------------
@@ -27,9 +28,16 @@ use crate::Severity;
 /// Diagnostics emitted by rules carry the rule's default severity. The linter
 /// stamps the effective severity from the registry (which resolves config
 /// overrides) onto each diagnostic before returning.
+///
+/// # Inline Suppression
+///
+/// When [`Linter::inline_suppression`] is enabled (the default), diagnostics
+/// on lines carrying a `%#ok<...>` directive comment are filtered out, mirroring
+/// MATLAB's inline suppression.
 pub struct Linter {
     registry: RuleRegistry,
     parser: Parser,
+    inline_suppression: bool,
 }
 
 /// Errors that can occur during linting.
@@ -43,13 +51,27 @@ impl Linter {
     /// Create a new `Linter` with the given rule registry.
     ///
     /// Initializes the tree-sitter parser with the MATLAB language grammar.
+    /// Inline suppression (`%#ok<...>`) is enabled by default; disable it with
+    /// [`Linter::set_inline_suppression`].
     pub fn new(registry: RuleRegistry) -> Self {
         let mut parser = Parser::new();
         parser
             .set_language(&tree_sitter_matlab::LANGUAGE.into())
             .expect("failed to load tree-sitter-matlab grammar");
 
-        Self { registry, parser }
+        Self {
+            registry,
+            parser,
+            inline_suppression: true,
+        }
+    }
+
+    /// Enable or disable inline suppression directives (`%#ok<...>`).
+    ///
+    /// Enabled by default; call with `false` to mirror a config file that sets
+    /// `inline_suppression = false`.
+    pub fn set_inline_suppression(&mut self, enabled: bool) {
+        self.inline_suppression = enabled;
     }
 
     /// Lint a source file, returning all diagnostics sorted by position.
@@ -58,8 +80,11 @@ impl Linter {
     /// 1. Parses `source` into a tree-sitter `Tree`.
     /// 2. Performs a single DFS traversal, dispatching nodes to subscribed rules.
     /// 3. Calls `check_file()` on all rules for file-level analysis.
-    /// 4. Stamps effective severity from config overrides.
+    /// 4. Filters out diagnostics suppressed by inline `%#ok<...>` directives.
     /// 5. Returns diagnostics sorted by (line, column).
+    ///
+    /// Severity overrides from config are stamped onto diagnostics as they are
+    /// collected during steps 2 and 3.
     pub fn lint(&mut self, source: &str, file_path: &Path) -> Result<Vec<Diagnostic>, LintError> {
         // Step 1: Parse
         let tree = self
@@ -100,7 +125,14 @@ impl Linter {
             Err(_) => vec![Self::quit_diagnostic(source)],
         };
 
-        // Step 4: Sort by position for deterministic output
+        // Step 4: Apply inline suppression directives (%#ok<...>).
+        // A directive on a line suppresses matching diagnostics on that line only.
+        if self.inline_suppression {
+            let suppressions = suppression::parse(source);
+            diagnostics.retain(|d| !suppressions.is_suppressed(d.line, d.rule_id));
+        }
+
+        // Step 5: Sort by position for deterministic output
         diagnostics.sort_by(|a, b| a.line.cmp(&b.line).then(a.column.cmp(&b.column)));
 
         Ok(diagnostics)
@@ -256,5 +288,133 @@ mod tests {
             !diags.iter().any(|d| d.rule_id == "QUIT"),
             "got: {diags:?}"
         );
+    }
+
+    /// Test-only rule that emits diagnostics with different rule ids depending on
+    /// the identifier text: `aa` → "RULEA", `bb` → "RULEB".
+    ///
+    /// Lets suppression tests exercise per-rule matching on the same line.
+    struct MultiRule;
+
+    impl Rule for MultiRule {
+        fn id(&self) -> &'static str {
+            "MULTI"
+        }
+
+        fn description(&self) -> &'static str {
+            "test-only multi-id rule"
+        }
+
+        fn severity(&self) -> Severity {
+            Severity::Warning
+        }
+
+        fn category(&self) -> Category {
+            Category::Bugs
+        }
+
+        fn target_node_types(&self) -> &'static [&'static str] {
+            &["identifier"]
+        }
+
+        fn check(&self, ctx: &NodeContext) -> Vec<Diagnostic> {
+            let node = ctx.node;
+            let text = &ctx.source[node.byte_range()];
+            let rule_id = match text {
+                "aa" => "RULEA",
+                "bb" => "RULEB",
+                _ => return Vec::new(),
+            };
+            let (line, column) = line_col_of(ctx.source, node.start_byte());
+            vec![Diagnostic {
+                rule_id,
+                message: format!("{rule_id} fired"),
+                severity: Severity::Warning,
+                byte_range: node.byte_range(),
+                line,
+                column,
+                fix: None,
+            }]
+        }
+    }
+
+    /// Compute the 1-indexed (line, column) of a byte offset in `source`.
+    fn line_col_of(source: &str, byte: usize) -> (usize, usize) {
+        let prefix = &source[..byte];
+        let line = prefix.bytes().filter(|b| *b == b'\n').count() + 1;
+        let line_start = prefix.rfind('\n').map_or(0, |p| p + 1);
+        (line, byte - line_start + 1)
+    }
+
+    fn lint_with(source: &str) -> Vec<Diagnostic> {
+        let registry = RuleRegistry::new(vec![Box::new(MultiRule)], &Config::default());
+        let mut linter = Linter::new(registry);
+        linter.lint(source, Path::new("test.m")).expect("lint should succeed")
+    }
+
+    #[test]
+    fn inline_suppression_single_rule_on_line() {
+        let diags = lint_with("aa = 1; %#ok<RULEA>\nbb = 2;\n");
+        assert_eq!(diags.len(), 1, "got: {diags:?}");
+        assert_eq!(diags[0].rule_id, "RULEB");
+        assert_eq!(diags[0].line, 2);
+    }
+
+    #[test]
+    fn inline_suppression_star_all_suppresses_everything_on_line() {
+        let diags = lint_with("aa = 1; bb = 2; %#ok<*all*>\n");
+        assert!(diags.is_empty(), "got: {diags:?}");
+    }
+
+    #[test]
+    fn inline_suppression_comma_separated_ids() {
+        let diags = lint_with("aa = 1; bb = 2; %#ok<RULEA,RULEB>\n");
+        assert!(diags.is_empty(), "got: {diags:?}");
+    }
+
+    #[test]
+    fn inline_suppression_wildcard_matching() {
+        // `*A` matches RULEA (ends with "A") but not RULEB.
+        let diags = lint_with("aa = 1; bb = 2; %#ok<*A>\n");
+        assert_eq!(diags.len(), 1, "got: {diags:?}");
+        assert_eq!(diags[0].rule_id, "RULEB");
+    }
+
+    #[test]
+    fn inline_suppression_non_matching_rule_on_same_line_not_suppressed() {
+        let diags = lint_with("aa = 1; bb = 2; %#ok<RULEA>\n");
+        assert_eq!(diags.len(), 1, "got: {diags:?}");
+        assert_eq!(diags[0].rule_id, "RULEB");
+        assert_eq!(diags[0].line, 1);
+    }
+
+    #[test]
+    fn inline_suppression_directive_on_other_line_does_not_suppress() {
+        let diags = lint_with("aa = 1;\n%#ok<RULEA>\nbb = 2;\n");
+        assert_eq!(diags.len(), 2, "got: {diags:?}");
+        assert!(diags.iter().any(|d| d.rule_id == "RULEA"));
+        assert!(diags.iter().any(|d| d.rule_id == "RULEB"));
+    }
+
+    #[test]
+    fn inline_suppression_enabled_by_default() {
+        // Linter::new defaults inline suppression to on; a directive suppresses
+        // without any explicit config/setter call.
+        let diags = lint_with("aa = 1; %#ok<RULEA>\n");
+        assert!(diags.is_empty(), "got: {diags:?}");
+    }
+
+    #[test]
+    fn inline_suppression_disabled_via_config() {
+        let config = Config::from_toml("[lint]\ninline_suppression = false\n").unwrap();
+        let registry = RuleRegistry::new(vec![Box::new(MultiRule)], &config);
+        let mut linter = Linter::new(registry);
+        linter.set_inline_suppression(config.inline_suppression);
+        let diags = linter
+            .lint("aa = 1; %#ok<RULEA>\nbb = 2;\n", Path::new("test.m"))
+            .expect("lint should succeed");
+        assert_eq!(diags.len(), 2, "got: {diags:?}");
+        assert!(diags.iter().any(|d| d.rule_id == "RULEA"));
+        assert!(diags.iter().any(|d| d.rule_id == "RULEB"));
     }
 }

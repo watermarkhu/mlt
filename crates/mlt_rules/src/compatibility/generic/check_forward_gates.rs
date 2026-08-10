@@ -10,8 +10,8 @@
 //! - **REDEFGI/REDEFGG** — `global` declaration misuse (file-level).
 //! - **NSTIMP** — nested functions inheriting `import` statements (file-level).
 //!
-//! Unset-variable checks that need whole-function dataflow analysis (SHVAI,
-//! IDISVARHIGH, IDISVARLOW) are not yet implemented (tracked for Phase 7).
+//! The unset/shared-variable behavior-change checks (SHVAI, IDISVARHIGH,
+//! IDISVARLOW) live in the sibling `check_unset_vars` module (Phase 7).
 
 use super::super::CompatibilityEngine;
 use mlt_core::{Diagnostic, Severity};

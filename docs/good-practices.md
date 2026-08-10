@@ -70,6 +70,21 @@ These checks cover function-call conventions: `sprintf`/`fprintf` format strings
 | `COMPNOT` | This logical comparison simplifies to ~VAR_NAME(...). Did you mean to use VAR_NAME to evaluate function argument: VAR_NAME(...VAR_NAME...)? |
 | `M3COL` | Using three colons (a:b:c:d) in an expression is probably unintended. |
 
+### Logical usage / handle defaults / shared variables / arity
+
+| Check ID | Message |
+| -------- | ------- |
+| `BDLGI` | Variable might be set by a nonlogical operator. |
+| `BDLOG1` | A scalar logical value is expected in the conditional expression. Use 'any' or 'all' to reduce the array to a logical scalar. |
+| `BDLOG2` | A scalar logical value is expected in the conditional expression. Use 'any' or 'all' to reduce the array to a logical scalar, or compare the scalar value to 0. |
+| `BDSCA` | Unexpected use of VAR_OPERATOR in a scalar context. |
+| `BDSCI` | Variable might be set by a nonscalar operator. |
+| `MCHDP` | A property default value that is a handle will cause all instances to share the same object data. To avoid sharing, create the property value in the constructor. For intentional sharing, consider using a Constant property. |
+| `MCHDT` | Declaring the value of a property as a handle might cause all instances to share the same default handle. To avoid sharing, create the handle for this property in the constructor. To express that sharing is intentional, use the Constant property attribute. |
+| `SHVAU` | Confusing usage of name VAR_NAME on lines VAR_NUMBER and VAR_NUMBER. Initialize VAR_NAME before line VAR_NUMBER to make it a shared variable or rename VAR_NAME on line VAR_NUMBER to disambiguate. |
+| `GTARG` | Function might be called with too many arguments. |
+| `LTARG` | Function might be called with too few arguments. |
+
 ### Parfor / SPMD / parallel practices
 
 | Check ID | Message |
@@ -970,6 +985,303 @@ a = 1:2:3;
 
 This check does not provide an automatic fix.
 
+## BDLGI - Variable Might Be Set by a Nonlogical Operator
+
+Flags variables that are assigned from an arithmetic operator (`+`, `-`, `*`, `/`, `^`, `.*`, ...) and later used as a bare `if` / `while` condition. A numeric value used as a condition is almost always a mistake; the condition should be a logical expression.
+
+### Why this matters
+
+Using a computed numeric value as a condition relies on the implicit nonzero-is-true rule, which is easy to misread and often indicates a missing comparison (for example `if x` instead of `if x > 0`).
+
+### Examples
+
+#### Incorrect
+
+```matlab
+x = a + b;
+if x
+    ...
+end
+```
+
+#### Correct
+
+```matlab
+x = a + b;
+if x > 0
+    ...
+end
+```
+
+The check only fires when the type environment can confirm the variable is not logical.
+
+## BDLOG1 - Non-Scalar Logical Value in a Conditional Expression
+
+Flags `if` / `while` conditions that are logical but not scalar. MATLAB requires a scalar logical value in a conditional expression; an array logical condition is an error (or `all`/`any` was intended).
+
+### Why this matters
+
+A logical vector produced by a comparison (`x = a > b; if x`) does not give the expected single true/false answer. Use `any` or `all` to reduce it to a scalar.
+
+### Examples
+
+#### Incorrect
+
+```matlab
+x = a > b;      % logical vector when a, b are vectors
+if x
+    ...
+end
+```
+
+#### Correct
+
+```matlab
+if any(a > b)
+    ...
+end
+```
+
+## BDLOG2 - Scalar Non-Logical Value in a Conditional Expression
+
+Flags `if` / `while` conditions that are scalar but not provably logical, such as a numeric scalar literal or a variable assigned a scalar number.
+
+### Why this matters
+
+A scalar numeric condition (`if x` where `x = 5`) always evaluates to true. MATLAB recommends comparing the scalar to 0 (`if x ~= 0`) to make the intent explicit.
+
+### Examples
+
+#### Incorrect
+
+```matlab
+x = 5;
+if x
+    ...
+end
+```
+
+#### Correct
+
+```matlab
+x = 5;
+if x ~= 0
+    ...
+end
+```
+
+## BDSCA - Short-Circuit Operator in a Scalar Context
+
+Flags `&&` / `||` operators whose operand is a non-scalar logical array. Short-circuit operators require scalar logical operands; element-wise `&` / `|` (or `any`/`all`) should be used for arrays.
+
+### Why this matters
+
+`&&` on an array is a runtime error. The fix is usually to reduce the operand with `any`/`all` or switch to the element-wise operator.
+
+### Examples
+
+#### Incorrect
+
+```matlab
+x = a > b;          % logical vector
+if x && y
+    ...
+end
+```
+
+#### Correct
+
+```matlab
+if all(x) && y
+    ...
+end
+```
+
+## BDSCI - Variable Might Be Set by a Nonscalar Operator
+
+Flags variables assigned from an array-producing expression (a colon range `a:b`, a matrix `[...]`, or a cell `{...}` literal with more than one element) and later used in a scalar context such as a bare `if` / `while` condition.
+
+### Why this matters
+
+Using an array where a scalar is expected is a common mistake; the array assignment usually indicates a different intent (for example, a missing subscript).
+
+### Examples
+
+#### Incorrect
+
+```matlab
+idx = 1:10;
+if idx
+    ...
+end
+```
+
+#### Correct
+
+```matlab
+idx = 1:10;
+if isempty(idx)
+    ...
+end
+```
+
+## MCHDP - Property Default Directly Constructs a Handle
+
+Flags properties whose default value directly constructs a handle instance (`handle()`, `onCleanup(...)`, `containers.Map(...)`, `timer()`, a constructor of the file's own handle class, and similar). The default is evaluated once when the class is loaded, so every instance shares the same object data.
+
+### Why this matters
+
+Shared handle defaults cause surprising aliasing: mutating the property on one instance changes it for every instance created later.
+
+### Examples
+
+#### Incorrect
+
+```matlab
+classdef Foo < handle
+    properties
+        Cleanup = onCleanup(@cleanup)
+    end
+end
+```
+
+#### Correct
+
+```matlab
+classdef Foo < handle
+    properties
+        Cleanup
+    end
+    methods
+        function obj = Foo()
+            obj.Cleanup = onCleanup(@cleanup);
+        end
+    end
+end
+```
+
+If the sharing is intentional, declare the property `Constant`.
+
+## MCHDT - Property Default Resolves to a Handle
+
+Flags properties whose default value is an identifier or expression that the type environment proves to be a handle-typed value. This fires when the default names a handle value instead of constructing one inline; the sharing concern is the same as MCHDP.
+
+### Why this matters
+
+A property whose default is a handle value is shared by all instances, which is usually unintended.
+
+### Examples
+
+#### Incorrect
+
+```matlab
+classdef Foo < handle
+    properties
+        Cleanup = cleanupObj   % cleanupObj is a handle
+    end
+end
+```
+
+#### Correct
+
+```matlab
+classdef Foo < handle
+    properties
+        Cleanup
+    end
+    methods
+        function obj = Foo()
+            obj.Cleanup = onCleanup(@cleanup);
+        end
+    end
+end
+```
+
+Heuristic note: the check only fires when the type environment can prove the identifier is a handle. External handle classes that are neither in the built-in list nor the file's own class are not resolved.
+
+## SHVAU - Confusing Shared-Variable Usage
+
+Flags a name that is used inside a nested function and also assigned in the enclosing function *after* the nested function definition. MATLAB cannot tell whether the nested function's use refers to the shared variable or to a separate local, producing confusing behavior.
+
+### Why this matters
+
+Assigning a variable in the parent after a nested function definition makes the nested function's reference ambiguous. Initialize the variable before the nested function to make it a shared variable, or rename one of the two.
+
+### Examples
+
+#### Incorrect
+
+```matlab
+function outer()
+    y = 1;
+    function inner()
+        disp(x);   % ambiguous: shared or local?
+    end
+    x = 2;         % assigned after the nested function
+end
+```
+
+#### Correct
+
+```matlab
+function outer()
+    x = 2;         % assigned before the nested function
+    function inner()
+        disp(x);   % clearly the shared variable
+    end
+end
+```
+
+## GTARG - Function Called with Too Many Arguments
+
+Flags `function_call` nodes that pass more arguments than the callee accepts. The callee arity comes from a same-file function definition first, then from a built-in table (`data/arity.toml`) covering common fixed-arity MATLAB functions.
+
+### Why this matters
+
+Passing extra arguments is usually a mistake and often indicates the wrong function was called or arguments were reordered.
+
+### Examples
+
+#### Incorrect
+
+```matlab
+sin(1, 2);
+myfunc(1, 2, 3);   % myfunc(a, b) takes two inputs
+```
+
+#### Correct
+
+```matlab
+sin(1);
+myfunc(1, 2);
+```
+
+Calls to functions that are neither defined in the same file nor in the built-in table are skipped (cross-file resolution is not implemented).
+
+## LTARG - Function Called with Too Few Arguments
+
+Flags `function_call` nodes that pass fewer arguments than the callee requires. Functions whose last input is `varargin` accept any number of extra arguments and are only checked for too-few calls.
+
+### Why this matters
+
+Missing arguments typically cause runtime errors or silently wrong behavior when the callee uses `nargin`.
+
+### Examples
+
+#### Incorrect
+
+```matlab
+disp();
+myfunc(1);         % myfunc(a, b) needs two inputs
+```
+
+#### Correct
+
+```matlab
+disp('hello');
+myfunc(1, 2);
+```
+
 ## Configuration
 
 These checks are part of the Good Practices engine and are disabled individually via the engine's `disabled_checks` list:
@@ -1002,7 +1314,7 @@ The other checks in this engine do not provide automatic fixes.
 - `comparison_operator` — COMPNOP, COMPNOT, MHERM, STRSZ
 - `range` — M3COL
 - `class_definition` — ATTF, ATTOF, MCPO, MCSAC, MOBSRV, MDEPIN, MCCPI, MGMD, MCCPE, MTHANS (via `check_file`)
-- File-level (via `check_file`) — PFIIN, PFOUS, PFTUSW, PFUIXW, COMFS, SEMFS
+- File-level (via `check_file`) — PFIIN, PFOUS, PFTUSW, PFUIXW, COMFS, SEMFS, BDLGI, BDLOG1, BDLOG2, BDSCA, BDSCI, MCHDP, MCHDT, SHVAU, GTARG, LTARG
 
 ## Related rules
 

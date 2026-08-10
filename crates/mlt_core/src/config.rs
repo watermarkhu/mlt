@@ -53,11 +53,16 @@ pub struct ConfigFile {
 }
 
 /// The `[lint]` section of the config file.
-#[derive(Debug, Deserialize, Default)]
+#[derive(Debug, Deserialize)]
 pub struct LintSection {
     /// Glob patterns for files/directories to exclude from linting.
     #[serde(default)]
     pub exclude: Vec<String>,
+
+    /// Whether `%#ok<...>` inline suppression directives are honored.
+    /// Defaults to `true` (mirrors MATLAB's inline suppression).
+    #[serde(default = "default_true")]
+    pub inline_suppression: bool,
 
     /// Per-rule configuration. Keys are rule IDs (e.g., "NOSEMI").
     /// Values are either a severity string or a full config table.
@@ -68,6 +73,17 @@ pub struct LintSection {
     /// Values are severity strings ("off", "error", "warn", "info").
     #[serde(default)]
     pub categories: HashMap<String, String>,
+}
+
+impl Default for LintSection {
+    fn default() -> Self {
+        Self {
+            exclude: Vec::new(),
+            inline_suppression: true,
+            rules: HashMap::new(),
+            categories: HashMap::new(),
+        }
+    }
 }
 
 /// A single rule's config entry — either a severity shorthand or a full table.
@@ -113,7 +129,7 @@ impl Default for RuleConfig {
 ///
 /// Constructed from a [`ConfigFile`] (parsed `.mlt.toml`) via [`Config::from_toml`],
 /// or created with [`Config::default()`] for unconfigured usage.
-#[derive(Debug, Clone, Default)]
+#[derive(Debug, Clone)]
 pub struct Config {
     /// Glob patterns for files/directories to exclude.
     pub exclude: Vec<String>,
@@ -122,6 +138,20 @@ pub struct Config {
     /// Per-category severity overrides, keyed by [`Category`].
     /// A value of `None` means the category is disabled ("off").
     pub categories: HashMap<Category, Option<Severity>>,
+    /// Whether `%#ok<...>` inline suppression directives are honored.
+    /// Defaults to `true`, mirroring MATLAB's inline suppression behavior.
+    pub inline_suppression: bool,
+}
+
+impl Default for Config {
+    fn default() -> Self {
+        Self {
+            exclude: Vec::new(),
+            rules: HashMap::new(),
+            categories: HashMap::new(),
+            inline_suppression: true,
+        }
+    }
 }
 
 impl Config {
@@ -205,6 +235,7 @@ impl Config {
             exclude: file.lint.exclude,
             rules,
             categories,
+            inline_suppression: file.lint.inline_suppression,
         })
     }
 
@@ -308,6 +339,11 @@ impl Config {
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
+
+/// Serde default for opt-out flags that default to enabled (`true`).
+fn default_true() -> bool {
+    true
+}
 
 /// Parse a severity string into (enabled, Option<Severity>).
 ///
@@ -422,6 +458,29 @@ exclude = ["vendor/**", "test/fixtures/**"]
 "#;
         let config = Config::from_toml(toml).unwrap();
         assert_eq!(config.exclude, vec!["vendor/**", "test/fixtures/**"]);
+    }
+
+    #[test]
+    fn test_inline_suppression_defaults_to_true() {
+        // Empty config: field absent entirely.
+        assert!(Config::default().inline_suppression);
+        let config = Config::from_toml("").unwrap();
+        assert!(config.inline_suppression);
+        // [lint] section present but flag omitted.
+        let config = Config::from_toml("[lint]\nexclude = []\n").unwrap();
+        assert!(config.inline_suppression);
+    }
+
+    #[test]
+    fn test_inline_suppression_can_be_disabled() {
+        let config = Config::from_toml("[lint]\ninline_suppression = false\n").unwrap();
+        assert!(!config.inline_suppression);
+    }
+
+    #[test]
+    fn test_inline_suppression_explicit_true() {
+        let config = Config::from_toml("[lint]\ninline_suppression = true\n").unwrap();
+        assert!(config.inline_suppression);
     }
 
     #[test]

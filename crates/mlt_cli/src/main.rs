@@ -42,6 +42,7 @@ fn run(cli: Cli) -> Result<()> {
     let rules = mlt_rules::active_rules(&config);
     let registry = RuleRegistry::new(rules, &config);
     let mut linter = Linter::new(registry);
+    linter.set_inline_suppression(config.inline_suppression);
 
     let mut total_diagnostics = 0;
     let mut files_with_issues = 0;

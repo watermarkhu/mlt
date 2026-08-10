@@ -590,7 +590,9 @@ mod tests {
 
     #[test]
     fn clean_plot_not_flagged() {
-        let got = diags("plot(x, y);\n");
+        // `x` and `y` are defined before use; `plot` is a plain callee with
+        // no variable definition, so the Phase 7 unset-var checks stay quiet.
+        let got = diags("x = 1;\ny = 2;\nplot(x, y);\n");
         assert!(got.is_empty(), "got: {got:?}");
     }
 }

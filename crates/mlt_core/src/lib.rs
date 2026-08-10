@@ -14,6 +14,7 @@ pub mod diagnostic;
 pub mod linter;
 pub mod registry;
 pub mod rule;
+pub mod suppression;
 
 // Re-export primary types at crate root for ergonomic imports.
 pub use config::{Config, ConfigError, RuleConfig};
