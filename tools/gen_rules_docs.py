@@ -202,6 +202,10 @@ def extract_table(mod_dir: str) -> list[tuple[str, str]]:
             if desc.endswith('|'):
                 desc = desc[:-1].strip()
             desc = re.sub(r'^(Error|Warning|Info)\s*\|\s*', '', desc)
+            # Doc-comment tables escape literal pipes as `\\|`; normalize to a
+            # single pipe so the markdown cell renderer (which escapes `|` to
+            # `\|`) produces a valid table.
+            desc = desc.replace('\\|', '|')
             rows.append((m.group(1), desc))
     return rows
 
@@ -319,7 +323,7 @@ def render_engine_page(mod: str, rows: list[tuple[str, str]]) -> str:
         '| -------- | ----------- |',
     ]
     for cid, desc in rows:
-        lines.append(f'| `{cid}` | {desc.replace("|", "\\\\|")} |')
+        lines.append(f'| `{cid}` | {desc.replace("|", "\\|")} |')
     lines += [
         '',
         '## Configuration',
@@ -334,7 +338,7 @@ def render_engine_page(mod: str, rows: list[tuple[str, str]]) -> str:
     lines += [
         '```',
         '',
-        'See [Configuration](configuration.md#per-engine-parameters) for the full parameter list and [rules.md](rules.md) for the complete rule inventory.',
+        'See [Configuration](../configuration.md#per-engine-parameters) for the full parameter list and [rules.md](../rules.md) for the complete rule inventory.',
         '',
     ]
     return '\n'.join(lines)
@@ -346,9 +350,9 @@ def write_engine_pages() -> int:
         seen = set()
         rows = [r for r in rows if not (r[0] in seen or seen.add(r[0]))]
         page = render_engine_page(mod, rows)
-        out = REPO / "docs" / f'{mod.replace("_", "-")}.md'
+        out = REPO / "docs" / "rules" / f'{mod.replace("_", "-")}.md'
         out.write_text(page, encoding="utf-8")
-        print(f"wrote {out.name} ({len(rows)} checks)")
+        print(f"wrote {out.relative_to(REPO)} ({len(rows)} checks)")
     return 0
 
 

@@ -11,12 +11,29 @@ node = "24.19.0"
 # the wasm32 target (the `cc` crate uses it as `CC` when building wasm).
 clang = "22.1.8"
 pinact = "latest"
+# Git hooks via hk (pinned; Renovate updates). Runs through `mise x` so every
+# contributor gets the pinned tools on PATH without activating mise.
+hk = "1.54.1"
+# Markdown linter for the docs (mkdocs flavor) and GitHub Actions linter,
+# used by the hk pre-commit hooks.
+rumdl = "latest"
+actionlint = "latest"
 
 [env]
 # Ensure the wasm build uses clang for the tree-sitter C parser and finds the
 # wasi sysroot headers. tree-sitter's C runtime is guarded by `__wasi__`, so we
 # define it for the wasm32-unknown-unknown target to skip the `dup` branch.
 WASI_SDK = ".tools/wasi-sdk-33.0-x86_64-linux"
+# Wrap hk hooks with `mise x` so tools are on PATH for everyone.
+HK_MISE = 1
+
+[hooks]
+# Automatically install/update hk hooks when tools are installed.
+postinstall = "hk install --mise"
+
+[tasks.pre-commit]
+description = "Run hk pre-commit hooks (same as the git hook)"
+run = "hk run pre-commit"
 
 [tasks.build-wasm]
 description = "Build the browser/npm wasm package"
