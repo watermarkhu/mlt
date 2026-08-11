@@ -43,7 +43,7 @@ impl LanguageSpecEngine {
 
 #[cfg(test)]
 mod tests {
-    
+
     use crate::language_spec::tests::{check_source, filter_by_id};
 
     #[test]
@@ -57,7 +57,10 @@ end
         // File is named "WrongName.m" but class is "MyClass"
         let diags = check_source(source, "WrongName.m");
         let mcfil = filter_by_id(&diags, "MCFIL");
-        assert!(!mcfil.is_empty(), "MCFIL should fire when class name != file name");
+        assert!(
+            !mcfil.is_empty(),
+            "MCFIL should fire when class name != file name"
+        );
     }
 
     #[test]

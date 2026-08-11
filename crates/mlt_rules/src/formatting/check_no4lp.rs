@@ -10,12 +10,7 @@ impl FormattingEngine {
     /// For `for_statement`, `while_statement`, `if_statement`, and
     /// `switch_statement`, check that the `block` body is indented by
     /// `indent_size` spaces relative to the parent keyword.
-    pub(crate) fn check_no4lp(
-        &self,
-        node: Node,
-        source: &str,
-        diagnostics: &mut Vec<Diagnostic>,
-    ) {
+    pub(crate) fn check_no4lp(&self, node: Node, source: &str, diagnostics: &mut Vec<Diagnostic>) {
         let parent_col = node.start_position().column;
         let expected_indent = parent_col + self.no4lp_config.indent_size;
 
@@ -98,7 +93,7 @@ impl FormattingEngine {
 
 #[cfg(test)]
 mod tests {
-    
+
     use crate::formatting::tests::{has_id, lint};
 
     // -- NO4LP ---------------------------------------------------------------

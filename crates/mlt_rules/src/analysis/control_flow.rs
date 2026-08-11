@@ -945,7 +945,12 @@ end
         let spans = find_unreachable(&tree, source);
 
         // Two unreachable statements: `y = 2;` and `disp(y);`
-        assert_eq!(spans.len(), 2, "expected 2 unreachable spans, got {:?}", spans);
+        assert_eq!(
+            spans.len(),
+            2,
+            "expected 2 unreachable spans, got {:?}",
+            spans
+        );
         assert_eq!(spans[0].cause, "return");
         assert_eq!(spans[1].cause, "return");
 
@@ -970,7 +975,12 @@ end
         let tree = parse(source);
         let spans = find_unreachable(&tree, source);
 
-        assert_eq!(spans.len(), 1, "expected 1 unreachable span, got {:?}", spans);
+        assert_eq!(
+            spans.len(),
+            1,
+            "expected 1 unreachable span, got {:?}",
+            spans
+        );
         assert_eq!(spans[0].cause, "break");
 
         let text = &source[spans[0].byte_range.clone()];
@@ -990,7 +1000,12 @@ end
         let tree = parse(source);
         let spans = find_unreachable(&tree, source);
 
-        assert_eq!(spans.len(), 1, "expected 1 unreachable span, got {:?}", spans);
+        assert_eq!(
+            spans.len(),
+            1,
+            "expected 1 unreachable span, got {:?}",
+            spans
+        );
         assert_eq!(spans[0].cause, "continue");
     }
 
@@ -1005,7 +1020,11 @@ end
 ";
         let tree = parse(source);
         let spans = find_unreachable(&tree, source);
-        assert!(spans.is_empty(), "expected no unreachable code, got {:?}", spans);
+        assert!(
+            spans.is_empty(),
+            "expected no unreachable code, got {:?}",
+            spans
+        );
     }
 
     #[test]
@@ -1024,7 +1043,12 @@ end
 
         // Only `dead = 1` is unreachable (inside the if body).
         // `alive = 2` is reachable (the if might not execute).
-        assert_eq!(spans.len(), 1, "expected 1 unreachable span, got {:?}", spans);
+        assert_eq!(
+            spans.len(),
+            1,
+            "expected 1 unreachable span, got {:?}",
+            spans
+        );
         let text = &source[spans[0].byte_range.clone()];
         assert!(
             text.contains("dead = 1"),

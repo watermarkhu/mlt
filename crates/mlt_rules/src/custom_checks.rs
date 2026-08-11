@@ -390,11 +390,7 @@ impl CustomChecksEngine {
     }
 
     /// Recursively walk tree to find system commands.
-    fn walk_for_system_commands(
-        node: Node,
-        source: &str,
-        diagnostics: &mut Vec<Diagnostic>,
-    ) {
+    fn walk_for_system_commands(node: Node, source: &str, diagnostics: &mut Vec<Diagnostic>) {
         if node.kind() == "command" {
             // Check if the command text starts with `!` (system command syntax)
             let text = &source[node.start_byte()..node.end_byte()];
@@ -481,10 +477,7 @@ impl CustomChecksEngine {
 
             // MACYCCOM: Method average cyclomatic complexity
             if !method_metrics.is_empty() {
-                let total: usize = method_metrics
-                    .iter()
-                    .map(|m| m.cyclomatic_complexity)
-                    .sum();
+                let total: usize = method_metrics.iter().map(|m| m.cyclomatic_complexity).sum();
                 let avg = total / method_metrics.len();
                 if avg > self.config.max_avg_cyclomatic_complexity {
                     let first = method_metrics[0];
@@ -536,9 +529,8 @@ impl CustomChecksEngine {
         }
 
         // Check if we're entering a class definition (methods become is_method=true)
-        let child_is_method = is_method
-            || node.kind() == "methods"
-            || node.kind() == "methods_block";
+        let child_is_method =
+            is_method || node.kind() == "methods" || node.kind() == "methods_block";
 
         let mut cursor = node.walk();
         for child in node.children(&mut cursor) {
@@ -561,7 +553,7 @@ impl CustomChecksEngine {
             line: pos.row + 1,
             column: pos.column + 1,
             is_method,
-            cyclomatic_complexity: 1, // Start at 1
+            cyclomatic_complexity: 1,        // Start at 1
             strict_cyclomatic_complexity: 1, // Start at 1
             ..Default::default()
         };
@@ -587,7 +579,7 @@ impl CustomChecksEngine {
             &mut local_vars,
             &mut local_consts,
             &mut called_funcs,
-            0,   // initial nesting depth
+            0,     // initial nesting depth
             false, // not inside a nested function
         );
 
@@ -758,9 +750,9 @@ impl CustomChecksEngine {
                     metrics.strict_cyclomatic_complexity += 1;
                 }
                 // Count conditions in the expression (DAFCO)
-                metrics.max_conditions = metrics.max_conditions.max(
-                    Self::count_boolean_operators(node, source),
-                );
+                metrics.max_conditions = metrics
+                    .max_conditions
+                    .max(Self::count_boolean_operators(node, source));
             }
             "comparison_operator" => {
                 // Strict cyclomatic adds comparison operators
@@ -819,8 +811,8 @@ impl CustomChecksEngine {
         // Recurse into children
         let mut cursor = node.walk();
         for child in node.children(&mut cursor) {
-            let entering_nested = child.kind() == "function_definition"
-                && node.kind() != "source_file";
+            let entering_nested =
+                child.kind() == "function_definition" && node.kind() != "source_file";
             self.analyze_function_body(
                 child,
                 source,
@@ -886,12 +878,7 @@ impl CustomChecksEngine {
     }
 
     /// Count input/output arguments actually used inside the function body (DAFVI/DAFVO).
-    fn count_args_used(
-        &self,
-        func_node: Node,
-        source: &str,
-        metrics: &mut FunctionMetrics,
-    ) {
+    fn count_args_used(&self, func_node: Node, source: &str, metrics: &mut FunctionMetrics) {
         let input_names = self.get_input_arg_names(func_node, source);
         let output_names = self.get_output_arg_names(func_node, source);
 
@@ -988,7 +975,14 @@ impl CustomChecksEngine {
             if child.kind() == "function_definition" && child != node {
                 continue;
             }
-            Self::find_used_identifiers(child, source, input_names, output_names, used_inputs, used_outputs);
+            Self::find_used_identifiers(
+                child,
+                source,
+                input_names,
+                output_names,
+                used_inputs,
+                used_outputs,
+            );
         }
     }
 
@@ -1069,7 +1063,8 @@ impl CustomChecksEngine {
                 "DAFPV",
                 format!(
                     "Function '{}' has {} persistent variables; maximum is {}",
-                    metrics.name, metrics.persistent_variable_count,
+                    metrics.name,
+                    metrics.persistent_variable_count,
                     self.config.max_persistent_variables
                 ),
             ));
@@ -1136,7 +1131,8 @@ impl CustomChecksEngine {
                 "DAFAF",
                 format!(
                     "Function '{}' has {} anonymous functions; maximum is {}",
-                    metrics.name, metrics.anonymous_function_count,
+                    metrics.name,
+                    metrics.anonymous_function_count,
                     self.config.max_anonymous_functions
                 ),
             ));
@@ -1188,12 +1184,17 @@ impl CustomChecksEngine {
 
         // CYCCOM / MCYCCOM: Cyclomatic complexity exceeds limit
         if metrics.cyclomatic_complexity > self.config.max_cyclomatic_complexity {
-            let rule_id = if metrics.is_method { "MCYCCOM" } else { "CYCCOM" };
+            let rule_id = if metrics.is_method {
+                "MCYCCOM"
+            } else {
+                "CYCCOM"
+            };
             diagnostics.push(make_diag(
                 rule_id,
                 format!(
                     "Function '{}' has cyclomatic complexity {}; maximum is {}",
-                    metrics.name, metrics.cyclomatic_complexity,
+                    metrics.name,
+                    metrics.cyclomatic_complexity,
                     self.config.max_cyclomatic_complexity
                 ),
             ));
@@ -1210,7 +1211,8 @@ impl CustomChecksEngine {
                 rule_id,
                 format!(
                     "Function '{}' has strict cyclomatic complexity {}; maximum is {}",
-                    metrics.name, metrics.strict_cyclomatic_complexity,
+                    metrics.name,
+                    metrics.strict_cyclomatic_complexity,
                     self.config.max_strict_cyclomatic_complexity
                 ),
             ));
@@ -1299,10 +1301,7 @@ mod tests {
 
     /// Build an engine with custom thresholds set via TOML.
     fn engine_with(params: &str) -> Box<dyn Rule> {
-        let config = Config::from_toml(&format!(
-            "[lint.rules.CUSTOM_CHECKS]\n{params}\n"
-        ))
-        .unwrap();
+        let config = Config::from_toml(&format!("[lint.rules.CUSTOM_CHECKS]\n{params}\n")).unwrap();
         CustomChecksEngine::from_config(&config)
     }
 
@@ -1418,7 +1417,8 @@ mod tests {
     #[test]
     fn mncsn_ok_with_shallow_nesting() {
         let engine = engine_with("max_nesting_depth = 2");
-        let source = "function f()\n    if a\n        if b\n            x = 1;\n        end\n    end\nend\n";
+        let source =
+            "function f()\n    if a\n        if b\n            x = 1;\n        end\n    end\nend\n";
         let diags = lint_file(&*engine, source);
         assert!(!has_id(&diags, "MNCSN"), "got: {diags:?}");
     }
@@ -1541,7 +1541,8 @@ mod tests {
     #[test]
     fn dafaf_fires_on_many_anonymous_functions() {
         let engine = engine_with("max_anonymous_functions = 2");
-        let source = "function f()\n    g1 = @(x) x + 1;\n    g2 = @(x) x + 2;\n    g3 = @(x) x + 3;\nend\n";
+        let source =
+            "function f()\n    g1 = @(x) x + 1;\n    g2 = @(x) x + 2;\n    g3 = @(x) x + 3;\nend\n";
         let diags = lint_file(&*engine, source);
         assert!(has_id(&diags, "DAFAF"), "got: {diags:?}");
     }
@@ -1631,7 +1632,8 @@ mod tests {
     #[test]
     fn cyccom_fires_when_complexity_exceeds() {
         let engine = engine_with("max_cyclomatic_complexity = 3");
-        let source = "function f()\n    if a, x = 1; end\n    if b, x = 2; end\n    if c, x = 3; end\nend\n";
+        let source =
+            "function f()\n    if a, x = 1; end\n    if b, x = 2; end\n    if c, x = 3; end\nend\n";
         let diags = lint_file(&*engine, source);
         assert!(has_id(&diags, "CYCCOM"), "got: {diags:?}");
     }

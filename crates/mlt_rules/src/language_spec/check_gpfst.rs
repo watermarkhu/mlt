@@ -4,7 +4,11 @@ use super::*;
 
 impl LanguageSpecEngine {
     /// GPFST: Global/persistent must precede first use.
-    pub(crate) fn check_gpfst(&self, symbol_table: &SymbolTable, diagnostics: &mut Vec<Diagnostic>) {
+    pub(crate) fn check_gpfst(
+        &self,
+        symbol_table: &SymbolTable,
+        diagnostics: &mut Vec<Diagnostic>,
+    ) {
         for scope in &symbol_table.scopes {
             // Find all global/persistent declarations
             let gp_defs: Vec<&_> = scope

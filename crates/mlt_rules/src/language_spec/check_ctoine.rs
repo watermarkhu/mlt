@@ -55,7 +55,7 @@ impl LanguageSpecEngine {
 
 #[cfg(test)]
 mod tests {
-    
+
     use crate::language_spec::tests::{check_source, filter_by_id};
 
     #[test]
@@ -71,7 +71,10 @@ end
 ";
         let diags = check_source(source, "Foo.m");
         let ctoine = filter_by_id(&diags, "CTOINE");
-        assert!(!ctoine.is_empty(), "CTOINE should fire for Foo(Foo(1)) in constructor");
+        assert!(
+            !ctoine.is_empty(),
+            "CTOINE should fire for Foo(Foo(1)) in constructor"
+        );
     }
 
     #[test]

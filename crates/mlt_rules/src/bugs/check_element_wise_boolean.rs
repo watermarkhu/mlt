@@ -34,8 +34,7 @@ impl BugsEngine {
             column: pos.column + 1,
             fix: Some(Fix::new(
                 node.start_byte()..node.end_byte(),
-                node_text(node, source)
-                    .replacen(wrong_op, correct_op, 1),
+                node_text(node, source).replacen(wrong_op, correct_op, 1),
             )),
         }]
     }

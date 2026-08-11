@@ -3,110 +3,104 @@
 use super::*;
 
 impl SyntaxErrorsEngine {
-        pub(crate) fn check_number_literals(&self, root: Node, source: &str) -> Vec<Diagnostic> {
-            let mut diagnostics = Vec::new();
-            let mut numbers = Vec::new();
-            let mut errors = Vec::new();
-            Self::collect_numbers_and_errors(root, &mut numbers, &mut errors);
-            errors.sort_by_key(|node| node.start_byte());
+    pub(crate) fn check_number_literals(&self, root: Node, source: &str) -> Vec<Diagnostic> {
+        let mut diagnostics = Vec::new();
+        let mut numbers = Vec::new();
+        let mut errors = Vec::new();
+        Self::collect_numbers_and_errors(root, &mut numbers, &mut errors);
+        errors.sort_by_key(|node| node.start_byte());
 
-            for number in numbers {
-                let start = number.start_byte();
-                let end = number.end_byte();
-                let text = &source[start..end];
+        for number in numbers {
+            let start = number.start_byte();
+            let end = number.end_byte();
+            let text = &source[start..end];
 
-                // Truncated literal checks: an ERROR node immediately following
-                // the number holds the invalid remainder of the literal.
-                if !Self::inside_error(number) {
-                    if let Ok(idx) = errors.binary_search_by_key(&end, |n| n.start_byte()) {
-                        let err_text = &source[errors[idx].byte_range()];
-                        if let Some(first) = err_text.chars().next() {
-                            let literal_like = first.is_ascii_alphanumeric() || first == '_';
-                            if (text.starts_with("0x") || text.starts_with("0X"))
-                                && self.is_check_enabled("BADHBH")
-                                && literal_like
-                            {
-                                diagnostics.push(Self::number_diagnostic(
+            // Truncated literal checks: an ERROR node immediately following
+            // the number holds the invalid remainder of the literal.
+            if !Self::inside_error(number) {
+                if let Ok(idx) = errors.binary_search_by_key(&end, |n| n.start_byte()) {
+                    let err_text = &source[errors[idx].byte_range()];
+                    if let Some(first) = err_text.chars().next() {
+                        let literal_like = first.is_ascii_alphanumeric() || first == '_';
+                        if (text.starts_with("0x") || text.starts_with("0X"))
+                            && self.is_check_enabled("BADHBH")
+                            && literal_like
+                        {
+                            diagnostics.push(Self::number_diagnostic(
                                     "BADHBH",
                                     "Invalid digit in hexadecimal literal. Supported hex digits are 0-9 and A-F. Supported type suffixes are u8,u16,u32,u64 and s8,s16,s32,s64.",
                                     number,
                                 ));
-                            } else if (text.starts_with("0b") || text.starts_with("0B"))
-                                && self.is_check_enabled("BADHBB")
-                                && literal_like
-                            {
-                                diagnostics.push(Self::number_diagnostic(
+                        } else if (text.starts_with("0b") || text.starts_with("0B"))
+                            && self.is_check_enabled("BADHBB")
+                            && literal_like
+                        {
+                            diagnostics.push(Self::number_diagnostic(
                                     "BADHBB",
                                     "Invalid digit in binary literal. Supported binary digits are 0 and 1. Supported type suffixes are u8,u16,u32,u64 and s8,s16,s32,s64.",
                                     number,
                                 ));
-                            } else if self.is_check_enabled("BADFP")
-                                && (first == '.' || first.is_ascii_digit())
-                            {
-                                diagnostics.push(Self::number_diagnostic(
-                                    "BADFP",
-                                    "Invalid floating-point constant",
-                                    number,
-                                ));
-                            }
-                        }
-                    }
-                }
-
-                // Digit-count checks for hex and binary literals.
-                if let Some((is_hex, digit_count, suffix)) =
-                    Self::parse_hex_binary_literal(text)
-                {
-                    match suffix {
-                        Some(suffix) => {
-                            if let Some(max) = Self::max_digits_for_suffix(suffix, is_hex) {
-                                if digit_count > max {
-                                    let (rule_id, message) = if is_hex {
-                                        (
-                                            "BADHBHT",
-                                            "Hexadecimal literal has too many digits for specified type suffix",
-                                        )
-                                    } else {
-                                        (
-                                            "BADHBBT",
-                                            "Binary literal has too many digits for specified type suffix",
-                                        )
-                                    };
-                                    if self.is_check_enabled(rule_id) {
-                                        diagnostics.push(Self::number_diagnostic(
-                                            rule_id,
-                                            message,
-                                            number,
-                                        ));
-                                    }
-                                }
-                            }
-                        }
-                        None => {
-                            if is_hex && digit_count > 16 && self.is_check_enabled("HEXTOOLONG") {
-                                diagnostics.push(Self::number_diagnostic(
-                                    "HEXTOOLONG",
-                                    "Hexadecimal literal has too many digits",
-                                    number,
-                                ));
-                            } else if !is_hex
-                                && digit_count > 64
-                                && self.is_check_enabled("BINARYTOOLONG")
-                            {
-                                diagnostics.push(Self::number_diagnostic(
-                                    "BINARYTOOLONG",
-                                    "Binary literal has too many digits",
-                                    number,
-                                ));
-                            }
+                        } else if self.is_check_enabled("BADFP")
+                            && (first == '.' || first.is_ascii_digit())
+                        {
+                            diagnostics.push(Self::number_diagnostic(
+                                "BADFP",
+                                "Invalid floating-point constant",
+                                number,
+                            ));
                         }
                     }
                 }
             }
 
-            diagnostics
+            // Digit-count checks for hex and binary literals.
+            if let Some((is_hex, digit_count, suffix)) = Self::parse_hex_binary_literal(text) {
+                match suffix {
+                    Some(suffix) => {
+                        if let Some(max) = Self::max_digits_for_suffix(suffix, is_hex) {
+                            if digit_count > max {
+                                let (rule_id, message) = if is_hex {
+                                    (
+                                            "BADHBHT",
+                                            "Hexadecimal literal has too many digits for specified type suffix",
+                                        )
+                                } else {
+                                    (
+                                            "BADHBBT",
+                                            "Binary literal has too many digits for specified type suffix",
+                                        )
+                                };
+                                if self.is_check_enabled(rule_id) {
+                                    diagnostics
+                                        .push(Self::number_diagnostic(rule_id, message, number));
+                                }
+                            }
+                        }
+                    }
+                    None => {
+                        if is_hex && digit_count > 16 && self.is_check_enabled("HEXTOOLONG") {
+                            diagnostics.push(Self::number_diagnostic(
+                                "HEXTOOLONG",
+                                "Hexadecimal literal has too many digits",
+                                number,
+                            ));
+                        } else if !is_hex
+                            && digit_count > 64
+                            && self.is_check_enabled("BINARYTOOLONG")
+                        {
+                            diagnostics.push(Self::number_diagnostic(
+                                "BINARYTOOLONG",
+                                "Binary literal has too many digits",
+                                number,
+                            ));
+                        }
+                    }
+                }
+            }
         }
 
+        diagnostics
+    }
 }
 
 #[cfg(test)]
@@ -120,11 +114,17 @@ mod tests {
     }
 
     fn engine_with_disabled(checks: &[&str]) -> Box<dyn Rule> {
-        let disabled = checks.iter().map(|c| format!("\"{c}\"")).collect::<Vec<_>>().join(", ");
-        let config = Config::from_toml(&format!("[lint.rules.SYNTAX_ERRORS_ENGINE]\ndisabled_checks = [{disabled}]\n")).unwrap();
+        let disabled = checks
+            .iter()
+            .map(|c| format!("\"{c}\""))
+            .collect::<Vec<_>>()
+            .join(", ");
+        let config = Config::from_toml(&format!(
+            "[lint.rules.SYNTAX_ERRORS_ENGINE]\ndisabled_checks = [{disabled}]\n"
+        ))
+        .unwrap();
         SyntaxErrorsEngine::from_config(&config)
     }
-
 
     // -- BADFP: invalid floating-point constant ------------------------------
 
@@ -149,10 +149,12 @@ mod tests {
     #[test]
     fn badfp_reports_number_byte_range() {
         let diags = lint_file(&*engine(), "x = 1.2.3;\n");
-        let d = diags.iter().find(|d| d.rule_id == "BADFP").expect("BADFP fired");
+        let d = diags
+            .iter()
+            .find(|d| d.rule_id == "BADFP")
+            .expect("BADFP fired");
         assert_eq!(d.byte_range, 4..7);
     }
-
 
     // -- BADHBH: invalid digit in hexadecimal literal ------------------------
 
@@ -180,7 +182,6 @@ mod tests {
         assert!(!has_id(&diags, "BADHBH"), "got: {diags:?}");
     }
 
-
     // -- BADHBB: invalid digit in binary literal -----------------------------
 
     #[test]
@@ -194,7 +195,6 @@ mod tests {
         let diags = lint_file(&*engine(), "x = 0b10;\n");
         assert!(!has_id(&diags, "BADHBB"), "got: {diags:?}");
     }
-
 
     // -- BADHBHT: hex literal too long for its type suffix -------------------
 
@@ -216,7 +216,6 @@ mod tests {
         assert!(!has_id(&diags, "BADHBHT"), "got: {diags:?}");
     }
 
-
     // -- BADHBBT: binary literal too long for its type suffix ----------------
 
     #[test]
@@ -237,7 +236,6 @@ mod tests {
         assert!(!has_id(&diags, "BADHBBT"), "got: {diags:?}");
     }
 
-
     // -- HEXTOOLONG: unsuffixed hex literal with too many digits -------------
 
     #[test]
@@ -251,7 +249,6 @@ mod tests {
         let diags = lint_file(&*engine(), "x = 0xFFFFFFFFFFFFFFFF;\n");
         assert!(!has_id(&diags, "HEXTOOLONG"), "got: {diags:?}");
     }
-
 
     // -- BINARYTOOLONG: unsuffixed binary literal with too many digits -------
 
@@ -268,7 +265,6 @@ mod tests {
         let diags = lint_file(&*engine(), &src);
         assert!(!has_id(&diags, "BINARYTOOLONG"), "got: {diags:?}");
     }
-
 
     // -- number literal checks disabled via config ---------------------------
 
@@ -296,5 +292,4 @@ mod tests {
         assert!(!has_id(&diags, "HEXTOOLONG"), "got: {diags:?}");
         assert!(!has_id(&diags, "BINARYTOOLONG"), "got: {diags:?}");
     }
-
 }

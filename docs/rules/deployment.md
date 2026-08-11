@@ -2,37 +2,15 @@
 icon: lucide/package
 ---
 
-# MATLAB Compiler (Deployment)
+<!-- Generated at docs build time from the module doc comments via
+     markdown-exec; regenerate the committed copy with:
+       python3 tools/gen_rules_docs.py --write-pages -->
 
-**Default severity:** Warning
-**Auto-fix:** No
-**Category:** Deployment
-**Can be disabled:** Yes
-
-## What this engine does
-
-The `DEPLOYMENT_ENGINE` rule implements the MATLAB Code Analyzer checks in the **MATLAB Compiler (Deployment)** category. All checks share one engine and are dispatched by tree-sitter node kind or by file-level traversal; each diagnostic carries the specific check ID (e.g. `MCCD`).
-
-## Check IDs
-
-| Check ID | Description |
-| -------- | ----------- |
-| `MCCD` | `cd` in deployed code |
-| `MCPRD` | Path modification in deployed code |
-| `MCHLP` | `help`/`doc` in deployed code |
-| `MCKBD` | `keyboard` in deployed code |
-| `MCSVP` | `savepath` in deployed code |
-| `MCMLR` | `matlabroot` in deployed code |
-| `MCABF` | `addpath` with absolute path |
-| `MCMFL` | `mfilename` in deployed code |
-| `MCTBX` | Toolbox function in deployed code |
-| `MCLL` | License check in deployed code |
-
-## Configuration
-
-```toml
-[lint.rules.DEPLOYMENT_ENGINE]
-skip_checks = ["AGROW"]   # Turn off specific checks
+```python exec="on"
+import sys
+sys.path.insert(0, "tools")
+from gen_rules_docs import render_engine_body, _engine_rows
+print(render_engine_body("deployment", _engine_rows("deployment")))
 ```
 
-See [Configuration](../configuration.md#per-engine-parameters) for the full parameter list and [../rules.md](../rules.md) for the complete rule inventory.
+<!-- 10 checks -->

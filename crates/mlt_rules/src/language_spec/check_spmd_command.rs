@@ -33,7 +33,12 @@ impl LanguageSpecEngine {
             }
             "save" => {
                 if !arguments.iter().any(|a| a == "-fromstruct") {
-                    self.push_diag(node, "SPSV", "SAVE cannot be called in an SPMD block without the '-fromstruct' option", diagnostics);
+                    self.push_diag(
+                        node,
+                        "SPSV",
+                        "SAVE cannot be called in an SPMD block without the '-fromstruct' option",
+                        diagnostics,
+                    );
                 }
             }
             "who" | "whos" => {

@@ -33,12 +33,14 @@ impl ReadabilityEngine {
             let arg_text = &source[named_children[0].start_byte()..named_children[0].end_byte()];
             // Only flag if argument looks like a string literal
             if arg_text.starts_with('\'') || arg_text.starts_with('"') {
-                let func = if check_id == "SPERR" { "error" } else { "warning" };
+                let func = if check_id == "SPERR" {
+                    "error"
+                } else {
+                    "warning"
+                };
                 results.push(self.diag(
                     check_id,
-                    &format!(
-                        "Use '{func}' with a message ID: {func}('myComponent:myID', ...)"
-                    ),
+                    &format!("Use '{func}' with a message ID: {func}('myComponent:myID', ...)"),
                     node,
                     None,
                 ));

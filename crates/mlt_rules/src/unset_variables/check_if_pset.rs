@@ -26,8 +26,7 @@ impl UnsetVariablesEngine {
                     for j in 0..inner_count {
                         if let Some(inner) = child.child(j) {
                             if inner.kind() == "block" {
-                                branch_assignments
-                                    .push(collect_block_assignments(inner, source));
+                                branch_assignments.push(collect_block_assignments(inner, source));
                                 break;
                             }
                         }
@@ -39,8 +38,7 @@ impl UnsetVariablesEngine {
                     for j in 0..inner_count {
                         if let Some(inner) = child.child(j) {
                             if inner.kind() == "block" {
-                                branch_assignments
-                                    .push(collect_block_assignments(inner, source));
+                                branch_assignments.push(collect_block_assignments(inner, source));
                                 break;
                             }
                         }
@@ -112,7 +110,9 @@ end
 ";
         let diags = lint_file(&*engine(), source);
         assert!(
-            diags.iter().any(|d| d.rule_id == "PSET" && d.message.contains("'z'")),
+            diags
+                .iter()
+                .any(|d| d.rule_id == "PSET" && d.message.contains("'z'")),
             "expected PSET for 'z' (set in if but not else), got: {diags:?}"
         );
     }
@@ -130,7 +130,9 @@ end
 ";
         let diags = lint_file(&*engine(), source);
         assert!(
-            !diags.iter().any(|d| d.rule_id == "PSET" && d.message.contains("'z'")),
+            !diags
+                .iter()
+                .any(|d| d.rule_id == "PSET" && d.message.contains("'z'")),
             "should not fire PSET when 'z' is set in all branches"
         );
     }

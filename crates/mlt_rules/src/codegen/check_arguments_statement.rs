@@ -20,7 +20,8 @@ mod tests {
 
     #[test]
     fn emrifav_fires_on_arguments_block() {
-        let src = "function f(a)\n    arguments\n        a (1,1) double\n    end\n    x = a;\nend\n";
+        let src =
+            "function f(a)\n    arguments\n        a (1,1) double\n    end\n    x = a;\nend\n";
         let diags = lint_nodes(&*engine(), src);
         assert!(has_id(&diags, "EMRIFAV"), "got: {diags:?}");
     }
@@ -31,5 +32,4 @@ mod tests {
         let diags = lint_nodes(&*engine(), src);
         assert!(!has_id(&diags, "EMRIFAV"), "got: {diags:?}");
     }
-
 }

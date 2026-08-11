@@ -30,9 +30,7 @@ impl IncompleteAnalysisEngine {
                 } else {
                     diagnostics.push(Diagnostic {
                         rule_id: "MDOTM",
-                        message: format!(
-                            "File has extension '.{ext_str}'; expected '.m'"
-                        ),
+                        message: format!("File has extension '.{ext_str}'; expected '.m'"),
                         severity: Severity::Error,
                         byte_range: 0..source.len().min(1),
                         line: 1,

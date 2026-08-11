@@ -101,7 +101,14 @@ impl LanguageSpecEngine {
         let line = class.line;
 
         for attr in &class.attributes {
-            self.check_one_attribute(&range, line, attr, CLASS_ATTRS, AttrLevel::Class, diagnostics);
+            self.check_one_attribute(
+                &range,
+                line,
+                attr,
+                CLASS_ATTRS,
+                AttrLevel::Class,
+                diagnostics,
+            );
         }
         for block in &class.properties_blocks {
             for attr in &block.attributes {
@@ -350,7 +357,10 @@ classdef (Frobnicate) Foo
 end
 ";
         let diags = check_source(source, "Foo.m");
-        assert!(!filter_by_id(&diags, "ATUNK").is_empty(), "ATUNK should fire for an unknown class attribute");
+        assert!(
+            !filter_by_id(&diags, "ATUNK").is_empty(),
+            "ATUNK should fire for an unknown class attribute"
+        );
     }
 
     #[test]
@@ -369,7 +379,11 @@ end
 ";
         let diags = check_source(source, "Foo.m");
         let hits = filter_by_id(&diags, "ATUNK");
-        assert_eq!(hits.len(), 2, "ATUNK should fire for the unknown property and method attributes");
+        assert_eq!(
+            hits.len(),
+            2,
+            "ATUNK should fire for the unknown property and method attributes"
+        );
     }
 
     #[test]
@@ -390,7 +404,10 @@ classdef (Sealed, AllowedSubclasses = ?Foo) Foo < handle
 end
 ";
         let diags = check_source(source, "Foo.m");
-        assert!(filter_by_id(&diags, "ATUNK").is_empty(), "ATUNK should NOT fire for valid attributes");
+        assert!(
+            filter_by_id(&diags, "ATUNK").is_empty(),
+            "ATUNK should NOT fire for valid attributes"
+        );
     }
 
     // -- ATLAB ---------------------------------------------------------------
@@ -405,7 +422,10 @@ function f()
 end
 ";
         let diags = check_source(source, "f.m");
-        assert!(!filter_by_id(&diags, "ATLAB").is_empty(), "ATLAB should fire for 'arguments (Input = true)'");
+        assert!(
+            !filter_by_id(&diags, "ATLAB").is_empty(),
+            "ATLAB should fire for 'arguments (Input = true)'"
+        );
     }
 
     #[test]
@@ -421,7 +441,10 @@ function y = f(x)
 end
 ";
         let diags = check_source(source, "f.m");
-        assert!(!filter_by_id(&diags, "ATLAB").is_empty(), "ATLAB should fire for 'arguments (~Output)'");
+        assert!(
+            !filter_by_id(&diags, "ATLAB").is_empty(),
+            "ATLAB should fire for 'arguments (~Output)'"
+        );
     }
 
     #[test]
@@ -440,7 +463,10 @@ function y = f(x)
 end
 ";
         let diags = check_source(source, "f.m");
-        assert!(filter_by_id(&diags, "ATLAB").is_empty(), "ATLAB should NOT fire for bare Input/Output attributes");
+        assert!(
+            filter_by_id(&diags, "ATLAB").is_empty(),
+            "ATLAB should NOT fire for bare Input/Output attributes"
+        );
     }
 
     // -- ATNAS ---------------------------------------------------------------
@@ -452,7 +478,10 @@ classdef (AllowedSubclasses = Foo) MyClass
 end
 ";
         let diags = check_source(source, "MyClass.m");
-        assert!(!filter_by_id(&diags, "ATNAS").is_empty(), "ATNAS should fire when AllowedSubclasses is not a meta-class or cell array");
+        assert!(
+            !filter_by_id(&diags, "ATNAS").is_empty(),
+            "ATNAS should fire when AllowedSubclasses is not a meta-class or cell array"
+        );
     }
 
     #[test]
@@ -462,7 +491,10 @@ classdef (AllowedSubclasses = {?Foo, ?Bar}, InferiorClasses = ?Baz) MyClass
 end
 ";
         let diags = check_source(source, "MyClass.m");
-        assert!(filter_by_id(&diags, "ATNAS").is_empty(), "ATNAS should NOT fire for valid meta-class values");
+        assert!(
+            filter_by_id(&diags, "ATNAS").is_empty(),
+            "ATNAS should NOT fire for valid meta-class values"
+        );
     }
 
     // -- ATNPI / ATNPP / ATPPI / ATPPP ---------------------------------------
@@ -474,7 +506,10 @@ classdef (Access = 42) Foo
 end
 ";
         let diags = check_source(source, "Foo.m");
-        assert!(!filter_by_id(&diags, "ATNPI").is_empty(), "ATNPI should fire for a bad class Access value");
+        assert!(
+            !filter_by_id(&diags, "ATNPI").is_empty(),
+            "ATNPI should fire for a bad class Access value"
+        );
     }
 
     #[test]
@@ -484,7 +519,10 @@ classdef (Access = private) Foo
 end
 ";
         let diags = check_source(source, "Foo.m");
-        assert!(filter_by_id(&diags, "ATNPI").is_empty(), "ATNPI should NOT fire for 'Access = private'");
+        assert!(
+            filter_by_id(&diags, "ATNPI").is_empty(),
+            "ATNPI should NOT fire for 'Access = private'"
+        );
     }
 
     #[test]
@@ -497,7 +535,10 @@ classdef Foo
 end
 ";
         let diags = check_source(source, "Foo.m");
-        assert!(!filter_by_id(&diags, "ATPPI").is_empty(), "ATPPI should fire for a bad property Access value");
+        assert!(
+            !filter_by_id(&diags, "ATPPI").is_empty(),
+            "ATPPI should fire for a bad property Access value"
+        );
     }
 
     #[test]
@@ -510,7 +551,10 @@ classdef Foo
 end
 ";
         let diags = check_source(source, "Foo.m");
-        assert!(filter_by_id(&diags, "ATPPI").is_empty(), "ATPPI should NOT fire for immutable or meta-class access values");
+        assert!(
+            filter_by_id(&diags, "ATPPI").is_empty(),
+            "ATPPI should NOT fire for immutable or meta-class access values"
+        );
     }
 
     #[test]
@@ -525,7 +569,10 @@ classdef Foo
 end
 ";
         let diags = check_source(source, "Foo.m");
-        assert!(!filter_by_id(&diags, "ATPPP").is_empty(), "ATPPP should fire for 'Access = immutable' on a methods block");
+        assert!(
+            !filter_by_id(&diags, "ATPPP").is_empty(),
+            "ATPPP should fire for 'Access = immutable' on a methods block"
+        );
     }
 
     #[test]
@@ -540,7 +587,10 @@ classdef Foo
 end
 ";
         let diags = check_source(source, "Foo.m");
-        assert!(filter_by_id(&diags, "ATPPP").is_empty(), "ATPPP should NOT fire for 'Access = protected'");
+        assert!(
+            filter_by_id(&diags, "ATPPP").is_empty(),
+            "ATPPP should NOT fire for 'Access = protected'"
+        );
     }
 
     #[test]
@@ -553,7 +603,10 @@ classdef Foo < handle
 end
 ";
         let diags = check_source(source, "Foo.m");
-        assert!(!filter_by_id(&diags, "ATNPP").is_empty(), "ATNPP should fire for 'ListenAccess = immutable'");
+        assert!(
+            !filter_by_id(&diags, "ATNPP").is_empty(),
+            "ATNPP should fire for 'ListenAccess = immutable'"
+        );
     }
 
     #[test]
@@ -566,7 +619,10 @@ classdef Foo < handle
 end
 ";
         let diags = check_source(source, "Foo.m");
-        assert!(filter_by_id(&diags, "ATNPP").is_empty(), "ATNPP should NOT fire for valid event access values");
+        assert!(
+            filter_by_id(&diags, "ATNPP").is_empty(),
+            "ATNPP should NOT fire for valid event access values"
+        );
     }
 
     // -- ATAS ----------------------------------------------------------------
@@ -581,7 +637,10 @@ classdef Foo
 end
 ";
         let diags = check_source(source, "Foo.m");
-        assert!(!filter_by_id(&diags, "ATAS").is_empty(), "ATAS should fire for a bad meta-class value on a property block");
+        assert!(
+            !filter_by_id(&diags, "ATAS").is_empty(),
+            "ATAS should fire for a bad meta-class value on a property block"
+        );
     }
 
     // -- ATVIZE --------------------------------------------------------------
@@ -593,7 +652,10 @@ classdef (Visible) Foo
 end
 ";
         let diags = check_source(source, "Foo.m");
-        assert!(!filter_by_id(&diags, "ATVIZE").is_empty(), "ATVIZE should fire for a 'Visible' attribute");
+        assert!(
+            !filter_by_id(&diags, "ATVIZE").is_empty(),
+            "ATVIZE should fire for a 'Visible' attribute"
+        );
     }
 
     #[test]
@@ -603,7 +665,10 @@ classdef (~Hidden) Foo
 end
 ";
         let diags = check_source(source, "Foo.m");
-        assert!(filter_by_id(&diags, "ATVIZE").is_empty(), "ATVIZE should NOT fire for a '~Hidden' attribute");
+        assert!(
+            filter_by_id(&diags, "ATVIZE").is_empty(),
+            "ATVIZE should NOT fire for a '~Hidden' attribute"
+        );
     }
 
     // -- Config respect ------------------------------------------------------
@@ -627,6 +692,9 @@ end
             file_path: path,
         };
         let diags = engine.check_file(&ctx);
-        assert!(filter_by_id(&diags, "ATUNK").is_empty(), "ATUNK should be disabled via config disabled_checks");
+        assert!(
+            filter_by_id(&diags, "ATUNK").is_empty(),
+            "ATUNK should be disabled via config disabled_checks"
+        );
     }
 }

@@ -12,8 +12,7 @@ impl GoodPracticesEngine {
         let is_single_scalar = inner
             .map(|n| {
                 let kind = n.kind();
-                (kind == "number" || kind == "identifier")
-                    && n.next_named_sibling().is_none()
+                (kind == "number" || kind == "identifier") && n.next_named_sibling().is_none()
             })
             .unwrap_or(false);
 
@@ -38,10 +37,7 @@ impl GoodPracticesEngine {
             line: pos.row + 1,
             column: pos.column + 1,
             fix: inner.map(|n| {
-                mlt_core::Fix::new(
-                    node.start_byte()..node.end_byte(),
-                    node_text(n, source),
-                )
+                mlt_core::Fix::new(node.start_byte()..node.end_byte(), node_text(n, source))
             }),
         }]
     }

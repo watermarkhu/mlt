@@ -4,7 +4,11 @@ use super::*;
 
 impl LanguageSpecEngine {
     /// FVREPO: A repeating input block with varargin must not have other arguments.
-    pub(crate) fn check_fvrepo(&self, blocks: &[ArgumentsBlockMeta], diagnostics: &mut Vec<Diagnostic>) {
+    pub(crate) fn check_fvrepo(
+        &self,
+        blocks: &[ArgumentsBlockMeta],
+        diagnostics: &mut Vec<Diagnostic>,
+    ) {
         if !self.is_check_enabled("FVREPO") {
             return;
         }
@@ -27,7 +31,7 @@ impl LanguageSpecEngine {
 
 #[cfg(test)]
 mod tests {
-    
+
     use crate::language_spec::tests::{check_source, filter_by_id};
 
     #[test]

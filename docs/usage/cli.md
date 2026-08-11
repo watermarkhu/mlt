@@ -6,7 +6,7 @@ icon: lucide/terminal
 
 ## Synopsis
 
-```
+```text
 mlt [OPTIONS] <FILES>...
 ```
 

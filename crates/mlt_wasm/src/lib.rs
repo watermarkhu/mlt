@@ -313,7 +313,10 @@ mod wasm {
         fn fix_applies_semicolon() {
             let mut l = linter();
             let fixed = l.fix("x = 1\n", None);
-            assert!(fixed.contains(';'), "expected a semicolon added, got: {fixed:?}");
+            assert!(
+                fixed.contains(';'),
+                "expected a semicolon added, got: {fixed:?}"
+            );
         }
 
         #[test]
@@ -363,4 +366,3 @@ mod wasm {
         }
     }
 }
-

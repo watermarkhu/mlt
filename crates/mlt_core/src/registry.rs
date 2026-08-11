@@ -47,10 +47,7 @@ impl RuleRegistry {
             severities.push(effective_severity);
 
             for &node_type in rule.target_node_types() {
-                node_type_index
-                    .entry(node_type)
-                    .or_default()
-                    .push(idx);
+                node_type_index.entry(node_type).or_default().push(idx);
             }
 
             if rule.has_file_check() {

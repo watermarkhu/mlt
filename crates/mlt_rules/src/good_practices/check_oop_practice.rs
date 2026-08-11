@@ -68,11 +68,7 @@ impl GoodPracticesEngine {
                 .iter()
                 .flat_map(|pb| pb.properties.iter())
                 .map(|p| p.name.clone())
-                .chain(
-                    meta.all_methods()
-                        .iter()
-                        .map(|m| strip_set_get(&m.name)),
-                )
+                .chain(meta.all_methods().iter().map(|m| strip_set_get(&m.name)))
                 .chain(
                     class
                         .events_blocks
@@ -93,11 +89,7 @@ impl GoodPracticesEngine {
                     m.byte_range.start,
                     MethodInfo {
                         base_name: strip_set_get(&m.name),
-                        first_input: m
-                            .inputs
-                            .iter()
-                            .find(|i| *i != "~")
-                            .cloned(),
+                        first_input: m.inputs.iter().find(|i| *i != "~").cloned(),
                         has_output: m.outputs.iter().any(|o| o != "~"),
                         is_setter: m.is_setter,
                         is_static: m
@@ -143,9 +135,8 @@ impl GoodPracticesEngine {
                     let pos = method.start_position();
                     diagnostics.push(Diagnostic {
                         rule_id: "MCSNOV",
-                        message:
-                            "Set function in value class must return the modified object."
-                                .to_string(),
+                        message: "Set function in value class must return the modified object."
+                            .to_string(),
                         severity: Severity::Warning,
                         byte_range: method.start_byte()..method.end_byte(),
                         line: pos.row + 1,

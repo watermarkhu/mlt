@@ -10,12 +10,7 @@ impl FormattingEngine {
     /// Detect `parenthesis` nodes that are unnecessary — e.g., `(x)` where
     /// x is a simple identifier or number, and the parenthesis is not a
     /// function call argument or condition.
-    pub(crate) fn check_noprt(
-        &self,
-        node: Node,
-        source: &str,
-        diagnostics: &mut Vec<Diagnostic>,
-    ) {
+    pub(crate) fn check_noprt(&self, node: Node, source: &str, diagnostics: &mut Vec<Diagnostic>) {
         // Only flag parenthesized simple expressions (identifier, number, string).
         let inner = find_inner_expr(node);
         let Some(inner_node) = inner else {
@@ -49,10 +44,7 @@ impl FormattingEngine {
         let inner_text = &source[inner_node.start_byte()..inner_node.end_byte()];
         diagnostics.push(Diagnostic {
             rule_id: "NOPRT",
-            message: format!(
-                "Unnecessary parentheses around '{}'",
-                inner_text
-            ),
+            message: format!("Unnecessary parentheses around '{}'", inner_text),
             severity: Severity::Info,
             byte_range: node.start_byte()..node.end_byte(),
             line: pos.row + 1,
@@ -67,7 +59,7 @@ impl FormattingEngine {
 
 #[cfg(test)]
 mod tests {
-    
+
     use crate::formatting::tests::{has_id, lint};
 
     // -- NOPRT ---------------------------------------------------------------

@@ -60,7 +60,7 @@ impl LanguageSpecEngine {
 
 #[cfg(test)]
 mod tests {
-    
+
     use crate::language_spec::tests::{check_source, filter_by_id};
 
     #[test]
@@ -89,6 +89,9 @@ end
 ";
         let diags = check_source(source, "Foo.m");
         let hits = filter_by_id(&diags, "MTMAT");
-        assert!(hits.is_empty(), "MTMAT should NOT fire for distinct attributes");
+        assert!(
+            hits.is_empty(),
+            "MTMAT should NOT fire for distinct attributes"
+        );
     }
 }

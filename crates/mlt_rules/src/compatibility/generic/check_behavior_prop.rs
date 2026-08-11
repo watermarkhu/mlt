@@ -54,21 +54,8 @@ const MSG_DINVHCRM: &str = "The 'defaultFigureInvertHardCopy' setting will be re
 /// Functions on which a `'LineStyleOrder'`/`'ColorOrder'` name-value argument
 /// triggers PTCLO: `set`, `axes`, and common chart-creation functions.
 const PTCLO_FUNCS: &[&str] = &[
-    "set",
-    "axes",
-    "plot",
-    "plot3",
-    "semilogx",
-    "semilogy",
-    "loglog",
-    "bar",
-    "barh",
-    "scatter",
-    "stairs",
-    "stem",
-    "area",
-    "line",
-    "errorbar",
+    "set", "axes", "plot", "plot3", "semilogx", "semilogy", "loglog", "bar", "barh", "scatter",
+    "stairs", "stem", "area", "line", "errorbar",
 ];
 
 /// Dispatch a single node to every behavior-change property/setting check.
@@ -95,7 +82,14 @@ pub(crate) fn collect_checks(
 impl CompatibilityEngine {
     /// SMTHG: `'GraphicsSmoothing'` figure property used as a name-value pair.
     pub(crate) fn check_smthg(&self, node: Node, source: &str, diagnostics: &mut Vec<Diagnostic>) {
-        scan_name_args(node, source, "GraphicsSmoothing", "SMTHG", MSG_SMTHG, diagnostics);
+        scan_name_args(
+            node,
+            source,
+            "GraphicsSmoothing",
+            "SMTHG",
+            MSG_SMTHG,
+            diagnostics,
+        );
     }
 
     /// SMTHGF: `'DefaultFigureGraphicsSmoothing'` groot setting.
@@ -112,7 +106,14 @@ impl CompatibilityEngine {
 
     /// SMTHF: `'FontSmoothing'` figure property used as a name-value pair.
     pub(crate) fn check_smthf(&self, node: Node, source: &str, diagnostics: &mut Vec<Diagnostic>) {
-        scan_name_args(node, source, "FontSmoothing", "SMTHF", MSG_SMTHF, diagnostics);
+        scan_name_args(
+            node,
+            source,
+            "FontSmoothing",
+            "SMTHF",
+            MSG_SMTHF,
+            diagnostics,
+        );
     }
 
     /// SMTHFA: `'DefaultAxesFontSmoothing'` groot setting.
@@ -140,12 +141,29 @@ impl CompatibilityEngine {
     }
 
     /// INVHCRM: `'InvertHardCopy'` figure property used as a name-value pair.
-    pub(crate) fn check_invhcrm(&self, node: Node, source: &str, diagnostics: &mut Vec<Diagnostic>) {
-        scan_name_args(node, source, "InvertHardCopy", "INVHCRM", MSG_INVHCRM, diagnostics);
+    pub(crate) fn check_invhcrm(
+        &self,
+        node: Node,
+        source: &str,
+        diagnostics: &mut Vec<Diagnostic>,
+    ) {
+        scan_name_args(
+            node,
+            source,
+            "InvertHardCopy",
+            "INVHCRM",
+            MSG_INVHCRM,
+            diagnostics,
+        );
     }
 
     /// DINVHCRM: `'defaultFigureInvertHardCopy'` groot setting.
-    pub(crate) fn check_dinvhcrm(&self, node: Node, source: &str, diagnostics: &mut Vec<Diagnostic>) {
+    pub(crate) fn check_dinvhcrm(
+        &self,
+        node: Node,
+        source: &str,
+        diagnostics: &mut Vec<Diagnostic>,
+    ) {
         scan_name_args(
             node,
             source,
@@ -307,7 +325,11 @@ fn cell_style_count(value: Node, source: &str) -> usize {
 /// (e.g. the `row` child of a cell).
 fn count_strings(node: Node, source: &str) -> usize {
     if node.kind() == "string" {
-        return if unquoted(node, source).is_empty() { 0 } else { 1 };
+        return if unquoted(node, source).is_empty() {
+            0
+        } else {
+            1
+        };
     }
     let mut count = 0;
     let mut cursor = node.walk();
@@ -341,7 +363,12 @@ fn scan_name_args(
 }
 
 /// Emit a warning diagnostic on the given node.
-fn fire(node: Node, rule_id: &'static str, message: &'static str, diagnostics: &mut Vec<Diagnostic>) {
+fn fire(
+    node: Node,
+    rule_id: &'static str,
+    message: &'static str,
+    diagnostics: &mut Vec<Diagnostic>,
+) {
     let start = node.start_position();
     diagnostics.push(Diagnostic {
         rule_id,
@@ -419,7 +446,10 @@ mod tests {
 
     #[test]
     fn smthgf_set_fires() {
-        fires("set(groot, 'DefaultFigureGraphicsSmoothing', 'off');", "SMTHGF");
+        fires(
+            "set(groot, 'DefaultFigureGraphicsSmoothing', 'off');",
+            "SMTHGF",
+        );
     }
 
     #[test]
@@ -504,7 +534,10 @@ mod tests {
 
     #[test]
     fn dinvhcrm_set_fires() {
-        fires("set(groot, 'defaultFigureInvertHardCopy', 'off');", "DINVHCRM");
+        fires(
+            "set(groot, 'defaultFigureInvertHardCopy', 'off');",
+            "DINVHCRM",
+        );
     }
 
     #[test]

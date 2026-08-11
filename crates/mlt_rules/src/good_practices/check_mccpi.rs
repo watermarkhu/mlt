@@ -73,7 +73,8 @@ mod tests {
 
     #[test]
     fn test_mccpi_silent_on_abstract_block() {
-        let source = "classdef MyConst\n    properties (Constant, Abstract)\n        X\n    end\nend\n";
+        let source =
+            "classdef MyConst\n    properties (Constant, Abstract)\n        X\n    end\nend\n";
         let tree = parse(source);
         let eng = engine();
         assert!(eng.check_mccpi(&tree, source).is_empty());
@@ -81,7 +82,8 @@ mod tests {
 
     #[test]
     fn test_mccpi_silent_on_abstract_class() {
-        let source = "classdef (Abstract) AbsClass\n    properties (Constant)\n        X\n    end\nend\n";
+        let source =
+            "classdef (Abstract) AbsClass\n    properties (Constant)\n        X\n    end\nend\n";
         let tree = parse(source);
         let eng = engine();
         assert!(eng.check_mccpi(&tree, source).is_empty());

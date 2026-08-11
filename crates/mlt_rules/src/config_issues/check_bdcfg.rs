@@ -60,7 +60,7 @@ impl ConfigIssuesEngine {
 
 #[cfg(test)]
 mod tests {
-    
+
     use crate::config_issues::tests::engine;
     use crate::test_util::{has_id, lint_nodes};
 
@@ -68,7 +68,10 @@ mod tests {
 
     #[test]
     fn bdcfg_ok_on_valid_param() {
-        let diags = lint_nodes(&*engine(), "set_param(gcs, 'SimulationCommand', 'start');\n");
+        let diags = lint_nodes(
+            &*engine(),
+            "set_param(gcs, 'SimulationCommand', 'start');\n",
+        );
         assert!(!has_id(&diags, "BDCFG"), "got: {diags:?}");
     }
 

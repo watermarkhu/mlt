@@ -22,8 +22,8 @@
 //! ```
 
 mod check_bdcfg;
-mod check_cferr;
 mod check_bdopt;
+mod check_cferr;
 mod check_cfig;
 
 use mlt_core::{Category, Config, Diagnostic, NodeContext, Rule, Severity};
@@ -56,12 +56,8 @@ const KNOWN_BAD_PARAMS: &[&str] = &[
 ];
 
 /// Option names that are not valid for `optimset`/`optimoptions`.
-const KNOWN_BAD_OPTIM_OPTIONS: &[&str] = &[
-    "NotAnOption",
-    "FakeOption",
-    "InvalidOpt",
-    "BadTolerance",
-];
+const KNOWN_BAD_OPTIM_OPTIONS: &[&str] =
+    &["NotAnOption", "FakeOption", "InvalidOpt", "BadTolerance"];
 
 /// Configuration functions that require specific argument counts.
 const CONFIG_FUNCTIONS: &[&str] = &[
@@ -103,10 +99,7 @@ impl ConfigIssuesEngine {
 
     /// Returns `true` if the given check ID is disabled via config.
     fn is_check_disabled(&self, check_id: &str) -> bool {
-        self.config
-            .disabled_checks
-            .iter()
-            .any(|d| d == check_id)
+        self.config.disabled_checks.iter().any(|d| d == check_id)
     }
 }
 

@@ -4,11 +4,7 @@ use super::*;
 
 impl UnusedEngine {
     /// Run MANU check: method defined but never called within the file.
-    pub(crate) fn check_manu(
-        &self,
-        table: &SymbolTable,
-        diagnostics: &mut Vec<Diagnostic>,
-    ) {
+    pub(crate) fn check_manu(&self, table: &SymbolTable, diagnostics: &mut Vec<Diagnostic>) {
         if self.is_check_disabled("MANU") {
             return;
         }
@@ -44,7 +40,6 @@ impl UnusedEngine {
             }
         }
     }
-
 }
 
 #[cfg(test)]
@@ -76,5 +71,4 @@ mod tests {
         );
         assert!(!has_id(&diags, "MANU"), "got: {diags:?}");
     }
-
 }

@@ -94,11 +94,36 @@ pub struct ReadabilityConfig {
 /// Mapping from `isa` second argument (without quotes) to
 /// (check_id, preferred_function, description).
 pub(crate) const ISA_REPLACEMENTS: &[(&str, &str, &str, &str)] = &[
-    ("char", "ISCHR", "ischar", "Use 'ischar(x)' instead of 'isa(x, ''char'')'"),
-    ("string", "ISSTR", "isstring", "Use 'isstring(x)' instead of 'isa(x, ''string'')'"),
-    ("logical", "ISLOG", "islogical", "Use 'islogical(x)' instead of 'isa(x, ''logical'')'"),
-    ("cell", "ISCEL", "iscell", "Use 'iscell(x)' instead of 'isa(x, ''cell'')'"),
-    ("double", "ISMAT", "isnumeric", "Use 'isnumeric(x)' instead of 'isa(x, ''double'')'"),
+    (
+        "char",
+        "ISCHR",
+        "ischar",
+        "Use 'ischar(x)' instead of 'isa(x, ''char'')'",
+    ),
+    (
+        "string",
+        "ISSTR",
+        "isstring",
+        "Use 'isstring(x)' instead of 'isa(x, ''string'')'",
+    ),
+    (
+        "logical",
+        "ISLOG",
+        "islogical",
+        "Use 'islogical(x)' instead of 'isa(x, ''logical'')'",
+    ),
+    (
+        "cell",
+        "ISCEL",
+        "iscell",
+        "Use 'iscell(x)' instead of 'isa(x, ''cell'')'",
+    ),
+    (
+        "double",
+        "ISMAT",
+        "isnumeric",
+        "Use 'isnumeric(x)' instead of 'isa(x, ''double'')'",
+    ),
 ];
 
 // ---------------------------------------------------------------------------
@@ -152,12 +177,7 @@ impl ReadabilityEngine {
 
     /// Run the file-level MFAMB check: flag bare-identifier callees that are
     /// also defined as variables in scope.
-    fn check_mfamb(
-        &self,
-        tree: &tree_sitter::Tree,
-        source: &str,
-        results: &mut Vec<Diagnostic>,
-    ) {
+    fn check_mfamb(&self, tree: &tree_sitter::Tree, source: &str, results: &mut Vec<Diagnostic>) {
         if !self.is_check_enabled("MFAMB") {
             return;
         }
@@ -190,11 +210,7 @@ impl ReadabilityEngine {
     // -----------------------------------------------------------------------
 
     /// Checks dispatched for `function_call` nodes.
-    fn check_function_call(
-        &self,
-        ctx: &NodeContext,
-        results: &mut Vec<Diagnostic>,
-    ) {
+    fn check_function_call(&self, ctx: &NodeContext, results: &mut Vec<Diagnostic>) {
         let node = ctx.node;
         let source = ctx.source;
 
@@ -224,11 +240,7 @@ impl ReadabilityEngine {
     }
 
     /// Checks dispatched for `comparison_operator` nodes.
-    fn check_comparison(
-        &self,
-        ctx: &NodeContext,
-        results: &mut Vec<Diagnostic>,
-    ) {
+    fn check_comparison(&self, ctx: &NodeContext, results: &mut Vec<Diagnostic>) {
         let node = ctx.node;
         let source = ctx.source;
 
@@ -237,11 +249,7 @@ impl ReadabilityEngine {
     }
 
     /// Checks dispatched for `boolean_operator` nodes.
-    fn check_boolean_operator(
-        &self,
-        ctx: &NodeContext,
-        results: &mut Vec<Diagnostic>,
-    ) {
+    fn check_boolean_operator(&self, ctx: &NodeContext, results: &mut Vec<Diagnostic>) {
         let node = ctx.node;
         let source = ctx.source;
 
@@ -249,11 +257,7 @@ impl ReadabilityEngine {
     }
 
     /// Checks dispatched for `assignment` nodes.
-    fn check_assignment(
-        &self,
-        ctx: &NodeContext,
-        results: &mut Vec<Diagnostic>,
-    ) {
+    fn check_assignment(&self, ctx: &NodeContext, results: &mut Vec<Diagnostic>) {
         let node = ctx.node;
         let source = ctx.source;
 
@@ -265,11 +269,7 @@ impl ReadabilityEngine {
     }
 
     /// Checks dispatched for `binary_operator` nodes.
-    fn check_binary_operator(
-        &self,
-        ctx: &NodeContext,
-        results: &mut Vec<Diagnostic>,
-    ) {
+    fn check_binary_operator(&self, ctx: &NodeContext, results: &mut Vec<Diagnostic>) {
         let node = ctx.node;
         let source = ctx.source;
 
@@ -277,11 +277,7 @@ impl ReadabilityEngine {
     }
 
     /// Checks dispatched for `matrix` nodes.
-    fn check_matrix(
-        &self,
-        ctx: &NodeContext,
-        results: &mut Vec<Diagnostic>,
-    ) {
+    fn check_matrix(&self, ctx: &NodeContext, results: &mut Vec<Diagnostic>) {
         let node = ctx.node;
         let source = ctx.source;
 
@@ -322,8 +318,14 @@ impl ReadabilityEngine {
         let arg2_text = &source[named_children[1].start_byte()..named_children[1].end_byte()];
 
         // STREMP: strcmp(s, '') or strcmp('', s)
-        if self.is_check_enabled("STREMP") && (is_empty_string(arg2_text) || is_empty_string(arg1_text)) {
-            let var = if is_empty_string(arg1_text) { arg2_text } else { arg1_text };
+        if self.is_check_enabled("STREMP")
+            && (is_empty_string(arg2_text) || is_empty_string(arg1_text))
+        {
+            let var = if is_empty_string(arg1_text) {
+                arg2_text
+            } else {
+                arg1_text
+            };
             results.push(self.diag(
                 "STREMP",
                 "Use 'strlength(s)==0' or 's==\"\"' instead of 'strcmp(s, '')'",
@@ -464,12 +466,7 @@ pub(crate) fn extract_operator_text<'a>(node: tree_sitter::Node<'a>, source: &'a
         if !child.is_named() {
             let text = &source[child.start_byte()..child.end_byte()];
             // Operator tokens are things like +, -, *, .*, |, ||, &, &&, ==
-            if !text.trim().is_empty()
-                && text != "("
-                && text != ")"
-                && text != "["
-                && text != "]"
-            {
+            if !text.trim().is_empty() && text != "(" && text != ")" && text != "[" && text != "]" {
                 return text;
             }
         }
@@ -637,10 +634,9 @@ mod tests {
 
     #[test]
     fn mfamb_disabled_in_config_does_not_fire() {
-        let config = Config::from_toml(
-            "[lint.rules.READABILITY_ENGINE]\ndisabled_checks = [\"MFAMB\"]\n",
-        )
-        .expect("valid config");
+        let config =
+            Config::from_toml("[lint.rules.READABILITY_ENGINE]\ndisabled_checks = [\"MFAMB\"]\n")
+                .expect("valid config");
         let rule = ReadabilityEngine::from_config(&config);
         let diags = lint_file(&*rule, "somevar = 5;\ny = somevar(1);\n");
         assert!(!has_id(&diags, "MFAMB"), "got: {diags:?}");

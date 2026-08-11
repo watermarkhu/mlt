@@ -9,7 +9,10 @@ impl LanguageSpecEngine {
             return;
         }
         for mb in &class.methods_blocks {
-            let is_static = mb.attributes.iter().any(|a| a.name == "Static" && !a.negated);
+            let is_static = mb
+                .attributes
+                .iter()
+                .any(|a| a.name == "Static" && !a.negated);
             if is_static {
                 continue;
             }
@@ -32,7 +35,7 @@ impl LanguageSpecEngine {
 
 #[cfg(test)]
 mod tests {
-    
+
     use crate::language_spec::tests::{check_source, filter_by_id};
 
     #[test]

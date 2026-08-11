@@ -10,8 +10,9 @@ impl LanguageSpecEngine {
                 if func.is_constructor && func.outputs.is_empty() {
                     diagnostics.push(Diagnostic {
                         rule_id: "CTORO",
-                        message: "Class constructors must be declared with at least one output argument"
-                            .to_string(),
+                        message:
+                            "Class constructors must be declared with at least one output argument"
+                                .to_string(),
                         severity: Severity::Error,
                         byte_range: func.byte_range.clone(),
                         line: func.line,
@@ -26,7 +27,7 @@ impl LanguageSpecEngine {
 
 #[cfg(test)]
 mod tests {
-    
+
     use crate::language_spec::tests::{check_source, filter_by_id};
 
     #[test]
@@ -41,7 +42,10 @@ end
 ";
         let diags = check_source(source, "Bar.m");
         let ctoro = filter_by_id(&diags, "CTORO");
-        assert!(!ctoro.is_empty(), "CTORO should fire for constructor without output");
+        assert!(
+            !ctoro.is_empty(),
+            "CTORO should fire for constructor without output"
+        );
     }
 
     #[test]
@@ -56,6 +60,9 @@ end
 ";
         let diags = check_source(source, "Bar.m");
         let ctoro = filter_by_id(&diags, "CTORO");
-        assert!(ctoro.is_empty(), "CTORO should NOT fire for constructor with output");
+        assert!(
+            ctoro.is_empty(),
+            "CTORO should NOT fire for constructor with output"
+        );
     }
 }

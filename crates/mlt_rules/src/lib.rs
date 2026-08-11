@@ -39,9 +39,9 @@ pub mod readability;
 pub mod suggested_improvements;
 pub mod syntax_errors;
 pub mod system_objects;
+pub mod unset_variables;
 pub mod unsupported;
 pub mod unused;
-pub mod unset_variables;
 
 use mlt_core::{Config, Rule};
 

@@ -45,12 +45,8 @@ impl BugsEngine {
         }
 
         let (rule_id, desc) = match rhs_op.as_str() {
-            "+" if rhs_left_text == lhs_name && rhs_right_text == "1" => {
-                ("INCR", "self-increment")
-            }
-            "-" if rhs_left_text == lhs_name && rhs_right_text == "1" => {
-                ("DECR", "self-decrement")
-            }
+            "+" if rhs_left_text == lhs_name && rhs_right_text == "1" => ("INCR", "self-increment"),
+            "-" if rhs_left_text == lhs_name && rhs_right_text == "1" => ("DECR", "self-decrement"),
             _ => return Vec::new(),
         };
 

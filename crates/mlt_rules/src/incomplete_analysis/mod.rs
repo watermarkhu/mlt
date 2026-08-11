@@ -401,10 +401,8 @@ pub(crate) fn engine() -> Box<dyn Rule> {
 /// Build an engine with a lowered/raised threshold in the config.
 #[cfg(test)]
 pub(crate) fn engine_with(params: &str) -> Box<dyn Rule> {
-    let config = Config::from_toml(&format!(
-        "[lint.rules.INCOMPLETE_ANALYSIS]\n{params}\n"
-    ))
-    .unwrap();
+    let config =
+        Config::from_toml(&format!("[lint.rules.INCOMPLETE_ANALYSIS]\n{params}\n")).unwrap();
     IncompleteAnalysisEngine::from_config(&config)
 }
 

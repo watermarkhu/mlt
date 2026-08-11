@@ -35,7 +35,8 @@ impl LanguageSpecEngine {
                         let pos = call_node.start_position();
                         diagnostics.push(Diagnostic {
                             rule_id: "MCCMC",
-                            message: "Constructor for superclass can only be called once".to_string(),
+                            message: "Constructor for superclass can only be called once"
+                                .to_string(),
                             severity: Severity::Error,
                             byte_range: call_node.start_byte()..call_node.end_byte(),
                             line: pos.row + 1,
@@ -231,8 +232,9 @@ impl LanguageSpecEngine {
             let pos = call_node.start_position();
             diagnostics.push(Diagnostic {
                 rule_id: "MCCBU",
-                message: "This superclass constructor is called after a use of the constructed object"
-                    .to_string(),
+                message:
+                    "This superclass constructor is called after a use of the constructed object"
+                        .to_string(),
                 severity: Severity::Error,
                 byte_range: call_node.start_byte()..call_node.end_byte(),
                 line: pos.row + 1,
@@ -315,7 +317,7 @@ impl LanguageSpecEngine {
 
 #[cfg(test)]
 mod tests {
-    
+
     use crate::language_spec::tests::{check_source, filter_by_id};
 
     #[test]
@@ -350,7 +352,10 @@ end
 ";
         let diags = check_source(source, "Foo.m");
         let hits = filter_by_id(&diags, "MCCBS");
-        assert!(hits.is_empty(), "MCCBS should NOT fire for a declared superclass");
+        assert!(
+            hits.is_empty(),
+            "MCCBS should NOT fire for a declared superclass"
+        );
     }
 
     #[test]
@@ -389,7 +394,10 @@ end
 ";
         let diags = check_source(source, "Foo.m");
         let hits = filter_by_id(&diags, "MCCBU");
-        assert!(hits.is_empty(), "MCCBU should NOT fire when super call comes first");
+        assert!(
+            hits.is_empty(),
+            "MCCBU should NOT fire when super call comes first"
+        );
     }
 
     #[test]
@@ -425,7 +433,10 @@ end
 ";
         let diags = check_source(source, "Foo.m");
         let hits = filter_by_id(&diags, "MCCMC");
-        assert!(hits.is_empty(), "MCCMC should NOT fire for a single super call");
+        assert!(
+            hits.is_empty(),
+            "MCCMC should NOT fire for a single super call"
+        );
     }
 
     #[test]
@@ -460,7 +471,10 @@ end
 ";
         let diags = check_source(source, "Foo.m");
         let hits = filter_by_id(&diags, "MCSCF");
-        assert!(hits.is_empty(), "MCSCF should NOT fire for a correct assignment");
+        assert!(
+            hits.is_empty(),
+            "MCSCF should NOT fire for a correct assignment"
+        );
     }
 
     #[test]
@@ -495,7 +509,10 @@ end
 ";
         let diags = check_source(source, "Foo.m");
         let hits = filter_by_id(&diags, "MCSCO");
-        assert!(hits.is_empty(), "MCSCO should NOT fire for the first output argument");
+        assert!(
+            hits.is_empty(),
+            "MCSCO should NOT fire for the first output argument"
+        );
     }
 
     #[test]
@@ -551,7 +568,10 @@ end
 ";
         let diags = check_source(source, "Foo.m");
         let hits = filter_by_id(&diags, "MCSCT");
-        assert!(hits.is_empty(), "MCSCT should NOT fire for a top-level super call");
+        assert!(
+            hits.is_empty(),
+            "MCSCT should NOT fire for a top-level super call"
+        );
     }
 
     #[test]
@@ -623,7 +643,10 @@ end
 ";
         let diags = check_source(source, "Foo.m");
         let hits = filter_by_id(&diags, "MCSCC");
-        assert!(hits.is_empty(), "MCSCC should NOT fire for a valid constructor call");
+        assert!(
+            hits.is_empty(),
+            "MCSCC should NOT fire for a valid constructor call"
+        );
     }
 
     #[test]
@@ -664,6 +687,9 @@ end
 ";
         let diags = check_source(source, "Foo.m");
         let hits = filter_by_id(&diags, "MCSCM");
-        assert!(hits.is_empty(), "MCSCM should NOT fire for a matching method name");
+        assert!(
+            hits.is_empty(),
+            "MCSCM should NOT fire for a matching method name"
+        );
     }
 }

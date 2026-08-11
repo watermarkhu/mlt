@@ -68,7 +68,7 @@ impl LanguageSpecEngine {
 
 #[cfg(test)]
 mod tests {
-    
+
     use crate::language_spec::tests::{check_source, filter_by_id};
 
     #[test]
@@ -81,7 +81,10 @@ function f()
 end
 ";
         let diags = check_source(source, "f.m");
-        assert!(!filter_by_id(&diags, "PFANSLP").is_empty(), "PFANSLP should fire for 'ans' as parfor variable");
+        assert!(
+            !filter_by_id(&diags, "PFANSLP").is_empty(),
+            "PFANSLP should fire for 'ans' as parfor variable"
+        );
     }
 
     #[test]
@@ -94,7 +97,10 @@ function f()
 end
 ";
         let diags = check_source(source, "f.m");
-        assert!(filter_by_id(&diags, "PFANSLP").is_empty(), "PFANSLP should NOT fire for a normal parfor variable");
+        assert!(
+            filter_by_id(&diags, "PFANSLP").is_empty(),
+            "PFANSLP should NOT fire for a normal parfor variable"
+        );
     }
 
     #[test]
@@ -107,7 +113,10 @@ function f()
 end
 ";
         let diags = check_source(source, "f.m");
-        assert!(!filter_by_id(&diags, "PFRNG").is_empty(), "PFRNG should fire for a non-unit step");
+        assert!(
+            !filter_by_id(&diags, "PFRNG").is_empty(),
+            "PFRNG should fire for a non-unit step"
+        );
     }
 
     #[test]
@@ -120,7 +129,10 @@ function f()
 end
 ";
         let diags = check_source(source, "f.m");
-        assert!(!filter_by_id(&diags, "PFRNG").is_empty(), "PFRNG should fire for a negative step");
+        assert!(
+            !filter_by_id(&diags, "PFRNG").is_empty(),
+            "PFRNG should fire for a negative step"
+        );
     }
 
     #[test]
@@ -133,6 +145,9 @@ function f()
 end
 ";
         let diags = check_source(source, "f.m");
-        assert!(filter_by_id(&diags, "PFRNG").is_empty(), "PFRNG should NOT fire for a unit step");
+        assert!(
+            filter_by_id(&diags, "PFRNG").is_empty(),
+            "PFRNG should NOT fire for a unit step"
+        );
     }
 }

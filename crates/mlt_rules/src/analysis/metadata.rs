@@ -494,8 +494,8 @@ fn extract_arg_validation(prop_node: Node, source: &str) -> Option<ArgValidation
         .or_else(|| find_first_child_of_kind(prop_node, "identifier"))
         .map(|n| node_text(n, source).to_string())?;
 
-    let dimensions = find_first_child_of_kind(prop_node, "dimensions")
-        .map(|n| node_text(n, source).to_string());
+    let dimensions =
+        find_first_child_of_kind(prop_node, "dimensions").map(|n| node_text(n, source).to_string());
 
     // Type constraint: bare identifier after dimensions (not the name).
     let type_constraint = extract_type_constraint(prop_node, source, &name);
@@ -513,14 +513,13 @@ fn extract_arg_validation(prop_node: Node, source: &str) -> Option<ArgValidation
         })
         .unwrap_or_default();
 
-    let default_value = find_first_child_of_kind(prop_node, "default_value")
-        .map(|dv| {
-            // The actual expression is the child(ren) after `=`.
-            // Use the full text, trimming the leading `=` if present.
-            let text = node_text(dv, source).trim().to_string();
-            let text = text.strip_prefix('=').unwrap_or(&text).trim().to_string();
-            text
-        });
+    let default_value = find_first_child_of_kind(prop_node, "default_value").map(|dv| {
+        // The actual expression is the child(ren) after `=`.
+        // Use the full text, trimming the leading `=` if present.
+        let text = node_text(dv, source).trim().to_string();
+        let text = text.strip_prefix('=').unwrap_or(&text).trim().to_string();
+        text
+    });
 
     Some(ArgValidation {
         name,
@@ -594,8 +593,8 @@ fn extract_property_meta(prop_node: Node, source: &str) -> Option<PropertyMeta> 
         .or_else(|| find_first_child_of_kind(prop_node, "identifier"))
         .map(|n| node_text(n, source).to_string())?;
 
-    let dimensions = find_first_child_of_kind(prop_node, "dimensions")
-        .map(|n| node_text(n, source).to_string());
+    let dimensions =
+        find_first_child_of_kind(prop_node, "dimensions").map(|n| node_text(n, source).to_string());
 
     let type_constraint = extract_type_constraint(prop_node, source, &name);
 
@@ -877,9 +876,7 @@ impl FileMeta {
             }
 
             // Function file: first is main, rest are local.
-            if let Some(fm) =
-                extract_function_meta(child, source, class_name, false, &[], false)
-            {
+            if let Some(fm) = extract_function_meta(child, source, class_name, false, &[], false) {
                 if !main_function_seen {
                     main_function_seen = true;
                     functions.push(fm);
@@ -943,14 +940,12 @@ impl FileMeta {
 
     /// Check if a property name exists in any properties block.
     pub fn has_property(&self, name: &str) -> bool {
-        self.class
-            .as_ref()
-            .is_some_and(|c| {
-                c.properties_blocks
-                    .iter()
-                    .flat_map(|pb| pb.properties.iter())
-                    .any(|p| p.name == name)
-            })
+        self.class.as_ref().is_some_and(|c| {
+            c.properties_blocks
+                .iter()
+                .flat_map(|pb| pb.properties.iter())
+                .any(|p| p.name == name)
+        })
     }
 
     /// Get the class name (if class file).
@@ -1281,7 +1276,9 @@ end
         assert!(members.contains(&"Blue".to_string()));
 
         assert_eq!(class.events_blocks.len(), 1);
-        assert!(class.events_blocks[0].events.contains(&"ColorChanged".to_string()));
+        assert!(class.events_blocks[0]
+            .events
+            .contains(&"ColorChanged".to_string()));
     }
 
     // ---- class_name helper -----------------------------------------------

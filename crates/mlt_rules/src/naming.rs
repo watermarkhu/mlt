@@ -270,9 +270,10 @@ impl NamingEngine {
         for (id, entity, check_type) in all_naming_combinations() {
             if config.is_rule_enabled(id) {
                 let check_config: NamingCheckConfig = config.rule_params(id);
-                let compiled_regex = check_config.pattern.as_ref().and_then(|p| {
-                    Regex::new(p).ok()
-                });
+                let compiled_regex = check_config
+                    .pattern
+                    .as_ref()
+                    .and_then(|p| Regex::new(p).ok());
                 checks.push(NamingRuleInstance {
                     id,
                     entity,
@@ -353,7 +354,10 @@ impl Rule for NamingEngine {
 /// - node inside `events` block → Event
 /// - `enum` node inside `enumeration` block → Enumeration
 /// - `assignment` LHS identifier → Variable
-fn collect_named_entities<'a>(tree: &'a tree_sitter::Tree, source: &'a str) -> Vec<NamedEntity<'a>> {
+fn collect_named_entities<'a>(
+    tree: &'a tree_sitter::Tree,
+    source: &'a str,
+) -> Vec<NamedEntity<'a>> {
     let mut entities = Vec::new();
     let mut first_function_seen = false;
 
@@ -423,7 +427,13 @@ fn collect_recursive<'a>(
             let child_count = node.child_count();
             for i in 0..child_count {
                 if let Some(child) = node.child(i) {
-                    collect_recursive(child, source, entities, first_function_seen, EntityContext::Function);
+                    collect_recursive(
+                        child,
+                        source,
+                        entities,
+                        first_function_seen,
+                        EntityContext::Function,
+                    );
                 }
             }
             return; // Don't recurse again below.
@@ -458,7 +468,13 @@ fn collect_recursive<'a>(
             let child_count = node.child_count();
             for i in 0..child_count {
                 if let Some(child) = node.child(i) {
-                    collect_recursive(child, source, entities, first_function_seen, EntityContext::Methods);
+                    collect_recursive(
+                        child,
+                        source,
+                        entities,
+                        first_function_seen,
+                        EntityContext::Methods,
+                    );
                 }
             }
             return;
@@ -469,7 +485,13 @@ fn collect_recursive<'a>(
             let child_count = node.child_count();
             for i in 0..child_count {
                 if let Some(child) = node.child(i) {
-                    collect_recursive(child, source, entities, first_function_seen, EntityContext::Events);
+                    collect_recursive(
+                        child,
+                        source,
+                        entities,
+                        first_function_seen,
+                        EntityContext::Events,
+                    );
                 }
             }
             return;
@@ -480,7 +502,13 @@ fn collect_recursive<'a>(
             let child_count = node.child_count();
             for i in 0..child_count {
                 if let Some(child) = node.child(i) {
-                    collect_recursive(child, source, entities, first_function_seen, EntityContext::Enumeration);
+                    collect_recursive(
+                        child,
+                        source,
+                        entities,
+                        first_function_seen,
+                        EntityContext::Enumeration,
+                    );
                 }
             }
             return;
@@ -864,10 +892,7 @@ mod tests {
 
     /// Build an engine with a single naming check configured via TOML.
     fn engine_with(rule_id: &str, params: &str) -> Box<dyn Rule> {
-        let config = Config::from_toml(&format!(
-            "[lint.rules.\"{rule_id}\"]\n{params}\n"
-        ))
-        .unwrap();
+        let config = Config::from_toml(&format!("[lint.rules.\"{rule_id}\"]\n{params}\n")).unwrap();
         NamingEngine::from_config(&config)
     }
 
@@ -1189,10 +1214,7 @@ mod tests {
     #[test]
     fn local_function_entity_detected() {
         let engine = engine_with("naming.localFunction.requiredPrefix", "prefix = \"lf_\"");
-        let diags = lint_file(
-            &*engine,
-            "function main()\nend\nfunction helper()\nend\n",
-        );
+        let diags = lint_file(&*engine, "function main()\nend\nfunction helper()\nend\n");
         assert!(
             has_id(&diags, "naming.localFunction.requiredPrefix"),
             "got: {diags:?}"

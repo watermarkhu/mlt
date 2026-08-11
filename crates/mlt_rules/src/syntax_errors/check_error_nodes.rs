@@ -3,28 +3,27 @@
 use super::*;
 
 impl SyntaxErrorsEngine {
-        pub(crate) fn check_error_nodes(&self, root: Node, source: &str) -> Vec<Diagnostic> {
-            let mut diagnostics = Vec::new();
-            let last = Self::last_descendant(root);
-            self.walk_error_nodes(root, source, last, &mut diagnostics);
+    pub(crate) fn check_error_nodes(&self, root: Node, source: &str) -> Vec<Diagnostic> {
+        let mut diagnostics = Vec::new();
+        let last = Self::last_descendant(root);
+        self.walk_error_nodes(root, source, last, &mut diagnostics);
 
-            // ENDPAR: Check if the file ends with a missing closing bracket.
-            if self.is_check_enabled("ENDPAR") {
-                if let Some(last) = last {
-                    let start = last.start_byte();
-                    let end = last.end_byte().max(start + 1);
-                    let text = &source[start..end.min(source.len())];
-                    let is_bracket_error =
-                        last.is_error() && Self::looks_like_missing_bracket(text);
-                    let missing_kind = Self::missing_bracket_opener(last.kind());
-                    if is_bracket_error || (last.is_missing() && missing_kind.is_some()) {
-                        let pos = last.start_position();
-                        let bracket = Self::bracket_kinds(text)
-                            .first()
-                            .copied()
-                            .or(missing_kind)
-                            .unwrap_or("bracket");
-                        diagnostics.push(Diagnostic {
+        // ENDPAR: Check if the file ends with a missing closing bracket.
+        if self.is_check_enabled("ENDPAR") {
+            if let Some(last) = last {
+                let start = last.start_byte();
+                let end = last.end_byte().max(start + 1);
+                let text = &source[start..end.min(source.len())];
+                let is_bracket_error = last.is_error() && Self::looks_like_missing_bracket(text);
+                let missing_kind = Self::missing_bracket_opener(last.kind());
+                if is_bracket_error || (last.is_missing() && missing_kind.is_some()) {
+                    let pos = last.start_position();
+                    let bracket = Self::bracket_kinds(text)
+                        .first()
+                        .copied()
+                        .or(missing_kind)
+                        .unwrap_or("bracket");
+                    diagnostics.push(Diagnostic {
                             rule_id: "ENDPAR",
                             message: format!(
                                 "A {bracket} might be missing a closing {bracket}, causing invalid syntax at end of file."
@@ -35,63 +34,62 @@ impl SyntaxErrorsEngine {
                             column: pos.column + 1,
                             fix: None,
                         });
-                    }
                 }
             }
-
-            // EOFMI: Check if file ends with ERROR node.
-            if self.is_check_enabled("EOFMI") {
-                if let Some(last) = Self::last_descendant(root) {
-                    if last.is_error() || last.is_missing() {
-                        let start = last.start_byte();
-                        let end = last.end_byte().max(start + 1);
-                        let pos = last.start_position();
-                        diagnostics.push(Diagnostic {
-                            rule_id: "EOFMI",
-                            message: "File ends with an incomplete or erroneous construct"
-                                .to_string(),
-                            severity: Severity::Error,
-                            byte_range: start..end,
-                            line: pos.row + 1,
-                            column: pos.column + 1,
-                            fix: None,
-                        });
-                    }
-                }
-            }
-
-            diagnostics
         }
 
-        pub(crate) fn walk_error_nodes(
-            &self,
-            node: Node,
-            source: &str,
-            last: Option<Node>,
-            diagnostics: &mut Vec<Diagnostic>,
-        ) {
-            if node.is_error() {
-                let start = node.start_byte();
-                let end = node.end_byte().max(start + 1);
-                let pos = node.start_position();
-                let text = &source[start..end.min(source.len())];
+        // EOFMI: Check if file ends with ERROR node.
+        if self.is_check_enabled("EOFMI") {
+            if let Some(last) = Self::last_descendant(root) {
+                if last.is_error() || last.is_missing() {
+                    let start = last.start_byte();
+                    let end = last.end_byte().max(start + 1);
+                    let pos = last.start_position();
+                    diagnostics.push(Diagnostic {
+                        rule_id: "EOFMI",
+                        message: "File ends with an incomplete or erroneous construct".to_string(),
+                        severity: Severity::Error,
+                        byte_range: start..end,
+                        line: pos.row + 1,
+                        column: pos.column + 1,
+                        fix: None,
+                    });
+                }
+            }
+        }
 
-                // Classify the error node.
-                let endct_variant = if self.is_check_enabled("ENDCT") {
-                    Self::classify_missing_end(&node, source)
-                } else {
-                    None
-                };
+        diagnostics
+    }
 
-                // NOPAR2: Looks like a missing closing bracket.
-                if Self::looks_like_missing_bracket(text) {
-                    let is_last = last.is_some_and(|l| l.id() == node.id());
-                    if self.is_check_enabled("NOPAR2") && !is_last {
-                        let bracket = Self::bracket_kinds(text)
-                            .first()
-                            .copied()
-                            .unwrap_or("bracket");
-                        diagnostics.push(Diagnostic {
+    pub(crate) fn walk_error_nodes(
+        &self,
+        node: Node,
+        source: &str,
+        last: Option<Node>,
+        diagnostics: &mut Vec<Diagnostic>,
+    ) {
+        if node.is_error() {
+            let start = node.start_byte();
+            let end = node.end_byte().max(start + 1);
+            let pos = node.start_position();
+            let text = &source[start..end.min(source.len())];
+
+            // Classify the error node.
+            let endct_variant = if self.is_check_enabled("ENDCT") {
+                Self::classify_missing_end(&node, source)
+            } else {
+                None
+            };
+
+            // NOPAR2: Looks like a missing closing bracket.
+            if Self::looks_like_missing_bracket(text) {
+                let is_last = last.is_some_and(|l| l.id() == node.id());
+                if self.is_check_enabled("NOPAR2") && !is_last {
+                    let bracket = Self::bracket_kinds(text)
+                        .first()
+                        .copied()
+                        .unwrap_or("bracket");
+                    diagnostics.push(Diagnostic {
                             rule_id: "NOPAR2",
                             message: format!(
                                 "A {bracket} might be missing a closing {bracket}, causing invalid syntax at {bracket} on line {}.",
@@ -103,32 +101,21 @@ impl SyntaxErrorsEngine {
                             column: pos.column + 1,
                             fix: None,
                         });
-                    }
                 }
-                // ENDCT: Looks like a missing END.
-                else if let Some((variant_id, variant_msg)) = endct_variant {
-                    if self.is_check_enabled(variant_id) {
-                        diagnostics.push(Diagnostic {
-                            rule_id: variant_id,
-                            message: variant_msg,
-                            severity: Severity::Error,
-                            byte_range: start..end,
-                            line: pos.row + 1,
-                            column: pos.column + 1,
-                            fix: None,
-                        });
-                    } else {
-                        diagnostics.push(Diagnostic {
-                            rule_id: "ENDCT",
-                            message: "Possible missing 'end' keyword".to_string(),
-                            severity: Severity::Error,
-                            byte_range: start..end,
-                            line: pos.row + 1,
-                            column: pos.column + 1,
-                            fix: None,
-                        });
-                    }
-                } else if self.is_check_enabled("ENDCT") && Self::looks_like_missing_end(text, &node) {
+            }
+            // ENDCT: Looks like a missing END.
+            else if let Some((variant_id, variant_msg)) = endct_variant {
+                if self.is_check_enabled(variant_id) {
+                    diagnostics.push(Diagnostic {
+                        rule_id: variant_id,
+                        message: variant_msg,
+                        severity: Severity::Error,
+                        byte_range: start..end,
+                        line: pos.row + 1,
+                        column: pos.column + 1,
+                        fix: None,
+                    });
+                } else {
                     diagnostics.push(Diagnostic {
                         rule_id: "ENDCT",
                         message: "Possible missing 'end' keyword".to_string(),
@@ -139,53 +126,64 @@ impl SyntaxErrorsEngine {
                         fix: None,
                     });
                 }
-                // FVSYN: Invalid function argument syntax. Fires for ERROR nodes
-                // that appear inside a function call's argument list. Replaces
-                // SYNER for these nodes (no double-fire).
-                else if self.is_check_enabled("FVSYN")
-                    && Self::is_in_function_call_args(&node)
-                    && !text.contains('=')
-                {
-                    diagnostics.push(Diagnostic {
-                        rule_id: "FVSYN",
-                        message: "Invalid function argument syntax".to_string(),
-                        severity: Severity::Error,
-                        byte_range: start..end,
-                        line: pos.row + 1,
-                        column: pos.column + 1,
-                        fix: None,
-                    });
-                }
-                // SYNER: Generic syntax error.
-                else if self.is_check_enabled("SYNER")
-                    && !(Self::is_in_function_call_args(&node) && text.contains('='))
-                {
-                    let snippet: String = text.chars().take(40).collect();
-                    let msg = if snippet.is_empty() {
-                        "Syntax error".to_string()
-                    } else {
-                        format!("Syntax error near '{snippet}'")
-                    };
-                    diagnostics.push(Diagnostic {
-                        rule_id: "SYNER",
-                        message: msg,
-                        severity: Severity::Error,
-                        byte_range: start..end,
-                        line: pos.row + 1,
-                        column: pos.column + 1,
-                        fix: None,
-                    });
-                }
-            } else if node.is_missing() {
-                if let Some(bracket) = Self::missing_bracket_opener(node.kind()) {
-                    let is_last = last.is_some_and(|l| l.id() == node.id());
-                    if !is_last {
-                        let start = node.start_byte();
-                        let end = node.end_byte().max(start + 1);
-                        let pos = node.start_position();
-                        if Self::is_end_of_file(node, source) {
-                            if self.is_check_enabled("ENDPAR") {
-                                diagnostics.push(Diagnostic {
+            } else if self.is_check_enabled("ENDCT") && Self::looks_like_missing_end(text, &node) {
+                diagnostics.push(Diagnostic {
+                    rule_id: "ENDCT",
+                    message: "Possible missing 'end' keyword".to_string(),
+                    severity: Severity::Error,
+                    byte_range: start..end,
+                    line: pos.row + 1,
+                    column: pos.column + 1,
+                    fix: None,
+                });
+            }
+            // FVSYN: Invalid function argument syntax. Fires for ERROR nodes
+            // that appear inside a function call's argument list. Replaces
+            // SYNER for these nodes (no double-fire).
+            else if self.is_check_enabled("FVSYN")
+                && Self::is_in_function_call_args(&node)
+                && !text.contains('=')
+            {
+                diagnostics.push(Diagnostic {
+                    rule_id: "FVSYN",
+                    message: "Invalid function argument syntax".to_string(),
+                    severity: Severity::Error,
+                    byte_range: start..end,
+                    line: pos.row + 1,
+                    column: pos.column + 1,
+                    fix: None,
+                });
+            }
+            // SYNER: Generic syntax error.
+            else if self.is_check_enabled("SYNER")
+                && !(Self::is_in_function_call_args(&node) && text.contains('='))
+            {
+                let snippet: String = text.chars().take(40).collect();
+                let msg = if snippet.is_empty() {
+                    "Syntax error".to_string()
+                } else {
+                    format!("Syntax error near '{snippet}'")
+                };
+                diagnostics.push(Diagnostic {
+                    rule_id: "SYNER",
+                    message: msg,
+                    severity: Severity::Error,
+                    byte_range: start..end,
+                    line: pos.row + 1,
+                    column: pos.column + 1,
+                    fix: None,
+                });
+            }
+        } else if node.is_missing() {
+            if let Some(bracket) = Self::missing_bracket_opener(node.kind()) {
+                let is_last = last.is_some_and(|l| l.id() == node.id());
+                if !is_last {
+                    let start = node.start_byte();
+                    let end = node.end_byte().max(start + 1);
+                    let pos = node.start_position();
+                    if Self::is_end_of_file(node, source) {
+                        if self.is_check_enabled("ENDPAR") {
+                            diagnostics.push(Diagnostic {
                                     rule_id: "ENDPAR",
                                     message: format!(
                                         "A {bracket} might be missing a closing {bracket}, causing invalid syntax at end of file."
@@ -196,10 +194,10 @@ impl SyntaxErrorsEngine {
                                     column: pos.column + 1,
                                     fix: None,
                                 });
-                            }
-                        } else if Self::is_line_ending(node, source) {
-                            if self.is_check_enabled("EOLPAR") {
-                                diagnostics.push(Diagnostic {
+                        }
+                    } else if Self::is_line_ending(node, source) {
+                        if self.is_check_enabled("EOLPAR") {
+                            diagnostics.push(Diagnostic {
                                     rule_id: "EOLPAR",
                                     message: format!(
                                         "A {bracket} might be missing a closing {bracket}, causing invalid syntax at end of line."
@@ -210,9 +208,9 @@ impl SyntaxErrorsEngine {
                                     column: pos.column + 1,
                                     fix: None,
                                 });
-                            }
-                        } else if self.is_check_enabled("NOPAR2") {
-                            diagnostics.push(Diagnostic {
+                        }
+                    } else if self.is_check_enabled("NOPAR2") {
+                        diagnostics.push(Diagnostic {
                                 rule_id: "NOPAR2",
                                 message: format!(
                                     "A {bracket} might be missing a closing {bracket}, causing invalid syntax at {bracket} on line {}.",
@@ -224,30 +222,29 @@ impl SyntaxErrorsEngine {
                                 column: pos.column + 1,
                                 fix: None,
                             });
-                        }
                     }
-                } else if self.is_check_enabled("SYNER") {
-                    let start = node.start_byte();
-                    let end = node.end_byte().max(start + 1);
-                    let pos = node.start_position();
-                    diagnostics.push(Diagnostic {
-                        rule_id: "SYNER",
-                        message: format!("Missing expected '{}'", node.kind()),
-                        severity: Severity::Error,
-                        byte_range: start..end,
-                        line: pos.row + 1,
-                        column: pos.column + 1,
-                        fix: None,
-                    });
                 }
-            }
-
-            let mut cursor = node.walk();
-            for child in node.children(&mut cursor) {
-                self.walk_error_nodes(child, source, last, diagnostics);
+            } else if self.is_check_enabled("SYNER") {
+                let start = node.start_byte();
+                let end = node.end_byte().max(start + 1);
+                let pos = node.start_position();
+                diagnostics.push(Diagnostic {
+                    rule_id: "SYNER",
+                    message: format!("Missing expected '{}'", node.kind()),
+                    severity: Severity::Error,
+                    byte_range: start..end,
+                    line: pos.row + 1,
+                    column: pos.column + 1,
+                    fix: None,
+                });
             }
         }
 
+        let mut cursor = node.walk();
+        for child in node.children(&mut cursor) {
+            self.walk_error_nodes(child, source, last, diagnostics);
+        }
+    }
 }
 
 #[cfg(test)]
@@ -261,11 +258,17 @@ mod tests {
     }
 
     fn engine_with_disabled(checks: &[&str]) -> Box<dyn Rule> {
-        let disabled = checks.iter().map(|c| format!("\"{c}\"")).collect::<Vec<_>>().join(", ");
-        let config = Config::from_toml(&format!("[lint.rules.SYNTAX_ERRORS_ENGINE]\ndisabled_checks = [{disabled}]\n")).unwrap();
+        let disabled = checks
+            .iter()
+            .map(|c| format!("\"{c}\""))
+            .collect::<Vec<_>>()
+            .join(", ");
+        let config = Config::from_toml(&format!(
+            "[lint.rules.SYNTAX_ERRORS_ENGINE]\ndisabled_checks = [{disabled}]\n"
+        ))
+        .unwrap();
         SyntaxErrorsEngine::from_config(&config)
     }
-
 
     // -- SYNER: generic syntax error ----------------------------------------
 
@@ -280,7 +283,6 @@ mod tests {
         let diags = lint_file(&*engine(), "x = 5;\ny = x + 1;\n");
         assert!(!has_id(&diags, "SYNER"), "got: {diags:?}");
     }
-
 
     // -- NOPAR2: missing closing bracket (mid-file) --------------------------
 
@@ -308,12 +310,14 @@ mod tests {
         assert!(!has_id(&diags, "ENDPAR"), "got: {diags:?}");
     }
 
-
     // -- EOLPAR: missing closing bracket at end of line ----------------------
 
     #[test]
     fn eolpar_fires_on_missing_paren_at_line_end() {
-        let diags = lint_file(&*engine(), "function foo()\n    x = f(1;\n    y = 2;\nend\n");
+        let diags = lint_file(
+            &*engine(),
+            "function foo()\n    x = f(1;\n    y = 2;\nend\n",
+        );
         assert!(has_id(&diags, "EOLPAR"), "got: {diags:?}");
         assert!(!has_id(&diags, "NOPAR2"), "got: {diags:?}");
         assert!(!has_id(&diags, "ENDPAR"), "got: {diags:?}");
@@ -332,7 +336,6 @@ mod tests {
         let diags = lint_file(&*engine(), "x = f(1);\n");
         assert!(!has_id(&diags, "EOLPAR"), "got: {diags:?}");
     }
-
 
     // -- ENDPAR: missing closing bracket at end of file ----------------------
 
@@ -355,7 +358,6 @@ mod tests {
         let diags = lint_file(&*engine(), "x = [1, 2];\n");
         assert!(!has_id(&diags, "ENDPAR"), "got: {diags:?}");
     }
-
 
     // -- Missing bracket variants: must fire / must not fire -----------------
 
@@ -398,7 +400,6 @@ mod tests {
         let diags = lint_file(&*engine, "x = f(1 + 2;\n");
         assert!(!has_id(&diags, "ENDPAR"), "got: {diags:?}");
     }
-
 
     // -- ENDCT family: possible missing `end` -------------------------------
 
@@ -487,13 +488,15 @@ mod tests {
     #[test]
     fn endct_disabled_suppresses_variants() {
         let engine = engine_with_disabled(&["ENDCT"]);
-        let diags = lint_file(&*engine, "if x > 0\n    y = 1;\nelse\nif x\nclassdef Foo\n  function f()\n  end\nend\n");
+        let diags = lint_file(
+            &*engine,
+            "if x > 0\n    y = 1;\nelse\nif x\nclassdef Foo\n  function f()\n  end\nend\n",
+        );
         assert!(!has_id(&diags, "ENDCT"), "got: {diags:?}");
         assert!(!has_id(&diags, "ENDCT2"), "got: {diags:?}");
         assert!(!has_id(&diags, "ENDCT3"), "got: {diags:?}");
         assert!(!has_id(&diags, "ENDCT4"), "got: {diags:?}");
     }
-
 
     // -- EOFMI: file ends with ERROR node -----------------------------------
 
@@ -508,5 +511,4 @@ mod tests {
         let diags = lint_file(&*engine(), "x = 5;\n");
         assert!(!has_id(&diags, "EOFMI"), "got: {diags:?}");
     }
-
 }

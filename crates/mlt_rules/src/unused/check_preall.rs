@@ -5,11 +5,7 @@ use super::*;
 impl UnusedEngine {
     /// Run PREALL check: variable preallocated but unused.
     /// Similar to NASGU but targets for-iterator variables specifically.
-    pub(crate) fn check_preall(
-        &self,
-        table: &SymbolTable,
-        diagnostics: &mut Vec<Diagnostic>,
-    ) {
+    pub(crate) fn check_preall(&self, table: &SymbolTable, diagnostics: &mut Vec<Diagnostic>) {
         if self.is_check_disabled("PREALL") {
             return;
         }
@@ -41,7 +37,6 @@ impl UnusedEngine {
             }
         }
     }
-
 }
 
 #[cfg(test)]
@@ -58,14 +53,19 @@ mod tests {
 
     #[test]
     fn preall_fires_on_unused_loop_var() {
-        let diags = lint_file(&*engine(), "function foo()\n    for i = 1:10\n        disp('hi');\n    end\nend\n");
+        let diags = lint_file(
+            &*engine(),
+            "function foo()\n    for i = 1:10\n        disp('hi');\n    end\nend\n",
+        );
         assert!(has_id(&diags, "PREALL"), "got: {diags:?}");
     }
 
     #[test]
     fn preall_ok_when_loop_var_used() {
-        let diags = lint_file(&*engine(), "function foo()\n    for i = 1:10\n        disp(i);\n    end\nend\n");
+        let diags = lint_file(
+            &*engine(),
+            "function foo()\n    for i = 1:10\n        disp(i);\n    end\nend\n",
+        );
         assert!(!has_id(&diags, "PREALL"), "got: {diags:?}");
     }
-
 }

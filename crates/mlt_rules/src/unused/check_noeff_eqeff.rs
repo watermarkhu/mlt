@@ -4,11 +4,7 @@ use super::*;
 
 impl UnusedEngine {
     /// Run NOEFF/EQEFF checks: statements with no effect.
-    pub(crate) fn check_noeff_eqeff(
-        &self,
-        ctx: &FileContext,
-        diagnostics: &mut Vec<Diagnostic>,
-    ) {
+    pub(crate) fn check_noeff_eqeff(&self, ctx: &FileContext, diagnostics: &mut Vec<Diagnostic>) {
         let noeff_disabled = self.is_check_disabled("NOEFF");
         let eqeff_disabled = self.is_check_disabled("EQEFF");
 
@@ -17,9 +13,13 @@ impl UnusedEngine {
         }
 
         // Walk the tree looking for expression nodes at statement level.
-        walk_for_no_effect(ctx.tree.root_node(), diagnostics, noeff_disabled, eqeff_disabled);
+        walk_for_no_effect(
+            ctx.tree.root_node(),
+            diagnostics,
+            noeff_disabled,
+            eqeff_disabled,
+        );
     }
-
 }
 
 // ---------------------------------------------------------------------------
@@ -61,8 +61,7 @@ pub(crate) fn walk_for_no_effect(
             let pos = node.start_position();
             diagnostics.push(Diagnostic {
                 rule_id: "NOEFF",
-                message: "Statement has no effect (expression result is discarded)"
-                    .to_string(),
+                message: "Statement has no effect (expression result is discarded)".to_string(),
                 severity: Severity::Warning,
                 byte_range: node.start_byte()..node.end_byte(),
                 line: pos.row + 1,
@@ -115,8 +114,10 @@ mod tests {
 
     #[test]
     fn eqeff_ok_when_result_used() {
-        let diags = lint_file(&*engine(), "function foo(a, b)\n    x = (a == b);\n    disp(x);\nend\n");
+        let diags = lint_file(
+            &*engine(),
+            "function foo(a, b)\n    x = (a == b);\n    disp(x);\nend\n",
+        );
         assert!(!has_id(&diags, "EQEFF"), "got: {diags:?}");
     }
-
 }

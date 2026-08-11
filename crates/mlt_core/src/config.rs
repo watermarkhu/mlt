@@ -200,10 +200,8 @@ impl Config {
                     };
 
                     // All keys except "severity" are rule-specific params.
-                    let params: toml::Table = table
-                        .into_iter()
-                        .filter(|(k, _)| k != "severity")
-                        .collect();
+                    let params: toml::Table =
+                        table.into_iter().filter(|(k, _)| k != "severity").collect();
 
                     RuleConfig {
                         enabled: true,
@@ -280,10 +278,7 @@ impl Config {
     ///
     /// Returns `true` if the rule has no config entry (rules are enabled by default).
     pub fn is_rule_enabled(&self, rule_id: &str) -> bool {
-        self.rules
-            .get(rule_id)
-            .map(|rc| rc.enabled)
-            .unwrap_or(true)
+        self.rules.get(rule_id).map(|rc| rc.enabled).unwrap_or(true)
     }
 
     /// Check whether a rule is enabled, considering both per-rule and per-category config.
@@ -292,11 +287,7 @@ impl Config {
     /// 1. Per-rule config takes precedence (if rule is explicitly configured).
     /// 2. Per-category config applies if the rule has no explicit config.
     /// 3. Default: enabled.
-    pub fn is_rule_enabled_for_category(
-        &self,
-        rule_id: &str,
-        category: Category,
-    ) -> bool {
+    pub fn is_rule_enabled_for_category(&self, rule_id: &str, category: Category) -> bool {
         // Per-rule override takes precedence.
         if let Some(rc) = self.rules.get(rule_id) {
             return rc.enabled;

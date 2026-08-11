@@ -42,9 +42,7 @@ mod tests {
 
     #[test]
     fn soinitprop_discretestate_without_resetimpl_fires() {
-        let source = system_class(
-            "    properties (DiscreteState)\n        states\n    end\n",
-        );
+        let source = system_class("    properties (DiscreteState)\n        states\n    end\n");
         let diags = lint_file(&*engine(), &source);
         assert!(has_id(&diags, "SOINITPROP"), "got: {diags:?}");
     }

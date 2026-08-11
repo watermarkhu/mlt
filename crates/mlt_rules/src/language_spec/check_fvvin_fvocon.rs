@@ -40,7 +40,8 @@ impl LanguageSpecEngine {
                         );
                     }
                     for reference in &call.references {
-                        let is_arg = matches!(reference, CallReference::Identifier(n) if n == &name);
+                        let is_arg =
+                            matches!(reference, CallReference::Identifier(n) if n == &name);
                         if ocon && !is_arg {
                             self.push_diag(
                                 prop,
@@ -58,7 +59,7 @@ impl LanguageSpecEngine {
 
 #[cfg(test)]
 mod tests {
-    
+
     use crate::language_spec::tests::{check_source, filter_by_id};
 
     #[test]

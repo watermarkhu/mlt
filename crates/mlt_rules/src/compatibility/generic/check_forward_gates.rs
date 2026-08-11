@@ -28,19 +28,47 @@ const FCDQS_MSG: &str = "Double-quoted strings are not available before R2017a. 
 const FCFAV_MSG: &str = "Function argument validation is not available before R2019b.";
 const FCHBL_MSG: &str = "Hexadecimal and binary literals are not available before R2019b. Use 'hex2dec' and 'bin2dec' instead.";
 const FCLFS_MSG: &str = "Local functions in a script are not available before R2016b.";
-const FCNVA_MSG: &str = "Name=Value syntax is not available before R2021a. Use comma-separated syntax instead.";
-const IMPIVD_MSG: &str = "Malformed import argument VAR_NAME will not be supported in a future release.";
+const FCNVA_MSG: &str =
+    "Name=Value syntax is not available before R2021a. Use comma-separated syntax instead.";
+const IMPIVD_MSG: &str =
+    "Malformed import argument VAR_NAME will not be supported in a future release.";
 const IMPKEY_MSG: &str = "Importing VAR_NAME will not be supported in a future release because VAR_NAME is a reserved word.";
 const REDEFGI_MSG: &str = "Declaring an input or output variable to be global might not be supported in a future release.";
-const REDEFGG_MSG: &str = "Declaring a variable to be global more than once might not be supported in a future release.";
-const NSTIMP_MSG: &str = "Nested functions now inherit import statements from this parent function.";
+const REDEFGG_MSG: &str =
+    "Declaring a variable to be global more than once might not be supported in a future release.";
+const NSTIMP_MSG: &str =
+    "Nested functions now inherit import statements from this parent function.";
 
 /// MATLAB reserved words (subset — for IMPKEY).
 const RESERVED: &[&str] = &[
-    "function", "end", "if", "else", "elseif", "for", "while", "switch", "case",
-    "otherwise", "return", "break", "continue", "global", "persistent", "try",
-    "catch", "classdef", "properties", "methods", "events", "enumeration",
-    "arguments", "parfor", "spmd", "import", "true", "false",
+    "function",
+    "end",
+    "if",
+    "else",
+    "elseif",
+    "for",
+    "while",
+    "switch",
+    "case",
+    "otherwise",
+    "return",
+    "break",
+    "continue",
+    "global",
+    "persistent",
+    "try",
+    "catch",
+    "classdef",
+    "properties",
+    "methods",
+    "events",
+    "enumeration",
+    "arguments",
+    "parfor",
+    "spmd",
+    "import",
+    "true",
+    "false",
 ];
 
 /// Dispatch a node to the relevant check.
@@ -154,12 +182,7 @@ impl CompatibilityEngine {
 
     /// Import handling: NSTIMP (nested inherit), IMPIVD/IMPKEY (malformed /
     /// reserved-word args).
-    fn check_import_command(
-        &self,
-        node: Node,
-        source: &str,
-        diagnostics: &mut Vec<Diagnostic>,
-    ) {
+    fn check_import_command(&self, node: Node, source: &str, diagnostics: &mut Vec<Diagnostic>) {
         let Some(name) = node.child(0) else {
             return;
         };
@@ -182,12 +205,24 @@ impl CompatibilityEngine {
             // IMPKEY: importing a reserved word.
             let base = arg.split('.').next().unwrap_or(&arg[..]);
             if RESERVED.contains(&base) {
-                push_diag("IMPKEY", IMPKEY_MSG.replace("VAR_NAME", arg), node, Severity::Warning, diagnostics);
+                push_diag(
+                    "IMPKEY",
+                    IMPKEY_MSG.replace("VAR_NAME", arg),
+                    node,
+                    Severity::Warning,
+                    diagnostics,
+                );
                 return;
             }
             // IMPIVD: malformed import argument (no package structure).
             if !arg.contains('.') && arg.chars().any(|c| !c.is_alphanumeric() && c != '_') {
-                push_diag("IMPIVD", IMPIVD_MSG.replace("VAR_NAME", arg), node, Severity::Warning, diagnostics);
+                push_diag(
+                    "IMPIVD",
+                    IMPIVD_MSG.replace("VAR_NAME", arg),
+                    node,
+                    Severity::Warning,
+                    diagnostics,
+                );
                 return;
             }
         }
@@ -239,7 +274,13 @@ impl CompatibilityEngine {
             for &name in names {
                 let text = &source[name.start_byte()..name.end_byte()];
                 if signature.contains(text) {
-                    push_diag("REDEFGI", REDEFGI_MSG, global_node, Severity::Warning, diagnostics);
+                    push_diag(
+                        "REDEFGI",
+                        REDEFGI_MSG,
+                        global_node,
+                        Severity::Warning,
+                        diagnostics,
+                    );
                     break;
                 }
             }
@@ -276,12 +317,7 @@ impl CompatibilityEngine {
     }
 
     /// Emit NSTIMP when a parent function's block contains an `import` command.
-    fn check_function_import(
-        &self,
-        func: Node,
-        source: &str,
-        diagnostics: &mut Vec<Diagnostic>,
-    ) {
+    fn check_function_import(&self, func: Node, source: &str, diagnostics: &mut Vec<Diagnostic>) {
         // The function's body block: direct child named `block`.
         if let Some(block) = block_of(func) {
             if block_has_import(block, source) {
@@ -408,9 +444,7 @@ fn node_subtree_has_global(node: Node, name: &str, source: &str) -> bool {
 fn global_contains(node: Node, name: &str, source: &str) -> bool {
     let mut cursor = node.walk();
     for child in node.children(&mut cursor) {
-        if child.kind() == "identifier"
-            && &source[child.start_byte()..child.end_byte()] == name
-        {
+        if child.kind() == "identifier" && &source[child.start_byte()..child.end_byte()] == name {
             return true;
         }
     }
@@ -528,19 +562,13 @@ mod tests {
 
     #[test]
     fn fccpv_plain_property_not_fires() {
-        let d = lint_file(
-            &*engine(),
-            "classdef C\n properties\n  x\n end\nend\n",
-        );
+        let d = lint_file(&*engine(), "classdef C\n properties\n  x\n end\nend\n");
         assert!(!has_id(&d, "FCCPV"), "got: {d:?}");
     }
 
     #[test]
     fn fclfs_script_local_function_fires() {
-        let d = lint_file(
-            &*engine(),
-            "x = 1;\nfunction y = helper(x)\n y = x;\nend\n",
-        );
+        let d = lint_file(&*engine(), "x = 1;\nfunction y = helper(x)\n y = x;\nend\n");
         assert!(has_id(&d, "FCLFS"), "got: {d:?}");
     }
 

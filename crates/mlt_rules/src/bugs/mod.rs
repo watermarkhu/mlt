@@ -94,31 +94,28 @@ const TARGET_NODES: &[&str] = &[
 
 /// Debug functions that should not appear in production code.
 const DEFAULT_DEBUG_FUNCTIONS: &[&str] = &[
-    "keyboard",
-    "dbstop",
-    "dbclear",
-    "dbcont",
-    "dbquit",
-    "dbup",
-    "dbdown",
-    "dbstack",
-    "dbstatus",
+    "keyboard", "dbstop", "dbclear", "dbcont", "dbquit", "dbup", "dbdown", "dbstack", "dbstatus",
     "dbtype",
 ];
 
 /// Higher-order functions that accept function handles.
-const DEFAULT_HIGHER_ORDER_FUNCTIONS: &[&str] = &[
-    "cellfun",
-    "arrayfun",
-    "structfun",
-    "bsxfun",
-    "spfun",
-];
+const DEFAULT_HIGHER_ORDER_FUNCTIONS: &[&str] =
+    &["cellfun", "arrayfun", "structfun", "bsxfun", "spfun"];
 
 /// Array-producing functions whose result is non-scalar.
 const ARRAY_FUNCTIONS: &[&str] = &[
-    "zeros", "ones", "rand", "randn", "eye", "linspace", "logspace",
-    "repmat", "reshape", "cell", "struct", "fieldnames",
+    "zeros",
+    "ones",
+    "rand",
+    "randn",
+    "eye",
+    "linspace",
+    "logspace",
+    "repmat",
+    "reshape",
+    "cell",
+    "struct",
+    "fieldnames",
 ];
 
 // ---------------------------------------------------------------------------
@@ -195,11 +192,7 @@ impl BugsEngine {
         diagnostics
     }
 
-    fn walk_if_branch_dup_bodies(
-        node: Node,
-        source: &str,
-        diagnostics: &mut Vec<Diagnostic>,
-    ) {
+    fn walk_if_branch_dup_bodies(node: Node, source: &str, diagnostics: &mut Vec<Diagnostic>) {
         if node.kind() == "if_statement" {
             let mut branch_bodies: Vec<(String, Node)> = Vec::new();
 
@@ -207,9 +200,7 @@ impl BugsEngine {
             for child in node.children(&mut cursor) {
                 let body = match child.kind() {
                     "block" => Some(child),
-                    "elseif_clause" | "else_clause" => {
-                        find_block_child(child)
-                    }
+                    "elseif_clause" | "else_clause" => find_block_child(child),
                     _ => None,
                 };
 
@@ -250,11 +241,7 @@ impl BugsEngine {
         diagnostics
     }
 
-    fn walk_if_condition_dup(
-        node: Node,
-        source: &str,
-        diagnostics: &mut Vec<Diagnostic>,
-    ) {
+    fn walk_if_condition_dup(node: Node, source: &str, diagnostics: &mut Vec<Diagnostic>) {
         if node.kind() == "if_statement" {
             let mut conditions: Vec<(String, Node)> = Vec::new();
 
@@ -311,11 +298,7 @@ impl BugsEngine {
         diagnostics
     }
 
-    fn walk_switch_dup_cases(
-        node: Node,
-        source: &str,
-        diagnostics: &mut Vec<Diagnostic>,
-    ) {
+    fn walk_switch_dup_cases(node: Node, source: &str, diagnostics: &mut Vec<Diagnostic>) {
         if node.kind() == "switch_statement" {
             let mut case_values: Vec<(String, Node)> = Vec::new();
 
@@ -325,8 +308,7 @@ impl BugsEngine {
                     // The case value is the first meaningful child after "case".
                     if let Some(case_val) = find_case_value(child) {
                         let val_text = normalize_whitespace(node_text(case_val, source));
-                        if let Some((_, _first)) =
-                            case_values.iter().find(|(t, _)| *t == val_text)
+                        if let Some((_, _first)) = case_values.iter().find(|(t, _)| *t == val_text)
                         {
                             let pos = case_val.start_position();
                             // Report as both LBODUP and MDUPC (they cover different aspects).
@@ -375,11 +357,7 @@ impl BugsEngine {
         diagnostics
     }
 
-    fn walk_switch_no_otherwise(
-        node: Node,
-        _source: &str,
-        diagnostics: &mut Vec<Diagnostic>,
-    ) {
+    fn walk_switch_no_otherwise(node: Node, _source: &str, diagnostics: &mut Vec<Diagnostic>) {
         if node.kind() == "switch_statement" {
             let mut has_otherwise = false;
             let mut cursor = node.walk();
@@ -417,17 +395,12 @@ impl BugsEngine {
         diagnostics
     }
 
-    fn walk_catch_without_id(
-        node: Node,
-        source: &str,
-        diagnostics: &mut Vec<Diagnostic>,
-    ) {
+    fn walk_catch_without_id(node: Node, source: &str, diagnostics: &mut Vec<Diagnostic>) {
         if node.kind() == "catch_clause" {
             // Check if the catch clause has an identifier child.
             let has_id = {
                 let mut cursor = node.walk();
-                let result = node.children(&mut cursor)
-                    .any(|c| c.kind() == "identifier");
+                let result = node.children(&mut cursor).any(|c| c.kind() == "identifier");
                 result
             };
 
@@ -536,11 +509,7 @@ impl BugsEngine {
         diagnostics
     }
 
-    fn walk_vararg_misuse(
-        node: Node,
-        source: &str,
-        diagnostics: &mut Vec<Diagnostic>,
-    ) {
+    fn walk_vararg_misuse(node: Node, source: &str, diagnostics: &mut Vec<Diagnostic>) {
         if node.kind() == "function_definition" {
             let func_text = node_text(node, source);
             let has_varargin_param = func_text.contains("varargin");
@@ -605,7 +574,13 @@ impl BugsEngine {
             let mut cursor = node.walk();
             for child in node.children(&mut cursor) {
                 if child.kind() != "function_definition" {
-                    Self::check_vararg_in_body(child, source, has_varargin, has_varargout, diagnostics);
+                    Self::check_vararg_in_body(
+                        child,
+                        source,
+                        has_varargin,
+                        has_varargout,
+                        diagnostics,
+                    );
                 }
             }
         } else {
@@ -623,11 +598,7 @@ impl BugsEngine {
         diagnostics
     }
 
-    fn walk_parfor_issues(
-        node: Node,
-        source: &str,
-        diagnostics: &mut Vec<Diagnostic>,
-    ) {
+    fn walk_parfor_issues(node: Node, source: &str, diagnostics: &mut Vec<Diagnostic>) {
         if node.kind() == "for_statement" {
             let stmt_text = node_text(node, source);
             if !stmt_text.starts_with("parfor") {
@@ -636,8 +607,9 @@ impl BugsEngine {
                     let pos = node.start_position();
                     diagnostics.push(Diagnostic {
                         rule_id: "FWPARF",
-                        message: "For loop could potentially be converted to parfor for parallelism"
-                            .to_string(),
+                        message:
+                            "For loop could potentially be converted to parfor for parallelism"
+                                .to_string(),
                         severity: Severity::Error,
                         byte_range: node.start_byte()..node.end_byte(),
                         line: pos.row + 1,
@@ -661,12 +633,7 @@ impl BugsEngine {
             let mut cursor = node.walk();
             for child in node.children(&mut cursor) {
                 if child.kind() == "block" {
-                    Self::check_parfor_body(
-                        child,
-                        source,
-                        loop_var.as_deref(),
-                        diagnostics,
-                    );
+                    Self::check_parfor_body(child, source, loop_var.as_deref(), diagnostics);
                 }
             }
 
@@ -729,9 +696,7 @@ impl BugsEngine {
                         let pos = node.start_position();
                         diagnostics.push(Diagnostic {
                             rule_id: "PFWHOS",
-                            message: format!(
-                                "'{name}' is not allowed inside parfor loops"
-                            ),
+                            message: format!("'{name}' is not allowed inside parfor loops"),
                             severity: Severity::Error,
                             byte_range: node.start_byte()..node.end_byte(),
                             line: pos.row + 1,
@@ -742,7 +707,12 @@ impl BugsEngine {
 
                     // PFBFN: Certain builtin functions problematic in parfor.
                     let problematic_builtins = [
-                        "assignin", "evalin", "save", "load", "clear", "global",
+                        "assignin",
+                        "evalin",
+                        "save",
+                        "load",
+                        "clear",
+                        "global",
                         "persistent",
                     ];
                     if problematic_builtins.contains(name) {
@@ -767,7 +737,9 @@ impl BugsEngine {
                 if let Some(lhs) = node.child_by_field_name("left").or_else(|| node.child(0)) {
                     if lhs.kind() == "identifier" {
                         let var_name = node_text(lhs, source).trim().to_string();
-                        if let Some(rhs) = node.child_by_field_name("right").or_else(|| node.child(2)) {
+                        if let Some(rhs) =
+                            node.child_by_field_name("right").or_else(|| node.child(2))
+                        {
                             let rhs_text = node_text(rhs, source);
                             // PFTUSE: Variable used on both sides but is not a reduction.
                             if rhs_text.contains(&var_name)
@@ -1053,11 +1025,7 @@ pub(crate) fn find_operator_text<'a>(node: Node<'a>, source: &'a str) -> String 
         if !child.is_named() {
             let text = &source[child.start_byte()..child.end_byte()];
             let trimmed = text.trim();
-            if !trimmed.is_empty()
-                && trimmed != "("
-                && trimmed != ")"
-                && trimmed != ","
-            {
+            if !trimmed.is_empty() && trimmed != "(" && trimmed != ")" && trimmed != "," {
                 return trimmed.to_string();
             }
         }
@@ -1070,7 +1038,10 @@ pub(crate) fn find_operator_text<'a>(node: Node<'a>, source: &'a str) -> String 
 
     // Last resort: parse from the full text.
     let text = node_text(node, source);
-    for op in &["&&", "||", "==", "~=", ">=", "<=", ">", "<", ".+", ".-", ".*", "./", ".\\", ".^", "+", "-", "*", "/", "\\", "^", "&", "|"] {
+    for op in &[
+        "&&", "||", "==", "~=", ">=", "<=", ">", "<", ".+", ".-", ".*", "./", ".\\", ".^", "+",
+        "-", "*", "/", "\\", "^", "&", "|",
+    ] {
         if text.contains(op) {
             return (*op).to_string();
         }
@@ -1105,9 +1076,7 @@ pub(crate) fn is_in_boolean_context(node: Node) -> bool {
                     if child.kind() == "block" {
                         break;
                     }
-                    if child.id() == node.id()
-                        || is_ancestor_of(child, node)
-                    {
+                    if child.id() == node.id() || is_ancestor_of(child, node) {
                         return in_condition;
                     }
                 }
@@ -1169,7 +1138,11 @@ pub(crate) fn collect_defined_functions(root: Node, source: &str) -> HashSet<Str
     names
 }
 
-pub(crate) fn collect_defined_functions_walk(node: Node, source: &str, names: &mut HashSet<String>) {
+pub(crate) fn collect_defined_functions_walk(
+    node: Node,
+    source: &str,
+    names: &mut HashSet<String>,
+) {
     if node.kind() == "function_definition" {
         if let Some(name_node) = node.child_by_field_name("name") {
             names.insert(node_text(name_node, source).trim().to_string());
@@ -1307,7 +1280,12 @@ pub(crate) fn has_mixed_reduction_ops(var_name: &str, rhs: Node, source: &str) -
     unique.len() > 1
 }
 
-pub(crate) fn collect_reduction_ops(var_name: &str, node: Node, source: &str, ops: &mut Vec<String>) {
+pub(crate) fn collect_reduction_ops(
+    var_name: &str,
+    node: Node,
+    source: &str,
+    ops: &mut Vec<String>,
+) {
     if node.kind() == "binary_operator" {
         if let Some(lhs) = node.child(0) {
             if lhs.kind() == "identifier" && node_text(lhs, source).trim() == var_name {
@@ -1724,5 +1702,3 @@ end
         }
     }
 }
-
-

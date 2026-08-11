@@ -9,10 +9,12 @@
 [global]
 # - MD013: generated rule tables and prose exceed 80 chars by design.
 # - MD024: repeated section headings across rule pages is a deliberate pattern.
+# - MD025: the hand-written rule pages (e.g. language-spec.md) use one `#`
+#   heading per rule.
 # - MD033: the playground page uses intentional inline HTML/CSS/JS.
 # - MD057: relative-link existence is unreliable for the nested docs/rules/
 #   tree; broken links are caught by `zensical build`.
-disable = ["MD013", "MD024", "MD033", "MD057"]
+disable = ["MD013", "MD024", "MD025", "MD033", "MD057"]
 respect_gitignore = true
 exclude = [
     ".git",
@@ -24,6 +26,12 @@ exclude = [
     ".opencode",
     ".playwright-mcp",
 ]
+
+# The docs/rules/*.md files are markdown-exec stubs: they start with front
+# matter + a python code block, and the H1 is generated at build time, so
+# MD041 (first line should be H1) does not apply to them.
+[per-file-ignores]
+"docs/rules/*.md" = ["MD041"]
 
 [MD013]
 line_length = 120

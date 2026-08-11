@@ -27,3 +27,7 @@ site/
 crates/mlt_wasm/pkg/
 wasm-pkg/pkg/
 docs/assets/mlt-wasm/
+
+# Python bytecode caches
+__pycache__/
+*.pyc

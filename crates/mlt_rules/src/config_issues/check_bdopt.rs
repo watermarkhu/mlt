@@ -39,9 +39,7 @@ impl ConfigIssuesEngine {
                         let start = arg.start_position();
                         diagnostics.push(Diagnostic {
                             rule_id: "BDOPT",
-                            message: format!(
-                                "Invalid option '{unquoted}' for {func_name}"
-                            ),
+                            message: format!("Invalid option '{unquoted}' for {func_name}"),
                             severity: Severity::Error,
                             byte_range: arg.start_byte()..arg.end_byte(),
                             line: start.row + 1,
@@ -59,7 +57,7 @@ impl ConfigIssuesEngine {
 
 #[cfg(test)]
 mod tests {
-    
+
     use crate::config_issues::tests::engine;
     use crate::test_util::{has_id, lint_nodes};
 

@@ -2,7 +2,11 @@ use super::*;
 
 impl GoodPracticesEngine {
     /// PROP: Property without type/size validation.
-    pub(crate) fn check_prop_validation(&self, tree: &tree_sitter::Tree, source: &str) -> Vec<Diagnostic> {
+    pub(crate) fn check_prop_validation(
+        &self,
+        tree: &tree_sitter::Tree,
+        source: &str,
+    ) -> Vec<Diagnostic> {
         if !self.is_check_enabled("PROP") {
             return Vec::new();
         }

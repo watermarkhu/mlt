@@ -300,7 +300,10 @@ mod tests {
             .expect("NOSEMI should fire");
         let fix = diag.fix.as_ref().expect("NOSEMI should carry an auto-fix");
         assert_eq!(fix.replacement, ";");
-        assert_eq!(fix.byte_range.start, fix.byte_range.end, "insertion must be zero-width");
+        assert_eq!(
+            fix.byte_range.start, fix.byte_range.end,
+            "insertion must be zero-width"
+        );
     }
 
     #[test]

@@ -9,8 +9,14 @@ impl LanguageSpecEngine {
             return;
         }
         for mb in &class.methods_blocks {
-            let is_abstract = mb.attributes.iter().any(|a| a.name == "Abstract" && !a.negated);
-            let is_sealed = mb.attributes.iter().any(|a| a.name == "Sealed" && !a.negated);
+            let is_abstract = mb
+                .attributes
+                .iter()
+                .any(|a| a.name == "Abstract" && !a.negated);
+            let is_sealed = mb
+                .attributes
+                .iter()
+                .any(|a| a.name == "Sealed" && !a.negated);
             if is_abstract && is_sealed {
                 for method in &mb.methods {
                     diagnostics.push(Diagnostic {
@@ -30,7 +36,7 @@ impl LanguageSpecEngine {
 
 #[cfg(test)]
 mod tests {
-    
+
     use crate::language_spec::tests::{check_source, filter_by_id};
 
     #[test]

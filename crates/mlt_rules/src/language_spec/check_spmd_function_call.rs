@@ -34,7 +34,12 @@ impl LanguageSpecEngine {
             }
             "save" => {
                 if !has_string_argument(node, source, "-fromstruct") {
-                    self.push_diag(node, "SPSV", "SAVE cannot be called in an SPMD block without the '-fromstruct' option", diagnostics);
+                    self.push_diag(
+                        node,
+                        "SPSV",
+                        "SAVE cannot be called in an SPMD block without the '-fromstruct' option",
+                        diagnostics,
+                    );
                 }
             }
             "who" | "whos" => {
@@ -60,7 +65,7 @@ impl LanguageSpecEngine {
 
 #[cfg(test)]
 mod tests {
-    
+
     use crate::language_spec::tests::{check_source, filter_by_id};
 
     #[test]
@@ -75,7 +80,11 @@ end
 ";
         let diags = check_source(source, "foo.m");
         let spevc = filter_by_id(&diags, "SPEVC");
-        assert_eq!(spevc.len(), 2, "SPEVC should fire for evalin/assignin('caller') in spmd, got {diags:?}");
+        assert_eq!(
+            spevc.len(),
+            2,
+            "SPEVC should fire for evalin/assignin('caller') in spmd, got {diags:?}"
+        );
     }
 
     #[test]
@@ -101,7 +110,10 @@ end
 ";
         let diags = check_source(source, "foo.m");
         let spld = filter_by_id(&diags, "SPLD");
-        assert!(!spld.is_empty(), "SPLD should fire for unassigned load in spmd");
+        assert!(
+            !spld.is_empty(),
+            "SPLD should fire for unassigned load in spmd"
+        );
     }
 
     #[test]
@@ -129,7 +141,10 @@ end
 ";
         let diags = check_source(source, "foo.m");
         let spsv = filter_by_id(&diags, "SPSV");
-        assert!(!spsv.is_empty(), "SPSV should fire for save without -fromstruct");
+        assert!(
+            !spsv.is_empty(),
+            "SPSV should fire for save without -fromstruct"
+        );
     }
 
     #[test]
@@ -143,7 +158,10 @@ end
 ";
         let diags = check_source(source, "foo.m");
         let spsv = filter_by_id(&diags, "SPSV");
-        assert!(spsv.is_empty(), "SPSV should NOT fire for save with -fromstruct");
+        assert!(
+            spsv.is_empty(),
+            "SPSV should NOT fire for save with -fromstruct"
+        );
     }
 
     #[test]
@@ -158,7 +176,11 @@ end
 ";
         let diags = check_source(source, "foo.m");
         let spwhos = filter_by_id(&diags, "SPWHOS");
-        assert_eq!(spwhos.len(), 2, "SPWHOS should fire for who/whos without -file");
+        assert_eq!(
+            spwhos.len(),
+            2,
+            "SPWHOS should fire for who/whos without -file"
+        );
     }
 
     #[test]
@@ -172,7 +194,10 @@ end
 ";
         let diags = check_source(source, "foo.m");
         let spwhos = filter_by_id(&diags, "SPWHOS");
-        assert!(spwhos.is_empty(), "SPWHOS should NOT fire for who with -file");
+        assert!(
+            spwhos.is_empty(),
+            "SPWHOS should NOT fire for who with -file"
+        );
     }
 
     #[test]
@@ -187,7 +212,11 @@ end
 ";
         let diags = check_source(source, "foo.m");
         let spbfn = filter_by_id(&diags, "SPBFN");
-        assert_eq!(spbfn.len(), 2, "SPBFN should fire for eval and non-caller evalin in spmd");
+        assert_eq!(
+            spbfn.len(),
+            2,
+            "SPBFN should fire for eval and non-caller evalin in spmd"
+        );
     }
 
     #[test]
@@ -215,7 +244,10 @@ end
 ";
         let diags = check_source(source, "outer.m");
         let spnf = filter_by_id(&diags, "SPNF");
-        assert!(!spnf.is_empty(), "SPNF should fire for nested function call in spmd");
+        assert!(
+            !spnf.is_empty(),
+            "SPNF should fire for nested function call in spmd"
+        );
     }
 
     #[test]
@@ -232,6 +264,9 @@ end
 ";
         let diags = check_source(source, "main.m");
         let spnf = filter_by_id(&diags, "SPNF");
-        assert!(spnf.is_empty(), "SPNF should NOT fire for top-level local function call");
+        assert!(
+            spnf.is_empty(),
+            "SPNF should NOT fire for top-level local function call"
+        );
     }
 }

@@ -100,9 +100,9 @@ impl LanguageSpecEngine {
         }
 
         // VTPIN: the validator body must use at least one of its inputs.
-        let uses_input = inputs.iter().any(|input| {
-            Self::body_references_identifier(body_node, source, input)
-        });
+        let uses_input = inputs
+            .iter()
+            .any(|input| Self::body_references_identifier(body_node, source, input));
         if !uses_input {
             if self.is_check_enabled("VTPIN") {
                 self.push_diag(
@@ -126,11 +126,7 @@ impl LanguageSpecEngine {
     }
 
     /// Whether the body of a function references the given identifier name.
-    fn body_references_identifier(
-        body: tree_sitter::Node,
-        source: &str,
-        name: &str,
-    ) -> bool {
+    fn body_references_identifier(body: tree_sitter::Node, source: &str, name: &str) -> bool {
         if body.kind() == "identifier" {
             return node_text(body, source) == name;
         }
@@ -215,7 +211,10 @@ classdef Foo
 end
 ";
         let diags = check_source(source, "Foo.m");
-        assert!(!filter_by_id(&diags, "VTPEAL").is_empty(), "VTPEAL should fire for a validator with no inputs");
+        assert!(
+            !filter_by_id(&diags, "VTPEAL").is_empty(),
+            "VTPEAL should fire for a validator with no inputs"
+        );
     }
 
     #[test]
@@ -232,7 +231,10 @@ classdef Foo
 end
 ";
         let diags = check_source(source, "Foo.m");
-        assert!(filter_by_id(&diags, "VTPEAL").is_empty(), "VTPEAL should NOT fire for a validator with an input");
+        assert!(
+            filter_by_id(&diags, "VTPEAL").is_empty(),
+            "VTPEAL should NOT fire for a validator with an input"
+        );
     }
 
     // -- VTPIN ---------------------------------------------------------------
@@ -250,7 +252,10 @@ classdef Foo
 end
 ";
         let diags = check_source(source, "Foo.m");
-        assert!(!filter_by_id(&diags, "VTPIN").is_empty(), "VTPIN should fire when the validator never uses its input");
+        assert!(
+            !filter_by_id(&diags, "VTPIN").is_empty(),
+            "VTPIN should fire when the validator never uses its input"
+        );
     }
 
     #[test]
@@ -267,7 +272,10 @@ classdef Foo
 end
 ";
         let diags = check_source(source, "Foo.m");
-        assert!(filter_by_id(&diags, "VTPIN").is_empty(), "VTPIN should NOT fire when the validator uses its input");
+        assert!(
+            filter_by_id(&diags, "VTPIN").is_empty(),
+            "VTPIN should NOT fire when the validator uses its input"
+        );
     }
 
     // -- VTPCON --------------------------------------------------------------
@@ -287,7 +295,10 @@ classdef Foo
 end
 ";
         let diags = check_source(source, "Foo.m");
-        assert!(!filter_by_id(&diags, "VTPCON").is_empty(), "VTPCON should fire when the validator references a variable other than the property");
+        assert!(
+            !filter_by_id(&diags, "VTPCON").is_empty(),
+            "VTPCON should fire when the validator references a variable other than the property"
+        );
     }
 
     #[test]
@@ -304,7 +315,10 @@ classdef Foo
 end
 ";
         let diags = check_source(source, "Foo.m");
-        assert!(filter_by_id(&diags, "VTPCON").is_empty(), "VTPCON should NOT fire when only the input and function calls are used");
+        assert!(
+            filter_by_id(&diags, "VTPCON").is_empty(),
+            "VTPCON should NOT fire when only the input and function calls are used"
+        );
     }
 
     #[test]
@@ -319,9 +333,18 @@ classdef Foo
 end
 ";
         let diags = check_source(source, "Foo.m");
-        assert!(filter_by_id(&diags, "VTPCON").is_empty(), "VTPCON should NOT fire for a non-validator method");
-        assert!(filter_by_id(&diags, "VTPEAL").is_empty(), "VTPEAL should NOT fire for a non-validator method");
-        assert!(filter_by_id(&diags, "VTPIN").is_empty(), "VTPIN should NOT fire for a non-validator method");
+        assert!(
+            filter_by_id(&diags, "VTPCON").is_empty(),
+            "VTPCON should NOT fire for a non-validator method"
+        );
+        assert!(
+            filter_by_id(&diags, "VTPEAL").is_empty(),
+            "VTPEAL should NOT fire for a non-validator method"
+        );
+        assert!(
+            filter_by_id(&diags, "VTPIN").is_empty(),
+            "VTPIN should NOT fire for a non-validator method"
+        );
     }
 
     // -- Config respect ------------------------------------------------------
@@ -350,6 +373,9 @@ end
             file_path: path,
         };
         let diags = engine.check_file(&ctx);
-        assert!(filter_by_id(&diags, "VTPEAL").is_empty(), "VTPEAL should be disabled via config disabled_checks");
+        assert!(
+            filter_by_id(&diags, "VTPEAL").is_empty(),
+            "VTPEAL should be disabled via config disabled_checks"
+        );
     }
 }

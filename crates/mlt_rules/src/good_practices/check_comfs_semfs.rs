@@ -4,7 +4,11 @@ impl GoodPracticesEngine {
     /// COMFS/SEMFS: a top-level `,` (COMFS) or `;` (SEMFS) in a file that also
     /// contains a `function_definition` makes the file a script, so all
     /// functions in it become local functions.
-    pub(crate) fn check_comfs_semfs(&self, tree: &tree_sitter::Tree, _source: &str) -> Vec<Diagnostic> {
+    pub(crate) fn check_comfs_semfs(
+        &self,
+        tree: &tree_sitter::Tree,
+        _source: &str,
+    ) -> Vec<Diagnostic> {
         let root = tree.root_node();
         if root.kind() != "source_file" {
             return Vec::new();

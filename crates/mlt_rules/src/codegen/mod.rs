@@ -74,40 +74,135 @@ struct CheckMeta {
 
 /// All 20 code generation check definitions.
 const CHECKS: &[CheckMeta] = &[
-    CheckMeta { id: "EMVDF", description: "Variable-size data is not supported for code generation" },
-    CheckMeta { id: "EMGRO", description: "Growing arrays inside loops is not supported for code generation" },
-    CheckMeta { id: "EMNODEF", description: "Variable must be defined before use in code generation" },
-    CheckMeta { id: "EMFCN", description: "Function is not supported for code generation" },
-    CheckMeta { id: "EMCEL", description: "Cell arrays are not supported for code generation" },
-    CheckMeta { id: "EMTC", description: "Try-catch statements are not supported for code generation" },
-    CheckMeta { id: "EMIMP", description: "Import statements are not supported for code generation" },
-    CheckMeta { id: "EMNST", description: "Nested functions are not supported for code generation" },
-    CheckMeta { id: "EMSCR", description: "Scripts are not supported for code generation; use functions instead" },
-    CheckMeta { id: "EMBRK", description: "Break statement in unsupported context for code generation" },
-    CheckMeta { id: "EMCNT", description: "Continue statement in unsupported context for code generation" },
-    CheckMeta { id: "EMPFR", description: "Parfor is not supported for code generation" },
-    CheckMeta { id: "EMRTN", description: "Return statement in unsupported context for code generation" },
-    CheckMeta { id: "EMWHL", description: "While loops with non-constant bounds may not be supported for code generation" },
-    CheckMeta { id: "EMRIFAV", description: "Arguments validation block is not fully supported for code generation" },
-    CheckMeta { id: "EMLOAD", description: "'load' is not supported for code generation" },
-    CheckMeta { id: "EMS2N", description: "'str2num' is not supported for code generation; use 'str2double'" },
-    CheckMeta { id: "PRMNOIN", description: "No input validation available in generated code" },
-    CheckMeta { id: "LOOPPRAGMAWITHOUTFOR", description: "coder.loop pragma must be immediately followed by a for-loop" },
-    CheckMeta { id: "FPASE", description: "Assignment to a scaled fixed-point expression may lose precision" },
+    CheckMeta {
+        id: "EMVDF",
+        description: "Variable-size data is not supported for code generation",
+    },
+    CheckMeta {
+        id: "EMGRO",
+        description: "Growing arrays inside loops is not supported for code generation",
+    },
+    CheckMeta {
+        id: "EMNODEF",
+        description: "Variable must be defined before use in code generation",
+    },
+    CheckMeta {
+        id: "EMFCN",
+        description: "Function is not supported for code generation",
+    },
+    CheckMeta {
+        id: "EMCEL",
+        description: "Cell arrays are not supported for code generation",
+    },
+    CheckMeta {
+        id: "EMTC",
+        description: "Try-catch statements are not supported for code generation",
+    },
+    CheckMeta {
+        id: "EMIMP",
+        description: "Import statements are not supported for code generation",
+    },
+    CheckMeta {
+        id: "EMNST",
+        description: "Nested functions are not supported for code generation",
+    },
+    CheckMeta {
+        id: "EMSCR",
+        description: "Scripts are not supported for code generation; use functions instead",
+    },
+    CheckMeta {
+        id: "EMBRK",
+        description: "Break statement in unsupported context for code generation",
+    },
+    CheckMeta {
+        id: "EMCNT",
+        description: "Continue statement in unsupported context for code generation",
+    },
+    CheckMeta {
+        id: "EMPFR",
+        description: "Parfor is not supported for code generation",
+    },
+    CheckMeta {
+        id: "EMRTN",
+        description: "Return statement in unsupported context for code generation",
+    },
+    CheckMeta {
+        id: "EMWHL",
+        description:
+            "While loops with non-constant bounds may not be supported for code generation",
+    },
+    CheckMeta {
+        id: "EMRIFAV",
+        description: "Arguments validation block is not fully supported for code generation",
+    },
+    CheckMeta {
+        id: "EMLOAD",
+        description: "'load' is not supported for code generation",
+    },
+    CheckMeta {
+        id: "EMS2N",
+        description: "'str2num' is not supported for code generation; use 'str2double'",
+    },
+    CheckMeta {
+        id: "PRMNOIN",
+        description: "No input validation available in generated code",
+    },
+    CheckMeta {
+        id: "LOOPPRAGMAWITHOUTFOR",
+        description: "coder.loop pragma must be immediately followed by a for-loop",
+    },
+    CheckMeta {
+        id: "FPASE",
+        description: "Assignment to a scaled fixed-point expression may lose precision",
+    },
 ];
 
 /// Functions unsupported in code generation.
 const UNSUPPORTED_FUNCTIONS: &[&str] = &[
-    "eval", "evalc", "evalin", "feval", "assignin", "input", "keyboard",
-    "dbstop", "dbclear", "dbcont", "dbstep", "dbup", "dbdown", "dbquit",
-    "who", "whos", "clear", "clearvars", "pack",
-    "figure", "plot", "subplot", "xlabel", "ylabel", "title",
-    "diary", "save", "load", "matfile",
-    "cd", "ls", "dir", "mkdir", "rmdir",
-    "javaObject", "javaMethod", "javaArray",
-    "NET", "actxserver",
-    "matlabroot", "tempdir", "tempname",
-    "script", "run",
+    "eval",
+    "evalc",
+    "evalin",
+    "feval",
+    "assignin",
+    "input",
+    "keyboard",
+    "dbstop",
+    "dbclear",
+    "dbcont",
+    "dbstep",
+    "dbup",
+    "dbdown",
+    "dbquit",
+    "who",
+    "whos",
+    "clear",
+    "clearvars",
+    "pack",
+    "figure",
+    "plot",
+    "subplot",
+    "xlabel",
+    "ylabel",
+    "title",
+    "diary",
+    "save",
+    "load",
+    "matfile",
+    "cd",
+    "ls",
+    "dir",
+    "mkdir",
+    "rmdir",
+    "javaObject",
+    "javaMethod",
+    "javaArray",
+    "NET",
+    "actxserver",
+    "matlabroot",
+    "tempdir",
+    "tempname",
+    "script",
+    "run",
 ];
 
 /// Look up check description by ID.
@@ -162,11 +257,7 @@ impl CodegenEngine {
     // ---------------------------------------------------------------------------
 
     /// File-level checks: EMNST (nested functions) and EMSCR (scripts).
-    fn check_file_level(
-        &self,
-        tree: &tree_sitter::Tree,
-        _source: &str,
-    ) -> Vec<Diagnostic> {
+    fn check_file_level(&self, tree: &tree_sitter::Tree, _source: &str) -> Vec<Diagnostic> {
         let mut diags = Vec::new();
         let root = tree.root_node();
 
@@ -197,11 +288,7 @@ impl CodegenEngine {
     }
 
     /// Recursively find nested function definitions (depth > 1).
-    fn find_nested_functions(
-        node: &tree_sitter::Node,
-        depth: usize,
-        diags: &mut Vec<Diagnostic>,
-    ) {
+    fn find_nested_functions(node: &tree_sitter::Node, depth: usize, diags: &mut Vec<Diagnostic>) {
         let count = node.child_count();
         for i in 0..count {
             if let Some(child) = node.child(i) {
@@ -291,7 +378,10 @@ pub(crate) fn node_text<'a>(node: tree_sitter::Node<'a>, source: &'a str) -> &'a
 }
 
 /// Extract function name from a `function_call` node.
-pub(crate) fn extract_func_name<'a>(node: tree_sitter::Node<'a>, source: &'a str) -> Option<&'a str> {
+pub(crate) fn extract_func_name<'a>(
+    node: tree_sitter::Node<'a>,
+    source: &'a str,
+) -> Option<&'a str> {
     if node.kind() != "function_call" {
         return None;
     }
@@ -300,7 +390,10 @@ pub(crate) fn extract_func_name<'a>(node: tree_sitter::Node<'a>, source: &'a str
 }
 
 /// Extract command name from a `command` node.
-pub(crate) fn extract_command_name<'a>(node: tree_sitter::Node<'a>, source: &'a str) -> Option<&'a str> {
+pub(crate) fn extract_command_name<'a>(
+    node: tree_sitter::Node<'a>,
+    source: &'a str,
+) -> Option<&'a str> {
     if node.kind() != "command" {
         return None;
     }
@@ -465,5 +558,4 @@ skip_checks = ["EMSCR", "EMFCN"]
         let diags = lint_nodes(&*rule, src);
         assert!(has_id(&diags, "EMTC"), "got: {diags:?}");
     }
-
 }

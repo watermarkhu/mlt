@@ -3,121 +3,119 @@
 use super::*;
 
 impl SyntaxErrorsEngine {
-        pub(crate) fn check_unterminated(&self, root: Node, source: &str) -> Vec<Diagnostic> {
-            let mut diagnostics = Vec::new();
-            let mut reported: HashSet<usize> = HashSet::new();
+    pub(crate) fn check_unterminated(&self, root: Node, source: &str) -> Vec<Diagnostic> {
+        let mut diagnostics = Vec::new();
+        let mut reported: HashSet<usize> = HashSet::new();
 
-            if self.is_check_enabled("STRIN") || self.is_check_enabled("DOUQT") {
-                Self::walk_unterminated_strings(root, source, &mut diagnostics, &mut reported);
-            }
-
-            if self.is_check_enabled("INBLK") {
-                Self::walk_unterminated_comments(root, source, &mut diagnostics);
-            }
-
-            diagnostics
+        if self.is_check_enabled("STRIN") || self.is_check_enabled("DOUQT") {
+            Self::walk_unterminated_strings(root, source, &mut diagnostics, &mut reported);
         }
 
-        pub(crate) fn walk_unterminated_strings(
-            node: Node,
-            source: &str,
-            diagnostics: &mut Vec<Diagnostic>,
-            reported: &mut HashSet<usize>,
-        ) {
-            if node.is_error() {
-                // STRIN: ERROR node whose text starts with an unmatched quote.
-                let start = node.start_byte();
-                let end = node.end_byte().min(source.len());
-                let text = &source[start..end];
-                if text.starts_with('\'')
-                    && text.matches('\'').count() % 2 == 1
-                    && !reported.contains(&start)
-                    && !Self::is_transpose_position(source, start)
-                {
-                    let pos = node.start_position();
-                    reported.insert(start);
-                    diagnostics.push(Diagnostic {
-                        rule_id: "STRIN",
-                        message: "A quoted character vector is unterminated.".to_string(),
-                        severity: Severity::Error,
-                        byte_range: start..start + 1,
-                        line: pos.row + 1,
-                        column: pos.column + 1,
-                        fix: None,
-                    });
-                }
+        if self.is_check_enabled("INBLK") {
+            Self::walk_unterminated_comments(root, source, &mut diagnostics);
+        }
 
-                // STRIN/DOUQT: direct quote tokens inside the ERROR node.
-                let mut cursor = node.walk();
-                for child in node.children(&mut cursor) {
-                    if child.kind() == "'" {
-                        let pos = child.start_byte();
-                        if !reported.contains(&pos) && !Self::is_transpose_position(source, pos) {
-                            let cpos = child.start_position();
-                            reported.insert(pos);
-                            diagnostics.push(Diagnostic {
-                                rule_id: "STRIN",
-                                message: "A quoted character vector is unterminated.".to_string(),
-                                severity: Severity::Error,
-                                byte_range: pos..pos + 1,
-                                line: cpos.row + 1,
-                                column: cpos.column + 1,
-                                fix: None,
-                            });
-                        }
-                    } else if child.kind() == "\"" {
-                        let pos = child.start_byte();
-                        if !reported.contains(&pos) {
-                            let cpos = child.start_position();
-                            reported.insert(pos);
-                            diagnostics.push(Diagnostic {
-                                rule_id: "DOUQT",
-                                message: "A double quoted string is unterminated.".to_string(),
-                                severity: Severity::Error,
-                                byte_range: pos..pos + 1,
-                                line: cpos.row + 1,
-                                column: cpos.column + 1,
-                                fix: None,
-                            });
-                        }
+        diagnostics
+    }
+
+    pub(crate) fn walk_unterminated_strings(
+        node: Node,
+        source: &str,
+        diagnostics: &mut Vec<Diagnostic>,
+        reported: &mut HashSet<usize>,
+    ) {
+        if node.is_error() {
+            // STRIN: ERROR node whose text starts with an unmatched quote.
+            let start = node.start_byte();
+            let end = node.end_byte().min(source.len());
+            let text = &source[start..end];
+            if text.starts_with('\'')
+                && text.matches('\'').count() % 2 == 1
+                && !reported.contains(&start)
+                && !Self::is_transpose_position(source, start)
+            {
+                let pos = node.start_position();
+                reported.insert(start);
+                diagnostics.push(Diagnostic {
+                    rule_id: "STRIN",
+                    message: "A quoted character vector is unterminated.".to_string(),
+                    severity: Severity::Error,
+                    byte_range: start..start + 1,
+                    line: pos.row + 1,
+                    column: pos.column + 1,
+                    fix: None,
+                });
+            }
+
+            // STRIN/DOUQT: direct quote tokens inside the ERROR node.
+            let mut cursor = node.walk();
+            for child in node.children(&mut cursor) {
+                if child.kind() == "'" {
+                    let pos = child.start_byte();
+                    if !reported.contains(&pos) && !Self::is_transpose_position(source, pos) {
+                        let cpos = child.start_position();
+                        reported.insert(pos);
+                        diagnostics.push(Diagnostic {
+                            rule_id: "STRIN",
+                            message: "A quoted character vector is unterminated.".to_string(),
+                            severity: Severity::Error,
+                            byte_range: pos..pos + 1,
+                            line: cpos.row + 1,
+                            column: cpos.column + 1,
+                            fix: None,
+                        });
+                    }
+                } else if child.kind() == "\"" {
+                    let pos = child.start_byte();
+                    if !reported.contains(&pos) {
+                        let cpos = child.start_position();
+                        reported.insert(pos);
+                        diagnostics.push(Diagnostic {
+                            rule_id: "DOUQT",
+                            message: "A double quoted string is unterminated.".to_string(),
+                            severity: Severity::Error,
+                            byte_range: pos..pos + 1,
+                            line: cpos.row + 1,
+                            column: cpos.column + 1,
+                            fix: None,
+                        });
                     }
                 }
             }
-
-            let mut cursor = node.walk();
-            for child in node.children(&mut cursor) {
-                Self::walk_unterminated_strings(child, source, diagnostics, reported);
-            }
         }
 
-        pub(crate) fn walk_unterminated_comments(
-            node: Node,
-            source: &str,
-            diagnostics: &mut Vec<Diagnostic>,
-        ) {
-            if node.kind() == "comment" {
-                let text = &source[node.start_byte()..node.end_byte()];
-                if text.starts_with("%{") && !text.contains("%}") {
-                    let pos = node.start_position();
-                    diagnostics.push(Diagnostic {
-                        rule_id: "INBLK",
-                        message: "A block comment is unterminated at the end of the file."
-                            .to_string(),
-                        severity: Severity::Error,
-                        byte_range: node.byte_range(),
-                        line: pos.row + 1,
-                        column: pos.column + 1,
-                        fix: None,
-                    });
-                }
-                return;
-            }
-            let mut cursor = node.walk();
-            for child in node.children(&mut cursor) {
-                Self::walk_unterminated_comments(child, source, diagnostics);
-            }
+        let mut cursor = node.walk();
+        for child in node.children(&mut cursor) {
+            Self::walk_unterminated_strings(child, source, diagnostics, reported);
         }
+    }
 
+    pub(crate) fn walk_unterminated_comments(
+        node: Node,
+        source: &str,
+        diagnostics: &mut Vec<Diagnostic>,
+    ) {
+        if node.kind() == "comment" {
+            let text = &source[node.start_byte()..node.end_byte()];
+            if text.starts_with("%{") && !text.contains("%}") {
+                let pos = node.start_position();
+                diagnostics.push(Diagnostic {
+                    rule_id: "INBLK",
+                    message: "A block comment is unterminated at the end of the file.".to_string(),
+                    severity: Severity::Error,
+                    byte_range: node.byte_range(),
+                    line: pos.row + 1,
+                    column: pos.column + 1,
+                    fix: None,
+                });
+            }
+            return;
+        }
+        let mut cursor = node.walk();
+        for child in node.children(&mut cursor) {
+            Self::walk_unterminated_comments(child, source, diagnostics);
+        }
+    }
 }
 
 #[cfg(test)]
@@ -131,11 +129,17 @@ mod tests {
     }
 
     fn engine_with_disabled(checks: &[&str]) -> Box<dyn Rule> {
-        let disabled = checks.iter().map(|c| format!("\"{c}\"")).collect::<Vec<_>>().join(", ");
-        let config = Config::from_toml(&format!("[lint.rules.SYNTAX_ERRORS_ENGINE]\ndisabled_checks = [{disabled}]\n")).unwrap();
+        let disabled = checks
+            .iter()
+            .map(|c| format!("\"{c}\""))
+            .collect::<Vec<_>>()
+            .join(", ");
+        let config = Config::from_toml(&format!(
+            "[lint.rules.SYNTAX_ERRORS_ENGINE]\ndisabled_checks = [{disabled}]\n"
+        ))
+        .unwrap();
         SyntaxErrorsEngine::from_config(&config)
     }
-
 
     // -- STRIN: unterminated single-quoted character vector -----------------
 
@@ -205,7 +209,6 @@ mod tests {
         assert!(!has_id(&diags, "STRIN"), "got: {diags:?}");
     }
 
-
     // -- DOUQT: unterminated double-quoted string ---------------------------
 
     #[test]
@@ -244,7 +247,6 @@ mod tests {
         assert!(!has_id(&diags, "DOUQT"), "got: {diags:?}");
     }
 
-
     // -- INBLK: unterminated block comment ----------------------------------
 
     #[test]
@@ -277,7 +279,6 @@ mod tests {
         assert!(!has_id(&diags, "INBLK"), "got: {diags:?}");
     }
 
-
     // -- STRIN/DOUQT/INBLK disabled via config ------------------------------
 
     #[test]
@@ -288,5 +289,4 @@ mod tests {
         assert!(!has_id(&diags, "DOUQT"), "got: {diags:?}");
         assert!(!has_id(&diags, "INBLK"), "got: {diags:?}");
     }
-
 }

@@ -27,7 +27,11 @@ impl BugsEngine {
         let pos = cond.start_position();
 
         if is_always_true(cond_text) {
-            let stmt = if kind == "if_statement" { "if" } else { "while" };
+            let stmt = if kind == "if_statement" {
+                "if"
+            } else {
+                "while"
+            };
             vec![Diagnostic {
                 rule_id: "CTRUE",
                 message: format!(
@@ -40,7 +44,11 @@ impl BugsEngine {
                 fix: None,
             }]
         } else if is_always_false(cond_text) {
-            let stmt = if kind == "if_statement" { "if" } else { "while" };
+            let stmt = if kind == "if_statement" {
+                "if"
+            } else {
+                "while"
+            };
             vec![Diagnostic {
                 rule_id: "CFALSE",
                 message: format!(

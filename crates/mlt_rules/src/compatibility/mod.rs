@@ -229,8 +229,7 @@ impl Rule for CompatibilityEngine {
             // lives for 'static, so we can safely transmute the &str lifetime.
             // SAFETY: COMPAT_DATA is a static LazyLock; its contents are never
             // deallocated, so the &str reference is valid for 'static.
-            let rule_id: &'static str =
-                unsafe { &*(entry.id.as_str() as *const str) };
+            let rule_id: &'static str = unsafe { &*(entry.id.as_str() as *const str) };
 
             diagnostics.push(Diagnostic {
                 rule_id,

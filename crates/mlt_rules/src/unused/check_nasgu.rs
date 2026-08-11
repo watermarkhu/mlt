@@ -4,11 +4,7 @@ use super::*;
 
 impl UnusedEngine {
     /// Run NASGU check: variable assigned but never used.
-    pub(crate) fn check_nasgu(
-        &self,
-        table: &SymbolTable,
-        diagnostics: &mut Vec<Diagnostic>,
-    ) {
+    pub(crate) fn check_nasgu(&self, table: &SymbolTable, diagnostics: &mut Vec<Diagnostic>) {
         if self.is_check_disabled("NASGU") {
             return;
         }
@@ -52,7 +48,6 @@ impl UnusedEngine {
             }
         }
     }
-
 }
 
 #[cfg(test)]
@@ -75,8 +70,10 @@ mod tests {
 
     #[test]
     fn nasgu_ok_when_used() {
-        let diags = lint_file(&*engine(), "function foo()\n    x = 1;\n    disp(x);\nend\n");
+        let diags = lint_file(
+            &*engine(),
+            "function foo()\n    x = 1;\n    disp(x);\nend\n",
+        );
         assert!(!has_id(&diags, "NASGU"), "got: {diags:?}");
     }
-
 }

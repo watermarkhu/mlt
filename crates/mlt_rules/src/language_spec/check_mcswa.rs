@@ -28,7 +28,7 @@ impl LanguageSpecEngine {
 
 #[cfg(test)]
 mod tests {
-    
+
     use crate::language_spec::tests::{check_source, filter_by_id};
 
     #[test]
@@ -57,6 +57,9 @@ end
 ";
         let diags = check_source(source, "Foo.m");
         let hits = filter_by_id(&diags, "MCSWA");
-        assert!(hits.is_empty(), "MCSWA should NOT fire for a plain Sealed class");
+        assert!(
+            hits.is_empty(),
+            "MCSWA should NOT fire for a plain Sealed class"
+        );
     }
 }

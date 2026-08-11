@@ -27,8 +27,7 @@ impl GoodPracticesEngine {
             .map(|arg| {
                 let text = node_text(arg, source);
                 // String literals are quoted; check for ':' inside quotes.
-                (arg.kind() == "string" || arg.kind() == "string_content")
-                    && text.contains(':')
+                (arg.kind() == "string" || arg.kind() == "string_content") && text.contains(':')
             })
             .unwrap_or(false);
 

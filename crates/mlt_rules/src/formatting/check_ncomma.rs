@@ -9,12 +9,7 @@ use super::*;
 impl FormattingEngine {
     /// For `function_call` arguments, check if args are separated by spaces
     /// instead of commas.
-    pub(crate) fn check_ncomma(
-        &self,
-        node: Node,
-        source: &str,
-        diagnostics: &mut Vec<Diagnostic>,
-    ) {
+    pub(crate) fn check_ncomma(&self, node: Node, source: &str, diagnostics: &mut Vec<Diagnostic>) {
         let Some(args_node) = find_arguments_child(node) else {
             return;
         };
@@ -76,7 +71,7 @@ impl FormattingEngine {
 
 #[cfg(test)]
 mod tests {
-    
+
     use crate::formatting::tests::{has_id, lint};
 
     // -- NCOMMA --------------------------------------------------------------

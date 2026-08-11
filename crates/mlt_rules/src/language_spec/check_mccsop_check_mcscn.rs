@@ -70,7 +70,9 @@ impl LanguageSpecEngine {
         if node.kind() == "assignment" {
             if let Some(prop_name) = assignment_field_property(node, source) {
                 let is_constant = class.properties_blocks.iter().any(|pb| {
-                    pb.attributes.iter().any(|a| a.name == "Constant" && !a.negated)
+                    pb.attributes
+                        .iter()
+                        .any(|a| a.name == "Constant" && !a.negated)
                         && pb.properties.iter().any(|p| p.name == prop_name)
                 });
                 if is_constant {
@@ -140,7 +142,7 @@ impl LanguageSpecEngine {
 
 #[cfg(test)]
 mod tests {
-    
+
     use crate::language_spec::tests::{check_source, filter_by_id};
 
     #[test]
@@ -181,7 +183,10 @@ end
 ";
         let diags = check_source(source, "Foo.m");
         let hits = filter_by_id(&diags, "MCCSOP");
-        assert!(hits.is_empty(), "MCCSOP should NOT fire for a non-Constant property");
+        assert!(
+            hits.is_empty(),
+            "MCCSOP should NOT fire for a non-Constant property"
+        );
     }
 
     #[test]
@@ -226,6 +231,9 @@ end
 ";
         let diags = check_source(source, "Foo.m");
         let hits = filter_by_id(&diags, "MCSCN");
-        assert!(hits.is_empty(), "MCSCN should NOT fire for a non-Constant property");
+        assert!(
+            hits.is_empty(),
+            "MCSCN should NOT fire for a non-Constant property"
+        );
     }
 }

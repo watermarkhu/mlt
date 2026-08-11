@@ -50,7 +50,7 @@ impl LanguageSpecEngine {
 
 #[cfg(test)]
 mod tests {
-    
+
     use crate::language_spec::tests::{check_source, filter_by_id};
 
     #[test]
@@ -63,6 +63,9 @@ function f()
 end
 ";
         let diags = check_source(source, "f.m");
-        assert!(!filter_by_id(&diags, "PFLD").is_empty(), "PFLD should fire for command-form load in parfor");
+        assert!(
+            !filter_by_id(&diags, "PFLD").is_empty(),
+            "PFLD should fire for command-form load in parfor"
+        );
     }
 }

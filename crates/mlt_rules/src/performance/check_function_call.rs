@@ -27,10 +27,9 @@ impl PerformanceEngine {
         }
 
         // EXIST: exist(..., 'file') or exist(..., 'dir')
-        if self.is_enabled("EXIST") && func_name == "exist"
-            && has_exist_type_arg(node, source) {
-                diags.push(make_diag("EXIST", node));
-            }
+        if self.is_enabled("EXIST") && func_name == "exist" && has_exist_type_arg(node, source) {
+            diags.push(make_diag("EXIST", node));
+        }
 
         // ST2NM: str2num
         if self.is_enabled("ST2NM") && func_name == "str2num" {

@@ -7,7 +7,10 @@ impl LanguageSpecEngine {
     pub(crate) fn check_mcasc(&self, class: &ClassMeta, diagnostics: &mut Vec<Diagnostic>) {
         if class.is_sealed() {
             for pb in &class.properties_blocks {
-                let is_abstract = pb.attributes.iter().any(|a| a.name == "Abstract" && !a.negated);
+                let is_abstract = pb
+                    .attributes
+                    .iter()
+                    .any(|a| a.name == "Abstract" && !a.negated);
                 if is_abstract {
                     for prop in &pb.properties {
                         diagnostics.push(Diagnostic {
@@ -31,7 +34,7 @@ impl LanguageSpecEngine {
 
 #[cfg(test)]
 mod tests {
-    
+
     use crate::language_spec::tests::{check_source, filter_by_id};
 
     #[test]

@@ -58,10 +58,7 @@ impl BugsEngine {
             byte_range: node.start_byte()..node.end_byte(),
             line: pos.row + 1,
             column: pos.column + 1,
-            fix: Some(Fix::new(
-                node.start_byte()..node.end_byte(),
-                replacement,
-            )),
+            fix: Some(Fix::new(node.start_byte()..node.end_byte(), replacement)),
         }]
     }
 }

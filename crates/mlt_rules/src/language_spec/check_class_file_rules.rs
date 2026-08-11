@@ -34,8 +34,18 @@ const KNOWN_BASE_CLASSES: &[&str] = &[
 
 /// Known top-level packages whose classes are always resolvable (CLSUNK).
 const KNOWN_PACKAGES: &[&str] = &[
-    "matlab", "simulink", "coder", "parallel", "dsp", "vision", "stateflow",
-    "fixedpoint", "sldv", "polyspace", "rf", "mpt",
+    "matlab",
+    "simulink",
+    "coder",
+    "parallel",
+    "dsp",
+    "vision",
+    "stateflow",
+    "fixedpoint",
+    "sldv",
+    "polyspace",
+    "rf",
+    "mpt",
 ];
 
 impl LanguageSpecEngine {
@@ -127,7 +137,10 @@ impl LanguageSpecEngine {
 
     /// NOPRV: a class definition cannot be inside a private directory.
     fn check_noprv(&self, class: &ClassMeta, ctx: &FileContext, diagnostics: &mut Vec<Diagnostic>) {
-        let in_private = ctx.file_path.components().any(|c| c.as_os_str() == "private");
+        let in_private = ctx
+            .file_path
+            .components()
+            .any(|c| c.as_os_str() == "private");
         if in_private && self.is_check_enabled("NOPRV") {
             diagnostics.push(Diagnostic {
                 rule_id: "NOPRV",
@@ -171,7 +184,10 @@ classdef (Sealed, Abstract) Foo
 end
 ";
         let diags = check_source(source, "Foo.m");
-        assert!(filter_by_id(&diags, "CLSAT").is_empty(), "CLSAT should NOT fire when attributes precede the class name");
+        assert!(
+            filter_by_id(&diags, "CLSAT").is_empty(),
+            "CLSAT should NOT fire when attributes precede the class name"
+        );
     }
 
     #[test]
@@ -181,7 +197,10 @@ classdef Foo
 end
 ";
         let diags = check_source(source, "Foo.m");
-        assert!(filter_by_id(&diags, "CLSAT").is_empty(), "CLSAT should NOT fire when the class has no attributes");
+        assert!(
+            filter_by_id(&diags, "CLSAT").is_empty(),
+            "CLSAT should NOT fire when the class has no attributes"
+        );
     }
 
     // -- CLSUNK --------------------------------------------------------------
@@ -193,7 +212,10 @@ classdef Foo < NotARealClass
 end
 ";
         let diags = check_source(source, "Foo.m");
-        assert!(!filter_by_id(&diags, "CLSUNK").is_empty(), "CLSUNK should fire for an unknown bare superclass name");
+        assert!(
+            !filter_by_id(&diags, "CLSUNK").is_empty(),
+            "CLSUNK should fire for an unknown bare superclass name"
+        );
     }
 
     #[test]
@@ -203,7 +225,10 @@ classdef Foo < nonexistent.pkg.Base
 end
 ";
         let diags = check_source(source, "Foo.m");
-        assert!(!filter_by_id(&diags, "CLSUNK").is_empty(), "CLSUNK should fire for an unknown lowercase package prefix");
+        assert!(
+            !filter_by_id(&diags, "CLSUNK").is_empty(),
+            "CLSUNK should fire for an unknown lowercase package prefix"
+        );
     }
 
     #[test]
@@ -222,7 +247,10 @@ classdef Qux < value
 end
 ";
         let diags = check_source(source, "Foo.m");
-        assert!(filter_by_id(&diags, "CLSUNK").is_empty(), "CLSUNK should NOT fire for known base classes");
+        assert!(
+            filter_by_id(&diags, "CLSUNK").is_empty(),
+            "CLSUNK should NOT fire for known base classes"
+        );
     }
 
     // -- NOPRV ---------------------------------------------------------------
@@ -234,7 +262,10 @@ classdef Foo
 end
 ";
         let diags = check_source(source, "private/Foo.m");
-        assert!(!filter_by_id(&diags, "NOPRV").is_empty(), "NOPRV should fire for a class in a private directory");
+        assert!(
+            !filter_by_id(&diags, "NOPRV").is_empty(),
+            "NOPRV should fire for a class in a private directory"
+        );
     }
 
     #[test]
@@ -244,7 +275,10 @@ classdef Foo
 end
 ";
         let diags = check_source(source, "Foo.m");
-        assert!(filter_by_id(&diags, "NOPRV").is_empty(), "NOPRV should NOT fire for a class outside private directories");
+        assert!(
+            filter_by_id(&diags, "NOPRV").is_empty(),
+            "NOPRV should NOT fire for a class outside private directories"
+        );
     }
 
     #[test]
@@ -255,7 +289,10 @@ function y = f(x)
 end
 ";
         let diags = check_source(source, "private/f.m");
-        assert!(filter_by_id(&diags, "NOPRV").is_empty(), "NOPRV should NOT fire for a function file in a private directory");
+        assert!(
+            filter_by_id(&diags, "NOPRV").is_empty(),
+            "NOPRV should NOT fire for a function file in a private directory"
+        );
     }
 
     // -- Config respect ------------------------------------------------------
@@ -279,6 +316,9 @@ end
             file_path: path,
         };
         let diags = engine.check_file(&ctx);
-        assert!(filter_by_id(&diags, "CLSUNK").is_empty(), "CLSUNK should be disabled via config disabled_checks");
+        assert!(
+            filter_by_id(&diags, "CLSUNK").is_empty(),
+            "CLSUNK should be disabled via config disabled_checks"
+        );
     }
 }

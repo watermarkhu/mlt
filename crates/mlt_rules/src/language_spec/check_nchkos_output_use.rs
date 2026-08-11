@@ -30,7 +30,7 @@ impl LanguageSpecEngine {
 
 #[cfg(test)]
 mod tests {
-    
+
     use crate::language_spec::tests::{check_source, filter_by_id};
 
     #[test]
@@ -43,7 +43,11 @@ end
 ";
         let diags = check_source(source, "foo.m");
         let nchkos = filter_by_id(&diags, "NCHKOS");
-        assert_eq!(nchkos.len(), 2, "NCHKOS should fire for narginchk/nargoutchk on RHS");
+        assert_eq!(
+            nchkos.len(),
+            2,
+            "NCHKOS should fire for narginchk/nargoutchk on RHS"
+        );
     }
 
     #[test]
@@ -56,6 +60,9 @@ end
 ";
         let diags = check_source(source, "foo.m");
         let nchkos = filter_by_id(&diags, "NCHKOS");
-        assert!(nchkos.is_empty(), "NCHKOS should NOT fire for standalone calls");
+        assert!(
+            nchkos.is_empty(),
+            "NCHKOS should NOT fire for standalone calls"
+        );
     }
 }

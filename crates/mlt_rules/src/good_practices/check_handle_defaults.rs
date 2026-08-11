@@ -65,7 +65,9 @@ impl GoodPracticesEngine {
             let text = default.trim();
 
             // MCHDP: direct handle construction as the default value.
-            if self.is_check_enabled("MCHDP") && is_handle_constructor_default(text, &own_class, own_is_handle) {
+            if self.is_check_enabled("MCHDP")
+                && is_handle_constructor_default(text, &own_class, own_is_handle)
+            {
                 diagnostics.push(Diagnostic {
                     rule_id: "MCHDP",
                     message: "A property default value that is a handle will cause all instances \
@@ -109,7 +111,11 @@ impl GoodPracticesEngine {
 
 /// Whether a property default value text directly constructs a handle:
 /// a known handle class (or the file's own handle class) followed by `(`.
-fn is_handle_constructor_default(text: &str, own_class: &Option<String>, own_is_handle: bool) -> bool {
+fn is_handle_constructor_default(
+    text: &str,
+    own_class: &Option<String>,
+    own_is_handle: bool,
+) -> bool {
     for class in KNOWN_HANDLE_CLASSES {
         if text.starts_with(class) && text[class.len()..].trim_start().starts_with('(') {
             return true;

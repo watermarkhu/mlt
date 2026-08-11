@@ -50,11 +50,7 @@ impl UnsetVariablesEngine {
     }
 
     /// Check whether a variable has any non-OutputArg definition in the scope.
-    fn has_non_output_def(
-        &self,
-        scope: &crate::analysis::symbols::Scope,
-        name: &str,
-    ) -> bool {
+    fn has_non_output_def(&self, scope: &crate::analysis::symbols::Scope, name: &str) -> bool {
         scope
             .defs
             .iter()
@@ -83,7 +79,9 @@ end
 ";
         let diags = lint_file(&*engine(), source);
         assert!(
-            diags.iter().any(|d| d.rule_id == "STOUT" && d.message.contains("'y'")),
+            diags
+                .iter()
+                .any(|d| d.rule_id == "STOUT" && d.message.contains("'y'")),
             "expected STOUT for 'y', got: {diags:?}"
         );
     }
@@ -97,7 +95,9 @@ end
 ";
         let diags = lint_file(&*engine(), source);
         assert!(
-            !diags.iter().any(|d| d.rule_id == "STOUT" && d.message.contains("'y'")),
+            !diags
+                .iter()
+                .any(|d| d.rule_id == "STOUT" && d.message.contains("'y'")),
             "should not fire STOUT when output is assigned"
         );
     }

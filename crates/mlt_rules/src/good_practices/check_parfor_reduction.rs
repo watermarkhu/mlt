@@ -113,9 +113,7 @@ fn rhs_root_is_binary(mut node: Node) -> bool {
 fn expression_uses_variable(node: Node, name: &str, source: &str) -> bool {
     let mut identifiers = Vec::new();
     collect_plain_identifiers(node, &mut identifiers);
-    identifiers
-        .iter()
-        .any(|id| node_text(*id, source) == name)
+    identifiers.iter().any(|id| node_text(*id, source) == name)
 }
 
 /// Collect identifier descendants, pruning nested functions and lambdas.

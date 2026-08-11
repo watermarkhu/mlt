@@ -4,11 +4,7 @@ use super::*;
 
 impl UnusedEngine {
     /// Run VANUS check: value assigned to `ans` is unused.
-    pub(crate) fn check_vanus(
-        &self,
-        table: &SymbolTable,
-        diagnostics: &mut Vec<Diagnostic>,
-    ) {
+    pub(crate) fn check_vanus(&self, table: &SymbolTable, diagnostics: &mut Vec<Diagnostic>) {
         if self.is_check_disabled("VANUS") {
             return;
         }
@@ -35,7 +31,6 @@ impl UnusedEngine {
             }
         }
     }
-
 }
 
 #[cfg(test)]
@@ -58,8 +53,10 @@ mod tests {
 
     #[test]
     fn vanus_ok_when_ans_used() {
-        let diags = lint_file(&*engine(), "function foo()\n    ans = 5;\n    disp(ans);\nend\n");
+        let diags = lint_file(
+            &*engine(),
+            "function foo()\n    ans = 5;\n    disp(ans);\nend\n",
+        );
         assert!(!has_id(&diags, "VANUS"), "got: {diags:?}");
     }
-
 }

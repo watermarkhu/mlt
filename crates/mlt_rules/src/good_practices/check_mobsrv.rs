@@ -21,9 +21,10 @@ impl GoodPracticesEngine {
                 .attributes
                 .iter()
                 .any(|a| a.name == "Constant" && !a.negated);
-            let has_observable = block.attributes.iter().any(|a| {
-                !a.negated && (a.name == "SetObservable" || a.name == "GetObservable")
-            });
+            let has_observable = block
+                .attributes
+                .iter()
+                .any(|a| !a.negated && (a.name == "SetObservable" || a.name == "GetObservable"));
             if !has_constant || !has_observable {
                 continue;
             }
@@ -33,7 +34,9 @@ impl GoodPracticesEngine {
 
             diagnostics.push(Diagnostic {
                 rule_id: "MOBSRV",
-                message: "Using SetObservable or GetObservable on a Constant property has no effect.".to_string(),
+                message:
+                    "Using SetObservable or GetObservable on a Constant property has no effect."
+                        .to_string(),
                 severity: Severity::Info,
                 byte_range: start_byte..end_byte,
                 line,

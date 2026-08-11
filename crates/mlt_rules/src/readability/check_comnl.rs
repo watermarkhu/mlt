@@ -32,7 +32,9 @@ impl ReadabilityEngine {
             let row = rows[i];
             let next_row = rows[i + 1];
 
-            let Some(comma) = find_trailing_comma(row) else { continue };
+            let Some(comma) = find_trailing_comma(row) else {
+                continue;
+            };
 
             // Source gap between this row and the next row.
             let gap = &source[row.end_byte()..next_row.start_byte()];
@@ -113,10 +115,9 @@ mod tests {
 
     #[test]
     fn comnl_disabled_via_config_does_not_fire() {
-        let config = Config::from_toml(
-            "[lint.rules.READABILITY_ENGINE]\ndisabled_checks = [\"COMNL\"]\n",
-        )
-        .expect("valid config");
+        let config =
+            Config::from_toml("[lint.rules.READABILITY_ENGINE]\ndisabled_checks = [\"COMNL\"]\n")
+                .expect("valid config");
         let rule = ReadabilityEngine::from_config(&config);
         let diags = lint_nodes(&*rule, "x = [1, 2,\n3, 4];\n");
         assert!(!has_id(&diags, "COMNL"), "got: {diags:?}");

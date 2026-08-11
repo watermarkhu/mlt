@@ -187,26 +187,70 @@ ICONS = {
 }
 
 
+def _split_table_row(line: str) -> list[str]:
+    """Split a `//! | a | b | c |` doc-table row on unescaped pipes.
+
+    Escaped pipes (backslash-pipe) inside cells are kept. Trailing/leading
+    whitespace is stripped from each cell.
+    """
+    cells: list[str] = []
+    current: list[str] = []
+    prev_backslash = False
+    for ch in line:
+        if ch == "|" and not prev_backslash:
+            cells.append("".join(current).strip())
+            current = []
+        else:
+            current.append(ch)
+        prev_backslash = ch == "\\"
+    cells.append("".join(current).strip())
+    return cells
+
+
 def extract_table(mod_dir: str) -> list[tuple[str, str]]:
-    """Extract check-ID tables from the module's doc-comment table."""
+    """Extract check-ID tables from the module's doc-comment table.
+
+    Supports both 2-column (`| ID | Description |`) and 3-column tables
+    (`| ID | Description | Detection |` or `| ID | Severity | Description |`).
+    The Description column is located from the header row.
+    """
     path = REPO / "crates" / "mlt_rules" / "src" / mod_dir / "mod.rs"
     try:
         lines = path.read_text(encoding="utf-8").splitlines()
     except FileNotFoundError:
         return []
+
+    # Find the header row and the index of the Description column.
+    desc_index = 1
+    for ln in lines:
+        if "//!" not in ln or "|" not in ln:
+            continue
+        cells = _split_table_row(ln.split("//!", 1)[1])
+        if any("Check ID" in c for c in cells):
+            for i, c in enumerate(cells):
+                if "Description" in c:
+                    desc_index = i
+                    break
+            break
+
     rows = []
     for ln in lines:
-        m = re.match(r'\s*//!\s*\|\s*`?([A-Z][A-Z0-9]{2,})`?\s*\|\s*(.+)', ln)
-        if m:
-            desc = m.group(2).strip()
-            if desc.endswith('|'):
-                desc = desc[:-1].strip()
-            desc = re.sub(r'^(Error|Warning|Info)\s*\|\s*', '', desc)
-            # Doc-comment tables escape literal pipes as `\\|`; normalize to a
-            # single pipe so the markdown cell renderer (which escapes `|` to
-            # `\|`) produces a valid table.
-            desc = desc.replace('\\|', '|')
-            rows.append((m.group(1), desc))
+        if "//!" not in ln or "|" not in ln:
+            continue
+        body = ln.split("//!", 1)[1]
+        cells = _split_table_row(body)
+        if len(cells) < desc_index + 1:
+            continue
+        # cells[0] is the leading empty cell (before the first `|`); the ID is
+        # the first cell that looks like a check ID.
+        id_cell = next((c for c in cells if re.fullmatch(r"[A-Z][A-Z0-9]{2,}", c.strip('` '))), None)
+        if id_cell is None:
+            continue
+        id_cell = id_cell.strip('` ')
+        desc = cells[desc_index].strip()
+        desc = re.sub(r'^(Error|Warning|Info)\s*\|?\s*', '', desc)
+        desc = desc.replace('\\|', '|').strip()
+        rows.append((id_cell, desc))
     return rows
 
 
@@ -296,16 +340,23 @@ CURATED = {
 
 
 def render_engine_page(mod: str, rows: list[tuple[str, str]]) -> str:
+    """Render a complete engine page (front matter + body)."""
+    icon = ICONS.get(mod, 'lucide/list-checks')
+    return '---\n' + f'icon: {icon}\n' + '---\n\n' + render_engine_body(mod, rows)
+
+
+def render_engine_body(mod: str, rows: list[tuple[str, str]]) -> str:
+    """Render the body of an engine page (no front matter).
+
+    This is printed by the `markdown-exec` block in the docs/rules/<mod>.md
+    stub files, so the tables are regenerated from the live module doc
+    comments at `zensical build` time.
+    """
     eng = MODULES[mod]
     title = TITLES[mod]
     cat = CATEGORY[mod]
     severity = SEVERITIES.get(mod, 'Warning')
-    icon = ICONS.get(mod, 'lucide/list-checks')
     lines = [
-        '---',
-        f'icon: {icon}',
-        '---',
-        '',
         f'# {title}',
         '',
         f'**Default severity:** {severity}',
@@ -344,15 +395,45 @@ def render_engine_page(mod: str, rows: list[tuple[str, str]]) -> str:
     return '\n'.join(lines)
 
 
+def _engine_rows(mod: str) -> list[tuple[str, str]]:
+    rows = CURATED.get(mod) or extract_table(mod)
+    seen = set()
+    return [r for r in rows if not (r[0] in seen or seen.add(r[0]))]
+
+
+def engine_page_stub(mod: str) -> str:
+    """The tiny markdown-exec stub written to docs/rules/<mod>.md.
+
+    The body (including the Check IDs table) is generated at docs build time
+    from the live module doc comments, so the stub never drifts from the
+    source. `--write-pages` materializes the body for a one-off commit instead.
+    """
+    icon = ICONS.get(mod, 'lucide/list-checks')
+    rows = _engine_rows(mod)
+    n = len(rows)
+    return (
+        '---\n'
+        f'icon: {icon}\n'
+        '---\n\n'
+        '<!-- Generated at docs build time from the module doc comments via\n'
+        '     markdown-exec; regenerate the committed copy with:\n'
+        '       python3 tools/gen_rules_docs.py --write-pages -->\n\n'
+        '```python exec="on"\n'
+        'import sys\n'
+        'sys.path.insert(0, "tools")\n'
+        'from gen_rules_docs import render_engine_body, _engine_rows\n'
+        f'print(render_engine_body("{mod}", _engine_rows("{mod}")))\n'
+        '```\n'
+        f'\n<!-- {n} checks -->\n'
+    )
+
+
 def write_engine_pages() -> int:
+    """Write the docs/rules/<mod>.md stub files (markdown-exec)."""
     for mod in MODULES:
-        rows = CURATED.get(mod) or extract_table(mod)
-        seen = set()
-        rows = [r for r in rows if not (r[0] in seen or seen.add(r[0]))]
-        page = render_engine_page(mod, rows)
         out = REPO / "docs" / "rules" / f'{mod.replace("_", "-")}.md'
-        out.write_text(page, encoding="utf-8")
-        print(f"wrote {out.relative_to(REPO)} ({len(rows)} checks)")
+        out.write_text(engine_page_stub(mod), encoding="utf-8")
+        print(f"wrote {out.relative_to(REPO)} ({len(_engine_rows(mod))} checks)")
     return 0
 
 

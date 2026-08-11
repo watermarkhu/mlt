@@ -91,9 +91,7 @@ fn collect_vtfin(tree: &tree_sitter::Tree, source: &str, diagnostics: &mut Vec<D
         let pos = f.start_position();
         diagnostics.push(Diagnostic {
             rule_id: "VTFIN",
-            message: format!(
-                "{value} should be the first input argument to the {name} function."
-            ),
+            message: format!("{value} should be the first input argument to the {name} function."),
             severity: Severity::Warning,
             byte_range: f.start_byte()..f.end_byte(),
             line: pos.row + 1,
@@ -345,7 +343,11 @@ mod tests {
             .find(|d| d.rule_id == "VTFIN")
             .unwrap();
         assert!(diag.message.contains("value"), "got: {}", diag.message);
-        assert!(diag.message.contains("validateFoo"), "got: {}", diag.message);
+        assert!(
+            diag.message.contains("validateFoo"),
+            "got: {}",
+            diag.message
+        );
     }
 
     #[test]

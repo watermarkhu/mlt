@@ -64,19 +64,19 @@
 //! disabled_checks = []
 //! ```
 
-mod check_file;
+mod check_assignment_lhs;
+mod check_call_syntax;
 mod check_directional_formatting;
 mod check_error_nodes;
+mod check_file;
 mod check_file_name;
 mod check_file_structure;
 mod check_function_names;
-mod check_statements;
-mod check_assignment_lhs;
-mod check_reserved_and_not;
-mod check_unterminated;
-mod check_number_literals;
-mod check_call_syntax;
 mod check_name_value;
+mod check_number_literals;
+mod check_reserved_and_not;
+mod check_statements;
+mod check_unterminated;
 mod check_validation_order;
 
 use std::collections::HashSet;
@@ -88,24 +88,69 @@ use tree_sitter::Node;
 
 /// expressions in MATLAB.
 const RESERVED_KEYWORDS: &[&str] = &[
-    "else", "end", "if", "for", "while", "switch", "case", "otherwise",
-    "classdef", "function", "try", "catch", "break", "continue", "return",
-    "persistent", "global", "parfor", "spmd", "properties", "methods",
-    "events", "enumeration",
+    "else",
+    "end",
+    "if",
+    "for",
+    "while",
+    "switch",
+    "case",
+    "otherwise",
+    "classdef",
+    "function",
+    "try",
+    "catch",
+    "break",
+    "continue",
+    "return",
+    "persistent",
+    "global",
+    "parfor",
+    "spmd",
+    "properties",
+    "methods",
+    "events",
+    "enumeration",
 ];
 
 /// Keywords that open a block which must be closed with a matching `end`.
 const BLOCK_OPENERS: &[&str] = &[
-    "if", "for", "while", "switch", "try", "function", "classdef",
-    "properties", "methods", "events", "enumeration",
+    "if",
+    "for",
+    "while",
+    "switch",
+    "try",
+    "function",
+    "classdef",
+    "properties",
+    "methods",
+    "events",
+    "enumeration",
 ];
 
 /// in an arguments block.
 const KNOWN_CLASS_NAMES: &[&str] = &[
-    "double", "single", "int8", "int16", "int32", "int64",
-    "uint8", "uint16", "uint32", "uint64",
-    "char", "string", "logical", "cell", "struct", "function_handle",
-    "table", "timetable", "categorical", "datetime", "duration",
+    "double",
+    "single",
+    "int8",
+    "int16",
+    "int32",
+    "int64",
+    "uint8",
+    "uint16",
+    "uint32",
+    "uint64",
+    "char",
+    "string",
+    "logical",
+    "cell",
+    "struct",
+    "function_handle",
+    "table",
+    "timetable",
+    "categorical",
+    "datetime",
+    "duration",
 ];
 
 // ---------------------------------------------------------------------------
@@ -164,15 +209,20 @@ impl SyntaxErrorsEngine {
         ranges.iter().any(|r| r.contains(&pos))
     }
 
-
     // -----------------------------------------------------------------------
     // Tree ERROR/MISSING node analysis (SYNER, NOPAR2, EOLPAR, ENDPAR, ENDCT, EOFMI)
     // -----------------------------------------------------------------------
 
     /// Heuristic: does this error text look like an unclosed bracket?
     pub(crate) fn looks_like_missing_bracket(text: &str) -> bool {
-        let opens: usize = text.chars().filter(|&c| c == '(' || c == '[' || c == '{').count();
-        let closes: usize = text.chars().filter(|&c| c == ')' || c == ']' || c == '}').count();
+        let opens: usize = text
+            .chars()
+            .filter(|&c| c == '(' || c == '[' || c == '{')
+            .count();
+        let closes: usize = text
+            .chars()
+            .filter(|&c| c == ')' || c == ']' || c == '}')
+            .count();
         opens > closes
     }
 
@@ -263,7 +313,10 @@ impl SyntaxErrorsEngine {
     }
 
     /// that starts with a block-opening keyword).
-    pub(crate) fn classify_missing_end(node: &Node, source: &str) -> Option<(&'static str, String)> {
+    pub(crate) fn classify_missing_end(
+        node: &Node,
+        source: &str,
+    ) -> Option<(&'static str, String)> {
         let start = node.start_byte();
         let node_end = node.end_byte().min(source.len());
         let text = &source[start..node_end];
@@ -298,7 +351,9 @@ impl SyntaxErrorsEngine {
                 .prev_sibling()
                 .map(|prev| {
                     let prev_text = &source[prev.start_byte()..prev.end_byte()];
-                    BLOCK_OPENERS.iter().any(|kw| prev_text.to_lowercase().contains(kw))
+                    BLOCK_OPENERS
+                        .iter()
+                        .any(|kw| prev_text.to_lowercase().contains(kw))
                 })
                 .unwrap_or(false);
             if opener_in_text || opener_in_prev {
@@ -331,11 +386,7 @@ impl SyntaxErrorsEngine {
             let sib_text = &source[sib.start_byte()..sib.end_byte()];
             match sib_text.split_whitespace().next() {
                 Some(first) if BLOCK_OPENERS.contains(&first.to_lowercase().as_str()) => {
-                    let kw = text
-                        .split_whitespace()
-                        .next()
-                        .unwrap_or("")
-                        .to_uppercase();
+                    let kw = text.split_whitespace().next().unwrap_or("").to_uppercase();
                     let matched = first.to_uppercase();
                     return Some((
                         "ENDCT3",
@@ -357,21 +408,17 @@ impl SyntaxErrorsEngine {
     // File structure validation (BDFIL, CLIS, CLTWO, SOFOC, SEMFU)
     // -----------------------------------------------------------------------
 
-
     // -----------------------------------------------------------------------
     // Function name validation (FNDOT, FNSWA)
     // -----------------------------------------------------------------------
-
 
     // -----------------------------------------------------------------------
     // Statement validation (NOLHS, SEPEXR, REDEF)
     // -----------------------------------------------------------------------
 
-
     // -----------------------------------------------------------------------
     // Assignment LHS validation (UNSET, LHROW)
     // -----------------------------------------------------------------------
-
 
     // -----------------------------------------------------------------------
     // Reserved words and invalid ~ usage (RESWD, SYNEND, MCPLD, BADNOT,
@@ -533,8 +580,7 @@ impl SyntaxErrorsEngine {
             return None;
         }
 
-        let suffix = if rest.len() >= 3 && Self::suffix_bits(&rest[rest.len() - 3..]).is_some()
-        {
+        let suffix = if rest.len() >= 3 && Self::suffix_bits(&rest[rest.len() - 3..]).is_some() {
             Some(&rest[rest.len() - 3..])
         } else if rest.len() >= 2 && Self::suffix_bits(&rest[rest.len() - 2..]).is_some() {
             Some(&rest[rest.len() - 2..])
@@ -584,7 +630,11 @@ impl SyntaxErrorsEngine {
     }
 
     /// Build an Error-severity diagnostic pointing at a number literal node.
-    pub(crate) fn number_diagnostic(rule_id: &'static str, message: &str, node: Node) -> Diagnostic {
+    pub(crate) fn number_diagnostic(
+        rule_id: &'static str,
+        message: &str,
+        node: Node,
+    ) -> Diagnostic {
         let pos = node.start_position();
         Diagnostic {
             rule_id,
@@ -662,18 +712,15 @@ impl SyntaxErrorsEngine {
     }
 
     pub(crate) fn arguments_child(node: Node) -> Option<Node> {
-        (0..node.child_count())
-            .find_map(|i| node.child(i).filter(|c| c.kind() == "arguments"))
+        (0..node.child_count()).find_map(|i| node.child(i).filter(|c| c.kind() == "arguments"))
     }
 
     pub(crate) fn has_eq_token(node: Node) -> bool {
-        (0..node.child_count())
-            .any(|i| node.child(i).is_some_and(|c| c.kind() == "="))
+        (0..node.child_count()).any(|i| node.child(i).is_some_and(|c| c.kind() == "="))
     }
 
     pub(crate) fn has_string_child(node: Node) -> bool {
-        (0..node.child_count())
-            .any(|i| node.child(i).is_some_and(|c| c.kind() == "string"))
+        (0..node.child_count()).any(|i| node.child(i).is_some_and(|c| c.kind() == "string"))
     }
 
     pub(crate) fn last_named_child(node: Node) -> Option<Node> {
@@ -717,7 +764,6 @@ impl SyntaxErrorsEngine {
         let last_child = node.child(child_count - 1)?;
         Self::last_descendant(last_child)
     }
-
 }
 
 impl Rule for SyntaxErrorsEngine {
@@ -823,7 +869,6 @@ mod tests {
     use crate::test_util::{has_id, lint_file};
     use mlt_core::Config;
 
-
     fn engine_with_disabled(checks: &[&str]) -> Box<dyn Rule> {
         let disabled = checks
             .iter()
@@ -847,6 +892,3 @@ mod tests {
         assert!(!has_id(&diags, "TWOCM"), "got: {diags:?}");
     }
 }
-
-
-

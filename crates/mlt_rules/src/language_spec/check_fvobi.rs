@@ -4,7 +4,11 @@ use super::*;
 
 impl LanguageSpecEngine {
     /// FVOBI: Declare all input argument blocks before all output arguments blocks.
-    pub(crate) fn check_fvobi(&self, blocks: &[ArgumentsBlockMeta], diagnostics: &mut Vec<Diagnostic>) {
+    pub(crate) fn check_fvobi(
+        &self,
+        blocks: &[ArgumentsBlockMeta],
+        diagnostics: &mut Vec<Diagnostic>,
+    ) {
         if !self.is_check_enabled("FVOBI") {
             return;
         }
@@ -26,7 +30,7 @@ impl LanguageSpecEngine {
 
 #[cfg(test)]
 mod tests {
-    
+
     use crate::language_spec::tests::{check_source, filter_by_id};
 
     #[test]

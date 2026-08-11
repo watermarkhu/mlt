@@ -4,7 +4,11 @@ use super::*;
 
 impl LanguageSpecEngine {
     /// FVOVREP: varargout can only be used inside a repeating output arguments block.
-    pub(crate) fn check_fvovrep(&self, blocks: &[ArgumentsBlockMeta], diagnostics: &mut Vec<Diagnostic>) {
+    pub(crate) fn check_fvovrep(
+        &self,
+        blocks: &[ArgumentsBlockMeta],
+        diagnostics: &mut Vec<Diagnostic>,
+    ) {
         if !self.is_check_enabled("FVOVREP") {
             return;
         }
@@ -28,7 +32,7 @@ impl LanguageSpecEngine {
 
 #[cfg(test)]
 mod tests {
-    
+
     use crate::language_spec::tests::{check_source, filter_by_id};
 
     #[test]

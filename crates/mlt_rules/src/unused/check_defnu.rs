@@ -4,11 +4,7 @@ use super::*;
 
 impl UnusedEngine {
     /// Run DEFNU check: local function defined but never called.
-    pub(crate) fn check_defnu(
-        &self,
-        table: &SymbolTable,
-        diagnostics: &mut Vec<Diagnostic>,
-    ) {
+    pub(crate) fn check_defnu(&self, table: &SymbolTable, diagnostics: &mut Vec<Diagnostic>) {
         if self.is_check_disabled("DEFNU") {
             return;
         }
@@ -44,7 +40,6 @@ impl UnusedEngine {
             }
         }
     }
-
 }
 
 #[cfg(test)]
@@ -76,5 +71,4 @@ mod tests {
         );
         assert!(!has_id(&diags, "DEFNU"), "got: {diags:?}");
     }
-
 }

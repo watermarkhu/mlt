@@ -57,7 +57,14 @@ pub fn lint_nodes(rule: &dyn Rule, source: &str) -> Vec<Diagnostic> {
         }
     }
 
-    walk(tree.root_node(), source, path, &targets, rule, &mut diagnostics);
+    walk(
+        tree.root_node(),
+        source,
+        path,
+        &targets,
+        rule,
+        &mut diagnostics,
+    );
     diagnostics
 }
 
