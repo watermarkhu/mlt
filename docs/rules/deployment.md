@@ -35,4 +35,4 @@ The `DEPLOYMENT_ENGINE` rule implements the MATLAB Code Analyzer checks in the *
 skip_checks = ["AGROW"]   # Turn off specific checks
 ```
 
-See [Configuration](configuration.md#per-engine-parameters) for the full parameter list and [rules.md](rules.md) for the complete rule inventory.
+See [Configuration](../configuration.md#per-engine-parameters) for the full parameter list and [../rules.md](../rules.md) for the complete rule inventory.

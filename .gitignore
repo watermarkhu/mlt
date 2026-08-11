@@ -21,3 +21,9 @@ target
 #.idea/
 
 site/
+
+# WASM build artifacts
+.tools/
+crates/mlt_wasm/pkg/
+wasm-pkg/pkg/
+docs/assets/mlt-wasm/

@@ -60,4 +60,4 @@ The `BUGS_ENGINE` rule implements the MATLAB Code Analyzer checks in the **Bugs*
 disabled_checks = ["XXXX"]   # Turn off specific checks
 ```
 
-See [Configuration](configuration.md#per-engine-parameters) for the full parameter list and [rules.md](rules.md) for the complete rule inventory.
+See [Configuration](../configuration.md#per-engine-parameters) for the full parameter list and [../rules.md](../rules.md) for the complete rule inventory.

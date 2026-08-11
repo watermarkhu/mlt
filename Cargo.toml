@@ -4,6 +4,7 @@ members = [
     "crates/mlt_cli",
     "crates/mlt_core",
     "crates/mlt_rules",
+    "crates/mlt_wasm",
 ]
 
 [workspace.package]

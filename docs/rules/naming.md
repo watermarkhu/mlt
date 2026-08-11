@@ -50,4 +50,4 @@ prefix = "v"
 
 ## Related rules
 
-- [Configuration](configuration.md#per-engine-parameters) — naming engine parameters
+- [Configuration](../configuration.md#per-engine-parameters) — naming engine parameters

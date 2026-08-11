@@ -31,7 +31,7 @@ This engine covers **243 check IDs**. Examples:
 | `HIST` | Use `histogram` instead of `hist` |
 | `HISTC` | Use `histcounts` instead of `histc` |
 
-The complete ID table is generated into [rules.md](rules.md).
+The complete ID table is generated into [../rules.md](../rules.md).
 
 ## Configuration
 
@@ -55,4 +55,4 @@ None — the diagnostic message names the recommended replacement.
 ## Related rules
 
 - [Compatibility](compatibility.md) — removed/deprecated functions
-- [Configuration](configuration.md#per-engine-parameters)
+- [Configuration](../configuration.md#per-engine-parameters)

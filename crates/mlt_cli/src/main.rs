@@ -6,7 +6,7 @@ use std::process;
 use anyhow::{Context, Result};
 use clap::Parser;
 
-use mlt_core::{Config, Diagnostic, Linter, RuleRegistry, Severity};
+use mlt_core::{apply_fixes, Config, Diagnostic, Linter, RuleRegistry, Severity};
 
 /// mlt — An ultra-fast, extensible linter for MATLAB.
 #[derive(Parser, Debug)]
@@ -180,44 +180,4 @@ fn load_config(explicit_path: Option<&std::path::Path>) -> Result<Config> {
         }
         None => Ok(Config::default()),
     }
-}
-
-/// Apply all available fixes to the source text.
-///
-/// Fixes are applied in reverse byte-offset order to preserve earlier offsets.
-/// Overlapping fixes are detected and skipped to prevent corruption.
-fn apply_fixes(source: &str, diagnostics: &[mlt_core::Diagnostic]) -> String {
-    // Collect all edits (primary + additional) from diagnostics that have fixes.
-    let mut edits: Vec<&mlt_core::Fix> = Vec::new();
-    for diag in diagnostics {
-        if let Some(ref fix) = diag.fix {
-            edits.push(fix);
-            for additional in &fix.additional_edits {
-                edits.push(additional);
-            }
-        }
-    }
-
-    // Sort edits by byte_range start in reverse order so applying them
-    // back-to-front doesn't invalidate earlier offsets.
-    edits.sort_by_key(|e| std::cmp::Reverse(e.byte_range.start));
-
-    let mut result = source.to_string();
-    let mut last_edit_start = usize::MAX;
-
-    for fix in edits {
-        // Skip overlapping edits: if this fix's range overlaps with the
-        // previously applied fix, skip it to prevent corruption.
-        if fix.byte_range.end > last_edit_start {
-            eprintln!(
-                "mlt: warning: skipping overlapping fix at bytes {}..{} (conflicts with edit at {})",
-                fix.byte_range.start, fix.byte_range.end, last_edit_start
-            );
-            continue;
-        }
-        result.replace_range(fix.byte_range.clone(), &fix.replacement);
-        last_edit_start = fix.byte_range.start;
-    }
-
-    result
 }
