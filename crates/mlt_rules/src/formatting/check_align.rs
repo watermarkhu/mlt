@@ -9,12 +9,7 @@ use super::*;
 impl FormattingEngine {
     /// Check that `elseif_clause` and `else_clause` are aligned with their
     /// `if_statement` parent.
-    pub(crate) fn check_align(
-        &self,
-        node: Node,
-        source: &str,
-        diagnostics: &mut Vec<Diagnostic>,
-    ) {
+    pub(crate) fn check_align(&self, node: Node, source: &str, diagnostics: &mut Vec<Diagnostic>) {
         let if_col = node.start_position().column;
         let child_count = node.child_count();
 
@@ -43,10 +38,7 @@ impl FormattingEngine {
                     byte_range: line_start..child.start_byte(),
                     line: pos.row + 1,
                     column: clause_col + 1,
-                    fix: Some(Fix::new(
-                        line_start..child.start_byte(),
-                        " ".repeat(if_col),
-                    )),
+                    fix: Some(Fix::new(line_start..child.start_byte(), " ".repeat(if_col))),
                 });
             }
         }
@@ -55,7 +47,7 @@ impl FormattingEngine {
 
 #[cfg(test)]
 mod tests {
-    
+
     use crate::formatting::tests::{has_id, lint};
 
     // -- ALIGN ---------------------------------------------------------------

@@ -40,8 +40,8 @@ impl ReadabilityEngine {
                             .filter_map(|i| inner_args.named_child(i))
                             .collect();
                         if inner_named.len() == 1 {
-                            let var_text = &source
-                                [inner_named[0].start_byte()..inner_named[0].end_byte()];
+                            let var_text =
+                                &source[inner_named[0].start_byte()..inner_named[0].end_byte()];
                             results.push(self.diag(
                                 "PSIZE",
                                 "Use 'numel(x)' instead of 'prod(size(x))'",

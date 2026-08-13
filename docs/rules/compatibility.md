@@ -29,7 +29,7 @@ These map onto the MATLAB Code Analyzer inventory targets (Compatibility Conside
 
 In addition, **65 of 68** generic AST-pattern checks (`function_name = ""`) that the lookup table cannot match are implemented in `compatibility/generic/` — these cover property/attribute removals, removed options and input arguments, forward-compatibility version gates, global/import scope, and behavior-change figure/axes properties.
 
-The complete ID table is generated into [rules.md](rules.md).
+The complete ID table is generated into [../rules.md](../rules.md).
 
 ## Configuration
 
@@ -56,4 +56,4 @@ None — these checks report deprecated or removed usage; the replacement is des
 ## Related rules
 
 - [Suggested Improvements](suggested-improvements.md) — replacement-function suggestions
-- [Configuration](configuration.md#per-engine-parameters)
+- [Configuration](../configuration.md#per-engine-parameters)

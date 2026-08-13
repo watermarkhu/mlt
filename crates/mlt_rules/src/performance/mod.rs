@@ -82,47 +82,171 @@ struct CheckMeta {
 
 /// All 41 performance check definitions.
 const CHECKS: &[CheckMeta] = &[
-    CheckMeta { id: "AGROW",       description: "Variable appears to grow inside a loop; consider preallocating" },
-    CheckMeta { id: "SAGROW",      description: "Struct field appears to grow inside a loop; consider preallocating" },
-    CheckMeta { id: "AND2",        description: "Use '&&' (short-circuit) instead of '&' for scalar logical operations" },
-    CheckMeta { id: "OR2",         description: "Use '||' (short-circuit) instead of '|' for scalar logical operations" },
-    CheckMeta { id: "MINV",        description: "Use 'A\\b' instead of 'inv(A)*b' for better numerical stability and performance" },
-    CheckMeta { id: "GFLD",        description: "Use dynamic field names 's.(name)' instead of 'getfield'" },
-    CheckMeta { id: "SFLD",        description: "Use dynamic field names 's.(name) = val' instead of 'setfield'" },
-    CheckMeta { id: "EXIST",       description: "Use 'isfile' or 'isfolder' instead of 'exist(..., ''file'')'" },
-    CheckMeta { id: "PFBNS",       description: "Array initialized as empty then grown; preallocate for known size" },
-    CheckMeta { id: "CCAT",        description: "Use string concatenation or 'join' instead of repeated 'strcat'" },
-    CheckMeta { id: "CCAT1",       description: "Consider using 'join' for cell array of character vector concatenation" },
-    CheckMeta { id: "ISMT",        description: "Use 'isempty(x)' instead of 'length(x)==0'" },
-    CheckMeta { id: "ISCL",        description: "Use 'isscalar(x)' instead of 'length(x)==1'" },
-    CheckMeta { id: "ST2NM",       description: "Use 'str2double' instead of 'str2num' for performance and security" },
-    CheckMeta { id: "FLPST",       description: "Use 'flip' instead of 'flipud'/'fliplr' on vectors" },
-    CheckMeta { id: "MXFND",       description: "Use 'max(x,[],''all'')' instead of nested 'max(max(x))'" },
-    CheckMeta { id: "EFIND",       description: "Use logical indexing instead of 'find' when used as a subscript" },
-    CheckMeta { id: "UDIM",        description: "Specify dimension argument in 'sum'/'max'/'min'/'prod'/'mean'" },
-    CheckMeta { id: "FREAD",       description: "Specify precision argument in 'fread' for performance" },
-    CheckMeta { id: "N2UNI",       description: "Consider using 'unique' instead of 'setdiff'+'union' pattern" },
-    CheckMeta { id: "TNMLP",       description: "Move 'tic'/'toc' outside loop body for accurate timing" },
-    CheckMeta { id: "LAXES",       description: "Cache axes handle returned by 'gca'/'gcf' instead of repeated calls" },
-    CheckMeta { id: "MMTC",        description: "Use '.^2' instead of '.*' with the same operand" },
-    CheckMeta { id: "MRPBW",       description: "Use 'imbinarize' instead of deprecated 'im2bw'" },
-    CheckMeta { id: "SPRIX",       description: "Avoid indexing sparse matrices with full logical arrays" },
-    CheckMeta { id: "TRSRT",       description: "Use 'mink'/'maxk' instead of sorting then indexing" },
-    CheckMeta { id: "GRIDD",       description: "Consider using 'meshgrid' or 'ndgrid' for grid generation" },
-    CheckMeta { id: "CLALL",       description: "'clear all' also clears breakpoints; use 'clearvars' instead" },
-    CheckMeta { id: "CLCLS",       description: "'clear classes' is a slow operation; avoid in production code" },
-    CheckMeta { id: "CLFUNC",      description: "'clear functions' is a slow operation; avoid in production code" },
-    CheckMeta { id: "CLJAVA",      description: "'clear java' is a slow operation; avoid in production code" },
-    CheckMeta { id: "CLMEX",       description: "'clear mex' clears all MEX files from memory; use specific names" },
-    CheckMeta { id: "CLEAR0ARGS",  description: "'clear' with no arguments clears all variables; use 'clearvars' instead" },
-    CheckMeta { id: "RGXP1",       description: "Regex pattern can be simplified for performance" },
-    CheckMeta { id: "RGXPI",       description: "Use 'regexpi' instead of 'regexp' with 'ignorecase' option" },
-    CheckMeta { id: "TRIM1",       description: "Use 'strtrim' instead of 'deblank' for more thorough whitespace removal" },
-    CheckMeta { id: "TRIM2",       description: "Use 'strip' instead of 'strtrim' for more flexible whitespace removal" },
-    CheckMeta { id: "STTOK",       description: "Use 'split' instead of 'strtok' in a loop for better performance" },
-    CheckMeta { id: "STNCI",       description: "Use 'strcmpi' instead of wrapping 'strcmp' with 'lower'" },
-    CheckMeta { id: "STCCS",       description: "Use 'contains' instead of '~isempty(strfind(...))'" },
-    CheckMeta { id: "FNDSB",       description: "Use 'contains' or 'matches' instead of 'findstr'" },
+    CheckMeta {
+        id: "AGROW",
+        description: "Variable appears to grow inside a loop; consider preallocating",
+    },
+    CheckMeta {
+        id: "SAGROW",
+        description: "Struct field appears to grow inside a loop; consider preallocating",
+    },
+    CheckMeta {
+        id: "AND2",
+        description: "Use '&&' (short-circuit) instead of '&' for scalar logical operations",
+    },
+    CheckMeta {
+        id: "OR2",
+        description: "Use '||' (short-circuit) instead of '|' for scalar logical operations",
+    },
+    CheckMeta {
+        id: "MINV",
+        description:
+            "Use 'A\\b' instead of 'inv(A)*b' for better numerical stability and performance",
+    },
+    CheckMeta {
+        id: "GFLD",
+        description: "Use dynamic field names 's.(name)' instead of 'getfield'",
+    },
+    CheckMeta {
+        id: "SFLD",
+        description: "Use dynamic field names 's.(name) = val' instead of 'setfield'",
+    },
+    CheckMeta {
+        id: "EXIST",
+        description: "Use 'isfile' or 'isfolder' instead of 'exist(..., ''file'')'",
+    },
+    CheckMeta {
+        id: "PFBNS",
+        description: "Array initialized as empty then grown; preallocate for known size",
+    },
+    CheckMeta {
+        id: "CCAT",
+        description: "Use string concatenation or 'join' instead of repeated 'strcat'",
+    },
+    CheckMeta {
+        id: "CCAT1",
+        description: "Consider using 'join' for cell array of character vector concatenation",
+    },
+    CheckMeta {
+        id: "ISMT",
+        description: "Use 'isempty(x)' instead of 'length(x)==0'",
+    },
+    CheckMeta {
+        id: "ISCL",
+        description: "Use 'isscalar(x)' instead of 'length(x)==1'",
+    },
+    CheckMeta {
+        id: "ST2NM",
+        description: "Use 'str2double' instead of 'str2num' for performance and security",
+    },
+    CheckMeta {
+        id: "FLPST",
+        description: "Use 'flip' instead of 'flipud'/'fliplr' on vectors",
+    },
+    CheckMeta {
+        id: "MXFND",
+        description: "Use 'max(x,[],''all'')' instead of nested 'max(max(x))'",
+    },
+    CheckMeta {
+        id: "EFIND",
+        description: "Use logical indexing instead of 'find' when used as a subscript",
+    },
+    CheckMeta {
+        id: "UDIM",
+        description: "Specify dimension argument in 'sum'/'max'/'min'/'prod'/'mean'",
+    },
+    CheckMeta {
+        id: "FREAD",
+        description: "Specify precision argument in 'fread' for performance",
+    },
+    CheckMeta {
+        id: "N2UNI",
+        description: "Consider using 'unique' instead of 'setdiff'+'union' pattern",
+    },
+    CheckMeta {
+        id: "TNMLP",
+        description: "Move 'tic'/'toc' outside loop body for accurate timing",
+    },
+    CheckMeta {
+        id: "LAXES",
+        description: "Cache axes handle returned by 'gca'/'gcf' instead of repeated calls",
+    },
+    CheckMeta {
+        id: "MMTC",
+        description: "Use '.^2' instead of '.*' with the same operand",
+    },
+    CheckMeta {
+        id: "MRPBW",
+        description: "Use 'imbinarize' instead of deprecated 'im2bw'",
+    },
+    CheckMeta {
+        id: "SPRIX",
+        description: "Avoid indexing sparse matrices with full logical arrays",
+    },
+    CheckMeta {
+        id: "TRSRT",
+        description: "Use 'mink'/'maxk' instead of sorting then indexing",
+    },
+    CheckMeta {
+        id: "GRIDD",
+        description: "Consider using 'meshgrid' or 'ndgrid' for grid generation",
+    },
+    CheckMeta {
+        id: "CLALL",
+        description: "'clear all' also clears breakpoints; use 'clearvars' instead",
+    },
+    CheckMeta {
+        id: "CLCLS",
+        description: "'clear classes' is a slow operation; avoid in production code",
+    },
+    CheckMeta {
+        id: "CLFUNC",
+        description: "'clear functions' is a slow operation; avoid in production code",
+    },
+    CheckMeta {
+        id: "CLJAVA",
+        description: "'clear java' is a slow operation; avoid in production code",
+    },
+    CheckMeta {
+        id: "CLMEX",
+        description: "'clear mex' clears all MEX files from memory; use specific names",
+    },
+    CheckMeta {
+        id: "CLEAR0ARGS",
+        description: "'clear' with no arguments clears all variables; use 'clearvars' instead",
+    },
+    CheckMeta {
+        id: "RGXP1",
+        description: "Regex pattern can be simplified for performance",
+    },
+    CheckMeta {
+        id: "RGXPI",
+        description: "Use 'regexpi' instead of 'regexp' with 'ignorecase' option",
+    },
+    CheckMeta {
+        id: "TRIM1",
+        description: "Use 'strtrim' instead of 'deblank' for more thorough whitespace removal",
+    },
+    CheckMeta {
+        id: "TRIM2",
+        description: "Use 'strip' instead of 'strtrim' for more flexible whitespace removal",
+    },
+    CheckMeta {
+        id: "STTOK",
+        description: "Use 'split' instead of 'strtok' in a loop for better performance",
+    },
+    CheckMeta {
+        id: "STNCI",
+        description: "Use 'strcmpi' instead of wrapping 'strcmp' with 'lower'",
+    },
+    CheckMeta {
+        id: "STCCS",
+        description: "Use 'contains' instead of '~isempty(strfind(...))'",
+    },
+    CheckMeta {
+        id: "FNDSB",
+        description: "Use 'contains' or 'matches' instead of 'findstr'",
+    },
 ];
 
 /// Look up check description by ID.
@@ -176,11 +300,7 @@ impl PerformanceEngine {
     // -----------------------------------------------------------------------
 
     /// File-level check for array/struct growth inside loops.
-    fn check_growth_in_loops(
-        &self,
-        tree: &tree_sitter::Tree,
-        source: &str,
-    ) -> Vec<Diagnostic> {
+    fn check_growth_in_loops(&self, tree: &tree_sitter::Tree, source: &str) -> Vec<Diagnostic> {
         let mut diags = Vec::new();
         let root = tree.root_node();
         self.traverse_for_growth(&root, source, false, &mut diags);
@@ -412,7 +532,10 @@ pub(crate) fn node_text<'a>(node: tree_sitter::Node<'a>, source: &'a str) -> &'a
 }
 
 /// Extract function name from a `function_call` node.
-pub(crate) fn extract_func_name<'a>(node: tree_sitter::Node<'a>, source: &'a str) -> Option<&'a str> {
+pub(crate) fn extract_func_name<'a>(
+    node: tree_sitter::Node<'a>,
+    source: &'a str,
+) -> Option<&'a str> {
     if node.kind() != "function_call" {
         return None;
     }
@@ -421,7 +544,10 @@ pub(crate) fn extract_func_name<'a>(node: tree_sitter::Node<'a>, source: &'a str
 }
 
 /// Extract command name from a `command` node.
-pub(crate) fn extract_command_name<'a>(node: tree_sitter::Node<'a>, source: &'a str) -> Option<&'a str> {
+pub(crate) fn extract_command_name<'a>(
+    node: tree_sitter::Node<'a>,
+    source: &'a str,
+) -> Option<&'a str> {
     if node.kind() != "command" {
         return None;
     }
@@ -434,7 +560,10 @@ pub(crate) fn extract_command_name<'a>(node: tree_sitter::Node<'a>, source: &'a 
 }
 
 /// Extract command arguments as a list of text fragments.
-pub(crate) fn extract_command_args<'a>(node: tree_sitter::Node<'a>, source: &'a str) -> Vec<&'a str> {
+pub(crate) fn extract_command_args<'a>(
+    node: tree_sitter::Node<'a>,
+    source: &'a str,
+) -> Vec<&'a str> {
     let mut args = Vec::new();
     let count = node.child_count();
     for i in 0..count {
@@ -803,10 +932,7 @@ pub(crate) fn extract_length_comparison<'a>(
 /// Create a fix that renames the function in a function_call node.
 pub(crate) fn fix_rename_func(node: tree_sitter::Node, source: &str, new_name: &str) -> Fix {
     if let Some(name_node) = node.child_by_field_name("name") {
-        Fix::new(
-            name_node.start_byte()..name_node.end_byte(),
-            new_name,
-        )
+        Fix::new(name_node.start_byte()..name_node.end_byte(), new_name)
     } else {
         // Fallback: try to replace the function name textually.
         let text = node_text(node, source);
@@ -831,10 +957,7 @@ pub(crate) fn fix_replace_operator(
         if let Some(child) = node.child(i) {
             let text = node_text(child, source);
             if text == old_op {
-                return Some(Fix::new(
-                    child.start_byte()..child.end_byte(),
-                    new_op,
-                ));
+                return Some(Fix::new(child.start_byte()..child.end_byte(), new_op));
             }
         }
     }
@@ -870,8 +993,8 @@ pub(crate) mod test_support {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
     use super::test_support::engine;
+    use super::*;
     use crate::test_util::{has_id, lint_file, lint_nodes};
     use mlt_core::Config;
 

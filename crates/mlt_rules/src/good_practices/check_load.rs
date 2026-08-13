@@ -26,8 +26,9 @@ impl GoodPracticesEngine {
         let pos = node.start_position();
         vec![Diagnostic {
             rule_id: "LOAD",
-            message: "load() without output variable creates variables implicitly; use s = load(...)"
-                .to_string(),
+            message:
+                "load() without output variable creates variables implicitly; use s = load(...)"
+                    .to_string(),
             severity: Severity::Warning,
             byte_range: node.start_byte()..node.end_byte(),
             line: pos.row + 1,

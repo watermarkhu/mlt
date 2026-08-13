@@ -4,11 +4,7 @@ use super::*;
 
 impl UnusedEngine {
     /// Run UNRCH check: unreachable code after return/break/continue.
-    pub(crate) fn check_unrch(
-        &self,
-        ctx: &FileContext,
-        diagnostics: &mut Vec<Diagnostic>,
-    ) {
+    pub(crate) fn check_unrch(&self, ctx: &FileContext, diagnostics: &mut Vec<Diagnostic>) {
         if self.is_check_disabled("UNRCH") {
             return;
         }
@@ -26,7 +22,6 @@ impl UnusedEngine {
             });
         }
     }
-
 }
 
 #[cfg(test)]
@@ -49,8 +44,10 @@ mod tests {
 
     #[test]
     fn unrch_ok_without_terminator() {
-        let diags = lint_file(&*engine(), "function foo()\n    x = 1;\n    disp(x);\nend\n");
+        let diags = lint_file(
+            &*engine(),
+            "function foo()\n    x = 1;\n    disp(x);\nend\n",
+        );
         assert!(!has_id(&diags, "UNRCH"), "got: {diags:?}");
     }
-
 }

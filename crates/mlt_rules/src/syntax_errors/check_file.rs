@@ -3,139 +3,111 @@
 use super::*;
 
 impl SyntaxErrorsEngine {
-        pub(crate) fn scan_source_text(
-            &self,
-            source: &str,
-            skip_ranges: &[Range<usize>],
-        ) -> Vec<Diagnostic> {
-            let mut diagnostics = Vec::new();
-            let bytes = source.as_bytes();
-            let len = bytes.len();
+    pub(crate) fn scan_source_text(
+        &self,
+        source: &str,
+        skip_ranges: &[Range<usize>],
+    ) -> Vec<Diagnostic> {
+        let mut diagnostics = Vec::new();
+        let bytes = source.as_bytes();
+        let len = bytes.len();
 
-            // Track line/column for diagnostics.
-            let mut line = 1usize;
-            let mut line_start = 0usize;
+        // Track line/column for diagnostics.
+        let mut line = 1usize;
+        let mut line_start = 0usize;
 
-            let mut i = 0;
-            while i < len {
-                let b = bytes[i];
+        let mut i = 0;
+        while i < len {
+            let b = bytes[i];
 
-                // Track newlines.
-                if b == b'\n' {
-                    line += 1;
-                    line_start = i + 1;
-                    i += 1;
-                    continue;
-                }
+            // Track newlines.
+            if b == b'\n' {
+                line += 1;
+                line_start = i + 1;
+                i += 1;
+                continue;
+            }
 
-                // BADCH: Invalid control characters (< 0x20 except \t, \n, \r).
-                if self.is_check_enabled("BADCH")
-                    && b < 0x20
-                    && b != b'\t'
-                    && b != b'\n'
-                    && b != b'\r'
-                    && !Self::in_skip_range(i, skip_ranges)
-                {
-                    diagnostics.push(Diagnostic {
-                        rule_id: "BADCH",
-                        message: format!(
-                            "Invalid control character (0x{:02X}) in source",
-                            b
-                        ),
-                        severity: Severity::Error,
-                        byte_range: i..i + 1,
-                        line,
-                        column: i - line_start + 1,
-                        fix: None,
-                    });
-                    i += 1;
-                    continue;
-                }
+            // BADCH: Invalid control characters (< 0x20 except \t, \n, \r).
+            if self.is_check_enabled("BADCH")
+                && b < 0x20
+                && b != b'\t'
+                && b != b'\n'
+                && b != b'\r'
+                && !Self::in_skip_range(i, skip_ranges)
+            {
+                diagnostics.push(Diagnostic {
+                    rule_id: "BADCH",
+                    message: format!("Invalid control character (0x{:02X}) in source", b),
+                    severity: Severity::Error,
+                    byte_range: i..i + 1,
+                    line,
+                    column: i - line_start + 1,
+                    fix: None,
+                });
+                i += 1;
+                continue;
+            }
 
-                // BADSP: Non-ASCII whitespace detection.
-                // Check for multi-byte UTF-8 sequences that are whitespace.
-                if self.is_check_enabled("BADSP") && b > 0x7F && !Self::in_skip_range(i, skip_ranges) {
-                    // Decode the UTF-8 character at this position.
-                    if let Some(ch) = source[i..].chars().next() {
-                        if ch.is_whitespace() && ch != ' ' && ch != '\t' && ch != '\n' && ch != '\r' {
-                            let ch_len = ch.len_utf8();
-                            diagnostics.push(Diagnostic {
-                                rule_id: "BADSP",
-                                message: format!(
-                                    "Non-ASCII whitespace character (U+{:04X}) in source",
-                                    ch as u32
-                                ),
-                                severity: Severity::Error,
-                                byte_range: i..i + ch_len,
-                                line,
-                                column: i - line_start + 1,
-                                fix: None,
-                            });
-                            i += ch_len;
-                            continue;
-                        }
-                    }
-                }
-
-                // BADNE: `!=` (MATLAB uses `~=`).
-                if self.is_check_enabled("BADNE")
-                    && b == b'!'
-                    && i + 1 < len
-                    && bytes[i + 1] == b'='
-                    && !Self::in_skip_range(i, skip_ranges)
-                {
-                    diagnostics.push(Diagnostic {
-                        rule_id: "BADNE",
-                        message: "Use '~=' instead of '!=' for not-equal in MATLAB".to_string(),
-                        severity: Severity::Error,
-                        byte_range: i..i + 2,
-                        line,
-                        column: i - line_start + 1,
-                        fix: Some(mlt_core::Fix::new(i..i + 2, "~=")),
-                    });
-                    i += 2;
-                    continue;
-                }
-
-                // BADOT: `..` not part of `...` (line continuation).
-                if self.is_check_enabled("BADOT")
-                    && b == b'.'
-                    && i + 1 < len
-                    && bytes[i + 1] == b'.'
-                    && !Self::in_skip_range(i, skip_ranges)
-                {
-                    // Check if this is part of `...` (line continuation).
-                    let is_ellipsis = i + 2 < len && bytes[i + 2] == b'.';
-                    if !is_ellipsis {
+            // BADSP: Non-ASCII whitespace detection.
+            // Check for multi-byte UTF-8 sequences that are whitespace.
+            if self.is_check_enabled("BADSP") && b > 0x7F && !Self::in_skip_range(i, skip_ranges) {
+                // Decode the UTF-8 character at this position.
+                if let Some(ch) = source[i..].chars().next() {
+                    if ch.is_whitespace() && ch != ' ' && ch != '\t' && ch != '\n' && ch != '\r' {
+                        let ch_len = ch.len_utf8();
                         diagnostics.push(Diagnostic {
-                            rule_id: "BADOT",
-                            message: "Invalid '..' operator; did you mean '...' (line continuation)?"
-                                .to_string(),
+                            rule_id: "BADSP",
+                            message: format!(
+                                "Non-ASCII whitespace character (U+{:04X}) in source",
+                                ch as u32
+                            ),
                             severity: Severity::Error,
-                            byte_range: i..i + 2,
+                            byte_range: i..i + ch_len,
                             line,
                             column: i - line_start + 1,
                             fix: None,
                         });
-                        i += 2;
-                        continue;
-                    } else {
-                        // Skip the whole `...`.
-                        i += 3;
+                        i += ch_len;
                         continue;
                     }
                 }
+            }
 
-                // TWOCM: `,,` (double comma).
-                if self.is_check_enabled("TWOCM")
-                    && b == b','
-                    && i + 1 < len
-                    && bytes[i + 1] == b','
-                    && !Self::in_skip_range(i, skip_ranges)
-                {
+            // BADNE: `!=` (MATLAB uses `~=`).
+            if self.is_check_enabled("BADNE")
+                && b == b'!'
+                && i + 1 < len
+                && bytes[i + 1] == b'='
+                && !Self::in_skip_range(i, skip_ranges)
+            {
+                diagnostics.push(Diagnostic {
+                    rule_id: "BADNE",
+                    message: "Use '~=' instead of '!=' for not-equal in MATLAB".to_string(),
+                    severity: Severity::Error,
+                    byte_range: i..i + 2,
+                    line,
+                    column: i - line_start + 1,
+                    fix: Some(mlt_core::Fix::new(i..i + 2, "~=")),
+                });
+                i += 2;
+                continue;
+            }
+
+            // BADOT: `..` not part of `...` (line continuation).
+            if self.is_check_enabled("BADOT")
+                && b == b'.'
+                && i + 1 < len
+                && bytes[i + 1] == b'.'
+                && !Self::in_skip_range(i, skip_ranges)
+            {
+                // Check if this is part of `...` (line continuation).
+                let is_ellipsis = i + 2 < len && bytes[i + 2] == b'.';
+                if !is_ellipsis {
                     diagnostics.push(Diagnostic {
-                        rule_id: "TWOCM",
-                        message: "Double comma ',,'; possible typo".to_string(),
+                        rule_id: "BADOT",
+                        message: "Invalid '..' operator; did you mean '...' (line continuation)?"
+                            .to_string(),
                         severity: Severity::Error,
                         byte_range: i..i + 2,
                         line,
@@ -144,22 +116,46 @@ impl SyntaxErrorsEngine {
                     });
                     i += 2;
                     continue;
+                } else {
+                    // Skip the whole `...`.
+                    i += 3;
+                    continue;
                 }
-
-                // Advance past multi-byte UTF-8 characters.
-                if b > 0x7F {
-                    if let Some(ch) = source[i..].chars().next() {
-                        i += ch.len_utf8();
-                        continue;
-                    }
-                }
-
-                i += 1;
             }
 
-            diagnostics
+            // TWOCM: `,,` (double comma).
+            if self.is_check_enabled("TWOCM")
+                && b == b','
+                && i + 1 < len
+                && bytes[i + 1] == b','
+                && !Self::in_skip_range(i, skip_ranges)
+            {
+                diagnostics.push(Diagnostic {
+                    rule_id: "TWOCM",
+                    message: "Double comma ',,'; possible typo".to_string(),
+                    severity: Severity::Error,
+                    byte_range: i..i + 2,
+                    line,
+                    column: i - line_start + 1,
+                    fix: None,
+                });
+                i += 2;
+                continue;
+            }
+
+            // Advance past multi-byte UTF-8 characters.
+            if b > 0x7F {
+                if let Some(ch) = source[i..].chars().next() {
+                    i += ch.len_utf8();
+                    continue;
+                }
+            }
+
+            i += 1;
         }
 
+        diagnostics
+    }
 }
 
 #[cfg(test)]
@@ -171,8 +167,6 @@ mod tests {
     fn engine() -> Box<dyn Rule> {
         SyntaxErrorsEngine::from_config(&Config::default())
     }
-
-
 
     // -- BADNE: `!=` instead of `~=` ----------------------------------------
 
@@ -188,7 +182,6 @@ mod tests {
         assert!(!has_id(&diags, "BADNE"), "got: {diags:?}");
     }
 
-
     // -- BADOT: `..` not part of `...` --------------------------------------
 
     #[test]
@@ -202,7 +195,6 @@ mod tests {
         let diags = lint_file(&*engine(), "x = 1 + ...\n    2;\n");
         assert!(!has_id(&diags, "BADOT"), "got: {diags:?}");
     }
-
 
     // -- TWOCM: double comma ------------------------------------------------
 
@@ -218,7 +210,6 @@ mod tests {
         assert!(!has_id(&diags, "TWOCM"), "got: {diags:?}");
     }
 
-
     // -- BADCH: invalid control characters ----------------------------------
 
     #[test]
@@ -233,7 +224,6 @@ mod tests {
         assert!(!has_id(&diags, "BADCH"), "got: {diags:?}");
     }
 
-
     // -- BADSP: non-ASCII whitespace ----------------------------------------
 
     #[test]
@@ -247,5 +237,4 @@ mod tests {
         let diags = lint_file(&*engine(), "x = 1;\n");
         assert!(!has_id(&diags, "BADSP"), "got: {diags:?}");
     }
-
 }

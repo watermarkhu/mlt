@@ -9,7 +9,10 @@ impl LanguageSpecEngine {
             return;
         }
         for mb in &class.methods_blocks {
-            let is_abstract = mb.attributes.iter().any(|a| a.name == "Abstract" && !a.negated);
+            let is_abstract = mb
+                .attributes
+                .iter()
+                .any(|a| a.name == "Abstract" && !a.negated);
             let is_private = mb
                 .attributes
                 .iter()
@@ -33,7 +36,7 @@ impl LanguageSpecEngine {
 
 #[cfg(test)]
 mod tests {
-    
+
     use crate::language_spec::tests::{check_source, filter_by_id};
 
     #[test]

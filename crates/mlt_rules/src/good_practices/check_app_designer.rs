@@ -25,10 +25,7 @@ impl GoodPracticesEngine {
         let Some(class) = meta.class.as_ref() else {
             return Vec::new();
         };
-        let is_app_designer = class
-            .superclasses
-            .iter()
-            .any(|s| s.contains("matlab.apps"));
+        let is_app_designer = class.superclasses.iter().any(|s| s.contains("matlab.apps"));
         if !is_app_designer {
             return Vec::new();
         }
@@ -85,9 +82,9 @@ impl GoodPracticesEngine {
                 if scope.kind != crate::analysis::symbols::ScopeKind::Method {
                     continue;
                 }
-                let is_class_method = method_ranges.iter().any(|r| {
-                    r.start == scope.byte_range.start && r.end == scope.byte_range.end
-                });
+                let is_class_method = method_ranges
+                    .iter()
+                    .any(|r| r.start == scope.byte_range.start && r.end == scope.byte_range.end);
                 if !is_class_method {
                     continue;
                 }
@@ -98,16 +95,12 @@ impl GoodPracticesEngine {
                             && properties.contains(&d.name)
                             && !scope.defs.iter().any(|o| {
                                 o.name == d.name
-                                    && o.kind
-                                        == crate::analysis::symbols::DefKind::InputArg
+                                    && o.kind == crate::analysis::symbols::DefKind::InputArg
                             })
                         {
                             diagnostics.push(Diagnostic {
                                 rule_id: "ADPROP",
-                                message: format!(
-                                    "Use app.{} to refer to this property.",
-                                    d.name
-                                ),
+                                message: format!("Use app.{} to refer to this property.", d.name),
                                 severity: Severity::Warning,
                                 byte_range: d.byte_range.clone(),
                                 line: d.line,
@@ -228,10 +221,7 @@ mod tests {
              results = x;\n        end\n        function helper(app, x)\n        end\n    end\nend\n"
         );
         let ids = app_designer_ids(&source);
-        assert!(
-            !ids.contains(&"ADMTHDINV"),
-            "unexpected ADMTHDINV: {ids:?}"
-        );
+        assert!(!ids.contains(&"ADMTHDINV"), "unexpected ADMTHDINV: {ids:?}");
     }
 
     #[test]

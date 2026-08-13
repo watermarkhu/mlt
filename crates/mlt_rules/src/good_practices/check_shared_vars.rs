@@ -108,7 +108,11 @@ end
             .find(|d| d.rule_id == "SHVAU")
             .unwrap();
         assert!(diag.message.contains("x"), "got: {}", diag.message);
-        assert!(diag.message.contains("lines 6 and 4"), "got: {}", diag.message);
+        assert!(
+            diag.message.contains("lines 6 and 4"),
+            "got: {}",
+            diag.message
+        );
     }
 
     #[test]

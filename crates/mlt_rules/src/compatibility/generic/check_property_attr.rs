@@ -44,17 +44,20 @@ const REMOVED_NAMES: &[(&str, &str, &str)] = &[
 ];
 
 /// SETERR: 'ErrorMessage' property removal (setter context — distinct message).
-const SETERR_MSG: &str = "The 'ErrorMessage' property has been removed. There is no simple replacement for this.";
+const SETERR_MSG: &str =
+    "The 'ErrorMessage' property has been removed. There is no simple replacement for this.";
 
 /// DSPFDF: 'DirectFeedthrough' property of the VariableFractionalDelay class.
-const DSPFDF_MSG: &str = "'DirectFeedthrough' property of 'dsp.VariableFractionalDelay' class has been removed.";
+const DSPFDF_MSG: &str =
+    "'DirectFeedthrough' property of 'dsp.VariableFractionalDelay' class has been removed.";
 
 /// MCGCP message.
 const MCGCP_MSG: &str = "Defining a get method for a constant property is not supported.";
 /// MCPDC message.
 const MCPDC_MSG: &str = "Specifying both the 'Constant' and 'Dependent' attributes on the same property is not supported.";
 /// PSTAT message.
-const PSTAT_MSG: &str = "The 'Static' attribute on properties has been removed. Use the 'Constant' attribute instead.";
+const PSTAT_MSG: &str =
+    "The 'Static' attribute on properties has been removed. Use the 'Constant' attribute instead.";
 /// ATVIZW message.
 const ATVIZW_MSG: &str = "The 'Visible' attribute has been removed. Use the '~Hidden' attribute instead or omit the attribute entirely.";
 
@@ -76,12 +79,7 @@ pub(crate) fn collect_checks(
 
 impl CompatibilityEngine {
     /// MCPDC: a classdef's own attributes contain both Constant and Dependent.
-    fn check_class_attributes(
-        &self,
-        node: Node,
-        source: &str,
-        diagnostics: &mut Vec<Diagnostic>,
-    ) {
+    fn check_class_attributes(&self, node: Node, source: &str, diagnostics: &mut Vec<Diagnostic>) {
         if !has_attributes_with_both(node, "Constant", "Dependent", source) {
             return;
         }
@@ -89,12 +87,7 @@ impl CompatibilityEngine {
     }
 
     /// PSTAT / ATVIZW: a properties block uses Static or Visible attributes.
-    fn check_properties_block(
-        &self,
-        node: Node,
-        source: &str,
-        diagnostics: &mut Vec<Diagnostic>,
-    ) {
+    fn check_properties_block(&self, node: Node, source: &str, diagnostics: &mut Vec<Diagnostic>) {
         if has_attribute(node, "Static", source) {
             push_diag("PSTAT", PSTAT_MSG, node, Severity::Error, diagnostics);
         }
@@ -104,12 +97,7 @@ impl CompatibilityEngine {
     }
 
     /// MCGCP: a methods block defines `get.<Prop>` for a Constant property.
-    fn check_constant_getter(
-        &self,
-        node: Node,
-        source: &str,
-        diagnostics: &mut Vec<Diagnostic>,
-    ) {
+    fn check_constant_getter(&self, node: Node, source: &str, diagnostics: &mut Vec<Diagnostic>) {
         // Find getters in this methods block.
         let getter_props: Vec<String> = collect_getter_props(node, source);
         if getter_props.is_empty() {
@@ -129,18 +117,14 @@ impl CompatibilityEngine {
     }
 
     /// Removed name-value option/property names passed as string literals.
-    fn check_removed_name(
-        &self,
-        node: Node,
-        source: &str,
-        diagnostics: &mut Vec<Diagnostic>,
-    ) {
+    fn check_removed_name(&self, node: Node, source: &str, diagnostics: &mut Vec<Diagnostic>) {
         let text = unquoted(node, source);
         for (name, id, msg) in REMOVED_NAMES {
             if text == *name {
                 // DSPIDF vs DSPFDF: distinguish by the owning class in the same call.
                 let severity = Severity::Error;
-                if *id == "DSPIDF" && call_references_class(node, "dsp.VariableFractionalDelay", source)
+                if *id == "DSPIDF"
+                    && call_references_class(node, "dsp.VariableFractionalDelay", source)
                 {
                     push_diag("DSPFDF", DSPFDF_MSG, node, severity, diagnostics);
                     return;
@@ -157,12 +141,7 @@ impl CompatibilityEngine {
 }
 
 /// Whether `node`'s attributes (direct children) include both `a` and `b`.
-fn has_attributes_with_both(
-    node: Node,
-    a: &str,
-    b: &str,
-    source: &str,
-) -> bool {
+fn has_attributes_with_both(node: Node, a: &str, b: &str, source: &str) -> bool {
     let attrs = attribute_names(node, source);
     attrs.iter().any(|x| x == a) && attrs.iter().any(|x| x == b)
 }
@@ -192,7 +171,9 @@ fn attribute_names_in(attrs: Node, source: &str) -> Vec<String> {
     let mut cursor = attrs.walk();
     for child in attrs.children(&mut cursor) {
         if child.kind() == "attribute" {
-            if let Some(id) = child.children(&mut child.walk()).find(|c| c.kind() == "identifier")
+            if let Some(id) = child
+                .children(&mut child.walk())
+                .find(|c| c.kind() == "identifier")
             {
                 out.push(source[id.start_byte()..id.end_byte()].to_string());
             }
@@ -230,9 +211,10 @@ fn collect_constant_props(class: Node, source: &str) -> Vec<String> {
             let mut pc = child.walk();
             for p in child.children(&mut pc) {
                 if p.kind() == "property" {
-                    if let Some(id) = p.child_by_field_name("name").or_else(|| {
-                        p.children(&mut p.walk()).find(|c| c.kind() == "identifier")
-                    }) {
+                    if let Some(id) = p
+                        .child_by_field_name("name")
+                        .or_else(|| p.children(&mut p.walk()).find(|c| c.kind() == "identifier"))
+                    {
                         out.push(source[id.start_byte()..id.end_byte()].to_string());
                     }
                 }
@@ -249,7 +231,9 @@ fn call_references_class(node: Node, class: &str, source: &str) -> bool {
         if p.kind() == "function_call" {
             // The call's own name may be just the method (e.g. VariableIntegerDelay);
             // the dotted class is in an enclosing field_expression.
-            let own = p.child_by_field_name("name").map(|n| &source[n.start_byte()..n.end_byte()]);
+            let own = p
+                .child_by_field_name("name")
+                .map(|n| &source[n.start_byte()..n.end_byte()]);
             if let Some(n) = own {
                 if n.contains(class) {
                     return true;
@@ -340,7 +324,10 @@ mod tests {
 
     #[test]
     fn pstat_static_property_fires() {
-        let d = lint_file(&*engine(), "classdef Foo\nproperties (Static)\n x\nend\nend\n");
+        let d = lint_file(
+            &*engine(),
+            "classdef Foo\nproperties (Static)\n x\nend\nend\n",
+        );
         assert!(has_id(&d, "PSTAT"), "got: {d:?}");
     }
 
@@ -352,7 +339,10 @@ mod tests {
 
     #[test]
     fn atvizw_visible_property_fires() {
-        let d = lint_file(&*engine(), "classdef Foo\nproperties (Visible = off)\n x\nend\nend\n");
+        let d = lint_file(
+            &*engine(),
+            "classdef Foo\nproperties (Visible = off)\n x\nend\nend\n",
+        );
         assert!(has_id(&d, "ATVIZW"), "got: {d:?}");
     }
 
@@ -394,7 +384,10 @@ mod tests {
 
     #[test]
     fn hessm_initialhessmatrix_fires() {
-        let d = lint_file(&*engine(), "opts = optimoptions('fmincon','InitialHessMatrix',eye(3));\n");
+        let d = lint_file(
+            &*engine(),
+            "opts = optimoptions('fmincon','InitialHessMatrix',eye(3));\n",
+        );
         assert!(has_id(&d, "HESSM"), "got: {d:?}");
     }
 
@@ -437,14 +430,20 @@ mod tests {
 
     #[test]
     fn dspidf_directfeedthrough_variableinteger_fires() {
-        let d = lint_file(&*engine(), "d = dsp.VariableIntegerDelay('DirectFeedthrough', true);\n");
+        let d = lint_file(
+            &*engine(),
+            "d = dsp.VariableIntegerDelay('DirectFeedthrough', true);\n",
+        );
         assert!(has_id(&d, "DSPIDF"), "got: {d:?}");
         assert!(!has_id(&d, "DSPFDF"), "got: {d:?}");
     }
 
     #[test]
     fn dspfdf_directfeedthrough_variablefractional_fires() {
-        let d = lint_file(&*engine(), "d = dsp.VariableFractionalDelay('DirectFeedthrough', true);\n");
+        let d = lint_file(
+            &*engine(),
+            "d = dsp.VariableFractionalDelay('DirectFeedthrough', true);\n",
+        );
         assert!(has_id(&d, "DSPFDF"), "got: {d:?}");
     }
 
@@ -456,7 +455,10 @@ mod tests {
 
     #[test]
     fn coeffc3_customthird_fires() {
-        let d = lint_file(&*engine(), "set(obj, 'CustomThirdFilterCoefficientsDataType', x);\n");
+        let d = lint_file(
+            &*engine(),
+            "set(obj, 'CustomThirdFilterCoefficientsDataType', x);\n",
+        );
         assert!(has_id(&d, "COEFFC3"), "got: {d:?}");
     }
 }

@@ -11,7 +11,11 @@ impl LanguageSpecEngine {
         let abstract_props: Vec<&str> = class
             .properties_blocks
             .iter()
-            .filter(|pb| pb.attributes.iter().any(|a| a.name == "Abstract" && !a.negated))
+            .filter(|pb| {
+                pb.attributes
+                    .iter()
+                    .any(|a| a.name == "Abstract" && !a.negated)
+            })
             .flat_map(|pb| pb.properties.iter().map(|p| p.name.as_str()))
             .collect();
         if abstract_props.is_empty() {
@@ -48,7 +52,7 @@ impl LanguageSpecEngine {
 
 #[cfg(test)]
 mod tests {
-    
+
     use crate::language_spec::tests::{check_source, filter_by_id};
 
     #[test]
@@ -89,6 +93,9 @@ end
 ";
         let diags = check_source(source, "Foo.m");
         let hits = filter_by_id(&diags, "MCGSA");
-        assert!(hits.is_empty(), "MCGSA should NOT fire for a normal property");
+        assert!(
+            hits.is_empty(),
+            "MCGSA should NOT fire for a normal property"
+        );
     }
 }

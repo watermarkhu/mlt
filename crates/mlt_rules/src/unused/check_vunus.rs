@@ -4,11 +4,7 @@ use super::*;
 
 impl UnusedEngine {
     /// Run VUNUS check: variable assigned in all branches but unused after.
-    pub(crate) fn check_vunus(
-        &self,
-        table: &SymbolTable,
-        diagnostics: &mut Vec<Diagnostic>,
-    ) {
+    pub(crate) fn check_vunus(&self, table: &SymbolTable, diagnostics: &mut Vec<Diagnostic>) {
         if self.is_check_disabled("VUNUS") {
             return;
         }
@@ -63,7 +59,6 @@ impl UnusedEngine {
             }
         }
     }
-
 }
 
 #[cfg(test)]
@@ -95,5 +90,4 @@ mod tests {
         );
         assert!(!has_id(&diags, "VUNUS"), "got: {diags:?}");
     }
-
 }

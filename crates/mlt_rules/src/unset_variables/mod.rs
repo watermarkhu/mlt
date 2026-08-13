@@ -50,8 +50,22 @@ mod check_switch_pset;
 /// Common MATLAB builtins that look like variables but are actually
 /// constants/functions and should not trigger unset-variable warnings.
 pub(crate) const MATLAB_BUILTINS: &[&str] = &[
-    "true", "false", "pi", "inf", "Inf", "nan", "NaN", "eps", "i", "j", "end", "nargin",
-    "nargout", "varargin", "varargout", "ans",
+    "true",
+    "false",
+    "pi",
+    "inf",
+    "Inf",
+    "nan",
+    "NaN",
+    "eps",
+    "i",
+    "j",
+    "end",
+    "nargin",
+    "nargout",
+    "varargin",
+    "varargout",
+    "ans",
 ];
 
 // ---------------------------------------------------------------------------
@@ -199,7 +213,10 @@ impl Rule for UnsetVariablesEngine {
 ///
 /// Performs a DFS from the root, returning the first `function_definition` node
 /// whose byte range matches.
-pub(crate) fn find_function_node_at<'a>(tree: &'a Tree, byte_range: &std::ops::Range<usize>) -> Option<Node<'a>> {
+pub(crate) fn find_function_node_at<'a>(
+    tree: &'a Tree,
+    byte_range: &std::ops::Range<usize>,
+) -> Option<Node<'a>> {
     let mut stack = vec![tree.root_node()];
     while let Some(node) = stack.pop() {
         if node.kind() == "function_definition"
@@ -313,12 +330,10 @@ end
 ";
         let diags = lint(source);
         assert!(
-            !diags
-                .iter()
-                .any(|d| d.message.contains("'pi'")
-                    || d.message.contains("'inf'")
-                    || d.message.contains("'true'")
-                    || d.message.contains("'nargin'")),
+            !diags.iter().any(|d| d.message.contains("'pi'")
+                || d.message.contains("'inf'")
+                || d.message.contains("'true'")
+                || d.message.contains("'nargin'")),
             "builtins should not be flagged, got: {diags:?}"
         );
     }

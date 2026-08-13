@@ -24,14 +24,11 @@ impl BugsEngine {
         }
 
         let first_arg = args[0].trim();
-        let is_string =
-            (first_arg.starts_with('\'') && first_arg.ends_with('\''))
-                || (first_arg.starts_with('"') && first_arg.ends_with('"'));
+        let is_string = (first_arg.starts_with('\'') && first_arg.ends_with('\''))
+            || (first_arg.starts_with('"') && first_arg.ends_with('"'));
 
         if is_string {
-            let fn_name = first_arg
-                .trim_matches('\'')
-                .trim_matches('"');
+            let fn_name = first_arg.trim_matches('\'').trim_matches('"');
             let pos = node.start_position();
             vec![Diagnostic {
                 rule_id: "FUNFUN",

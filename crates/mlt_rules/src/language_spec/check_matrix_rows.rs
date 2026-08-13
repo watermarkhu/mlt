@@ -48,8 +48,7 @@ impl LanguageSpecEngine {
                 for elem in child.children(&mut inner_cursor) {
                     let k = elem.kind();
                     // Skip punctuation/separators
-                    if k != "," && k != ";" && k != "[" && k != "]" && k != " " && elem.is_named()
-                    {
+                    if k != "," && k != ";" && k != "[" && k != "]" && k != " " && elem.is_named() {
                         elem_count += 1;
                     }
                 }
@@ -60,7 +59,10 @@ impl LanguageSpecEngine {
         // Check if all rows have the same length (only if there are multiple rows)
         if row_lengths.len() > 1 {
             let first_len = row_lengths[0];
-            if row_lengths.iter().any(|&len| len != first_len && first_len > 0 && len > 0) {
+            if row_lengths
+                .iter()
+                .any(|&len| len != first_len && first_len > 0 && len > 0)
+            {
                 let pos = matrix_node.start_position();
                 diagnostics.push(Diagnostic {
                     rule_id: "ROWLN",

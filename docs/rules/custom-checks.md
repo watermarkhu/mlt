@@ -101,4 +101,4 @@ A threshold of `0` disables that check.
 
 ## Related rules
 
-- [Configuration](configuration.md#per-engine-parameters) — custom-checks parameters
+- [Configuration](../configuration.md#per-engine-parameters) — custom-checks parameters

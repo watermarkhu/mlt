@@ -9,7 +9,10 @@ impl LanguageSpecEngine {
             return;
         }
         for pb in &class.properties_blocks {
-            let is_weak = pb.attributes.iter().any(|a| a.name == "WeakHandle" && !a.negated);
+            let is_weak = pb
+                .attributes
+                .iter()
+                .any(|a| a.name == "WeakHandle" && !a.negated);
             if !is_weak {
                 continue;
             }
@@ -35,7 +38,7 @@ impl LanguageSpecEngine {
 
 #[cfg(test)]
 mod tests {
-    
+
     use crate::language_spec::tests::{check_source, filter_by_id};
 
     #[test]
@@ -66,6 +69,9 @@ end
 ";
         let diags = check_source(source, "Foo.m");
         let hits = filter_by_id(&diags, "MWKCL");
-        assert!(hits.is_empty(), "MWKCL should NOT fire for a typed property");
+        assert!(
+            hits.is_empty(),
+            "MWKCL should NOT fire for a typed property"
+        );
     }
 }

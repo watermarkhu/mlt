@@ -9,13 +9,18 @@ impl LanguageSpecEngine {
             return;
         }
         for mb in &class.methods_blocks {
-            let block_abstract = mb.attributes.iter().any(|a| a.name == "Abstract" && !a.negated);
+            let block_abstract = mb
+                .attributes
+                .iter()
+                .any(|a| a.name == "Abstract" && !a.negated);
             for method in &mb.methods {
-                if (method.is_setter || method.is_getter) && (method.is_abstract || block_abstract) {
+                if (method.is_setter || method.is_getter) && (method.is_abstract || block_abstract)
+                {
                     diagnostics.push(Diagnostic {
                         rule_id: "MCPSG",
-                        message: "Set or get method must be fully defined in the class definition file"
-                            .to_string(),
+                        message:
+                            "Set or get method must be fully defined in the class definition file"
+                                .to_string(),
                         severity: Severity::Error,
                         byte_range: method.byte_range.clone(),
                         line: method.line,
@@ -30,7 +35,7 @@ impl LanguageSpecEngine {
 
 #[cfg(test)]
 mod tests {
-    
+
     use crate::language_spec::tests::{check_source, filter_by_id};
 
     #[test]
@@ -70,6 +75,9 @@ end
 ";
         let diags = check_source(source, "Foo.m");
         let hits = filter_by_id(&diags, "MCPSG");
-        assert!(hits.is_empty(), "MCPSG should NOT fire for a defined setter");
+        assert!(
+            hits.is_empty(),
+            "MCPSG should NOT fire for a defined setter"
+        );
     }
 }

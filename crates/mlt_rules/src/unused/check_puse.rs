@@ -4,11 +4,7 @@ use super::*;
 
 impl UnusedEngine {
     /// Run PUSE check: global/persistent variables declared but not used.
-    pub(crate) fn check_puse(
-        &self,
-        table: &SymbolTable,
-        diagnostics: &mut Vec<Diagnostic>,
-    ) {
+    pub(crate) fn check_puse(&self, table: &SymbolTable, diagnostics: &mut Vec<Diagnostic>) {
         if self.is_check_disabled("PUSE") {
             return;
         }
@@ -32,9 +28,7 @@ impl UnusedEngine {
                     };
                     diagnostics.push(Diagnostic {
                         rule_id: "PUSE",
-                        message: format!(
-                            "{kind_str} variable '{name}' is declared but never used"
-                        ),
+                        message: format!("{kind_str} variable '{name}' is declared but never used"),
                         severity: Severity::Warning,
                         byte_range: def.byte_range.clone(),
                         line: def.line,
@@ -45,7 +39,6 @@ impl UnusedEngine {
             }
         }
     }
-
 }
 
 #[cfg(test)]
@@ -68,8 +61,10 @@ mod tests {
 
     #[test]
     fn puse_ok_when_global_used() {
-        let diags = lint_file(&*engine(), "function foo()\n    global g;\n    disp(g);\nend\n");
+        let diags = lint_file(
+            &*engine(),
+            "function foo()\n    global g;\n    disp(g);\nend\n",
+        );
         assert!(!has_id(&diags, "PUSE"), "got: {diags:?}");
     }
-
 }

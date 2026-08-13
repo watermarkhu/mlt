@@ -4,7 +4,11 @@ use super::*;
 
 impl LanguageSpecEngine {
     /// NPERS: Persistent declarations in script files.
-    pub(crate) fn check_npers(&self, symbol_table: &SymbolTable, diagnostics: &mut Vec<Diagnostic>) {
+    pub(crate) fn check_npers(
+        &self,
+        symbol_table: &SymbolTable,
+        diagnostics: &mut Vec<Diagnostic>,
+    ) {
         let root_scope = symbol_table.root_scope();
         for def in &root_scope.defs {
             if def.kind == DefKind::Persistent {
@@ -27,7 +31,7 @@ impl LanguageSpecEngine {
 
 #[cfg(test)]
 mod tests {
-    
+
     use crate::language_spec::tests::{check_source, filter_by_id};
 
     #[test]

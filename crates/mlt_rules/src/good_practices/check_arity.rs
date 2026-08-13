@@ -52,8 +52,8 @@ const ARITY_TOML_SOURCE: &str = include_str!("../data/arity.toml");
 
 /// Parsed builtin arity table: function name → `(min_args, max_args)`.
 static ARITY_TABLE: LazyLock<HashMap<String, (usize, usize)>> = LazyLock::new(|| {
-    let data: ArityData = toml::from_str(ARITY_TOML_SOURCE)
-        .expect("failed to parse data/arity.toml");
+    let data: ArityData =
+        toml::from_str(ARITY_TOML_SOURCE).expect("failed to parse data/arity.toml");
     data.functions
         .into_iter()
         .map(|f| (f.name, (f.min_args, f.max_args)))
@@ -64,11 +64,7 @@ impl GoodPracticesEngine {
     /// GTARG / LTARG: compare every `function_call`'s argument count against
     /// the callee's declared arity (same-file functions first, then the
     /// builtin table).
-    pub(crate) fn check_arity(
-        &self,
-        tree: &tree_sitter::Tree,
-        source: &str,
-    ) -> Vec<Diagnostic> {
+    pub(crate) fn check_arity(&self, tree: &tree_sitter::Tree, source: &str) -> Vec<Diagnostic> {
         let any_enabled = self.is_check_enabled("GTARG") || self.is_check_enabled("LTARG");
         if !any_enabled {
             return Vec::new();
@@ -84,7 +80,11 @@ impl GoodPracticesEngine {
             } else {
                 func.inputs.len()
             };
-            let max = if has_varargin { usize::MAX } else { func.inputs.len() };
+            let max = if has_varargin {
+                usize::MAX
+            } else {
+                func.inputs.len()
+            };
             same_file.insert(func.name.as_str(), (min, max));
         }
 

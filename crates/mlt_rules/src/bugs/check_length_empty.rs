@@ -47,9 +47,7 @@ impl BugsEngine {
         let _ = zero_node; // suppress unused warning
         vec![Diagnostic {
             rule_id: "LOGEMP",
-            message: format!(
-                "Use 'isempty({arg_text})' instead of '{func_name}({arg_text}) == 0'"
-            ),
+            message: format!("Use 'isempty({arg_text})' instead of '{func_name}({arg_text}) == 0'"),
             severity: Severity::Error,
             byte_range: node.start_byte()..node.end_byte(),
             line: pos.row + 1,

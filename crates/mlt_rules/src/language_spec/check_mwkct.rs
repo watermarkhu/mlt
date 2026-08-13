@@ -9,8 +9,14 @@ impl LanguageSpecEngine {
             return;
         }
         for pb in &class.properties_blocks {
-            let is_weak = pb.attributes.iter().any(|a| a.name == "WeakHandle" && !a.negated);
-            let is_constant = pb.attributes.iter().any(|a| a.name == "Constant" && !a.negated);
+            let is_weak = pb
+                .attributes
+                .iter()
+                .any(|a| a.name == "WeakHandle" && !a.negated);
+            let is_constant = pb
+                .attributes
+                .iter()
+                .any(|a| a.name == "Constant" && !a.negated);
             if is_weak && is_constant {
                 diagnostics.push(Diagnostic {
                     rule_id: "MWKCT",
@@ -30,7 +36,7 @@ impl LanguageSpecEngine {
 
 #[cfg(test)]
 mod tests {
-    
+
     use crate::language_spec::tests::{check_source, filter_by_id};
 
     #[test]

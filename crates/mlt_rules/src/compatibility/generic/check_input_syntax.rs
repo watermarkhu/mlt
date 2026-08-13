@@ -65,12 +65,7 @@ pub(crate) fn collect_checks(
 
 impl CompatibilityEngine {
     /// Removed string input arguments / print options (function-call form).
-    fn check_removed_arg(
-        &self,
-        node: Node,
-        source: &str,
-        diagnostics: &mut Vec<Diagnostic>,
-    ) {
+    fn check_removed_arg(&self, node: Node, source: &str, diagnostics: &mut Vec<Diagnostic>) {
         let text = unquoted(node, source);
         for (name, id, msg) in REMOVED_ARGS {
             if text == *name {
@@ -87,12 +82,7 @@ impl CompatibilityEngine {
     }
 
     /// Removed arguments in command form (`slrt 'slrt'`).
-    fn check_command(
-        &self,
-        node: Node,
-        source: &str,
-        diagnostics: &mut Vec<Diagnostic>,
-    ) {
+    fn check_command(&self, node: Node, source: &str, diagnostics: &mut Vec<Diagnostic>) {
         // Command arguments are child `command_argument` nodes; handled there.
         let mut cursor = node.walk();
         for child in node.children(&mut cursor) {
@@ -103,12 +93,7 @@ impl CompatibilityEngine {
     }
 
     /// A command_argument: `'fixpoint'`, `resources`, `-dill`, etc.
-    fn check_command_arg(
-        &self,
-        node: Node,
-        source: &str,
-        diagnostics: &mut Vec<Diagnostic>,
-    ) {
+    fn check_command_arg(&self, node: Node, source: &str, diagnostics: &mut Vec<Diagnostic>) {
         let text = node_text(node, source);
         let stripped = text.trim().trim_matches('\'').trim_matches('"');
         for (name, id, msg) in REMOVED_ARGS {
@@ -118,21 +103,13 @@ impl CompatibilityEngine {
             }
         }
         // RESOU: `resources` folder reference (cd / addpath / import).
-        if stripped == "resources"
-            || text.contains("resources/")
-            || text.contains("resources\\")
-        {
+        if stripped == "resources" || text.contains("resources/") || text.contains("resources\\") {
             push_diag("RESOU", RESOU_MSG, node, Severity::Error, diagnostics);
         }
     }
 
     /// REPUDD: `schema.prop(...)` / `schema(...)` class-definition calls.
-    fn check_schema(
-        &self,
-        node: Node,
-        source: &str,
-        diagnostics: &mut Vec<Diagnostic>,
-    ) {
+    fn check_schema(&self, node: Node, source: &str, diagnostics: &mut Vec<Diagnostic>) {
         let text = &source[node.start_byte()..node.end_byte()];
         if text.starts_with("schema.") || text.starts_with("schemaType") || text == "schema" {
             push_diag("REPUDD", REPUDD_MSG, node, Severity::Error, diagnostics);

@@ -61,46 +61,106 @@ struct CheckMeta {
 
 /// All 13 unsupported feature check definitions.
 const CHECKS: &[CheckMeta] = &[
-    CheckMeta { id: "MCADE", description: "ADE (Application Deployment Environment) function is no longer supported" },
-    CheckMeta { id: "AWTIUD", description: "Await syntax is not supported in this context" },
-    CheckMeta { id: "AXCHUD", description: "ActiveX/COM automation is deprecated; use modern alternatives" },
-    CheckMeta { id: "FEATUD", description: "'feature' is an undocumented internal function; avoid in production code" },
-    CheckMeta { id: "FNDPUD", description: "'findprop' is deprecated; use 'findobj' or property access instead" },
-    CheckMeta { id: "HGCNUD", description: "Handle Graphics container object pattern is deprecated" },
-    CheckMeta { id: "IMPKG", description: "Import package syntax is not supported in this context" },
-    CheckMeta { id: "ISMBUD", description: "'isMember' (camelCase) is deprecated; use 'ismember' (lowercase)" },
-    CheckMeta { id: "MIPKG", description: "'meta.package' is an internal API; use 'what' or package-qualified names instead" },
-    CheckMeta { id: "SEPTUD", description: "'serial' is deprecated; use 'serialport' instead" },
-    CheckMeta { id: "SYDEUD", description: "System.Data .NET interop is platform-specific and may not be available" },
-    CheckMeta { id: "UIRSUD", description: "'uiresume' used outside of a figure callback context" },
-    CheckMeta { id: "UISUUD", description: "Deprecated UI setup pattern; use modern App Designer patterns" },
+    CheckMeta {
+        id: "MCADE",
+        description: "ADE (Application Deployment Environment) function is no longer supported",
+    },
+    CheckMeta {
+        id: "AWTIUD",
+        description: "Await syntax is not supported in this context",
+    },
+    CheckMeta {
+        id: "AXCHUD",
+        description: "ActiveX/COM automation is deprecated; use modern alternatives",
+    },
+    CheckMeta {
+        id: "FEATUD",
+        description: "'feature' is an undocumented internal function; avoid in production code",
+    },
+    CheckMeta {
+        id: "FNDPUD",
+        description: "'findprop' is deprecated; use 'findobj' or property access instead",
+    },
+    CheckMeta {
+        id: "HGCNUD",
+        description: "Handle Graphics container object pattern is deprecated",
+    },
+    CheckMeta {
+        id: "IMPKG",
+        description: "Import package syntax is not supported in this context",
+    },
+    CheckMeta {
+        id: "ISMBUD",
+        description: "'isMember' (camelCase) is deprecated; use 'ismember' (lowercase)",
+    },
+    CheckMeta {
+        id: "MIPKG",
+        description:
+            "'meta.package' is an internal API; use 'what' or package-qualified names instead",
+    },
+    CheckMeta {
+        id: "SEPTUD",
+        description: "'serial' is deprecated; use 'serialport' instead",
+    },
+    CheckMeta {
+        id: "SYDEUD",
+        description: "System.Data .NET interop is platform-specific and may not be available",
+    },
+    CheckMeta {
+        id: "UIRSUD",
+        description: "'uiresume' used outside of a figure callback context",
+    },
+    CheckMeta {
+        id: "UISUUD",
+        description: "Deprecated UI setup pattern; use modern App Designer patterns",
+    },
 ];
 
 /// ADE functions that are no longer supported.
 pub(crate) const ADE_FUNCTIONS: &[&str] = &[
-    "deploytool", "mcrinstaller", "mcrversion",
-    "isdeployed", "ismcc", "ctfroot",
-    "componentinfo", "packagetool",
+    "deploytool",
+    "mcrinstaller",
+    "mcrversion",
+    "isdeployed",
+    "ismcc",
+    "ctfroot",
+    "componentinfo",
+    "packagetool",
 ];
 
 /// ActiveX/COM functions.
 pub(crate) const ACTIVEX_FUNCTIONS: &[&str] = &[
-    "actxserver", "actxcontrol", "actxGetRunningServer",
-    "actxcontrollist", "actxcontrolselect",
-    "enableservice", "registerevent", "unregisterevent",
-    "isevent", "eventlisteners", "events",
+    "actxserver",
+    "actxcontrol",
+    "actxGetRunningServer",
+    "actxcontrollist",
+    "actxcontrolselect",
+    "enableservice",
+    "registerevent",
+    "unregisterevent",
+    "isevent",
+    "eventlisteners",
+    "events",
 ];
 
 /// Handle Graphics container functions (deprecated patterns).
 pub(crate) const HG_CONTAINER_FUNCTIONS: &[&str] = &[
-    "uicontainer", "uiflowcontainer", "uigridcontainer",
-    "uitabgroup", "uitab",
+    "uicontainer",
+    "uiflowcontainer",
+    "uigridcontainer",
+    "uitabgroup",
+    "uitab",
 ];
 
 /// Deprecated UI setup functions.
 pub(crate) const UI_SETUP_FUNCTIONS: &[&str] = &[
-    "uiwait", "guidata", "guihandles", "setappdata", "getappdata",
-    "rmappdata", "isappdata",
+    "uiwait",
+    "guidata",
+    "guihandles",
+    "setappdata",
+    "getappdata",
+    "rmappdata",
+    "isappdata",
 ];
 
 /// Look up check description by ID.
@@ -199,7 +259,10 @@ fn node_text<'a>(node: tree_sitter::Node<'a>, source: &'a str) -> &'a str {
 }
 
 /// Extract function name from a `function_call` node.
-pub(crate) fn extract_func_name<'a>(node: tree_sitter::Node<'a>, source: &'a str) -> Option<&'a str> {
+pub(crate) fn extract_func_name<'a>(
+    node: tree_sitter::Node<'a>,
+    source: &'a str,
+) -> Option<&'a str> {
     if node.kind() != "function_call" {
         return None;
     }
@@ -208,7 +271,10 @@ pub(crate) fn extract_func_name<'a>(node: tree_sitter::Node<'a>, source: &'a str
 }
 
 /// Extract command name from a `command` node.
-pub(crate) fn extract_command_name<'a>(node: tree_sitter::Node<'a>, source: &'a str) -> Option<&'a str> {
+pub(crate) fn extract_command_name<'a>(
+    node: tree_sitter::Node<'a>,
+    source: &'a str,
+) -> Option<&'a str> {
     if node.kind() != "command" {
         return None;
     }
@@ -284,10 +350,9 @@ mod tests {
 
     #[test]
     fn skip_checks_disables_check() {
-        let config = Config::from_toml(
-            "[lint.rules.UNSUPPORTED_ENGINE]\nskip_checks = [\"FEATUD\"]\n",
-        )
-        .expect("valid config");
+        let config =
+            Config::from_toml("[lint.rules.UNSUPPORTED_ENGINE]\nskip_checks = [\"FEATUD\"]\n")
+                .expect("valid config");
         let rule = UnsupportedEngine::from_config(&config);
         let src = "v = feature('version');\n";
         let diags = lint_nodes(&*rule, src);

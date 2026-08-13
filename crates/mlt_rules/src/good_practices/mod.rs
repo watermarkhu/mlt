@@ -236,16 +236,16 @@ mod check_nbrak1;
 mod check_noans;
 mod check_noin;
 mod check_oop_practice;
+mod check_parfor_reduction;
 mod check_pfevb;
 mod check_pfgp;
 mod check_pfgv;
 mod check_pfrni;
-mod check_parfor_reduction;
 mod check_prop_validation;
 mod check_rmwrn;
 mod check_sepex;
-mod check_shociraa;
 mod check_shared_vars;
+mod check_shociraa;
 mod check_simpt;
 mod check_spevb;
 mod check_spgv;
@@ -350,7 +350,6 @@ pub struct GoodPracticesEngine {
 }
 
 impl GoodPracticesEngine {
-
     /// Factory constructor. Reads rule-specific params from config.
     pub fn from_config(config: &Config) -> Box<dyn Rule> {
         let rule_config: GoodPracticesConfig = config.rule_params("GOOD_PRACTICES_ENGINE");
@@ -361,11 +360,7 @@ impl GoodPracticesEngine {
 
     /// Check whether a specific sub-check ID is enabled.
     pub(crate) fn is_check_enabled(&self, check_id: &str) -> bool {
-        !self
-            .config
-            .disabled_checks
-            .iter()
-            .any(|id| id == check_id)
+        !self.config.disabled_checks.iter().any(|id| id == check_id)
     }
 
     /// WLAST: `warning` is the last statement in a function (may need `error` instead).
@@ -378,10 +373,20 @@ impl GoodPracticesEngine {
         let mut diagnostics = Vec::new();
 
         for func in &meta.functions {
-            self.check_wlast_in_range(tree.root_node(), source, func.byte_range.clone(), &mut diagnostics);
+            self.check_wlast_in_range(
+                tree.root_node(),
+                source,
+                func.byte_range.clone(),
+                &mut diagnostics,
+            );
         }
         for func in &meta.local_functions {
-            self.check_wlast_in_range(tree.root_node(), source, func.byte_range.clone(), &mut diagnostics);
+            self.check_wlast_in_range(
+                tree.root_node(),
+                source,
+                func.byte_range.clone(),
+                &mut diagnostics,
+            );
         }
 
         diagnostics
@@ -485,11 +490,7 @@ impl GoodPracticesEngine {
     ///
     /// Uses the symbol table with byte-range comparisons because the symbol
     /// table has no per-parfor scope.
-    fn check_parfor_file_level(
-        &self,
-        tree: &tree_sitter::Tree,
-        source: &str,
-    ) -> Vec<Diagnostic> {
+    fn check_parfor_file_level(&self, tree: &tree_sitter::Tree, source: &str) -> Vec<Diagnostic> {
         let any_enabled = self.is_check_enabled("PFIIN")
             || self.is_check_enabled("PFOUS")
             || self.is_check_enabled("PFTUSW")
@@ -539,7 +540,8 @@ impl GoodPracticesEngine {
 
             // PFOUS / PFTUSW: simple-identifier assignments in the body and
             // whether the variable is used after the loop.
-            let need_assignments = self.is_check_enabled("PFOUS") || self.is_check_enabled("PFTUSW");
+            let need_assignments =
+                self.is_check_enabled("PFOUS") || self.is_check_enabled("PFTUSW");
             if need_assignments {
                 if let Some(body_node) = body {
                     let assigned = collect_simple_lhs_assignments(body_node, source);
@@ -547,8 +549,7 @@ impl GoodPracticesEngine {
                         if idx_var.as_deref() == Some(name.as_str()) {
                             continue;
                         }
-                        let uses =
-                            uses_after_parfor(&sym, &name, parfor.end_byte(), tree, false);
+                        let uses = uses_after_parfor(&sym, &name, parfor.end_byte(), tree, false);
                         if self.is_check_enabled("PFOUS") && uses.is_empty() {
                             let pos = lhs_node.start_position();
                             diagnostics.push(Diagnostic {
@@ -634,7 +635,6 @@ impl GoodPracticesEngine {
             None
         }
     }
-
 }
 
 impl Rule for GoodPracticesEngine {
@@ -889,11 +889,7 @@ pub(crate) fn find_operator_text<'a>(node: Node<'a>, source: &'a str) -> String 
         if !child.is_named() {
             let text = &source[child.start_byte()..child.end_byte()];
             let trimmed = text.trim();
-            if !trimmed.is_empty()
-                && trimmed != "("
-                && trimmed != ")"
-                && trimmed != ","
-            {
+            if !trimmed.is_empty() && trimmed != "(" && trimmed != ")" && trimmed != "," {
                 return trimmed.to_string();
             }
         }
@@ -904,7 +900,9 @@ pub(crate) fn find_operator_text<'a>(node: Node<'a>, source: &'a str) -> String 
     }
 
     let text = node_text(node, source);
-    for op in &["==", "~=", ">=", "<=", "&&", "||", ">", "<", "&", "|", "+", "-", "*", "/", "^"] {
+    for op in &[
+        "==", "~=", ">=", "<=", "&&", "||", ">", "<", "&", "|", "+", "-", "*", "/", "^",
+    ] {
         if text.contains(op) {
             return (*op).to_string();
         }
@@ -930,7 +928,10 @@ pub(crate) fn node_has_string_child(node: Node) -> bool {
 }
 
 /// Classify the type of eval usage based on argument text patterns.
-pub(crate) fn classify_eval_usage(args_text: &str, config: &GoodPracticesConfig) -> (&'static str, &'static str) {
+pub(crate) fn classify_eval_usage(
+    args_text: &str,
+    config: &GoodPracticesConfig,
+) -> (&'static str, &'static str) {
     // EVLDOT: dynamic field access patterns like `eval(['s.' fieldname])`
     if (args_text.contains("s.") || args_text.contains(".("))
         && config.disabled_checks.iter().all(|c| c != "EVLDOT")
@@ -1047,9 +1048,8 @@ pub(crate) fn find_element_wise_boolean_in_condition(
         if child.kind() == "boolean_operator" {
             let text = node_text(child, source);
             // Single `&` or `|` (not `&&` or `||`)
-            let has_element_wise =
-                (text.contains('&') && !text.contains("&&"))
-                    || (text.contains('|') && !text.contains("||"));
+            let has_element_wise = (text.contains('&') && !text.contains("&&"))
+                || (text.contains('|') && !text.contains("||"));
             if has_element_wise {
                 let pos = child.start_position();
                 diagnostics.push(Diagnostic {
@@ -1064,7 +1064,10 @@ pub(crate) fn find_element_wise_boolean_in_condition(
             }
         }
         // Don't recurse into nested if/while/for/blocks — just check immediate condition.
-        if child.kind() == "block" || child.kind() == "elseif_clause" || child.kind() == "else_clause" {
+        if child.kind() == "block"
+            || child.kind() == "elseif_clause"
+            || child.kind() == "else_clause"
+        {
             continue;
         }
         find_element_wise_boolean_in_condition(child, source, diagnostics);
@@ -1072,7 +1075,10 @@ pub(crate) fn find_element_wise_boolean_in_condition(
 }
 
 /// Find the function_definition node overlapping a byte range.
-pub(crate) fn find_node_in_range<'a>(root: Node<'a>, range: &std::ops::Range<usize>) -> Option<Node<'a>> {
+pub(crate) fn find_node_in_range<'a>(
+    root: Node<'a>,
+    range: &std::ops::Range<usize>,
+) -> Option<Node<'a>> {
     if root.kind() == "function_definition"
         && root.start_byte() == range.start
         && root.end_byte() == range.end
@@ -1285,7 +1291,10 @@ pub(crate) fn collect_parfor_nodes<'a>(root: Node<'a>, source: &str) -> Vec<Node
 }
 
 /// Collect all identifiers declared `global` or `persistent` anywhere in a tree.
-pub(crate) fn collect_global_persistent_vars(root: Node, source: &str) -> std::collections::HashSet<String> {
+pub(crate) fn collect_global_persistent_vars(
+    root: Node,
+    source: &str,
+) -> std::collections::HashSet<String> {
     let mut vars = std::collections::HashSet::new();
     let mut cursor = root.walk();
     for child in root.children(&mut cursor) {
@@ -1351,8 +1360,9 @@ pub(crate) fn lhs_base_name(lhs: Node, source: &str) -> Option<String> {
     match lhs.kind() {
         "identifier" => Some(node_text(lhs, source).to_string()),
         "function_call" => get_function_call_name(lhs, source).map(|s| s.to_string()),
-        "field_expression" => find_child_of_kind(lhs, "identifier")
-            .map(|n| node_text(n, source).to_string()),
+        "field_expression" => {
+            find_child_of_kind(lhs, "identifier").map(|n| node_text(n, source).to_string())
+        }
         _ => None,
     }
 }
@@ -1486,7 +1496,10 @@ pub(crate) fn collect_parfor_body_reads<'a>(
 }
 
 /// Collect simple-identifier LHS assignments inside a node (for PFOUS/PFTUSW).
-pub(crate) fn collect_simple_lhs_assignments<'a>(node: Node<'a>, source: &str) -> Vec<(String, Node<'a>)> {
+pub(crate) fn collect_simple_lhs_assignments<'a>(
+    node: Node<'a>,
+    source: &str,
+) -> Vec<(String, Node<'a>)> {
     let mut out = Vec::new();
     let mut assignments = Vec::new();
     collect_nodes_of_kind(node, "assignment", &mut assignments);
@@ -1685,7 +1698,11 @@ pub(crate) fn collect_loop_assignments(
 
 /// Find the `attribute` node with the given name inside a node that has an
 /// `attributes` child (e.g., `class_definition` or a `properties` block).
-pub(crate) fn find_attribute_node<'a>(node: Node<'a>, name: &str, source: &'a str) -> Option<Node<'a>> {
+pub(crate) fn find_attribute_node<'a>(
+    node: Node<'a>,
+    name: &str,
+    source: &'a str,
+) -> Option<Node<'a>> {
     let attrs = find_child_of_kind(node, "attributes")?;
     let count = attrs.child_count();
     for i in 0..count {
@@ -1725,7 +1742,10 @@ pub(crate) fn block_diagnostic_position(
 }
 
 /// Find the `index`-th child of kind `properties` under a class definition.
-pub(crate) fn find_nth_properties_block<'a>(class_node: Node<'a>, index: usize) -> Option<Node<'a>> {
+pub(crate) fn find_nth_properties_block<'a>(
+    class_node: Node<'a>,
+    index: usize,
+) -> Option<Node<'a>> {
     let mut seen = 0;
     let count = class_node.child_count();
     for i in 0..count {
@@ -1987,7 +2007,8 @@ mod tests {
 
     #[test]
     fn test_g3_checks_fire_through_dispatch() {
-        let source = "if isa(x,'double') == true\nend\nif isa(x,'double') ~= true\nend\na = 1:2:3:4;\n";
+        let source =
+            "if isa(x,'double') == true\nend\nif isa(x,'double') ~= true\nend\na = 1:2:3:4;\n";
         let tree = parse(source);
         let eng = engine();
 
@@ -2011,7 +2032,8 @@ mod tests {
             },
         };
 
-        let source = "if isa(x,'double') == true\nend\nif isa(x,'double') ~= true\nend\na = 1:2:3:4;\n";
+        let source =
+            "if isa(x,'double') == true\nend\nif isa(x,'double') ~= true\nend\na = 1:2:3:4;\n";
         let tree = parse(source);
         let mut ids = Vec::new();
         collect_diagnostics(&eng, tree.root_node(), source, &mut ids);
@@ -2044,7 +2066,10 @@ mod tests {
         };
         let ids: Vec<&str> = eng.check_file(&ctx).iter().map(|d| d.rule_id).collect();
         for expected in ["MCPO", "MCSAC", "MOBSRV", "MCCPI", "MDEPIN", "MGMD"] {
-            assert!(ids.iter().any(|id| id == &expected), "missing {expected}, got: {ids:?}");
+            assert!(
+                ids.iter().any(|id| id == &expected),
+                "missing {expected}, got: {ids:?}"
+            );
         }
     }
 
@@ -2068,7 +2093,10 @@ mod tests {
             .copied()
             .filter(|id| OOP_CHECK_IDS.contains(id))
             .collect();
-        assert!(oop_hits.is_empty(), "unexpected OOP diagnostics: {oop_hits:?}");
+        assert!(
+            oop_hits.is_empty(),
+            "unexpected OOP diagnostics: {oop_hits:?}"
+        );
     }
 
     #[test]
@@ -2082,7 +2110,10 @@ eval(x + y);\nonCleanup(@f);\n[~] = onCleanup(@f);\nc = computer('arch');\nfprin
         let mut ids = Vec::new();
         collect_diagnostics(&eng, tree.root_node(), source, &mut ids);
         for want in ["FXSET", "SIMPT", "TLEV", "UNONC", "MIPC1", "CTPCT"] {
-            assert!(ids.iter().any(|id| id == &want), "expected {want} to fire, got: {ids:?}");
+            assert!(
+                ids.iter().any(|id| id == &want),
+                "expected {want} to fire, got: {ids:?}"
+            );
         }
     }
 

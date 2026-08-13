@@ -22,8 +22,7 @@ impl UnsetVariablesEngine {
                     for j in 0..inner_count {
                         if let Some(inner) = child.child(j) {
                             if inner.kind() == "block" {
-                                branch_assignments
-                                    .push(collect_block_assignments(inner, source));
+                                branch_assignments.push(collect_block_assignments(inner, source));
                                 break;
                             }
                         }
@@ -35,8 +34,7 @@ impl UnsetVariablesEngine {
                     for j in 0..inner_count {
                         if let Some(inner) = child.child(j) {
                             if inner.kind() == "block" {
-                                branch_assignments
-                                    .push(collect_block_assignments(inner, source));
+                                branch_assignments.push(collect_block_assignments(inner, source));
                                 break;
                             }
                         }

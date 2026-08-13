@@ -10,12 +10,7 @@ impl FormattingEngine {
     /// For `if_statement` and `while_statement`, check if the condition
     /// expression is wrapped in a `parenthesis` node. If so, suggest
     /// removing the outer parens since MATLAB does not require them.
-    pub(crate) fn check_nopts(
-        &self,
-        node: Node,
-        source: &str,
-        diagnostics: &mut Vec<Diagnostic>,
-    ) {
+    pub(crate) fn check_nopts(&self, node: Node, source: &str, diagnostics: &mut Vec<Diagnostic>) {
         let condition = match node.kind() {
             "if_statement" | "while_statement" => node.child_by_field_name("condition"),
             _ => None,
@@ -37,10 +32,7 @@ impl FormattingEngine {
                 byte_range: cond.start_byte()..cond.end_byte(),
                 line: pos.row + 1,
                 column: pos.column + 1,
-                fix: Some(Fix::new(
-                    cond.start_byte()..cond.end_byte(),
-                    inner_text,
-                )),
+                fix: Some(Fix::new(cond.start_byte()..cond.end_byte(), inner_text)),
             });
         }
     }
@@ -48,7 +40,7 @@ impl FormattingEngine {
 
 #[cfg(test)]
 mod tests {
-    
+
     use crate::formatting::tests::{has_id, lint};
 
     // -- NOPTS ---------------------------------------------------------------

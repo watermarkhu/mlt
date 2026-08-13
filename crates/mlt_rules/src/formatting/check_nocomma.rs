@@ -24,12 +24,7 @@ impl FormattingEngine {
     }
 
     /// Check a single `row` node for missing commas between elements.
-    fn check_row_commas(
-        &self,
-        row: Node,
-        source: &str,
-        diagnostics: &mut Vec<Diagnostic>,
-    ) {
+    fn check_row_commas(&self, row: Node, source: &str, diagnostics: &mut Vec<Diagnostic>) {
         // Collect expression children (skip punctuation like "[", "]", ",", ";").
         let mut prev_expr: Option<Node> = None;
         let child_count = row.child_count();
@@ -93,7 +88,7 @@ impl FormattingEngine {
 
 #[cfg(test)]
 mod tests {
-    
+
     use crate::formatting::tests::{has_id, lint};
 
     // -- NOCOMMA -------------------------------------------------------------

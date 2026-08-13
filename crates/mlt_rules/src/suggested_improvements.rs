@@ -74,8 +74,7 @@ const SUGGESTED_TOML_SOURCE: &str = include_str!("data/suggested_improvements.to
 /// Parsed suggested improvements data. All strings inside are owned and live
 /// for 'static because this is a `LazyLock` static.
 static SUGGESTED_DATA: LazyLock<SuggestedData> = LazyLock::new(|| {
-    toml::from_str(SUGGESTED_TOML_SOURCE)
-        .expect("failed to parse data/suggested_improvements.toml")
+    toml::from_str(SUGGESTED_TOML_SOURCE).expect("failed to parse data/suggested_improvements.toml")
 });
 
 /// Lookup table: function_name → reference to `SuggestedEntry`.
@@ -163,8 +162,7 @@ impl Rule for SuggestedImprovementsEngine {
         // transmute the &str lifetime.
         // SAFETY: SUGGESTED_DATA is a static LazyLock; its contents are never
         // deallocated, so the &str reference is valid for 'static.
-        let rule_id: &'static str =
-            unsafe { &*(entry.id.as_str() as *const str) };
+        let rule_id: &'static str = unsafe { &*(entry.id.as_str() as *const str) };
 
         vec![Diagnostic {
             rule_id,

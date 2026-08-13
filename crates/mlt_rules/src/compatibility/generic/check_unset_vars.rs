@@ -29,9 +29,7 @@ use mlt_core::{Diagnostic, Severity};
 use std::collections::{HashMap, HashSet};
 use tree_sitter::{Node, Tree};
 
-use crate::analysis::symbols::{
-    DefKind, Scope, ScopeKind, SymbolTable, VarDef, VarUse,
-};
+use crate::analysis::symbols::{DefKind, Scope, ScopeKind, SymbolTable, VarDef, VarUse};
 
 /// IDISVARLOW: indexing an undefined variable may resolve to a path function.
 const IDISVARLOW_MSG: &str = "To avoid a potential conflict with functions on the path, explicitly define the variable before indexing into it.";
@@ -44,8 +42,22 @@ const SHVAI_MSG: &str = "Explicitly define shared variables in the parent functi
 
 /// Names that are always defined by MATLAB and never need a user definition.
 const BUILTINS: &[&str] = &[
-    "true", "false", "pi", "inf", "Inf", "nan", "NaN", "eps", "i", "j", "end",
-    "nargin", "nargout", "varargin", "varargout", "ans",
+    "true",
+    "false",
+    "pi",
+    "inf",
+    "Inf",
+    "nan",
+    "NaN",
+    "eps",
+    "i",
+    "j",
+    "end",
+    "nargin",
+    "nargout",
+    "varargin",
+    "varargout",
+    "ans",
 ];
 
 /// How an identifier use is classified for the unset-variable checks.
@@ -166,11 +178,7 @@ impl CompatibilityEngine {
     }
 
     /// SHVAI: a shared variable is only defined after the nested function.
-    fn check_shvai(
-        &self,
-        symbol_table: &SymbolTable,
-        diagnostics: &mut Vec<Diagnostic>,
-    ) {
+    fn check_shvai(&self, symbol_table: &SymbolTable, diagnostics: &mut Vec<Diagnostic>) {
         for scope in &symbol_table.scopes {
             if scope.kind != ScopeKind::NestedFunction {
                 continue;
@@ -207,7 +215,13 @@ impl CompatibilityEngine {
                     .iter()
                     .all(|d| d.byte_range.start >= nested_start)
                 {
-                    push_def_diag("SHVAI", SHVAI_MSG, variable_defs[0], Severity::Warning, diagnostics);
+                    push_def_diag(
+                        "SHVAI",
+                        SHVAI_MSG,
+                        variable_defs[0],
+                        Severity::Warning,
+                        diagnostics,
+                    );
                 }
             }
         }

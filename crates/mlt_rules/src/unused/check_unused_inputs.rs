@@ -44,9 +44,7 @@ impl UnusedEngine {
                     if !nused_disabled {
                         diagnostics.push(Diagnostic {
                             rule_id: "NUSED",
-                            message: format!(
-                                "Input argument '{name}' is defined but never used"
-                            ),
+                            message: format!("Input argument '{name}' is defined but never used"),
                             severity: Severity::Warning,
                             byte_range: def.byte_range.clone(),
                             line: def.line,
@@ -90,7 +88,6 @@ impl UnusedEngine {
             }
         }
     }
-
 }
 
 #[cfg(test)]
@@ -140,5 +137,4 @@ mod tests {
         let diags = lint_file(&*engine(), "function foo(x)\n    disp(x);\nend\n");
         assert!(!has_id(&diags, "INUSD"), "got: {diags:?}");
     }
-
 }

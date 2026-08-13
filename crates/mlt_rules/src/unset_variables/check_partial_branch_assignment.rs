@@ -16,12 +16,7 @@ impl UnsetVariablesEngine {
     }
 
     /// DFS walk to find if/switch statements for PSET analysis.
-    fn walk_pset(
-        &self,
-        node: Node,
-        source: &str,
-        diagnostics: &mut Vec<Diagnostic>,
-    ) {
+    fn walk_pset(&self, node: Node, source: &str, diagnostics: &mut Vec<Diagnostic>) {
         match node.kind() {
             "if_statement" => {
                 self.check_if_pset(node, source, diagnostics);

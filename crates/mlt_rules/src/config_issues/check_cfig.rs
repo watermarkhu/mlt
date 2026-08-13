@@ -50,7 +50,7 @@ impl ConfigIssuesEngine {
 
 #[cfg(test)]
 mod tests {
-    
+
     use crate::config_issues::tests::engine;
     use crate::test_util::{has_id, lint_nodes};
 

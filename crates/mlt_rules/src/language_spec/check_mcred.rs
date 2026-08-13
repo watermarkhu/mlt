@@ -11,10 +11,7 @@ impl LanguageSpecEngine {
                 if prop.name == class.name {
                     diagnostics.push(Diagnostic {
                         rule_id: "MCRED",
-                        message: format!(
-                            "Property '{}' has the same name as the class",
-                            prop.name
-                        ),
+                        message: format!("Property '{}' has the same name as the class", prop.name),
                         severity: Severity::Error,
                         byte_range: prop.byte_range.clone(),
                         line: prop.line,
@@ -31,10 +28,7 @@ impl LanguageSpecEngine {
                 if *event == class.name {
                     diagnostics.push(Diagnostic {
                         rule_id: "MCRED",
-                        message: format!(
-                            "Event '{}' has the same name as the class",
-                            event
-                        ),
+                        message: format!("Event '{}' has the same name as the class", event),
                         severity: Severity::Error,
                         byte_range: class.byte_range.clone(),
                         line: class.line,
@@ -69,7 +63,7 @@ impl LanguageSpecEngine {
 
 #[cfg(test)]
 mod tests {
-    
+
     use crate::language_spec::tests::{check_source, filter_by_id};
 
     #[test]

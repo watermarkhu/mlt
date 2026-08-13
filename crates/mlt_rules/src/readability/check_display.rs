@@ -6,21 +6,12 @@ use super::*;
 
 impl ReadabilityEngine {
     /// DSPSY: `display(x)` → `disp(x)`
-    pub(crate) fn check_display(
-        &self,
-        node: tree_sitter::Node,
-        results: &mut Vec<Diagnostic>,
-    ) {
+    pub(crate) fn check_display(&self, node: tree_sitter::Node, results: &mut Vec<Diagnostic>) {
         if !self.is_check_enabled("DSPSY") {
             return;
         }
 
-        results.push(self.diag(
-            "DSPSY",
-            "Use 'disp' instead of 'display'",
-            node,
-            None,
-        ));
+        results.push(self.diag("DSPSY", "Use 'disp' instead of 'display'", node, None));
     }
 }
 

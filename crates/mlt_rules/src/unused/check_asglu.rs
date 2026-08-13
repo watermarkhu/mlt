@@ -5,11 +5,7 @@ use super::*;
 impl UnusedEngine {
     /// Run ASGLU check: consecutive assignments to the same variable with no
     /// use between them.
-    pub(crate) fn check_asglu(
-        &self,
-        table: &SymbolTable,
-        diagnostics: &mut Vec<Diagnostic>,
-    ) {
+    pub(crate) fn check_asglu(&self, table: &SymbolTable, diagnostics: &mut Vec<Diagnostic>) {
         if self.is_check_disabled("ASGLU") {
             return;
         }
@@ -75,7 +71,6 @@ impl UnusedEngine {
             }
         }
     }
-
 }
 
 #[cfg(test)]
@@ -98,9 +93,10 @@ mod tests {
 
     #[test]
     fn asglu_ok_when_used_between() {
-        let diags =
-            lint_file(&*engine(), "function foo()\n    x = 1;\n    disp(x);\n    x = 2;\nend\n");
+        let diags = lint_file(
+            &*engine(),
+            "function foo()\n    x = 1;\n    disp(x);\n    x = 2;\nend\n",
+        );
         assert!(!has_id(&diags, "ASGLU"), "got: {diags:?}");
     }
-
 }

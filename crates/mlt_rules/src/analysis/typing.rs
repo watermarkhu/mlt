@@ -94,7 +94,10 @@ impl TypeEnv {
 
     /// The inferred type of `name`, or [`TypeInfo::of(TypeKind::Unknown)`].
     pub fn type_of(&self, name: &str) -> TypeInfo {
-        self.types.get(name).copied().unwrap_or_else(|| TypeInfo::of(TypeKind::Unknown))
+        self.types
+            .get(name)
+            .copied()
+            .unwrap_or_else(|| TypeInfo::of(TypeKind::Unknown))
     }
 
     /// Whether `name` is known to be a logical scalar.
@@ -152,10 +155,12 @@ impl<'a> Walker<'a> {
             }
             "lambda" => Some(TypeInfo::of(TypeKind::FunctionHandle)),
             "metaclass_operator" => Some(TypeInfo::of(TypeKind::Handle)),
-            "binary_operator" | "comparison_operator" | "boolean_operator"
-            | "boolean_operator_short" | "unary_operator" | "postfix_operator" => {
-                self.infer_operator(node)
-            }
+            "binary_operator"
+            | "comparison_operator"
+            | "boolean_operator"
+            | "boolean_operator_short"
+            | "unary_operator"
+            | "postfix_operator" => self.infer_operator(node),
             "parenthesis" | "range" => {
                 // A parenthesized expression inherits its child's type; a range
                 // is numeric.
@@ -209,7 +214,10 @@ impl<'a> Walker<'a> {
                     TypeKind::Numeric
                 }
             }
-            "postfix_operator" => operands.first().map(|o| o.kind).unwrap_or(TypeKind::Numeric),
+            "postfix_operator" => operands
+                .first()
+                .map(|o| o.kind)
+                .unwrap_or(TypeKind::Numeric),
             _ => {
                 // Arithmetic `+ - * / ^ .* ./ .^ \` are numeric.
                 let txt = self.text(node);
@@ -251,8 +259,8 @@ impl<'a> Walker<'a> {
             "zeros" | "ones" | "eye" | "rand" | "randn" | "randi" | "linspace" | "logspace"
             | "nan" | "inf" | "abs" | "ceil" | "floor" | "round" | "fix" | "mod" | "rem"
             | "sqrt" | "exp" | "log" | "log10" | "sin" | "cos" | "tan" | "sum" | "mean"
-            | "median" | "std" | "var" | "min" | "max" | "prod" | "numel" | "length"
-            | "size" | "ndims" | "rank" | "det" | "norm" | "reshape" | "repmat" | "sort" => {
+            | "median" | "std" | "var" | "min" | "max" | "prod" | "numel" | "length" | "size"
+            | "ndims" | "rank" | "det" | "norm" | "reshape" | "repmat" | "sort" => {
                 return Some(TypeInfo::of(TypeKind::Numeric));
             }
             "isempty" | "isequal" | "isnan" | "isinf" | "islogical" | "isnumeric" | "ischar"
@@ -311,7 +319,9 @@ impl<'a> Walker<'a> {
             return;
         }
         let name = self.text(lhs).to_string();
-        let info = self.infer_expr(rhs).unwrap_or_else(|| TypeInfo::of(TypeKind::Unknown));
+        let info = self
+            .infer_expr(rhs)
+            .unwrap_or_else(|| TypeInfo::of(TypeKind::Unknown));
         self.env.types.insert(name, info);
     }
 
@@ -323,9 +333,10 @@ impl<'a> Walker<'a> {
                 let mut cursor = node.walk();
                 for child in node.children(&mut cursor) {
                     if child.kind() == "identifier" {
-                        self.env
-                            .types
-                            .insert(self.text(child).to_string(), TypeInfo::of(TypeKind::Unknown));
+                        self.env.types.insert(
+                            self.text(child).to_string(),
+                            TypeInfo::of(TypeKind::Unknown),
+                        );
                     }
                 }
             }

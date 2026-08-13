@@ -147,10 +147,9 @@ mod tests {
 
     #[test]
     fn fludlr_disabled_in_config_does_not_fire() {
-        let config = Config::from_toml(
-            "[lint.rules.READABILITY_ENGINE]\ndisabled_checks = [\"FLUDLR\"]\n",
-        )
-        .expect("valid config");
+        let config =
+            Config::from_toml("[lint.rules.READABILITY_ENGINE]\ndisabled_checks = [\"FLUDLR\"]\n")
+                .expect("valid config");
         let rule = ReadabilityEngine::from_config(&config);
         let diags = lint_nodes(&*rule, "y = flipud(fliplr(x));\n");
         assert!(!has_id(&diags, "FLUDLR"), "got: {diags:?}");

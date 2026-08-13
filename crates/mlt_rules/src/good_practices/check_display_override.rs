@@ -2,7 +2,11 @@ use super::*;
 
 impl GoodPracticesEngine {
     /// DISPLAY: Overriding `display` is discouraged (use `disp` instead).
-    pub(crate) fn check_display_override(&self, tree: &tree_sitter::Tree, source: &str) -> Vec<Diagnostic> {
+    pub(crate) fn check_display_override(
+        &self,
+        tree: &tree_sitter::Tree,
+        source: &str,
+    ) -> Vec<Diagnostic> {
         if !self.is_check_enabled("DISPLAY") {
             return Vec::new();
         }

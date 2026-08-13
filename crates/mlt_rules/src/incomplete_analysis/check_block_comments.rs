@@ -19,9 +19,7 @@ impl IncompleteAnalysisEngine {
                 if depth > 1 {
                     diagnostics.push(Diagnostic {
                         rule_id: "DEEPC",
-                        message: format!(
-                            "Block comments nested too deeply (depth {depth})"
-                        ),
+                        message: format!("Block comments nested too deeply (depth {depth})"),
                         severity: Severity::Error,
                         byte_range: byte_offset..byte_offset + line.len(),
                         line: line_idx + 1,

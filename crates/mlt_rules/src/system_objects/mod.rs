@@ -97,15 +97,30 @@ pub(crate) const CHECKS: &[CheckMeta] = &[
 
 /// System object lifecycle methods.
 pub(crate) const SYSTEM_OBJECT_METHODS: &[&str] = &[
-    "step", "setup", "release", "reset", "isDone", "isLocked",
-    "getNumInputs", "getNumOutputs", "clone",
+    "step",
+    "setup",
+    "release",
+    "reset",
+    "isDone",
+    "isLocked",
+    "getNumInputs",
+    "getNumOutputs",
+    "clone",
 ];
 
 /// Reserved System object method names that should not be overridden.
 pub(crate) const RESERVED_NAMES: &[&str] = &[
-    "step", "setup", "release", "reset", "isDone", "isLocked",
-    "getNumInputs", "getNumOutputs", "clone",
-    "processTunedPropertiesImpl", "infoImpl",
+    "step",
+    "setup",
+    "release",
+    "reset",
+    "isDone",
+    "isLocked",
+    "getNumInputs",
+    "getNumOutputs",
+    "clone",
+    "processTunedPropertiesImpl",
+    "infoImpl",
 ];
 
 /// Deprecated System object properties and their replacements.
@@ -201,11 +216,7 @@ impl SystemObjectsEngine {
     // -----------------------------------------------------------------------
 
     /// File-level checks for class definitions inheriting from matlab.System.
-    fn check_file_level(
-        &self,
-        tree: &tree_sitter::Tree,
-        source: &str,
-    ) -> Vec<Diagnostic> {
+    fn check_file_level(&self, tree: &tree_sitter::Tree, source: &str) -> Vec<Diagnostic> {
         let mut diags = Vec::new();
         let root = tree.root_node();
 
@@ -367,9 +378,11 @@ pub(crate) fn has_output_assignment(node: tree_sitter::Node) -> bool {
     if let Some(parent) = node.parent() {
         // Check if parent is an assignment and this node is on the right side
         if parent.kind() == "assignment" {
-            if let Some(rhs) = parent.child_by_field_name("right").or_else(|| parent.child(2)) {
-                return node.start_byte() >= rhs.start_byte()
-                    && node.end_byte() <= rhs.end_byte();
+            if let Some(rhs) = parent
+                .child_by_field_name("right")
+                .or_else(|| parent.child(2))
+            {
+                return node.start_byte() >= rhs.start_byte() && node.end_byte() <= rhs.end_byte();
             }
         }
     }
@@ -486,9 +499,6 @@ pub(crate) mod test_support {
 
     /// Wrap a class body in a `matlab.System` class definition.
     pub(crate) fn system_class(source: &str) -> String {
-        format!(
-            "classdef mySystem < matlab.System\n{}\nend\n",
-            source
-        )
+        format!("classdef mySystem < matlab.System\n{}\nend\n", source)
     }
 }

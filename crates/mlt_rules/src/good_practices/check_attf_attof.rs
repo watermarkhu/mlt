@@ -5,7 +5,11 @@ impl GoodPracticesEngine {
     ///
     /// ATTF fires when the value assigned to `Abstract` is not a recognizable
     /// boolean literal; ATTOF fires when the value is explicitly `false`.
-    pub(crate) fn check_attf_attof(&self, tree: &tree_sitter::Tree, source: &str) -> Vec<Diagnostic> {
+    pub(crate) fn check_attf_attof(
+        &self,
+        tree: &tree_sitter::Tree,
+        source: &str,
+    ) -> Vec<Diagnostic> {
         if !self.is_check_enabled("ATTF") && !self.is_check_enabled("ATTOF") {
             return Vec::new();
         }
@@ -41,10 +45,8 @@ impl GoodPracticesEngine {
         };
 
         let lower = value.to_lowercase();
-        let is_valid_literal = matches!(
-            lower.as_str(),
-            "true" | "false" | "1" | "0" | "on" | "off"
-        );
+        let is_valid_literal =
+            matches!(lower.as_str(), "true" | "false" | "1" | "0" | "on" | "off");
 
         let mut diagnostics = Vec::new();
         if !is_valid_literal && self.is_check_enabled("ATTF") {

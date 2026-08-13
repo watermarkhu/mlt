@@ -3,34 +3,55 @@
 use super::*;
 
 impl SyntaxErrorsEngine {
-        pub(crate) fn check_assignment_lhs(&self, root: Node, source: &str) -> Vec<Diagnostic> {
-            let mut diagnostics = Vec::new();
-            self.walk_assignment_lhs(root, source, &mut diagnostics);
-            diagnostics
-        }
+    pub(crate) fn check_assignment_lhs(&self, root: Node, source: &str) -> Vec<Diagnostic> {
+        let mut diagnostics = Vec::new();
+        self.walk_assignment_lhs(root, source, &mut diagnostics);
+        diagnostics
+    }
 
-        pub(crate) fn walk_assignment_lhs(&self, node: Node, source: &str, diagnostics: &mut Vec<Diagnostic>) {
-            const OPERATOR_LHS_KINDS: [&str; 5] = [
-                "comparison_operator",
-                "binary_operator",
-                "boolean_operator",
-                "unary_operator",
-                "postfix_operator",
-            ];
+    pub(crate) fn walk_assignment_lhs(
+        &self,
+        node: Node,
+        source: &str,
+        diagnostics: &mut Vec<Diagnostic>,
+    ) {
+        const OPERATOR_LHS_KINDS: [&str; 5] = [
+            "comparison_operator",
+            "binary_operator",
+            "boolean_operator",
+            "unary_operator",
+            "postfix_operator",
+        ];
 
-            let kind = node.kind();
+        let kind = node.kind();
 
-            if kind == "assignment" {
-                let lhs = node.child_by_field_name("left");
-                if let Some(lhs) = lhs {
-                    let pos = lhs.start_position();
+        if kind == "assignment" {
+            let lhs = node.child_by_field_name("left");
+            if let Some(lhs) = lhs {
+                let pos = lhs.start_position();
 
-                    // UNSET: operator expression on the left side of `=`.
-                    if self.is_check_enabled("UNSET") && OPERATOR_LHS_KINDS.contains(&lhs.kind()) {
+                // UNSET: operator expression on the left side of `=`.
+                if self.is_check_enabled("UNSET") && OPERATOR_LHS_KINDS.contains(&lhs.kind()) {
+                    diagnostics.push(Diagnostic {
+                        rule_id: "UNSET",
+                        message: "Invalid use of operator on the left side of an assignment"
+                            .to_string(),
+                        severity: Severity::Error,
+                        byte_range: lhs.byte_range(),
+                        line: pos.row + 1,
+                        column: pos.column + 1,
+                        fix: None,
+                    });
+                }
+
+                // LHROW: multi-output LHS containing a row separator (`;`).
+                if self.is_check_enabled("LHROW") && lhs.kind() == "multioutput_variable" {
+                    let lhs_text = &source[lhs.start_byte()..lhs.end_byte()];
+                    if lhs_text.contains(';') {
                         diagnostics.push(Diagnostic {
-                            rule_id: "UNSET",
+                            rule_id: "LHROW",
                             message:
-                                "Invalid use of operator on the left side of an assignment"
+                                "The left side of an assignment cannot have multiple rows (';')"
                                     .to_string(),
                             severity: Severity::Error,
                             byte_range: lhs.byte_range(),
@@ -39,56 +60,39 @@ impl SyntaxErrorsEngine {
                             fix: None,
                         });
                     }
-
-                    // LHROW: multi-output LHS containing a row separator (`;`).
-                    if self.is_check_enabled("LHROW") && lhs.kind() == "multioutput_variable" {
-                        let lhs_text = &source[lhs.start_byte()..lhs.end_byte()];
-                        if lhs_text.contains(';') {
-                            diagnostics.push(Diagnostic {
-                                rule_id: "LHROW",
-                                message: "The left side of an assignment cannot have multiple rows (';')"
-                                    .to_string(),
-                                severity: Severity::Error,
-                                byte_range: lhs.byte_range(),
-                                line: pos.row + 1,
-                                column: pos.column + 1,
-                                fix: None,
-                            });
-                        }
-                    }
                 }
-            }
-
-            // UNSET fallback: the parser may emit an ERROR node (text starting
-            // with `=`) as the sibling of a statement-level operator expression
-            // instead of an assignment node (e.g., `x == 5 = 3;`).
-            if self.is_check_enabled("UNSET") && node.is_error() {
-                if let Some(prev) = node.prev_sibling() {
-                    if OPERATOR_LHS_KINDS.contains(&prev.kind()) {
-                        let err_text = &source[node.start_byte()..node.end_byte()];
-                        if err_text.trim_start().starts_with('=') {
-                            let pos = prev.start_position();
-                            diagnostics.push(Diagnostic {
-                                rule_id: "UNSET",
-                                message: "Invalid use of operator on the left side of an assignment"
-                                    .to_string(),
-                                severity: Severity::Error,
-                                byte_range: prev.byte_range(),
-                                line: pos.row + 1,
-                                column: pos.column + 1,
-                                fix: None,
-                            });
-                        }
-                    }
-                }
-            }
-
-            let mut cursor = node.walk();
-            for child in node.children(&mut cursor) {
-                self.walk_assignment_lhs(child, source, diagnostics);
             }
         }
 
+        // UNSET fallback: the parser may emit an ERROR node (text starting
+        // with `=`) as the sibling of a statement-level operator expression
+        // instead of an assignment node (e.g., `x == 5 = 3;`).
+        if self.is_check_enabled("UNSET") && node.is_error() {
+            if let Some(prev) = node.prev_sibling() {
+                if OPERATOR_LHS_KINDS.contains(&prev.kind()) {
+                    let err_text = &source[node.start_byte()..node.end_byte()];
+                    if err_text.trim_start().starts_with('=') {
+                        let pos = prev.start_position();
+                        diagnostics.push(Diagnostic {
+                            rule_id: "UNSET",
+                            message: "Invalid use of operator on the left side of an assignment"
+                                .to_string(),
+                            severity: Severity::Error,
+                            byte_range: prev.byte_range(),
+                            line: pos.row + 1,
+                            column: pos.column + 1,
+                            fix: None,
+                        });
+                    }
+                }
+            }
+        }
+
+        let mut cursor = node.walk();
+        for child in node.children(&mut cursor) {
+            self.walk_assignment_lhs(child, source, diagnostics);
+        }
+    }
 }
 
 #[cfg(test)]
@@ -102,11 +106,17 @@ mod tests {
     }
 
     fn engine_with_disabled(checks: &[&str]) -> Box<dyn Rule> {
-        let disabled = checks.iter().map(|c| format!("\"{c}\"")).collect::<Vec<_>>().join(", ");
-        let config = Config::from_toml(&format!("[lint.rules.SYNTAX_ERRORS_ENGINE]\ndisabled_checks = [{disabled}]\n")).unwrap();
+        let disabled = checks
+            .iter()
+            .map(|c| format!("\"{c}\""))
+            .collect::<Vec<_>>()
+            .join(", ");
+        let config = Config::from_toml(&format!(
+            "[lint.rules.SYNTAX_ERRORS_ENGINE]\ndisabled_checks = [{disabled}]\n"
+        ))
+        .unwrap();
         SyntaxErrorsEngine::from_config(&config)
     }
-
 
     // -- UNSET: operator on the left side of an assignment ------------------
 
@@ -152,7 +162,6 @@ mod tests {
         assert!(!has_id(&diags, "UNSET"), "got: {diags:?}");
     }
 
-
     // -- LHROW: assignment LHS with multiple rows ---------------------------
 
     #[test]
@@ -179,7 +188,6 @@ mod tests {
         assert!(!has_id(&diags, "LHROW"), "got: {diags:?}");
     }
 
-
     // -- UNSET/LHROW disabled via config ------------------------------------
 
     #[test]
@@ -189,5 +197,4 @@ mod tests {
         assert!(!has_id(&diags, "UNSET"), "got: {diags:?}");
         assert!(!has_id(&diags, "LHROW"), "got: {diags:?}");
     }
-
 }

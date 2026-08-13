@@ -25,7 +25,7 @@ impl LanguageSpecEngine {
 
 #[cfg(test)]
 mod tests {
-    
+
     use crate::language_spec::tests::{check_source, filter_by_id};
 
     #[test]
@@ -36,7 +36,10 @@ end
 ";
         let diags = check_source(source, "Foo.m");
         let mherit = filter_by_id(&diags, "MHERIT");
-        assert!(!mherit.is_empty(), "MHERIT should fire for 'classdef Foo < double'");
+        assert!(
+            !mherit.is_empty(),
+            "MHERIT should fire for 'classdef Foo < double'"
+        );
     }
 
     #[test]
@@ -50,6 +53,9 @@ end
 ";
         let diags = check_source(source, "Foo.m");
         let mherit = filter_by_id(&diags, "MHERIT");
-        assert!(mherit.is_empty(), "MHERIT should NOT fire for handle or user superclass");
+        assert!(
+            mherit.is_empty(),
+            "MHERIT should NOT fire for handle or user superclass"
+        );
     }
 }

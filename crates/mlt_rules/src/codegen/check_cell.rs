@@ -31,5 +31,4 @@ mod tests {
         let diags = lint_nodes(&*engine(), src);
         assert!(!has_id(&diags, "EMCEL"), "got: {diags:?}");
     }
-
 }

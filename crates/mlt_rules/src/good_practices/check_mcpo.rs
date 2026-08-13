@@ -55,7 +55,8 @@ mod tests {
 
     #[test]
     fn test_mcpo_fires_on_value_class_observable() {
-        let source = "classdef ValClass\n    properties (SetObservable)\n        Data\n    end\nend\n";
+        let source =
+            "classdef ValClass\n    properties (SetObservable)\n        Data\n    end\nend\n";
         let tree = parse(source);
         let eng = engine();
         let diags = eng.check_mcpo(&tree, source);
@@ -79,7 +80,8 @@ mod tests {
                 disabled_checks: vec!["MCPO".to_string()],
             },
         };
-        let source = "classdef ValClass\n    properties (SetObservable)\n        Data\n    end\nend\n";
+        let source =
+            "classdef ValClass\n    properties (SetObservable)\n        Data\n    end\nend\n";
         let tree = parse(source);
         assert!(eng.check_mcpo(&tree, source).is_empty());
     }

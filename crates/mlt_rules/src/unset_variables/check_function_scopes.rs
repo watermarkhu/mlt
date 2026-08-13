@@ -119,10 +119,9 @@ end
         // x is assigned later in the function, so it is "used but not set
         // in all code paths" (USENS) rather than completely undefined.
         assert!(
-            diags
-                .iter()
-                .any(|d| (d.rule_id == "NODEF" || d.rule_id == "USENS")
-                    && d.message.contains("'x'")),
+            diags.iter().any(
+                |d| (d.rule_id == "NODEF" || d.rule_id == "USENS") && d.message.contains("'x'")
+            ),
             "expected NODEF or USENS for 'x', got: {diags:?}"
         );
     }
@@ -153,7 +152,9 @@ end
 ";
         let diags = lint_file(&*engine(), source);
         assert!(
-            !diags.iter().any(|d| d.rule_id == "NODEF" && d.message.contains("'x'")),
+            !diags
+                .iter()
+                .any(|d| d.rule_id == "NODEF" && d.message.contains("'x'")),
             "should not fire NODEF for 'x' when it is assigned before use"
         );
     }
@@ -172,9 +173,9 @@ end
 ";
         let diags = lint_file(&*engine(), source);
         // z is assigned later on one path but used before being definitely assigned.
-        let has_relevant = diags.iter().any(|d| {
-            (d.rule_id == "NODEF" || d.rule_id == "USENS") && d.message.contains("'z'")
-        });
+        let has_relevant = diags
+            .iter()
+            .any(|d| (d.rule_id == "NODEF" || d.rule_id == "USENS") && d.message.contains("'z'"));
         assert!(
             has_relevant,
             "expected NODEF or USENS for 'z', got: {diags:?}"

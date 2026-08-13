@@ -73,7 +73,7 @@ impl LanguageSpecEngine {
 
 #[cfg(test)]
 mod tests {
-    
+
     use crate::language_spec::tests::{check_source, filter_by_id};
 
     #[test]
@@ -90,7 +90,11 @@ end
 ";
         let diags = check_source(source, "foo.m");
         let spdec = filter_by_id(&diags, "SPDEC");
-        assert_eq!(spdec.len(), 2, "SPDEC should fire for negative/fractional bounds");
+        assert_eq!(
+            spdec.len(),
+            2,
+            "SPDEC should fire for negative/fractional bounds"
+        );
     }
 
     #[test]
@@ -107,7 +111,10 @@ end
 ";
         let diags = check_source(source, "foo.m");
         let spdec = filter_by_id(&diags, "SPDEC");
-        assert!(spdec.is_empty(), "SPDEC should NOT fire for valid integer bounds");
+        assert!(
+            spdec.is_empty(),
+            "SPDEC should NOT fire for valid integer bounds"
+        );
     }
 
     #[test]

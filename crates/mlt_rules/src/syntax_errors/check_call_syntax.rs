@@ -3,39 +3,39 @@
 use super::*;
 
 impl SyntaxErrorsEngine {
-        pub(crate) fn check_call_syntax(&self, root: Node, source: &str) -> Vec<Diagnostic> {
-            let mut diagnostics = Vec::new();
-            self.walk_call_syntax(root, source, &mut diagnostics);
-            diagnostics
-        }
+    pub(crate) fn check_call_syntax(&self, root: Node, source: &str) -> Vec<Diagnostic> {
+        let mut diagnostics = Vec::new();
+        self.walk_call_syntax(root, source, &mut diagnostics);
+        diagnostics
+    }
 
-        pub(crate) fn walk_call_syntax(
-            &self,
-            node: Node,
-            source: &str,
-            diagnostics: &mut Vec<Diagnostic>,
-        ) {
-            if node.kind() == "function_call" {
-                self.check_function_call(node, source, diagnostics);
-            }
-            let mut cursor = node.walk();
-            for child in node.children(&mut cursor) {
-                self.walk_call_syntax(child, source, diagnostics);
-            }
+    pub(crate) fn walk_call_syntax(
+        &self,
+        node: Node,
+        source: &str,
+        diagnostics: &mut Vec<Diagnostic>,
+    ) {
+        if node.kind() == "function_call" {
+            self.check_function_call(node, source, diagnostics);
         }
+        let mut cursor = node.walk();
+        for child in node.children(&mut cursor) {
+            self.walk_call_syntax(child, source, diagnostics);
+        }
+    }
 
-        pub(crate) fn check_function_call(
-            &self,
-            node: Node,
-            source: &str,
-            diagnostics: &mut Vec<Diagnostic>,
-        ) {
-            // SBTMP: chaining outputs after parenthesis is not supported.
-            if self.is_check_enabled("SBTMP") {
-                if let Some(name) = node.child_by_field_name("name") {
-                    if name.kind() == "function_call" {
-                        let pos = node.start_position();
-                        diagnostics.push(Diagnostic {
+    pub(crate) fn check_function_call(
+        &self,
+        node: Node,
+        source: &str,
+        diagnostics: &mut Vec<Diagnostic>,
+    ) {
+        // SBTMP: chaining outputs after parenthesis is not supported.
+        if self.is_check_enabled("SBTMP") {
+            if let Some(name) = node.child_by_field_name("name") {
+                if name.kind() == "function_call" {
+                    let pos = node.start_position();
+                    diagnostics.push(Diagnostic {
                             rule_id: "SBTMP",
                             message: "Invalid array indexing or function call. Chaining outputs after parenthesis is not supported."
                                 .to_string(),
@@ -45,39 +45,38 @@ impl SyntaxErrorsEngine {
                             column: pos.column + 1,
                             fix: None,
                         });
-                    }
                 }
-            }
-
-            let is_brace = (0..node.child_count())
-                .any(|i| node.child(i).is_some_and(|c| c.kind() == "{"));
-            let args = Self::arguments_child(node);
-
-            // FVACI: name=value syntax in cell indexing (`{}` calls).
-            if self.is_check_enabled("FVACI") && is_brace {
-                if let Some(a) = args {
-                    if Self::has_eq_token(a) {
-                        let pos = node.start_position();
-                        diagnostics.push(Diagnostic {
-                            rule_id: "FVACI",
-                            message: "Use of name-value arguments in cell indexing is not supported."
-                                .to_string(),
-                            severity: Severity::Error,
-                            byte_range: node.byte_range(),
-                            line: pos.row + 1,
-                            column: pos.column + 1,
-                            fix: None,
-                        });
-                    }
-                }
-            }
-
-            // FVACS/FVAMI: name=value with an invalid name in a call.
-            if self.is_check_enabled("FVACS") || self.is_check_enabled("FVAMI") {
-                self.check_name_value(node, args, source, diagnostics);
             }
         }
 
+        let is_brace =
+            (0..node.child_count()).any(|i| node.child(i).is_some_and(|c| c.kind() == "{"));
+        let args = Self::arguments_child(node);
+
+        // FVACI: name=value syntax in cell indexing (`{}` calls).
+        if self.is_check_enabled("FVACI") && is_brace {
+            if let Some(a) = args {
+                if Self::has_eq_token(a) {
+                    let pos = node.start_position();
+                    diagnostics.push(Diagnostic {
+                        rule_id: "FVACI",
+                        message: "Use of name-value arguments in cell indexing is not supported."
+                            .to_string(),
+                        severity: Severity::Error,
+                        byte_range: node.byte_range(),
+                        line: pos.row + 1,
+                        column: pos.column + 1,
+                        fix: None,
+                    });
+                }
+            }
+        }
+
+        // FVACS/FVAMI: name=value with an invalid name in a call.
+        if self.is_check_enabled("FVACS") || self.is_check_enabled("FVAMI") {
+            self.check_name_value(node, args, source, diagnostics);
+        }
+    }
 }
 
 #[cfg(test)]
@@ -91,8 +90,15 @@ mod tests {
     }
 
     fn engine_with_disabled(checks: &[&str]) -> Box<dyn Rule> {
-        let disabled = checks.iter().map(|c| format!("\"{c}\"")).collect::<Vec<_>>().join(", ");
-        let config = Config::from_toml(&format!("[lint.rules.SYNTAX_ERRORS_ENGINE]\ndisabled_checks = [{disabled}]\n")).unwrap();
+        let disabled = checks
+            .iter()
+            .map(|c| format!("\"{c}\""))
+            .collect::<Vec<_>>()
+            .join(", ");
+        let config = Config::from_toml(&format!(
+            "[lint.rules.SYNTAX_ERRORS_ENGINE]\ndisabled_checks = [{disabled}]\n"
+        ))
+        .unwrap();
         SyntaxErrorsEngine::from_config(&config)
     }
 
@@ -240,6 +246,4 @@ mod tests {
         assert!(!has_id(&diags, "FVACS"), "got: {diags:?}");
         assert!(!has_id(&diags, "FVAMI"), "got: {diags:?}");
     }
-
 }
-

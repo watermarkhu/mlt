@@ -22,14 +22,13 @@ impl BugsEngine {
         }
 
         // Check for `size(x) == [m n]` or `[m n] == size(x)`.
-        let (call_node, array_node) =
-            if lhs.kind() == "function_call" && rhs.kind() == "matrix" {
-                (lhs, rhs)
-            } else if rhs.kind() == "function_call" && lhs.kind() == "matrix" {
-                (rhs, lhs)
-            } else {
-                return Vec::new();
-            };
+        let (call_node, array_node) = if lhs.kind() == "function_call" && rhs.kind() == "matrix" {
+            (lhs, rhs)
+        } else if rhs.kind() == "function_call" && lhs.kind() == "matrix" {
+            (rhs, lhs)
+        } else {
+            return Vec::new();
+        };
 
         let func_name = match extract_call_name(call_node, source) {
             Some(n) => n,
@@ -59,10 +58,7 @@ impl BugsEngine {
             byte_range: node.start_byte()..node.end_byte(),
             line: pos.row + 1,
             column: pos.column + 1,
-            fix: Some(Fix::new(
-                node.start_byte()..node.end_byte(),
-                replacement,
-            )),
+            fix: Some(Fix::new(node.start_byte()..node.end_byte(), replacement)),
         }]
     }
 }

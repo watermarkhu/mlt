@@ -158,11 +158,7 @@ impl UnusedEngine {
 
     /// Run MSNU check: struct field set but never read.
     /// This is a heuristic check based on field_expression analysis.
-    fn check_msnu(
-        &self,
-        ctx: &FileContext,
-        diagnostics: &mut Vec<Diagnostic>,
-    ) {
+    fn check_msnu(&self, ctx: &FileContext, diagnostics: &mut Vec<Diagnostic>) {
         if self.is_check_disabled("MSNU") {
             return;
         }
@@ -200,11 +196,7 @@ impl UnusedEngine {
     /// Run MSNE check: struct field doesn't exist (assigned but potential typo).
     /// Heuristic: if a struct has many fields and one is only written once with
     /// no reads, it may be a typo.
-    fn check_msne(
-        &self,
-        ctx: &FileContext,
-        diagnostics: &mut Vec<Diagnostic>,
-    ) {
+    fn check_msne(&self, ctx: &FileContext, diagnostics: &mut Vec<Diagnostic>) {
         if self.is_check_disabled("MSNE") {
             return;
         }
@@ -242,7 +234,8 @@ impl UnusedEngine {
 
             for w in writes {
                 let key = format!("{}.{}", object, w.field);
-                if field_write_count.get(w.field.as_str()) == Some(&1) && !field_reads.contains(&key)
+                if field_write_count.get(w.field.as_str()) == Some(&1)
+                    && !field_reads.contains(&key)
                 {
                     diagnostics.push(Diagnostic {
                         rule_id: "MSNE",
@@ -316,11 +309,7 @@ impl UnusedEngine {
     }
 
     /// Collect field reads from an expression subtree.
-    fn collect_field_reads(
-        node: Node,
-        source: &str,
-        reads: &mut HashSet<String>,
-    ) {
+    fn collect_field_reads(node: Node, source: &str, reads: &mut HashSet<String>) {
         if node.kind() == "field_expression" {
             if let Some(access) = extract_field_access(node, source) {
                 let key = format!("{}.{}", access.object, access.field);
@@ -335,7 +324,6 @@ impl UnusedEngine {
             }
         }
     }
-
 }
 
 impl Rule for UnusedEngine {
@@ -499,7 +487,6 @@ mod tests {
         UnusedEngine::from_config(&Config::default())
     }
 
-
     // -- MSNU: struct field set but never read ------------------------------
 
     #[test]
@@ -510,8 +497,10 @@ mod tests {
 
     #[test]
     fn msnu_ok_when_field_read() {
-        let diags =
-            lint_file(&*engine(), "function foo()\n    s.field = 1;\n    x = s.field;\n    disp(x);\nend\n");
+        let diags = lint_file(
+            &*engine(),
+            "function foo()\n    s.field = 1;\n    x = s.field;\n    disp(x);\nend\n",
+        );
         assert!(!has_id(&diags, "MSNU"), "got: {diags:?}");
     }
 
@@ -534,5 +523,4 @@ mod tests {
         );
         assert!(!has_id(&diags, "MSNE"), "got: {diags:?}");
     }
-
 }

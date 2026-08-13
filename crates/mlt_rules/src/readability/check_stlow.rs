@@ -134,10 +134,9 @@ mod tests {
 
     #[test]
     fn stlow_disabled_in_config_does_not_fire() {
-        let config = Config::from_toml(
-            "[lint.rules.READABILITY_ENGINE]\ndisabled_checks = [\"STLOW\"]\n",
-        )
-        .expect("valid config");
+        let config =
+            Config::from_toml("[lint.rules.READABILITY_ENGINE]\ndisabled_checks = [\"STLOW\"]\n")
+                .expect("valid config");
         let rule = ReadabilityEngine::from_config(&config);
         let diags = lint_nodes(&*rule, "x = strcmp(upper(str), 'ABC');\n");
         assert!(!has_id(&diags, "STLOW"), "got: {diags:?}");

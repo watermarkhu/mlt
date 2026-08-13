@@ -5,11 +5,7 @@ use super::*;
 impl UnusedEngine {
     /// Run SETNU check: output of function call assigned but never used.
     /// This is a refinement of NASGU specifically for function call outputs.
-    pub(crate) fn check_setnu(
-        &self,
-        table: &SymbolTable,
-        diagnostics: &mut Vec<Diagnostic>,
-    ) {
+    pub(crate) fn check_setnu(&self, table: &SymbolTable, diagnostics: &mut Vec<Diagnostic>) {
         if self.is_check_disabled("SETNU") {
             return;
         }
@@ -44,9 +40,7 @@ impl UnusedEngine {
                 if !scope.is_used(name) {
                     diagnostics.push(Diagnostic {
                         rule_id: "SETNU",
-                        message: format!(
-                            "Output assigned to '{name}' is never used"
-                        ),
+                        message: format!("Output assigned to '{name}' is never used"),
                         severity: Severity::Warning,
                         byte_range: def.byte_range.clone(),
                         line: def.line,
@@ -57,7 +51,6 @@ impl UnusedEngine {
             }
         }
     }
-
 }
 
 #[cfg(test)]
@@ -90,5 +83,4 @@ mod tests {
         let diags = lint_file(&*engine(), "function foo()\n    x = 5;\nend\n");
         assert!(!has_id(&diags, "SETNU"), "got: {diags:?}");
     }
-
 }

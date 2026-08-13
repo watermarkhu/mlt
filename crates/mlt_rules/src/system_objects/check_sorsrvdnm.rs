@@ -18,9 +18,7 @@ impl SystemObjectsEngine {
                         let method_name = node_text(name_node, source);
                         // Only flag if the method name is reserved but not an expected
                         // override (setupImpl, stepImpl, etc. are expected)
-                        if RESERVED_NAMES.contains(&method_name)
-                            && !method_name.ends_with("Impl")
-                        {
+                        if RESERVED_NAMES.contains(&method_name) && !method_name.ends_with("Impl") {
                             diags.push(make_diag("SORSRVDNM", name_node));
                         }
                     }
@@ -44,14 +42,16 @@ mod tests {
 
     #[test]
     fn sorsrvdnm_impl_suffixed_method_does_not_fire() {
-        let source = system_class("    methods\n        function stepImpl(obj)\n        end\n    end");
+        let source =
+            system_class("    methods\n        function stepImpl(obj)\n        end\n    end");
         let diags = lint_file(&*engine(), &source);
         assert!(!has_id(&diags, "SORSRVDNM"), "got: {diags:?}");
     }
 
     #[test]
     fn sorsrvdnm_non_reserved_method_does_not_fire() {
-        let source = system_class("    methods\n        function doWork(obj)\n        end\n    end");
+        let source =
+            system_class("    methods\n        function doWork(obj)\n        end\n    end");
         let diags = lint_file(&*engine(), &source);
         assert!(!has_id(&diags, "SORSRVDNM"), "got: {diags:?}");
     }

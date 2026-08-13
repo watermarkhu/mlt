@@ -155,10 +155,7 @@ fn array_literal_is_scalar(node: Node) -> bool {
 /// Collect `(condition, is_if_while)` pairs: the condition of every
 /// `if_statement`, `while_statement` and `elseif_clause`, plus the switch
 /// expression of every `switch_statement` (with `is_if_while == false`).
-fn collect_condition_expressions<'a>(
-    node: Node<'a>,
-    out: &mut Vec<(Node<'a>, bool)>,
-) {
+fn collect_condition_expressions<'a>(node: Node<'a>, out: &mut Vec<(Node<'a>, bool)>) {
     match node.kind() {
         "if_statement" | "while_statement" | "elseif_clause" => {
             if let Some(cond) = first_named_child(node) {
@@ -223,10 +220,7 @@ fn check_bare_condition(
                 });
             }
 
-            if eng.is_check_enabled("BDLOG1")
-                && info.kind == TypeKind::Logical
-                && !info.scalar
-            {
+            if eng.is_check_enabled("BDLOG1") && info.kind == TypeKind::Logical && !info.scalar {
                 diagnostics.push(Diagnostic {
                     rule_id: "BDLOG1",
                     message: "A scalar logical value is expected in the conditional expression. \
@@ -292,12 +286,7 @@ fn check_bare_condition(
 
 /// BDSCA: walk the whole tree and flag `&&` / `||` operators with a
 /// non-scalar logical operand.
-fn collect_bdsca(
-    node: Node,
-    env: &TypeEnv,
-    source: &str,
-    diagnostics: &mut Vec<Diagnostic>,
-) {
+fn collect_bdsca(node: Node, env: &TypeEnv, source: &str, diagnostics: &mut Vec<Diagnostic>) {
     if node.kind() == "boolean_operator" || node.kind() == "boolean_operator_short" {
         let op = find_operator_text(node, source);
         let op = if op.is_empty() { "&&" } else { op.as_str() };

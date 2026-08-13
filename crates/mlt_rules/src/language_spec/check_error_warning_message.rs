@@ -40,7 +40,7 @@ impl LanguageSpecEngine {
 
 #[cfg(test)]
 mod tests {
-    
+
     use crate::language_spec::tests::{check_source, filter_by_id};
 
     #[test]
@@ -48,7 +48,10 @@ mod tests {
         let source = "error('MyTool:badInput');\n";
         let diags = check_source(source, "myscript.m");
         let ertxt = filter_by_id(&diags, "ERTXT");
-        assert!(!ertxt.is_empty(), "ERTXT should fire for error ID with no message");
+        assert!(
+            !ertxt.is_empty(),
+            "ERTXT should fire for error ID with no message"
+        );
     }
 
     #[test]
@@ -59,7 +62,10 @@ error('MyID', 'message here');
 ";
         let diags = check_source(source, "myscript.m");
         let ertxt = filter_by_id(&diags, "ERTXT");
-        assert!(ertxt.is_empty(), "ERTXT should NOT fire for plain message or ID+message");
+        assert!(
+            ertxt.is_empty(),
+            "ERTXT should NOT fire for plain message or ID+message"
+        );
     }
 
     #[test]
@@ -67,7 +73,10 @@ error('MyID', 'message here');
         let source = "warning('MyTool:badInput');\n";
         let diags = check_source(source, "myscript.m");
         let wtxt = filter_by_id(&diags, "WTXT");
-        assert!(!wtxt.is_empty(), "WTXT should fire for warning ID with no message");
+        assert!(
+            !wtxt.is_empty(),
+            "WTXT should fire for warning ID with no message"
+        );
     }
 
     #[test]
@@ -75,6 +84,9 @@ error('MyID', 'message here');
         let source = "warning('plain message');\nwarning('MyID', 'msg');\n";
         let diags = check_source(source, "myscript.m");
         let wtxt = filter_by_id(&diags, "WTXT");
-        assert!(wtxt.is_empty(), "WTXT should NOT fire for plain message or ID+message");
+        assert!(
+            wtxt.is_empty(),
+            "WTXT should NOT fire for plain message or ID+message"
+        );
     }
 }

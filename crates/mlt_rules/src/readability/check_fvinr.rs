@@ -75,10 +75,9 @@ mod tests {
 
     #[test]
     fn fvinr_disabled_in_config_does_not_fire() {
-        let config = Config::from_toml(
-            "[lint.rules.READABILITY_ENGINE]\ndisabled_checks = [\"FVINR\"]\n",
-        )
-        .expect("valid config");
+        let config =
+            Config::from_toml("[lint.rules.READABILITY_ENGINE]\ndisabled_checks = [\"FVINR\"]\n")
+                .expect("valid config");
         let rule = ReadabilityEngine::from_config(&config);
         let source = "function f(a)\n    arguments\n        a (1,1)\n    end\nend\n";
         let diags = lint_nodes(&*rule, source);
@@ -97,9 +96,6 @@ mod tests {
         assert_eq!(fix.replacement, " (Input)");
         let mut fixed = String::from(source);
         fixed.replace_range(fix.byte_range.clone(), &fix.replacement);
-        assert!(
-            fixed.contains("arguments (Input)"),
-            "got: {fixed:?}"
-        );
+        assert!(fixed.contains("arguments (Input)"), "got: {fixed:?}");
     }
 }

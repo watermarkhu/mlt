@@ -22,7 +22,10 @@ impl PerformanceEngine {
         }
 
         // The operand should be a function_call to isempty
-        let operand = match node.child(1).or_else(|| node.child_by_field_name("operand")) {
+        let operand = match node
+            .child(1)
+            .or_else(|| node.child_by_field_name("operand"))
+        {
             Some(n) => n,
             None => return diags,
         };

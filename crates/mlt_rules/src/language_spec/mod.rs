@@ -473,7 +473,10 @@ impl LanguageSpecEngine {
         diagnostics: &mut Vec<Diagnostic>,
     ) {
         let kind = node.kind();
-        let current_context = context_stack.last().map(|f| f.context).unwrap_or(LoopContext::Normal);
+        let current_context = context_stack
+            .last()
+            .map(|f| f.context)
+            .unwrap_or(LoopContext::Normal);
 
         match kind {
             "for_statement" => {
@@ -531,7 +534,12 @@ impl LanguageSpecEngine {
                     });
                     self.visit_children(node, source, context_stack, nested_functions, diagnostics);
                     if let Some(frame) = context_stack.last() {
-                        self.finalize_parfor_analysis(&frame.parfor_analysis, node, source, diagnostics);
+                        self.finalize_parfor_analysis(
+                            &frame.parfor_analysis,
+                            node,
+                            source,
+                            diagnostics,
+                        );
                     }
                     context_stack.pop();
                 } else {
@@ -546,7 +554,13 @@ impl LanguageSpecEngine {
                         // C1 checks for nested for loops inside parfor
                         self.check_nested_for_in_parfor(node, source, context_stack, diagnostics);
                         // Stay in Parfor context
-                        self.visit_children(node, source, context_stack, nested_functions, diagnostics);
+                        self.visit_children(
+                            node,
+                            source,
+                            context_stack,
+                            nested_functions,
+                            diagnostics,
+                        );
                         // Remove the for variable from tracking
                         if let Some(frame) = context_stack.last_mut() {
                             frame.for_vars_in_parfor.pop();
@@ -559,7 +573,13 @@ impl LanguageSpecEngine {
                             for_vars_in_parfor: Vec::new(),
                             parfor_analysis: ParforAnalysis::default(),
                         });
-                        self.visit_children(node, source, context_stack, nested_functions, diagnostics);
+                        self.visit_children(
+                            node,
+                            source,
+                            context_stack,
+                            nested_functions,
+                            diagnostics,
+                        );
                         context_stack.pop();
                     }
                 }
@@ -935,7 +955,11 @@ impl LanguageSpecEngine {
     }
 
     /// Extract the loop variable from a `for_statement` (works for both for and parfor).
-    pub(crate) fn extract_for_variable(&self, node: tree_sitter::Node, source: &str) -> Option<String> {
+    pub(crate) fn extract_for_variable(
+        &self,
+        node: tree_sitter::Node,
+        source: &str,
+    ) -> Option<String> {
         let mut cursor = node.walk();
         for child in node.children(&mut cursor) {
             if child.kind() == "iterator" {
@@ -961,11 +985,7 @@ impl LanguageSpecEngine {
     }
 
     /// Extract the LHS variable name from a simple assignment.
-    fn extract_assignment_lhs_name(
-        &self,
-        node: tree_sitter::Node,
-        source: &str,
-    ) -> Option<String> {
+    fn extract_assignment_lhs_name(&self, node: tree_sitter::Node, source: &str) -> Option<String> {
         let lhs = node.child_by_field_name("left")?;
         if lhs.kind() == "identifier" {
             Some(node_text(lhs, source).to_string())
@@ -981,16 +1001,30 @@ impl LanguageSpecEngine {
 
 /// Functions that do not accept cell array inputs (PFCEL).
 const PFCEL_NO_CELL_FUNCTIONS: &[&str] = &[
-    "sin", "cos", "tan", "asin", "acos", "atan", "sinh", "cosh", "tanh",
-    "exp", "log", "log10", "log2", "sqrt", "abs", "sign", "floor", "ceil",
-    "round", "fix", "mod", "rem",
+    "sin", "cos", "tan", "asin", "acos", "atan", "sinh", "cosh", "tanh", "exp", "log", "log10",
+    "log2", "sqrt", "abs", "sign", "floor", "ceil", "round", "fix", "mod", "rem",
 ];
 
 /// Reduction functions supported by parfor functional reductions (PFRFH).
 const PFRFH_REDUCTION_FUNCTIONS: &[&str] = &[
-    "plus", "minus", "times", "mtimes", "max", "min", "or", "and", "xor",
-    "horzcat", "vertcat", "hypot", "union", "intersect", "setxor",
-    "setdiff", "unique", "strcat",
+    "plus",
+    "minus",
+    "times",
+    "mtimes",
+    "max",
+    "min",
+    "or",
+    "and",
+    "xor",
+    "horzcat",
+    "vertcat",
+    "hypot",
+    "union",
+    "intersect",
+    "setxor",
+    "setdiff",
+    "unique",
+    "strcat",
 ];
 
 /// Maximum number of variables a parfor loop may contain (PFVARS).
@@ -1102,8 +1136,11 @@ impl LanguageSpecEngine {
         let Some(analysis) = current_parfor_analysis_mut(context_stack) else {
             return;
         };
-        let nested_for_vars: Vec<String> =
-            analysis.nested_fors.iter().map(|nf| nf.var.clone()).collect();
+        let nested_for_vars: Vec<String> = analysis
+            .nested_fors
+            .iter()
+            .map(|nf| nf.var.clone())
+            .collect();
 
         // PFMLTI: the nested for loop variable must not be assigned in the body
         if nested_for_vars.contains(&lhs_name) {
@@ -1184,7 +1221,9 @@ impl LanguageSpecEngine {
                     let right = rhs_node.child(2);
                     if let Some(r) = right {
                         if r.kind() == "identifier" && node_text(r, source) == lhs_name {
-                            analysis.sub_right.push((lhs_name.clone(), node.start_byte()));
+                            analysis
+                                .sub_right
+                                .push((lhs_name.clone(), node.start_byte()));
                         }
                     }
                 }
@@ -1390,17 +1429,19 @@ impl LanguageSpecEngine {
                     .unwrap_or(false);
                 analysis.var_names.insert(name.clone());
                 if is_assign_lhs {
-                    analysis
-                        .sliced_lhs
-                        .entry(name)
-                        .or_default()
-                        .push((args, node.start_byte(), node.end_byte(), is_cell));
+                    analysis.sliced_lhs.entry(name).or_default().push((
+                        args,
+                        node.start_byte(),
+                        node.end_byte(),
+                        is_cell,
+                    ));
                 } else {
-                    analysis
-                        .indexed_reads
-                        .entry(name)
-                        .or_default()
-                        .push((args, node.start_byte(), node.end_byte(), is_cell));
+                    analysis.indexed_reads.entry(name).or_default().push((
+                        args,
+                        node.start_byte(),
+                        node.end_byte(),
+                        is_cell,
+                    ));
                 }
             }
         }
@@ -1734,8 +1775,7 @@ impl LanguageSpecEngine {
 
         // PFSLO: indexed with the parfor loop variable but not a sliced output
         for (var, reads) in &analysis.indexed_reads {
-            if analysis.temp_assigns.contains_key(var) && !analysis.sliced_lhs.contains_key(var)
-            {
+            if analysis.temp_assigns.contains_key(var) && !analysis.sliced_lhs.contains_key(var) {
                 if let Some(first) = reads
                     .iter()
                     .filter(|(args, _, _, _)| args_tokens(args).contains(&parfor_var))
@@ -1770,7 +1810,7 @@ impl LanguageSpecEngine {
                             "Invalid combination of sliced indexing and non-indexed reads \
                              of the sliced output variable '{var}'"
                         ),
-                    diagnostics,
+                        diagnostics,
                     );
                 }
             }
@@ -1778,8 +1818,7 @@ impl LanguageSpecEngine {
 
         // PFSLW: multiple sliced accesses with different subscripts
         for (var, writes) in &analysis.sliced_lhs {
-            let mut sigs: Vec<String> =
-                writes.iter().map(|(args, _, _, _)| args.clone()).collect();
+            let mut sigs: Vec<String> = writes.iter().map(|(args, _, _, _)| args.clone()).collect();
             if let Some(reads) = analysis.indexed_reads.get(var) {
                 sigs.extend(reads.iter().map(|(args, _, _, _)| args.clone()));
             }
@@ -1810,9 +1849,7 @@ impl LanguageSpecEngine {
                     start,
                     start + 1,
                     "PFUNK",
-                    &format!(
-                        "The PARFOR loop cannot run due to the way variable '{var}' is used"
-                    ),
+                    &format!("The PARFOR loop cannot run due to the way variable '{var}' is used"),
                     diagnostics,
                 );
             }
@@ -1851,9 +1888,7 @@ impl LanguageSpecEngine {
         for (var, args, start, end) in accesses {
             let tokens = args_tokens(&args);
             for nf in &analysis.nested_fors {
-                if tokens.contains(&nf.var)
-                    && !(start >= nf.for_start && start <= nf.for_end)
-                {
+                if tokens.contains(&nf.var) && !(start >= nf.for_start && start <= nf.for_end) {
                     self.push_diag_bytes(
                         source,
                         start,
@@ -1874,23 +1909,16 @@ impl LanguageSpecEngine {
         // PFFRNG: nested for loop range must be a row of positive constants when it
         // indexes a sliced variable.
         for nf in &analysis.nested_fors {
-            let indexes_sliced = analysis
-                .sliced_lhs
-                .iter()
-                .any(|(_, writes)| {
-                    writes
+            let indexes_sliced = analysis.sliced_lhs.iter().any(|(_, writes)| {
+                writes
+                    .iter()
+                    .any(|(args, _, _, _)| args_tokens(args).contains(&nf.var))
+            }) || analysis.indexed_reads.iter().any(|(v, reads)| {
+                analysis.sliced_lhs.contains_key(v)
+                    && reads
                         .iter()
                         .any(|(args, _, _, _)| args_tokens(args).contains(&nf.var))
-                })
-                || analysis
-                    .indexed_reads
-                    .iter()
-                    .any(|(v, reads)| {
-                        analysis.sliced_lhs.contains_key(v)
-                            && reads
-                                .iter()
-                                .any(|(args, _, _, _)| args_tokens(args).contains(&nf.var))
-                    });
+            });
             if indexes_sliced && !nf.range_is_const_pos {
                 self.push_diag_bytes(
                     source,
@@ -2085,11 +2113,7 @@ impl LanguageSpecEngine {
 impl LanguageSpecEngine {
     /// Check whether a specific sub-check ID is enabled.
     pub(crate) fn is_check_enabled(&self, check_id: &str) -> bool {
-        !self
-            .config
-            .disabled_checks
-            .iter()
-            .any(|id| id == check_id)
+        !self.config.disabled_checks.iter().any(|id| id == check_id)
     }
 
     /// Collect all `function_definition` nodes in a tree with their names.
@@ -2242,7 +2266,11 @@ impl LanguageSpecEngine {
     ///
     /// Nested functions are `function_definition` nodes whose ancestor is another
     /// `function_definition`. Methods in `methods` blocks are not nested functions.
-    fn collect_nested_function_names(&self, root: tree_sitter::Node, source: &str) -> HashSet<String> {
+    fn collect_nested_function_names(
+        &self,
+        root: tree_sitter::Node,
+        source: &str,
+    ) -> HashSet<String> {
         let mut names = HashSet::new();
         Self::collect_nested_functions_dfs(root, false, source, &mut names);
         names
@@ -2445,7 +2473,11 @@ pub(crate) fn range_is_positive_constants(range_node: tree_sitter::Node, source:
 }
 
 /// Collect all identifier texts inside `node`.
-pub(crate) fn collect_identifiers(node: tree_sitter::Node, source: &str, out: &mut HashSet<String>) {
+pub(crate) fn collect_identifiers(
+    node: tree_sitter::Node,
+    source: &str,
+    out: &mut HashSet<String>,
+) {
     if node.kind() == "identifier" {
         out.insert(node_text(node, source).to_string());
         return;
@@ -2508,7 +2540,10 @@ pub(crate) fn collect_assigns_before(
 }
 
 /// Find the first child of a node with the given kind.
-pub(crate) fn find_child_kind<'a>(node: tree_sitter::Node<'a>, kind: &str) -> Option<tree_sitter::Node<'a>> {
+pub(crate) fn find_child_kind<'a>(
+    node: tree_sitter::Node<'a>,
+    kind: &str,
+) -> Option<tree_sitter::Node<'a>> {
     let mut cursor = node.walk();
     let mut result = None;
     for child in node.children(&mut cursor) {
@@ -2533,7 +2568,11 @@ pub(crate) fn function_output_names(node: tree_sitter::Node, source: &str) -> Ve
 }
 
 /// Collect all identifier names within a node.
-pub(crate) fn collect_identifiers_recursive(node: tree_sitter::Node, source: &str, out: &mut Vec<String>) {
+pub(crate) fn collect_identifiers_recursive(
+    node: tree_sitter::Node,
+    source: &str,
+    out: &mut Vec<String>,
+) {
     if node.kind() == "identifier" {
         out.push(node_text(node, source).to_string());
     }
@@ -2712,7 +2751,10 @@ pub(crate) fn block_role(attributes: &[String]) -> BlockRole {
 }
 
 /// Extract per-argument validation entries from an arguments block.
-pub(crate) fn block_arg_validations(block_node: tree_sitter::Node, source: &str) -> Vec<ArgValidation> {
+pub(crate) fn block_arg_validations(
+    block_node: tree_sitter::Node,
+    source: &str,
+) -> Vec<ArgValidation> {
     let mut validations = Vec::new();
     let mut cursor = block_node.walk();
     for child in block_node.children(&mut cursor) {
@@ -2738,8 +2780,8 @@ pub(crate) fn extract_block_arg_validation(
         prop_plain_name(prop_node, source)?
     };
 
-    let dimensions = find_child_kind(prop_node, "dimensions")
-        .map(|n| node_text(n, source).to_string());
+    let dimensions =
+        find_child_kind(prop_node, "dimensions").map(|n| node_text(n, source).to_string());
 
     let type_constraint = extract_block_type_constraint(prop_node, source);
 
@@ -2930,14 +2972,19 @@ pub(crate) fn prop_validator_calls(prop: tree_sitter::Node, source: &str) -> Vec
 }
 
 /// Extract a single validation function call node.
-pub(crate) fn extract_validator_call(call_node: tree_sitter::Node, source: &str) -> Option<ValidatorCall> {
+pub(crate) fn extract_validator_call(
+    call_node: tree_sitter::Node,
+    source: &str,
+) -> Option<ValidatorCall> {
     let mut references = Vec::new();
     if let Some(args_node) = find_child_kind(call_node, "arguments") {
         let mut cursor = args_node.walk();
         for arg in args_node.children(&mut cursor) {
             match arg.kind() {
                 "identifier" => {
-                    references.push(CallReference::Identifier(node_text(arg, source).to_string()));
+                    references.push(CallReference::Identifier(
+                        node_text(arg, source).to_string(),
+                    ));
                 }
                 "field_expression" => {
                     references.push(CallReference::Field);
@@ -2964,7 +3011,11 @@ pub(crate) fn collect_function_calls<'a>(
 }
 
 /// Whether a default value expression references a name-value structure.
-pub(crate) fn default_refs_name_value(node: tree_sitter::Node, source: &str, nv_structs: &[String]) -> bool {
+pub(crate) fn default_refs_name_value(
+    node: tree_sitter::Node,
+    source: &str,
+    nv_structs: &[String],
+) -> bool {
     if node.kind() == "field_expression" {
         if let Some(base) = find_child_kind(node, "identifier") {
             if nv_structs.iter().any(|s| s == node_text(base, source)) {
@@ -3029,10 +3080,27 @@ pub(crate) fn is_prefix_of(sequence: &[String], full: &[String]) -> bool {
 pub(crate) fn is_known_class_name(name: &str) -> bool {
     matches!(
         name,
-        "double" | "single" | "logical" | "char" | "string" | "cell" | "struct"
-            | "function_handle" | "int8" | "int16" | "int32" | "int64" | "uint8"
-            | "uint16" | "uint32" | "uint64" | "table" | "datetime" | "duration"
-            | "categorical" | "calendarDuration"
+        "double"
+            | "single"
+            | "logical"
+            | "char"
+            | "string"
+            | "cell"
+            | "struct"
+            | "function_handle"
+            | "int8"
+            | "int16"
+            | "int32"
+            | "int64"
+            | "uint8"
+            | "uint16"
+            | "uint32"
+            | "uint64"
+            | "table"
+            | "datetime"
+            | "duration"
+            | "categorical"
+            | "calendarDuration"
     )
 }
 
@@ -3050,8 +3118,8 @@ const BANNED_ARGUMENTS_FUNCTIONS: &[&str] = &[
 
 /// Built-in MATLAB classes that cannot be subclassed directly.
 const NON_SUBCLASSABLE_BUILTINS: &[&str] = &[
-    "double", "single", "int8", "int16", "int32", "int64", "uint8", "uint16", "uint32",
-    "uint64", "char", "logical", "cell", "struct",
+    "double", "single", "int8", "int16", "int32", "int64", "uint8", "uint16", "uint32", "uint64",
+    "char", "logical", "cell", "struct",
 ];
 
 /// Get the callee name of a `function_call` node.
@@ -3285,11 +3353,44 @@ mod tests {
     // ===== Function validation checks (FV* / TIN* / TTOO* group) =====
 
     const FV_CHECK_IDS: &[&str] = &[
-        "FVAPN", "FVATF", "FVBTN", "FVDAN", "FVDAP", "FVDNF", "FVDREP", "FVIDV",
-        "FVIOA", "FVMCL", "FVNDE", "FVNIV", "FVNREP", "FVNSC", "FVNVL", "FVOBI",
-        "FVOCON", "FVOND", "FVONV", "FVOOD", "FVOOI", "FVOON", "FVORDI", "FVORDN",
-        "FVORDO", "FVORDP", "FVORM", "FVOVREP", "FVREPD", "FVREPO", "FVSOR",
-        "FVSORO", "FVUBD", "FVVCON", "FVVIN", "FVVREP", "TINVALDIM", "TTOOFEWDIMS",
+        "FVAPN",
+        "FVATF",
+        "FVBTN",
+        "FVDAN",
+        "FVDAP",
+        "FVDNF",
+        "FVDREP",
+        "FVIDV",
+        "FVIOA",
+        "FVMCL",
+        "FVNDE",
+        "FVNIV",
+        "FVNREP",
+        "FVNSC",
+        "FVNVL",
+        "FVOBI",
+        "FVOCON",
+        "FVOND",
+        "FVONV",
+        "FVOOD",
+        "FVOOI",
+        "FVOON",
+        "FVORDI",
+        "FVORDN",
+        "FVORDO",
+        "FVORDP",
+        "FVORM",
+        "FVOVREP",
+        "FVREPD",
+        "FVREPO",
+        "FVSOR",
+        "FVSORO",
+        "FVUBD",
+        "FVVCON",
+        "FVVIN",
+        "FVVREP",
+        "TINVALDIM",
+        "TTOOFEWDIMS",
     ];
 
     #[test]
@@ -3339,162 +3440,6 @@ end
         assert_eq!(blocks[1].args[0].name, "y");
     }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
     #[test]
     fn test_fv_checks_respect_disabled_config() {
         let mut rule_config = LanguageSpecConfig::default();
@@ -3522,7 +3467,6 @@ end
             "FVNIV should be disabled via config disabled_checks"
         );
     }
-
 
     // ===== Parfor restriction tests =====
 
@@ -3555,7 +3499,10 @@ end
 ";
         let diags = check_source(source, "foo.m");
         let pfspmd = filter_by_id(&diags, "PFSPMD");
-        assert!(!pfspmd.is_empty(), "PFSPMD should fire for spmd inside parfor");
+        assert!(
+            !pfspmd.is_empty(),
+            "PFSPMD should fire for spmd inside parfor"
+        );
     }
 
     #[test]
@@ -3571,7 +3518,10 @@ end
 ";
         let diags = check_source(source, "foo.m");
         let pfbrk = filter_by_id(&diags, "PFBRK");
-        assert!(!pfbrk.is_empty(), "PFBRK should fire for break inside parfor");
+        assert!(
+            !pfbrk.is_empty(),
+            "PFBRK should fire for break inside parfor"
+        );
     }
 
     #[test]
@@ -3585,7 +3535,10 @@ end
 ";
         let diags = check_source(source, "foo.m");
         let pfrtn = filter_by_id(&diags, "PFRTN");
-        assert!(!pfrtn.is_empty(), "PFRTN should fire for return inside parfor");
+        assert!(
+            !pfrtn.is_empty(),
+            "PFRTN should fire for return inside parfor"
+        );
     }
 
     #[test]
@@ -3599,7 +3552,10 @@ end
 ";
         let diags = check_source(source, "foo.m");
         let pfglob = filter_by_id(&diags, "PFGLOB");
-        assert!(!pfglob.is_empty(), "PFGLOB should fire for global inside parfor");
+        assert!(
+            !pfglob.is_empty(),
+            "PFGLOB should fire for global inside parfor"
+        );
     }
 
     #[test]
@@ -3613,7 +3569,10 @@ end
 ";
         let diags = check_source(source, "foo.m");
         let pfpers = filter_by_id(&diags, "PFPERS");
-        assert!(!pfpers.is_empty(), "PFPERS should fire for persistent inside parfor");
+        assert!(
+            !pfpers.is_empty(),
+            "PFPERS should fire for persistent inside parfor"
+        );
     }
 
     #[test]
@@ -3650,7 +3609,10 @@ end
 ";
         let diags = check_source(source, "foo.m");
         let spnst = filter_by_id(&diags, "SPNST");
-        assert!(!spnst.is_empty(), "SPNST should fire for parfor inside spmd");
+        assert!(
+            !spnst.is_empty(),
+            "SPNST should fire for parfor inside spmd"
+        );
     }
 
     #[test]
@@ -3680,7 +3642,10 @@ end
 ";
         let diags = check_source(source, "foo.m");
         let spret = filter_by_id(&diags, "SPRET");
-        assert!(!spret.is_empty(), "SPRET should fire for return inside spmd");
+        assert!(
+            !spret.is_empty(),
+            "SPRET should fire for return inside spmd"
+        );
     }
 
     #[test]
@@ -3699,49 +3664,11 @@ end
 
     // ===== Class/OOP rule tests =====
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
     // ===== Function validation tests =====
-
-
 
     // ===== Script-level tests =====
 
-
-
-
-
     // ===== Other language spec tests =====
-
-
-
-
-
-
-
-
-
-
-
-
 
     #[test]
     fn test_no_parfor_violations_in_normal_code() {
@@ -3769,38 +3696,6 @@ end
 
     // ===== C4: SPMD transparency checks =====
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
     #[test]
     fn test_spbrk_covered_by_spret() {
         // SPBRK (break/continue not fully contained in spmd) is subsumed by SPRET,
@@ -3814,53 +3709,29 @@ end
 ";
         let diags = check_source(source, "foo.m");
         let spret = filter_by_id(&diags, "SPRET");
-        assert!(!spret.is_empty(), "SPRET should fire for break inside spmd (covers SPBRK)");
+        assert!(
+            !spret.is_empty(),
+            "SPRET should fire for break inside spmd (covers SPBRK)"
+        );
         let spbrk = filter_by_id(&diags, "SPBRK");
-        assert!(spbrk.is_empty(), "SPBRK is deferred — no separate diagnostic emitted");
+        assert!(
+            spbrk.is_empty(),
+            "SPBRK is deferred — no separate diagnostic emitted"
+        );
     }
 
     // ===== C4: error/warning message checks =====
 
-
-
-
-
-
-
-
-
-
-
-
-
     // ===== C4: class construction checks =====
 
-
-
-
-
-
-
-
-
-
-
-
-
     // ===== C4: script variable definition check =====
-
-
-
-
-
-
 
     // ===== C2 class/method attribute checks =====
 
     const C2_CHECK_IDS: [&str; 26] = [
         "MABSEAC", "MABSEAM", "MCAPP", "MCCBS", "MCCBU", "MCCMC", "MCCSOP", "MCGSA", "MCMIO",
-        "MCMSP", "MCMTP", "MCPIN", "MCPSG", "MCSCC", "MCSCF", "MCSCM", "MCSCN", "MCSCO",
-        "MCSCT", "MCSMO", "MCSWA", "MTAGS3", "MTMAT", "MWKCL", "MWKCT", "MWKREF",
+        "MCMSP", "MCMTP", "MCPIN", "MCPSG", "MCSCC", "MCSCF", "MCSCM", "MCSCN", "MCSCO", "MCSCT",
+        "MCSMO", "MCSWA", "MTAGS3", "MTMAT", "MWKCL", "MWKCT", "MWKREF",
     ];
 
     #[test]
@@ -3917,119 +3788,13 @@ end
         );
     }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
     // ===== C2 constant property checks =====
-
-
-
-
-
-
-
-
 
     // ===== C2 WeakHandle property checks =====
 
-
-
-
-
-
-
-
-
-
-
-
-
     // ===== C2 constructor/superclass checks =====
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
     // ===== C2 method signature checks =====
-
-
-
-
-
-
-
-
-
-
-
-
 
     // ===== C1: parfor/SPMD variable, slicing, and reduction checks =====
 
@@ -4046,7 +3811,10 @@ function f()
 end
 ";
         let diags = check_source(source, "f.m");
-        assert!(!filter_by_id(&diags, "PFEVC").is_empty(), "PFEVC should fire for evalin('caller') in parfor");
+        assert!(
+            !filter_by_id(&diags, "PFEVC").is_empty(),
+            "PFEVC should fire for evalin('caller') in parfor"
+        );
     }
 
     #[test]
@@ -4062,7 +3830,10 @@ function f()
 end
 ";
         let diags = check_source(source, "f.m");
-        assert!(filter_by_id(&diags, "PFEVC").is_empty(), "PFEVC should NOT fire for evalin('base') or outside parfor");
+        assert!(
+            filter_by_id(&diags, "PFEVC").is_empty(),
+            "PFEVC should NOT fire for evalin('base') or outside parfor"
+        );
     }
 
     // -- PFINPT --------------------------------------------------------------
@@ -4077,7 +3848,10 @@ function f()
 end
 ";
         let diags = check_source(source, "f.m");
-        assert!(!filter_by_id(&diags, "PFINPT").is_empty(), "PFINPT should fire for inputname in parfor");
+        assert!(
+            !filter_by_id(&diags, "PFINPT").is_empty(),
+            "PFINPT should fire for inputname in parfor"
+        );
     }
 
     #[test]
@@ -4090,7 +3864,10 @@ function f()
 end
 ";
         let diags = check_source(source, "f.m");
-        assert!(filter_by_id(&diags, "PFINPT").is_empty(), "PFINPT should NOT fire outside parfor");
+        assert!(
+            filter_by_id(&diags, "PFINPT").is_empty(),
+            "PFINPT should NOT fire outside parfor"
+        );
     }
 
     // -- PFNACK --------------------------------------------------------------
@@ -4105,7 +3882,10 @@ function f()
 end
 ";
         let diags = check_source(source, "f.m");
-        assert!(!filter_by_id(&diags, "PFNACK").is_empty(), "PFNACK should fire for narginchk in parfor");
+        assert!(
+            !filter_by_id(&diags, "PFNACK").is_empty(),
+            "PFNACK should fire for narginchk in parfor"
+        );
     }
 
     #[test]
@@ -4116,7 +3896,10 @@ function f()
 end
 ";
         let diags = check_source(source, "f.m");
-        assert!(filter_by_id(&diags, "PFNACK").is_empty(), "PFNACK should NOT fire outside parfor");
+        assert!(
+            filter_by_id(&diags, "PFNACK").is_empty(),
+            "PFNACK should NOT fire outside parfor"
+        );
     }
 
     // -- PFNAIO --------------------------------------------------------------
@@ -4132,7 +3915,10 @@ function f()
 end
 ";
         let diags = check_source(source, "f.m");
-        assert!(!filter_by_id(&diags, "PFNAIO").is_empty(), "PFNAIO should fire for nargin/nargout without arguments in parfor");
+        assert!(
+            !filter_by_id(&diags, "PFNAIO").is_empty(),
+            "PFNAIO should fire for nargin/nargout without arguments in parfor"
+        );
     }
 
     #[test]
@@ -4146,7 +3932,10 @@ function f()
 end
 ";
         let diags = check_source(source, "f.m");
-        assert!(filter_by_id(&diags, "PFNAIO").is_empty(), "PFNAIO should NOT fire outside parfor");
+        assert!(
+            filter_by_id(&diags, "PFNAIO").is_empty(),
+            "PFNAIO should NOT fire outside parfor"
+        );
     }
 
     // -- PFLD ----------------------------------------------------------------
@@ -4161,10 +3950,11 @@ function f()
 end
 ";
         let diags = check_source(source, "f.m");
-        assert!(!filter_by_id(&diags, "PFLD").is_empty(), "PFLD should fire for load without output in parfor");
+        assert!(
+            !filter_by_id(&diags, "PFLD").is_empty(),
+            "PFLD should fire for load without output in parfor"
+        );
     }
-
-
 
     #[test]
     fn test_pfld_no_fire_load_with_output() {
@@ -4176,7 +3966,10 @@ function f()
 end
 ";
         let diags = check_source(source, "f.m");
-        assert!(filter_by_id(&diags, "PFLD").is_empty(), "PFLD should NOT fire when load has an output");
+        assert!(
+            filter_by_id(&diags, "PFLD").is_empty(),
+            "PFLD should NOT fire when load has an output"
+        );
     }
 
     // -- PFSV ----------------------------------------------------------------
@@ -4191,7 +3984,10 @@ function f()
 end
 ";
         let diags = check_source(source, "f.m");
-        assert!(!filter_by_id(&diags, "PFSV").is_empty(), "PFSV should fire for save without -fromstruct in parfor");
+        assert!(
+            !filter_by_id(&diags, "PFSV").is_empty(),
+            "PFSV should fire for save without -fromstruct in parfor"
+        );
     }
 
     #[test]
@@ -4204,7 +4000,10 @@ function f()
 end
 ";
         let diags = check_source(source, "f.m");
-        assert!(filter_by_id(&diags, "PFSV").is_empty(), "PFSV should NOT fire for save with -fromstruct");
+        assert!(
+            filter_by_id(&diags, "PFSV").is_empty(),
+            "PFSV should NOT fire for save with -fromstruct"
+        );
     }
 
     // -- FPFORP / FWFORP -----------------------------------------------------
@@ -4220,7 +4019,10 @@ function f()
 end
 ";
         let diags = check_source(source, "f.m");
-        assert!(!filter_by_id(&diags, "FPFORP").is_empty(), "FPFORP should fire for fprintf to a read-only handle");
+        assert!(
+            !filter_by_id(&diags, "FPFORP").is_empty(),
+            "FPFORP should fire for fprintf to a read-only handle"
+        );
     }
 
     #[test]
@@ -4233,7 +4035,10 @@ function f()
 end
 ";
         let diags = check_source(source, "f.m");
-        assert!(!filter_by_id(&diags, "FPFORP").is_empty(), "FPFORP should fire for inline read-only fopen");
+        assert!(
+            !filter_by_id(&diags, "FPFORP").is_empty(),
+            "FPFORP should fire for inline read-only fopen"
+        );
     }
 
     #[test]
@@ -4248,7 +4053,10 @@ function f()
 end
 ";
         let diags = check_source(source, "f.m");
-        assert!(filter_by_id(&diags, "FPFORP").is_empty(), "FPFORP should NOT fire for a writable handle or stdout");
+        assert!(
+            filter_by_id(&diags, "FPFORP").is_empty(),
+            "FPFORP should NOT fire for a writable handle or stdout"
+        );
     }
 
     #[test]
@@ -4262,7 +4070,10 @@ function f()
 end
 ";
         let diags = check_source(source, "f.m");
-        assert!(!filter_by_id(&diags, "FWFORP").is_empty(), "FWFORP should fire for fwrite to a read-only handle");
+        assert!(
+            !filter_by_id(&diags, "FWFORP").is_empty(),
+            "FWFORP should fire for fwrite to a read-only handle"
+        );
     }
 
     #[test]
@@ -4275,7 +4086,10 @@ function f()
 end
 ";
         let diags = check_source(source, "f.m");
-        assert!(filter_by_id(&diags, "FWFORP").is_empty(), "FWFORP should NOT fire for a writable handle");
+        assert!(
+            filter_by_id(&diags, "FWFORP").is_empty(),
+            "FWFORP should NOT fire for a writable handle"
+        );
     }
 
     // -- PFCEL ---------------------------------------------------------------
@@ -4291,7 +4105,10 @@ function f()
 end
 ";
         let diags = check_source(source, "f.m");
-        assert!(!filter_by_id(&diags, "PFCEL").is_empty(), "PFCEL should fire for cell array arguments");
+        assert!(
+            !filter_by_id(&diags, "PFCEL").is_empty(),
+            "PFCEL should fire for cell array arguments"
+        );
     }
 
     #[test]
@@ -4304,7 +4121,10 @@ function f()
 end
 ";
         let diags = check_source(source, "f.m");
-        assert!(filter_by_id(&diags, "PFCEL").is_empty(), "PFCEL should NOT fire for numeric arguments");
+        assert!(
+            filter_by_id(&diags, "PFCEL").is_empty(),
+            "PFCEL should NOT fire for numeric arguments"
+        );
     }
 
     // -- PFANON --------------------------------------------------------------
@@ -4320,7 +4140,10 @@ function f()
 end
 ";
         let diags = check_source(source, "f.m");
-        assert!(!filter_by_id(&diags, "PFANON").is_empty(), "PFANON should fire when a sliced output is used in a lambda");
+        assert!(
+            !filter_by_id(&diags, "PFANON").is_empty(),
+            "PFANON should fire when a sliced output is used in a lambda"
+        );
     }
 
     #[test]
@@ -4334,14 +4157,13 @@ function f()
 end
 ";
         let diags = check_source(source, "f.m");
-        assert!(filter_by_id(&diags, "PFANON").is_empty(), "PFANON should NOT fire for unrelated lambdas");
+        assert!(
+            filter_by_id(&diags, "PFANON").is_empty(),
+            "PFANON should NOT fire for unrelated lambdas"
+        );
     }
 
     // -- PFANSLP / PFANSNS ---------------------------------------------------
-
-
-
-
 
     #[test]
     fn test_pfansns_fires_ans_for_variable_in_parfor() {
@@ -4355,7 +4177,10 @@ function f()
 end
 ";
         let diags = check_source(source, "f.m");
-        assert!(!filter_by_id(&diags, "PFANSNS").is_empty(), "PFANSNS should fire for 'ans' as for variable in parfor");
+        assert!(
+            !filter_by_id(&diags, "PFANSNS").is_empty(),
+            "PFANSNS should fire for 'ans' as for variable in parfor"
+        );
     }
 
     #[test]
@@ -4370,7 +4195,10 @@ function f()
 end
 ";
         let diags = check_source(source, "f.m");
-        assert!(filter_by_id(&diags, "PFANSNS").is_empty(), "PFANSNS should NOT fire for a normal for variable");
+        assert!(
+            filter_by_id(&diags, "PFANSNS").is_empty(),
+            "PFANSNS should NOT fire for a normal for variable"
+        );
     }
 
     // -- PFCTXT --------------------------------------------------------------
@@ -4388,7 +4216,10 @@ function f()
 end
 ";
         let diags = check_source(source, "f.m");
-        assert!(!filter_by_id(&diags, "PFCTXT").is_empty(), "PFCTXT should fire when a sliced variable is indexed outside the defining for loop");
+        assert!(
+            !filter_by_id(&diags, "PFCTXT").is_empty(),
+            "PFCTXT should fire when a sliced variable is indexed outside the defining for loop"
+        );
     }
 
     #[test]
@@ -4403,7 +4234,10 @@ function f()
 end
 ";
         let diags = check_source(source, "f.m");
-        assert!(filter_by_id(&diags, "PFCTXT").is_empty(), "PFCTXT should NOT fire when accesses are inside the defining for loop");
+        assert!(
+            filter_by_id(&diags, "PFCTXT").is_empty(),
+            "PFCTXT should NOT fire when accesses are inside the defining for loop"
+        );
     }
 
     // -- PFFRNG --------------------------------------------------------------
@@ -4420,7 +4254,10 @@ function f()
 end
 ";
         let diags = check_source(source, "f.m");
-        assert!(!filter_by_id(&diags, "PFFRNG").is_empty(), "PFFRNG should fire for a non-constant nested loop range");
+        assert!(
+            !filter_by_id(&diags, "PFFRNG").is_empty(),
+            "PFFRNG should fire for a non-constant nested loop range"
+        );
     }
 
     #[test]
@@ -4435,7 +4272,10 @@ function f()
 end
 ";
         let diags = check_source(source, "f.m");
-        assert!(filter_by_id(&diags, "PFFRNG").is_empty(), "PFFRNG should NOT fire for a constant positive range");
+        assert!(
+            filter_by_id(&diags, "PFFRNG").is_empty(),
+            "PFFRNG should NOT fire for a constant positive range"
+        );
     }
 
     // -- PFFSUB --------------------------------------------------------------
@@ -4452,7 +4292,10 @@ function f()
 end
 ";
         let diags = check_source(source, "f.m");
-        assert!(!filter_by_id(&diags, "PFFSUB").is_empty(), "PFFSUB should fire when a nested for variable is indexed");
+        assert!(
+            !filter_by_id(&diags, "PFFSUB").is_empty(),
+            "PFFSUB should fire when a nested for variable is indexed"
+        );
     }
 
     #[test]
@@ -4467,7 +4310,10 @@ function f()
 end
 ";
         let diags = check_source(source, "f.m");
-        assert!(filter_by_id(&diags, "PFFSUB").is_empty(), "PFFSUB should NOT fire when the nested for variable is an argument");
+        assert!(
+            filter_by_id(&diags, "PFFSUB").is_empty(),
+            "PFFSUB should NOT fire when the nested for variable is an argument"
+        );
     }
 
     // -- PFINCR --------------------------------------------------------------
@@ -4483,7 +4329,10 @@ function f(s)
 end
 ";
         let diags = check_source(source, "f.m");
-        assert!(!filter_by_id(&diags, "PFINCR").is_empty(), "PFINCR should fire for mixed reduction operators");
+        assert!(
+            !filter_by_id(&diags, "PFINCR").is_empty(),
+            "PFINCR should fire for mixed reduction operators"
+        );
     }
 
     #[test]
@@ -4497,7 +4346,10 @@ function f(s)
 end
 ";
         let diags = check_source(source, "f.m");
-        assert!(filter_by_id(&diags, "PFINCR").is_empty(), "PFINCR should NOT fire for a single reduction operator");
+        assert!(
+            filter_by_id(&diags, "PFINCR").is_empty(),
+            "PFINCR should NOT fire for a single reduction operator"
+        );
     }
 
     // -- PFMLTI --------------------------------------------------------------
@@ -4514,7 +4366,10 @@ function f()
 end
 ";
         let diags = check_source(source, "f.m");
-        assert!(!filter_by_id(&diags, "PFMLTI").is_empty(), "PFMLTI should fire when the nested for variable is assigned");
+        assert!(
+            !filter_by_id(&diags, "PFMLTI").is_empty(),
+            "PFMLTI should fire when the nested for variable is assigned"
+        );
     }
 
     #[test]
@@ -4529,7 +4384,10 @@ function f()
 end
 ";
         let diags = check_source(source, "f.m");
-        assert!(filter_by_id(&diags, "PFMLTI").is_empty(), "PFMLTI should NOT fire when the nested for variable is not assigned");
+        assert!(
+            filter_by_id(&diags, "PFMLTI").is_empty(),
+            "PFMLTI should NOT fire when the nested for variable is not assigned"
+        );
     }
 
     // -- PFNAR ---------------------------------------------------------------
@@ -4545,7 +4403,10 @@ function s = f(x)
 end
 ";
         let diags = check_source(source, "f.m");
-        assert!(!filter_by_id(&diags, "PFNAR").is_empty(), "PFNAR should fire when a reduction variable is subtracted from an expression");
+        assert!(
+            !filter_by_id(&diags, "PFNAR").is_empty(),
+            "PFNAR should fire when a reduction variable is subtracted from an expression"
+        );
     }
 
     #[test]
@@ -4559,7 +4420,10 @@ function s = f(x)
 end
 ";
         let diags = check_source(source, "f.m");
-        assert!(filter_by_id(&diags, "PFNAR").is_empty(), "PFNAR should NOT fire for a valid reduction subtraction");
+        assert!(
+            filter_by_id(&diags, "PFNAR").is_empty(),
+            "PFNAR should NOT fire for a valid reduction subtraction"
+        );
     }
 
     // -- PFRFH ---------------------------------------------------------------
@@ -4576,7 +4440,10 @@ function s = f(x)
 end
 ";
         let diags = check_source(source, "f.m");
-        assert!(!filter_by_id(&diags, "PFRFH").is_empty(), "PFRFH should fire when the reduction function is not a name or broadcast variable");
+        assert!(
+            !filter_by_id(&diags, "PFRFH").is_empty(),
+            "PFRFH should fire when the reduction function is not a name or broadcast variable"
+        );
     }
 
     #[test]
@@ -4590,7 +4457,10 @@ function s = f(x)
 end
 ";
         let diags = check_source(source, "f.m");
-        assert!(filter_by_id(&diags, "PFRFH").is_empty(), "PFRFH should NOT fire for a known reduction function");
+        assert!(
+            filter_by_id(&diags, "PFRFH").is_empty(),
+            "PFRFH should NOT fire for a known reduction function"
+        );
     }
 
     #[test]
@@ -4604,16 +4474,13 @@ function s = f(x, fn)
 end
 ";
         let diags = check_source(source, "f.m");
-        assert!(filter_by_id(&diags, "PFRFH").is_empty(), "PFRFH should NOT fire for a broadcast reduction function");
+        assert!(
+            filter_by_id(&diags, "PFRFH").is_empty(),
+            "PFRFH should NOT fire for a broadcast reduction function"
+        );
     }
 
     // -- PFRNG ---------------------------------------------------------------
-
-
-
-
-
-
 
     // -- PFSLO ---------------------------------------------------------------
 
@@ -4628,7 +4495,10 @@ function f()
 end
 ";
         let diags = check_source(source, "f.m");
-        assert!(!filter_by_id(&diags, "PFSLO").is_empty(), "PFSLO should fire when a temporary is indexed with the loop variable");
+        assert!(
+            !filter_by_id(&diags, "PFSLO").is_empty(),
+            "PFSLO should fire when a temporary is indexed with the loop variable"
+        );
     }
 
     #[test]
@@ -4642,7 +4512,10 @@ function f()
 end
 ";
         let diags = check_source(source, "f.m");
-        assert!(filter_by_id(&diags, "PFSLO").is_empty(), "PFSLO should NOT fire for a valid sliced output");
+        assert!(
+            filter_by_id(&diags, "PFSLO").is_empty(),
+            "PFSLO should NOT fire for a valid sliced output"
+        );
     }
 
     // -- PFSLRD --------------------------------------------------------------
@@ -4658,7 +4531,10 @@ function f()
 end
 ";
         let diags = check_source(source, "f.m");
-        assert!(!filter_by_id(&diags, "PFSLRD").is_empty(), "PFSLRD should fire for a non-indexed read of a sliced variable");
+        assert!(
+            !filter_by_id(&diags, "PFSLRD").is_empty(),
+            "PFSLRD should fire for a non-indexed read of a sliced variable"
+        );
     }
 
     #[test]
@@ -4672,7 +4548,10 @@ function f()
 end
 ";
         let diags = check_source(source, "f.m");
-        assert!(filter_by_id(&diags, "PFSLRD").is_empty(), "PFSLRD should NOT fire for indexed reads only");
+        assert!(
+            filter_by_id(&diags, "PFSLRD").is_empty(),
+            "PFSLRD should NOT fire for indexed reads only"
+        );
     }
 
     // -- PFSLW ---------------------------------------------------------------
@@ -4688,7 +4567,10 @@ function f()
 end
 ";
         let diags = check_source(source, "f.m");
-        assert!(!filter_by_id(&diags, "PFSLW").is_empty(), "PFSLW should fire for mismatched subscript lists");
+        assert!(
+            !filter_by_id(&diags, "PFSLW").is_empty(),
+            "PFSLW should fire for mismatched subscript lists"
+        );
     }
 
     #[test]
@@ -4702,7 +4584,10 @@ function f()
 end
 ";
         let diags = check_source(source, "f.m");
-        assert!(filter_by_id(&diags, "PFSLW").is_empty(), "PFSLW should NOT fire for consistent subscript lists");
+        assert!(
+            filter_by_id(&diags, "PFSLW").is_empty(),
+            "PFSLW should NOT fire for consistent subscript lists"
+        );
     }
 
     // -- PFUNK ---------------------------------------------------------------
@@ -4718,7 +4603,10 @@ function f()
 end
 ";
         let diags = check_source(source, "f.m");
-        assert!(!filter_by_id(&diags, "PFUNK").is_empty(), "PFUNK should fire when a variable is both sliced and a temporary");
+        assert!(
+            !filter_by_id(&diags, "PFUNK").is_empty(),
+            "PFUNK should fire when a variable is both sliced and a temporary"
+        );
     }
 
     #[test]
@@ -4731,7 +4619,10 @@ function f()
 end
 ";
         let diags = check_source(source, "f.m");
-        assert!(filter_by_id(&diags, "PFUNK").is_empty(), "PFUNK should NOT fire for a pure sliced output");
+        assert!(
+            filter_by_id(&diags, "PFUNK").is_empty(),
+            "PFUNK should NOT fire for a pure sliced output"
+        );
     }
 
     // -- PFUTMP --------------------------------------------------------------
@@ -4747,7 +4638,10 @@ function f()
 end
 ";
         let diags = check_source(source, "f.m");
-        assert!(!filter_by_id(&diags, "PFUTMP").is_empty(), "PFUTMP should fire when a temporary is used before it is set");
+        assert!(
+            !filter_by_id(&diags, "PFUTMP").is_empty(),
+            "PFUTMP should fire when a temporary is used before it is set"
+        );
     }
 
     #[test]
@@ -4761,7 +4655,10 @@ function f()
 end
 ";
         let diags = check_source(source, "f.m");
-        assert!(filter_by_id(&diags, "PFUTMP").is_empty(), "PFUTMP should NOT fire when the temporary is set before use");
+        assert!(
+            filter_by_id(&diags, "PFUTMP").is_empty(),
+            "PFUTMP should NOT fire when the temporary is set before use"
+        );
     }
 
     #[test]
@@ -4775,7 +4672,10 @@ function f(t)
 end
 ";
         let diags = check_source(source, "f.m");
-        assert!(filter_by_id(&diags, "PFUTMP").is_empty(), "PFUTMP should NOT fire for a function input");
+        assert!(
+            filter_by_id(&diags, "PFUTMP").is_empty(),
+            "PFUTMP should NOT fire for a function input"
+        );
     }
 
     // -- PFUTVR --------------------------------------------------------------
@@ -4784,7 +4684,10 @@ end
     fn test_putvr_fires_uninitialized_reduction() {
         let source = "parfor i = 1:10\n    s = s + x(i);\nend\n";
         let diags = check_source(source, "script.m");
-        assert!(!filter_by_id(&diags, "PFUTVR").is_empty(), "PFUTVR should fire for an uninitialized reduction variable");
+        assert!(
+            !filter_by_id(&diags, "PFUTVR").is_empty(),
+            "PFUTVR should fire for an uninitialized reduction variable"
+        );
     }
 
     #[test]
@@ -4798,7 +4701,10 @@ function s = f(x)
 end
 ";
         let diags = check_source(source, "f.m");
-        assert!(filter_by_id(&diags, "PFUTVR").is_empty(), "PFUTVR should NOT fire for an initialized reduction variable");
+        assert!(
+            filter_by_id(&diags, "PFUTVR").is_empty(),
+            "PFUTVR should NOT fire for an initialized reduction variable"
+        );
     }
 
     // -- PFVARS --------------------------------------------------------------
@@ -4811,7 +4717,10 @@ end
         }
         let source = format!("function f()\nparfor i = 1:10\n{body}end\nend\n");
         let diags = check_source(&source, "f.m");
-        assert!(!filter_by_id(&diags, "PFVARS").is_empty(), "PFVARS should fire for more than 1024 variables");
+        assert!(
+            !filter_by_id(&diags, "PFVARS").is_empty(),
+            "PFVARS should fire for more than 1024 variables"
+        );
     }
 
     #[test]
@@ -4824,7 +4733,10 @@ function f()
 end
 ";
         let diags = check_source(source, "f.m");
-        assert!(filter_by_id(&diags, "PFVARS").is_empty(), "PFVARS should NOT fire for a few variables");
+        assert!(
+            filter_by_id(&diags, "PFVARS").is_empty(),
+            "PFVARS should NOT fire for a few variables"
+        );
     }
 
     // -- PFVSUB --------------------------------------------------------------
@@ -4841,7 +4753,10 @@ function f()
 end
 ";
         let diags = check_source(source, "f.m");
-        assert!(!filter_by_id(&diags, "PFVSUB").is_empty(), "PFVSUB should fire when the parfor loop variable is indexed");
+        assert!(
+            !filter_by_id(&diags, "PFVSUB").is_empty(),
+            "PFVSUB should fire when the parfor loop variable is indexed"
+        );
     }
 
     #[test]
@@ -4854,7 +4769,10 @@ function f()
 end
 ";
         let diags = check_source(source, "f.m");
-        assert!(filter_by_id(&diags, "PFVSUB").is_empty(), "PFVSUB should NOT fire for indexing a sliced variable");
+        assert!(
+            filter_by_id(&diags, "PFVSUB").is_empty(),
+            "PFVSUB should NOT fire for indexing a sliced variable"
+        );
     }
 
     // -- PFANSRE -------------------------------------------------------------
@@ -4869,7 +4787,10 @@ function f()
 end
 ";
         let diags = check_source(source, "f.m");
-        assert!(!filter_by_id(&diags, "PFANSRE").is_empty(), "PFANSRE should fire for 'ans = ans + i' in a parfor");
+        assert!(
+            !filter_by_id(&diags, "PFANSRE").is_empty(),
+            "PFANSRE should fire for 'ans = ans + i' in a parfor"
+        );
     }
 
     #[test]
@@ -4882,7 +4803,10 @@ function f()
 end
 ";
         let diags = check_source(source, "f.m");
-        assert!(filter_by_id(&diags, "PFANSRE").is_empty(), "PFANSRE should NOT fire for a plain temporary assignment");
+        assert!(
+            filter_by_id(&diags, "PFANSRE").is_empty(),
+            "PFANSRE should NOT fire for a plain temporary assignment"
+        );
     }
 
     // -- PFANSSL -------------------------------------------------------------
@@ -4898,7 +4822,10 @@ function f()
 end
 ";
         let diags = check_source(source, "f.m");
-        assert!(!filter_by_id(&diags, "PFANSSL").is_empty(), "PFANSSL should fire when 'ans' is indexed in a parfor");
+        assert!(
+            !filter_by_id(&diags, "PFANSSL").is_empty(),
+            "PFANSSL should fire when 'ans' is indexed in a parfor"
+        );
     }
 
     #[test]
@@ -4911,7 +4838,10 @@ function f()
 end
 ";
         let diags = check_source(source, "f.m");
-        assert!(filter_by_id(&diags, "PFANSSL").is_empty(), "PFANSSL should NOT fire for a non-indexed read of 'ans'");
+        assert!(
+            filter_by_id(&diags, "PFANSSL").is_empty(),
+            "PFANSSL should NOT fire for a non-indexed read of 'ans'"
+        );
     }
 
     // -- PFDF ----------------------------------------------------------------
@@ -4928,7 +4858,10 @@ function f()
 end
 ";
         let diags = check_source(source, "f.m");
-        assert!(!filter_by_id(&diags, "PFDF").is_empty(), "PFDF should fire for a nested for with DRANGE inside a parfor");
+        assert!(
+            !filter_by_id(&diags, "PFDF").is_empty(),
+            "PFDF should fire for a nested for with DRANGE inside a parfor"
+        );
     }
 
     #[test]
@@ -4943,7 +4876,10 @@ function f()
 end
 ";
         let diags = check_source(source, "f.m");
-        assert!(filter_by_id(&diags, "PFDF").is_empty(), "PFDF should NOT fire for a plain nested for inside a parfor");
+        assert!(
+            filter_by_id(&diags, "PFDF").is_empty(),
+            "PFDF should NOT fire for a plain nested for inside a parfor"
+        );
     }
 
     // -- PFPIE ---------------------------------------------------------------
@@ -4959,7 +4895,10 @@ function f()
 end
 ";
         let diags = check_source(source, "f.m");
-        assert!(!filter_by_id(&diags, "PFPIE").is_empty(), "PFPIE should fire for complex index expressions on a sliced variable");
+        assert!(
+            !filter_by_id(&diags, "PFPIE").is_empty(),
+            "PFPIE should fire for complex index expressions on a sliced variable"
+        );
     }
 
     #[test]
@@ -4972,7 +4911,10 @@ function f()
 end
 ";
         let diags = check_source(source, "f.m");
-        assert!(filter_by_id(&diags, "PFPIE").is_empty(), "PFPIE should NOT fire for simple index expressions");
+        assert!(
+            filter_by_id(&diags, "PFPIE").is_empty(),
+            "PFPIE should NOT fire for simple index expressions"
+        );
     }
 
     // -- PFSAME --------------------------------------------------------------
@@ -4988,7 +4930,10 @@ function f()
 end
 ";
         let diags = check_source(source, "f.m");
-        assert!(!filter_by_id(&diags, "PFSAME").is_empty(), "PFSAME should fire when a sliced variable is indexed in different ways");
+        assert!(
+            !filter_by_id(&diags, "PFSAME").is_empty(),
+            "PFSAME should fire when a sliced variable is indexed in different ways"
+        );
     }
 
     #[test]
@@ -5002,7 +4947,10 @@ function f()
 end
 ";
         let diags = check_source(source, "f.m");
-        assert!(filter_by_id(&diags, "PFSAME").is_empty(), "PFSAME should NOT fire when a sliced variable is always indexed the same way");
+        assert!(
+            filter_by_id(&diags, "PFSAME").is_empty(),
+            "PFSAME should NOT fire when a sliced variable is always indexed the same way"
+        );
     }
 
     // -- PFTIN ---------------------------------------------------------------
@@ -5018,7 +4966,10 @@ function f()
 end
 ";
         let diags = check_source(source, "f.m");
-        assert!(!filter_by_id(&diags, "PFTIN").is_empty(), "PFTIN should fire when a temporary is used before it is set");
+        assert!(
+            !filter_by_id(&diags, "PFTIN").is_empty(),
+            "PFTIN should fire when a temporary is used before it is set"
+        );
     }
 
     #[test]
@@ -5032,7 +4983,10 @@ function f()
 end
 ";
         let diags = check_source(source, "f.m");
-        assert!(filter_by_id(&diags, "PFTIN").is_empty(), "PFTIN should NOT fire when the temporary is set before use");
+        assert!(
+            filter_by_id(&diags, "PFTIN").is_empty(),
+            "PFTIN should NOT fire when the temporary is set before use"
+        );
     }
 
     // -- New PF* checks respect disabled config ------------------------------
@@ -5063,8 +5017,14 @@ end
             file_path: path,
         };
         let diags = engine.check_file(&ctx);
-        assert!(filter_by_id(&diags, "PFANSRE").is_empty(), "PFANSRE should be disabled via config disabled_checks");
-        assert!(filter_by_id(&diags, "PFDF").is_empty(), "PFDF should be disabled via config disabled_checks");
+        assert!(
+            filter_by_id(&diags, "PFANSRE").is_empty(),
+            "PFANSRE should be disabled via config disabled_checks"
+        );
+        assert!(
+            filter_by_id(&diags, "PFDF").is_empty(),
+            "PFDF should be disabled via config disabled_checks"
+        );
     }
 
     // -- plan MUST-fire / MUST-NOT-fire examples -----------------------------
@@ -5083,8 +5043,14 @@ function f()
 end
 ";
         let diags = check_source(source, "f.m");
-        assert!(!filter_by_id(&diags, "PFEVC").is_empty(), "PFEVC should fire on the MUST-fire example");
-        assert!(!filter_by_id(&diags, "PFANSLP").is_empty(), "PFANSLP should fire on the MUST-fire example");
+        assert!(
+            !filter_by_id(&diags, "PFEVC").is_empty(),
+            "PFEVC should fire on the MUST-fire example"
+        );
+        assert!(
+            !filter_by_id(&diags, "PFANSLP").is_empty(),
+            "PFANSLP should fire on the MUST-fire example"
+        );
     }
 
     #[test]
@@ -5105,11 +5071,34 @@ end
             .filter(|d| {
                 matches!(
                     d.rule_id,
-                    "FPFORP" | "FWFORP" | "PFANON" | "PFANSLP" | "PFANSNS" | "PFCEL"
-                        | "PFCTXT" | "PFEVC" | "PFFRNG" | "PFFSUB" | "PFINCR" | "PFINPT"
-                        | "PFLD" | "PFMLTI" | "PFNACK" | "PFNAIO" | "PFNAR" | "PFRFH"
-                        | "PFRNG" | "PFSLO" | "PFSLRD" | "PFSLW" | "PFSV" | "PFUNK"
-                        | "PFUTMP" | "PFUTVR" | "PFVARS" | "PFVSUB"
+                    "FPFORP"
+                        | "FWFORP"
+                        | "PFANON"
+                        | "PFANSLP"
+                        | "PFANSNS"
+                        | "PFCEL"
+                        | "PFCTXT"
+                        | "PFEVC"
+                        | "PFFRNG"
+                        | "PFFSUB"
+                        | "PFINCR"
+                        | "PFINPT"
+                        | "PFLD"
+                        | "PFMLTI"
+                        | "PFNACK"
+                        | "PFNAIO"
+                        | "PFNAR"
+                        | "PFRFH"
+                        | "PFRNG"
+                        | "PFSLO"
+                        | "PFSLRD"
+                        | "PFSLW"
+                        | "PFSV"
+                        | "PFUNK"
+                        | "PFUTMP"
+                        | "PFUTVR"
+                        | "PFVARS"
+                        | "PFVSUB"
                 )
             })
             .collect();
@@ -5156,5 +5145,4 @@ end
             "PFANSLP should be disabled via config disabled_checks"
         );
     }
-
 }

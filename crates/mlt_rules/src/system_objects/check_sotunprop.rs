@@ -88,9 +88,8 @@ mod tests {
 
     #[test]
     fn sotunprop_nontunable_block_does_not_fire() {
-        let source = system_class(
-            "    properties (Nontunable)\n        Label char = 'x'\n    end\n",
-        );
+        let source =
+            system_class("    properties (Nontunable)\n        Label char = 'x'\n    end\n");
         let diags = lint_file(&*engine(), &source);
         assert!(!has_id(&diags, "SOTUNPROP3"), "got: {diags:?}");
     }

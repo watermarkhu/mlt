@@ -20,10 +20,9 @@ impl GoodPracticesEngine {
         };
 
         let (check_id, message) = match func_name {
-            "addpref" if self.is_check_enabled("ADAPPREF") => (
-                "ADAPPREF",
-                "Avoid addpref(); use the settings API instead",
-            ),
+            "addpref" if self.is_check_enabled("ADAPPREF") => {
+                ("ADAPPREF", "Avoid addpref(); use the settings API instead")
+            }
             "keyboard" if self.is_check_enabled("KEYBOARDFUN") => (
                 "KEYBOARDFUN",
                 "keyboard() left in code; remove before deployment",

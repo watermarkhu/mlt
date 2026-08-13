@@ -4,7 +4,11 @@ use super::*;
 
 impl LanguageSpecEngine {
     /// FVIOA: Both 'Input' and 'Output' attributes on one block are not supported.
-    pub(crate) fn check_fvioa(&self, blocks: &[ArgumentsBlockMeta], diagnostics: &mut Vec<Diagnostic>) {
+    pub(crate) fn check_fvioa(
+        &self,
+        blocks: &[ArgumentsBlockMeta],
+        diagnostics: &mut Vec<Diagnostic>,
+    ) {
         if !self.is_check_enabled("FVIOA") {
             return;
         }
@@ -25,7 +29,7 @@ impl LanguageSpecEngine {
 
 #[cfg(test)]
 mod tests {
-    
+
     use crate::language_spec::tests::{check_source, filter_by_id};
 
     #[test]

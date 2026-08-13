@@ -9,8 +9,14 @@ impl LanguageSpecEngine {
             return;
         }
         for pb in &class.properties_blocks {
-            let is_weak = pb.attributes.iter().any(|a| a.name == "WeakHandle" && !a.negated);
-            let is_dependent = pb.attributes.iter().any(|a| a.name == "Dependent" && !a.negated);
+            let is_weak = pb
+                .attributes
+                .iter()
+                .any(|a| a.name == "WeakHandle" && !a.negated);
+            let is_dependent = pb
+                .attributes
+                .iter()
+                .any(|a| a.name == "Dependent" && !a.negated);
             if is_weak && is_dependent {
                 diagnostics.push(Diagnostic {
                     rule_id: "MWKREF",
@@ -29,7 +35,7 @@ impl LanguageSpecEngine {
 
 #[cfg(test)]
 mod tests {
-    
+
     use crate::language_spec::tests::{check_source, filter_by_id};
 
     #[test]
@@ -63,6 +69,9 @@ end
 ";
         let diags = check_source(source, "Foo.m");
         let hits = filter_by_id(&diags, "MWKREF");
-        assert!(hits.is_empty(), "MWKREF should NOT fire for separate blocks");
+        assert!(
+            hits.is_empty(),
+            "MWKREF should NOT fire for separate blocks"
+        );
     }
 }

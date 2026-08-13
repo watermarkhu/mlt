@@ -20,7 +20,10 @@ fn nofil_fires_on_missing_file() {
         .expect("failed to run mlt");
 
     let stdout = String::from_utf8_lossy(&output.stdout);
-    assert!(stdout.contains("NOFIL"), "expected NOFIL in output:\n{stdout}");
+    assert!(
+        stdout.contains("NOFIL"),
+        "expected NOFIL in output:\n{stdout}"
+    );
     assert!(
         stdout.contains("File is not found"),
         "expected 'File is not found' in output:\n{stdout}"

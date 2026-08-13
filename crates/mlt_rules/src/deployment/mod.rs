@@ -74,23 +74,62 @@ const CHECKS: &[CheckMeta] = &[
 /// Common toolbox-specific functions that require special compilation support.
 const TOOLBOX_FUNCTIONS: &[&str] = &[
     // Signal Processing Toolbox
-    "fft2", "ifft2", "fftshift", "butter", "cheby1", "filter", "filtfilt",
-    "spectrogram", "pwelch",
+    "fft2",
+    "ifft2",
+    "fftshift",
+    "butter",
+    "cheby1",
+    "filter",
+    "filtfilt",
+    "spectrogram",
+    "pwelch",
     // Image Processing Toolbox
-    "imread", "imshow", "imresize", "imfilter", "edge", "regionprops",
-    "bwlabel", "rgb2gray",
+    "imread",
+    "imshow",
+    "imresize",
+    "imfilter",
+    "edge",
+    "regionprops",
+    "bwlabel",
+    "rgb2gray",
     // Statistics and Machine Learning
-    "fitlm", "predict", "kmeans", "pca", "corr", "ttest",
-    "anova1", "normpdf", "normcdf",
+    "fitlm",
+    "predict",
+    "kmeans",
+    "pca",
+    "corr",
+    "ttest",
+    "anova1",
+    "normpdf",
+    "normcdf",
     // Optimization Toolbox
-    "fmincon", "linprog", "quadprog", "fsolve", "lsqnonlin",
+    "fmincon",
+    "linprog",
+    "quadprog",
+    "fsolve",
+    "lsqnonlin",
     // Control System Toolbox
-    "tf", "ss", "zpk", "bode", "step", "nyquist", "margin",
+    "tf",
+    "ss",
+    "zpk",
+    "bode",
+    "step",
+    "nyquist",
+    "margin",
     // Curve Fitting Toolbox
-    "fit", "cfit", "fittype",
+    "fit",
+    "cfit",
+    "fittype",
     // Symbolic Math Toolbox (never deployable)
-    "sym", "syms", "simplify", "expand", "solve", "diff", "int",
-    "limit", "taylor",
+    "sym",
+    "syms",
+    "simplify",
+    "expand",
+    "solve",
+    "diff",
+    "int",
+    "limit",
+    "taylor",
 ];
 
 /// Look up check metadata by ID.
@@ -199,7 +238,10 @@ fn node_text<'a>(node: tree_sitter::Node<'a>, source: &'a str) -> &'a str {
 }
 
 /// Extract function name from a `function_call` node.
-pub(crate) fn extract_func_name<'a>(node: tree_sitter::Node<'a>, source: &'a str) -> Option<&'a str> {
+pub(crate) fn extract_func_name<'a>(
+    node: tree_sitter::Node<'a>,
+    source: &'a str,
+) -> Option<&'a str> {
     if node.kind() != "function_call" {
         return None;
     }
@@ -208,7 +250,10 @@ pub(crate) fn extract_func_name<'a>(node: tree_sitter::Node<'a>, source: &'a str
 }
 
 /// Extract command name from a `command` node.
-pub(crate) fn extract_command_name<'a>(node: tree_sitter::Node<'a>, source: &'a str) -> Option<&'a str> {
+pub(crate) fn extract_command_name<'a>(
+    node: tree_sitter::Node<'a>,
+    source: &'a str,
+) -> Option<&'a str> {
     if node.kind() != "command" {
         return None;
     }
@@ -283,10 +328,9 @@ mod tests {
 
     #[test]
     fn skip_checks_disables_check() {
-        let config = Config::from_toml(
-            "[lint.rules.DEPLOYMENT_ENGINE]\nskip_checks = [\"MCTBX\"]\n",
-        )
-        .expect("valid config");
+        let config =
+            Config::from_toml("[lint.rules.DEPLOYMENT_ENGINE]\nskip_checks = [\"MCTBX\"]\n")
+                .expect("valid config");
         let rule = DeploymentEngine::from_config(&config);
         let src = "y = fft2(x);\n";
         let diags = lint_nodes(&*rule, src);
@@ -296,7 +340,12 @@ mod tests {
     /// Ensure the test source parses without syntax errors (sanity check).
     #[test]
     fn test_sources_parse() {
-        let sources = ["cd /tmp\n", "addpath('src');\n", "doc plot\n", "r = matlabroot;\n"];
+        let sources = [
+            "cd /tmp\n",
+            "addpath('src');\n",
+            "doc plot\n",
+            "r = matlabroot;\n",
+        ];
         for src in sources {
             let tree = parse(src);
             assert!(!tree.root_node().has_error(), "parse error for: {src:?}");

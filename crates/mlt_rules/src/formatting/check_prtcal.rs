@@ -10,12 +10,7 @@ impl FormattingEngine {
     /// For `function_call` nodes at statement level with only string literal
     /// arguments, suggest command syntax instead. For example:
     /// `disp('hello')` could be `disp hello`.
-    pub(crate) fn check_prtcal(
-        &self,
-        node: Node,
-        source: &str,
-        diagnostics: &mut Vec<Diagnostic>,
-    ) {
+    pub(crate) fn check_prtcal(&self, node: Node, source: &str, diagnostics: &mut Vec<Diagnostic>) {
         // Only fire at statement level.
         let is_statement_level = node
             .parent()
@@ -81,25 +76,19 @@ impl FormattingEngine {
         let command_form = format!("{} {}", name, arg_texts.join(" "));
         diagnostics.push(Diagnostic {
             rule_id: "PRTCAL",
-            message: format!(
-                "Consider using command syntax: '{}'",
-                command_form
-            ),
+            message: format!("Consider using command syntax: '{}'", command_form),
             severity: Severity::Info,
             byte_range: node.start_byte()..node.end_byte(),
             line: pos.row + 1,
             column: pos.column + 1,
-            fix: Some(Fix::new(
-                node.start_byte()..node.end_byte(),
-                command_form,
-            )),
+            fix: Some(Fix::new(node.start_byte()..node.end_byte(), command_form)),
         });
     }
 }
 
 #[cfg(test)]
 mod tests {
-    
+
     use crate::formatting::tests::{has_id, lint};
 
     // -- PRTCAL --------------------------------------------------------------

@@ -22,7 +22,7 @@ icon: lucide/flame
 
     Clean `Rule` trait architecture inspired by rumdl. Add new rules with minimal boilerplate.
 
-    [:octicons-arrow-right-24: Rules Reference](rules.md)
+    [:octicons-arrow-right-24: Rules Reference](../rules.md)
 
 -   :wrench:{ .lg .middle } **Auto-fix support**
 
@@ -83,7 +83,7 @@ Found 2 issues in 1 file.
 
     Get up and running in minutes.
 
--   [:octicons-book-24: **Rules Reference**](rules.md)
+-   [:octicons-book-24: **Rules Reference**](../rules.md)
 
     Explore all available linting rules.
 

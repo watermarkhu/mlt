@@ -284,10 +284,7 @@ mod tests {
         let diags = linter
             .lint("x = 1;\n", Path::new("test.m"))
             .expect("lint should succeed");
-        assert!(
-            !diags.iter().any(|d| d.rule_id == "QUIT"),
-            "got: {diags:?}"
-        );
+        assert!(!diags.iter().any(|d| d.rule_id == "QUIT"), "got: {diags:?}");
     }
 
     /// Test-only rule that emits diagnostics with different rule ids depending on
@@ -349,7 +346,9 @@ mod tests {
     fn lint_with(source: &str) -> Vec<Diagnostic> {
         let registry = RuleRegistry::new(vec![Box::new(MultiRule)], &Config::default());
         let mut linter = Linter::new(registry);
-        linter.lint(source, Path::new("test.m")).expect("lint should succeed")
+        linter
+            .lint(source, Path::new("test.m"))
+            .expect("lint should succeed")
     }
 
     #[test]

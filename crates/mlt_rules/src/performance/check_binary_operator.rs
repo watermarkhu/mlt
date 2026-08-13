@@ -13,16 +13,14 @@ impl PerformanceEngine {
         let op = extract_operator(node, source);
 
         // MINV: inv(A) * b or b * inv(A)
-        if self.is_enabled("MINV") && op == "*"
-            && has_inv_operand(node, source) {
-                diags.push(make_diag("MINV", node));
-            }
+        if self.is_enabled("MINV") && op == "*" && has_inv_operand(node, source) {
+            diags.push(make_diag("MINV", node));
+        }
 
         // MMTC: x .* x → x.^2
-        if self.is_enabled("MMTC") && op == ".*"
-            && has_same_operands(node, source) {
-                diags.push(make_diag("MMTC", node));
-            }
+        if self.is_enabled("MMTC") && op == ".*" && has_same_operands(node, source) {
+            diags.push(make_diag("MMTC", node));
+        }
 
         diags
     }

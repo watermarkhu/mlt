@@ -39,8 +39,8 @@
 
 mod check_align;
 mod check_ncomma;
-mod check_nocomma;
 mod check_no4lp;
+mod check_nocomma;
 mod check_noprt;
 mod check_nopts;
 mod check_prtcal;
@@ -189,12 +189,7 @@ impl Rule for FormattingEngine {
 
 impl FormattingEngine {
     /// Walk the tree recursively, applying enabled checks to each node.
-    fn visit_recursive(
-        &self,
-        node: Node,
-        source: &str,
-        diagnostics: &mut Vec<Diagnostic>,
-    ) {
+    fn visit_recursive(&self, node: Node, source: &str, diagnostics: &mut Vec<Diagnostic>) {
         let kind = node.kind();
         // Note: multiple checks can apply to the same node type, so dispatch
         // each independently rather than using mutually-exclusive match arms.
