@@ -56,7 +56,7 @@ MFAMB, FVINR), run one flow per rule:
      kinds involved and how to distinguish the pattern from lookalikes (remember
      `function_call` is also used for indexing); MATLAB examples that MUST fire and
      MUST NOT fire; exact files to create/modify (rule module, `lib.rs` `pub mod`,
-     `docs/<id>.md`, `docs/rules.md` row, `zensical.toml` nav); any rule-specific
+      `docs/<id>.md`, `docs/rules.md` row, VitePress sidebar (`docs/.vitepress/config.mts`)); any rule-specific
      config params; tests to add; pitfalls.
 2. **Launch ALL Reviewers in parallel** — one `task` call per plan, all in a single
    message, `subagent_type: "reviewer"`, prompt includes the rule ID, the category,
@@ -73,7 +73,7 @@ Do not serialize steps 2 and 3. Each is a batch of parallel tasks.
 - `cargo build` succeeds
 - `cargo clippy --all-targets` passes with zero warnings
 - `cargo test` passes (fires, not-fires, and config tests from the plan)
-- Docs updated: `docs/<rule_id>.md`, `docs/rules.md`, `zensical.toml`
+- Docs updated: `docs/<rule_id>.md`, `docs/rules.md`, VitePress sidebar (`docs/.vitepress/config.mts`)
 - `crates/mlt_rules/src/lib.rs` has the `pub mod` line for any new module
 
 ## Notes

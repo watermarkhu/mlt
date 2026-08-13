@@ -4,9 +4,11 @@ icon: lucide/code
 
 # Editor Integration
 
-!!! note "Coming Soon"
+::: info Coming Soon
 
-    Editor integration is planned for a future release. This page will be updated with instructions as support is added.
+Editor integration is planned for a future release. This page will be updated with instructions as support is added.
+
+:::
 
 ## Planned Integrations
 

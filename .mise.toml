@@ -7,6 +7,8 @@
 "cargo:wasm-pack" = "0.13.1"
 # Node.js used for npm publishing and local tooling (pinned; Renovate updates).
 node = "24.19.0"
+# Bun for the VitePress docs project (install, `bun run docs:*` scripts).
+bun = "latest"
 # Clang C compiler — required to compile the tree-sitter-matlab C parser for
 # the wasm32 target (the `cc` crate uses it as `CC` when building wasm).
 clang = "22.1.8"
@@ -14,7 +16,7 @@ pinact = "latest"
 # Git hooks via hk (pinned; Renovate updates). Runs through `mise x` so every
 # contributor gets the pinned tools on PATH without activating mise.
 hk = "1.54.1"
-# Markdown linter for the docs (mkdocs flavor) and GitHub Actions linter,
+# Markdown linter for the docs (VitePress flavor) and GitHub Actions linter,
 # used by the hk pre-commit hooks.
 rumdl = "latest"
 actionlint = "latest"
@@ -62,9 +64,9 @@ description = "Run the wasm binding host tests"
 run = "cargo test --features wasm -p mlt_wasm"
 
 [tasks.serve-local-wasm]
-description = "Copy the local wasm build into docs/assets so the playground loads it locally"
+description = "Copy the local wasm build into docs/public so the playground loads it locally"
 run = """
-rm -rf docs/assets/mlt-wasm
-mkdir -p docs/assets/mlt-wasm
-cp -r crates/mlt_wasm/pkg/. docs/assets/mlt-wasm/
+rm -rf docs/public/assets/mlt-wasm
+mkdir -p docs/public/assets/mlt-wasm
+cp -r crates/mlt_wasm/pkg/. docs/public/assets/mlt-wasm/
 """

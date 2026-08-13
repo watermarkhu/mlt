@@ -13,12 +13,12 @@ The goal is full feature parity with MATLAB's Code Analyzer (~2,680 checks), usi
 ```
 mlt/
 ├── Cargo.toml              # Workspace root (resolver = "2")
-├── zensical.toml           # Documentation site config (Zensical/MkDocs)
+├── package.json            # Docs toolchain (bun + VitePress), npm scripts
 ├── crates/
 │   ├── mlt_cli/            # CLI binary (clap, config discovery, output formatting)
 │   ├── mlt_core/           # Core engine (Rule trait, RuleRegistry, Linter, Config, Diagnostic)
 │   └── mlt_rules/          # Individual lint rule implementations
-└── docs/                   # Zensical documentation site (Markdown)
+└── docs/                   # VitePress documentation site (Markdown)
 ```
 
 ### Crate Responsibilities
@@ -228,12 +228,12 @@ Create `docs/<rule_id_lowercase>.md` following the format of `docs/nosemi.md`:
 
 Add a row to the rule table in `docs/rules.md`.
 
-### 5. Update zensical.toml nav
+### 5. Update the VitePress sidebar
 
-Add the rule page to the `Rules` section in `zensical.toml`:
+Add the rule page to the `Rules` section of the sidebar in `docs/.vitepress/config.mts`:
 
-```toml
-{ "RULE_ID - Name" = "rule_id_lowercase.md" },
+```ts
+{ text: 'RULE_ID - Name', link: '/rules/rule_id_lowercase' },
 ```
 
 ### 6. Verify
@@ -325,6 +325,11 @@ pub struct RuleIdConfig {
 | `cargo run -- <file.m>` | Run the linter on a MATLAB file |
 | `cargo run -- --fix <file.m>` | Apply auto-fixes |
 | `cargo run -- --config path/.mlt.toml <file.m>` | Lint with explicit config |
+| `bun install` | Install the docs toolchain (VitePress, lucide icons) |
+| `bun run docs:dev` | Preview the docs locally |
+| `bun run docs:build` | Regenerate generated tables/pages, then build the site |
+| `bun run docs:gen` | Regenerate generated tables/pages only |
+| `bun docs/scripts/gen_rules_docs.ts --check` | Fail if generated docs are stale (hk pre-commit) |
 
 ## Quality Standards
 
@@ -336,19 +341,19 @@ pub struct RuleIdConfig {
 
 ## Documentation System
 
-Documentation uses [Zensical](https://zensical.org) (successor to Material for MkDocs):
+Documentation uses [VitePress](https://vitepress.dev/):
 
-- Config: `zensical.toml` at repo root
+- Config: `docs/.vitepress/config.mts` (site meta, nav, sidebar) + `docs/.vitepress/theme/`
 - Content: `docs/` directory (Markdown)
-- Dependencies: `pyproject.toml` `[dependency-groups].docs` (`zensical`, `markdown-exec`)
-- Preview: `zensical serve` (run from the local venv)
-- Build: `.venv/bin/zensical build`
-- Generated tables: the "Data-Driven Check IDs" section of `docs/rules.md` is
-  produced at build time by a `markdown-exec` code block (plugin enabled as
-  `[project.plugins.markdown-exec]`) that calls `tools/gen_rules_docs.py`. The
-  same script regenerates the category engine pages (`--write-pages`).
+- Dependencies: `package.json` `devDependencies` (`vitepress`, `lucide-vue-next`)
+- Preview: `bun run docs:dev` (runs `docs:gen` first)
+- Build: `bun run docs:build` (runs `docs:gen`, then `vitepress build docs`)
+- Generated tables: the "Data-Driven Check IDs" section of `docs/rules.md` and
+  the category engine pages (`docs/rules/<cat>.md`) are produced by
+  `docs/scripts/gen_rules_docs.ts` (TypeScript). `docs:build` regenerates them first so
+  they never drift from the sources.
 - Editing rule docs: after changing `data/*.toml` or an engine's doc-comment
-  table, rebuild with `.venv/bin/zensical build` to refresh the generated tables.
+  table, run `bun run docs:gen` to refresh the generated tables/pages.
 
 ### Documentation Structure
 

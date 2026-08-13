@@ -70,7 +70,7 @@ developing):
 
 ```bash
 mise run build-wasm
-mise run serve-local-wasm   # copies crates/mlt_wasm/pkg -> docs/assets/mlt-wasm
+mise run serve-local-wasm   # copies crates/mlt_wasm/pkg -> docs/public/assets/mlt-wasm
 ```
 
 The page tries `assets/mlt-wasm/mlt_lib.js` first and falls back to the CDN, so

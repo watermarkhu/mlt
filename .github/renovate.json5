@@ -1,7 +1,7 @@
 {
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
   "extends": ["config:recommended"],
-  "enabledManagers": ["cargo", "mise", "npm"],
+  "enabledManagers": ["bun", "cargo", "mise", "npm"],
   "packageRules": [
     {
       "matchManagers": ["mise"],

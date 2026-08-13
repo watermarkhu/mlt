@@ -231,6 +231,6 @@ max_cyclomatic_complexity = 12
 
 ## Next Steps
 
-- [Rules Reference](../rules.md) — Browse all available rules
+- [Rules Reference](rules.md) — Browse all available rules
 - [CLI Reference](usage/cli.md) — Command-line options
 - [Quick Start](getting-started/quickstart.md) — Get up and running

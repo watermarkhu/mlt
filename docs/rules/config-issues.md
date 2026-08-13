@@ -2,15 +2,31 @@
 icon: lucide/cog
 ---
 
-<!-- Generated at docs build time from the module doc comments via
-     markdown-exec; regenerate the committed copy with:
-       python3 tools/gen_rules_docs.py --write-pages -->
+# Code Analyzer Configuration Issues
 
-```python exec="on"
-import sys
-sys.path.insert(0, "tools")
-from gen_rules_docs import render_engine_body, _engine_rows
-print(render_engine_body("config_issues", _engine_rows("config_issues")))
+**Default severity:** Error
+**Auto-fix:** No
+**Category:** Configuration Issues
+**Can be disabled:** Yes
+
+## What this engine does
+
+The `CONFIG_ISSUES_ENGINE` rule implements the MATLAB Code Analyzer checks in the **Code Analyzer Configuration Issues** category. All checks share one engine and are dispatched by tree-sitter node kind or by file-level traversal; each diagnostic carries the specific check ID (e.g. `BDCFG`).
+
+## Check IDs
+
+| Check ID | Description |
+| -------- | ----------- |
+| `BDCFG` | BDCFG |
+| `CFERR` | CFERR |
+| `BDOPT` | BDOPT |
+| `CFIG` | CFIG |
+
+## Configuration
+
+```toml
+[lint.rules.CONFIG_ISSUES_ENGINE]
+disabled_checks = ["XXXX"]   # Turn off specific checks
 ```
 
-<!-- 4 checks -->
+See [Configuration](../configuration.md#per-engine-parameters) for the full parameter list and [rules.md](../rules.md) for the complete rule inventory.

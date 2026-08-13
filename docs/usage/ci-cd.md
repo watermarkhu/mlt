@@ -4,9 +4,11 @@ icon: lucide/git-branch
 
 # CI/CD Integration
 
-!!! note "Coming Soon"
+::: info Coming Soon
 
-    CI/CD integration guides are planned for a future release. This page outlines the intended workflow.
+CI/CD integration guides are planned for a future release. This page outlines the intended workflow.
+
+:::
 
 ## GitHub Actions (Planned)
 

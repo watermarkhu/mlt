@@ -31,7 +31,7 @@ You will be given: the rule ID, the plan (as text), and the category/module.
 2. **Check for flaws.** Look specifically for:
    - False positives / false negatives not covered by the MUST/MUST NOT examples
    - Detection logic that cannot work with the actual grammar node kinds
-   - Missing steps (docs page, rules.md row, zensical.toml nav, config params)
+   - Missing steps (docs page, rules.md row, VitePress sidebar, config params)
    - Missing or weak tests
    - Anything ambiguous that would block an independent Implementer
 

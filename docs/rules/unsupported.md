@@ -2,15 +2,40 @@
 icon: lucide/ban
 ---
 
-<!-- Generated at docs build time from the module doc comments via
-     markdown-exec; regenerate the committed copy with:
-       python3 tools/gen_rules_docs.py --write-pages -->
+# Unsupported Features
 
-```python exec="on"
-import sys
-sys.path.insert(0, "tools")
-from gen_rules_docs import render_engine_body, _engine_rows
-print(render_engine_body("unsupported", _engine_rows("unsupported")))
+**Default severity:** Warning
+**Auto-fix:** No
+**Category:** Unsupported
+**Can be disabled:** Yes
+
+## What this engine does
+
+The `UNSUPPORTED_ENGINE` rule implements the MATLAB Code Analyzer checks in the **Unsupported Features** category. All checks share one engine and are dispatched by tree-sitter node kind or by file-level traversal; each diagnostic carries the specific check ID (e.g. `MCADE`).
+
+## Check IDs
+
+| Check ID | Description |
+| -------- | ----------- |
+| `MCADE` | MCADE |
+| `AWTIUD` | AWTIUD |
+| `AXCHUD` | AXCHUD |
+| `FEATUD` | FEATUD |
+| `FNDPUD` | FNDPUD |
+| `HGCNUD` | HGCNUD |
+| `IMPKG` | IMPKG |
+| `ISMBUD` | ISMBUD |
+| `MIPKG` | MIPKG |
+| `SEPTUD` | SEPTUD |
+| `SYDEUD` | SYDEUD |
+| `UIRSUD` | UIRSUD |
+| `UISUUD` | UISUUD |
+
+## Configuration
+
+```toml
+[lint.rules.UNSUPPORTED_ENGINE]
+skip_checks = ["AGROW"]   # Turn off specific checks
 ```
 
-<!-- 13 checks -->
+See [Configuration](../configuration.md#per-engine-parameters) for the full parameter list and [rules.md](../rules.md) for the complete rule inventory.

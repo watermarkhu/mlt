@@ -35,11 +35,18 @@ local hygiene = new Mapping<String, Step> {
 local ci_and_docs = new Mapping<String, Step> {
     ["actionlint"] = Builtins.actionlint
     ["rumdl"] = (Builtins.rumdl) {
-        // Lint the site docs only (mkdocs flavor). Developer-facing markdown
-        // (AGENTS.md, .opencode/) is intentionally excluded.
+        // Lint the site docs only (VitePress flavor, configured in .rumdl.toml).
+        // Developer-facing markdown (AGENTS.md, .opencode/) is intentionally
+        // excluded.
         glob = List("docs/**/*.md", "wasm-pkg/README.md")
-        check = "rumdl check --flavor mkdocs --diff {{files}}"
-        fix = "rumdl check --flavor mkdocs --fix {{files}}"
+        check = "rumdl check --diff {{files}}"
+        fix = "rumdl check --fix {{files}}"
+    }
+    // Regenerated docs (docs/rules.md data tables, docs/rules/*.md engine pages)
+    // must match the sources; fails if `bun run docs:gen` would change anything.
+    ["docs-gen"] {
+        glob = List("docs/**/*.md", "docs/scripts/gen_rules_docs.ts", "crates/mlt_rules/src/data/*.toml")
+        check = "bun docs/scripts/gen_rules_docs.ts --check"
     }
 }
 

@@ -169,7 +169,7 @@ use a local build instead:
 ```bash
 mise install
 mise run build-wasm
-mise run serve-local-wasm   # copies wasm-pkg/pkg -> docs/assets/mlt-wasm
+mise run serve-local-wasm   # copies crates/mlt_wasm/pkg -> docs/public/assets/mlt-wasm
 ```
 
 ## License

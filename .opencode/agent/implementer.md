@@ -22,7 +22,7 @@ You will be given: the rule ID, the category/module, and the Reviewer's approved
    - Add the `pub mod` line in `crates/mlt_rules/src/lib.rs` if the module is new.
    - Add the tests described in the plan (fires, not-fires, config-respected).
    - Create `docs/<rule_id>.md` following the `docs/nosemi.md` template.
-   - Add a row to `docs/rules.md` and a nav entry in `zensical.toml`.
+   - Add a row to `docs/rules.md` and a sidebar entry in `docs/.vitepress/config.mts`.
    - Do NOT add code comments unless the plan explicitly requires them.
 
 2. **Verify with cargo.**
