@@ -1,21 +1,47 @@
 //! # NOSEMI: Trailing Semicolon Missing
 //!
-//! In MATLAB, statements that produce output without a trailing semicolon will
-//! print their result to the console. This is almost always unintentional in
-//! production code and can cause significant performance degradation in loops.
+//! ```mlt
+//! id = "NOSEMI"
+//! title = "Trailing Semicolon Missing"
+//! category = "formatting"
+//! severity = "info"
+//! fix = true
+//! icon = "lucide/code"
+//! ```
+//!
+//! ## Rule
+//!
+//! Flags MATLAB statements that produce output without a trailing semicolon.
+//! In MATLAB, such statements print their result to the console, which is
+//! almost always unintentional in production code and can cause significant
+//! performance degradation in loops.
+//!
+//! ## Fix
+//!
+//! Inserts a trailing semicolon immediately after the statement, suppressing
+//! the console output without changing program behavior.
 //!
 //! ## Examples
 //!
-//! Bad:
+//! ### Incorrect
+//!
 //! ```matlab
 //! x = compute_value()
 //! data = load('file.mat')
 //! ```
 //!
-//! Good:
+//! ### Correct
+//!
 //! ```matlab
 //! x = compute_value();
 //! data = load('file.mat');
+//! ```
+//!
+//! ### Fixed
+//!
+//! ```diff
+//! - x = compute_value()
+//! + x = compute_value();
 //! ```
 //!
 //! ## Configuration

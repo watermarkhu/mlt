@@ -1,49 +1,96 @@
-//! # Bugs Detection Engine
+//! # BUGS_ENGINE: Bugs
 //!
-//! This module implements 35 bug-detection checks from MATLAB's Code Analyzer.
-//! All checks are handled by a single hybrid engine (`BugsEngine`) that performs
-//! both node-level checking (dispatched per-node during traversal) and file-level
-//! checking (full-tree analysis after traversal).
+//! ```mlt
+//! id = "BUGS_ENGINE"
+//! title = "Bugs"
+//! category = "bugs"
+//! severity = "error"
+//! fix = true
+//! icon = "lucide/bug"
+//! slug = "bugs"
+//! ```
+//!
+//! ## Rule
+//!
+//! Detects likely bugs and logic errors in MATLAB code. All 35 checks share a
+//! single hybrid engine (`BugsEngine`) that performs both node-level checking
+//! (dispatched per-node during traversal) and file-level checking (full-tree
+//! analysis after traversal). Each diagnostic carries the specific check ID
+//! (e.g. `IFBDUP`, `FNAN`).
 //!
 //! ## Check IDs
 //!
-//! | Check ID   | Description                                                    |
-//! |------------|----------------------------------------------------------------|
-//! | IFBDUP     | Duplicate if-branch bodies                                     |
-//! | IFCDUP     | Duplicate if-branch conditions                                 |
-//! | CTRUE      | Condition is always true (`if true`, `while 1`)                |
-//! | CFALSE     | Condition is always false (`if false`, `while 0`)              |
-//! | SHOCIRT    | Short-circuit `&&` with non-scalar LHS                         |
-//! | SHOCIRF    | Short-circuit `\|\|` with non-scalar LHS                      |
-//! | DEBUGFUN   | Debug function in code (keyboard, dbstop, etc.)                |
-//! | INCR       | Suspicious self-increment `x = x + 1`                         |
-//! | DECR       | Suspicious self-decrement `x = x - 1`                         |
-//! | CMDAND     | `&` used where `&&` intended (boolean context)                 |
-//! | CMDOR      | `\|` used where `\|\|` intended (boolean context)              |
-//! | RHSFN      | Function name used on RHS without `@`                          |
-//! | FNAN       | Comparison with NaN (use `isnan` instead)                      |
-//! | LOGEMP     | `length(x) == 0` instead of `isempty(x)`                      |
-//! | STCUL      | `strcmpi` with same-case arguments                             |
-//! | LBODUP     | Duplicate case values in switch                                |
-//! | FUNFUN     | Passing function name as string instead of handle              |
-//! | DEFSIZE    | `size(x) == [m n]` instead of `isequal(size(x), [m n])`       |
-//! | VARARG     | Misuse of varargin/varargout                                   |
-//! | STRCMPCSTR | `strcmp` with single-char comparison                            |
-//! | ASSRT      | `assert` with constant true condition                          |
-//! | BDSCA2     | Suspicious scalar/array operation                              |
-//! | NOPRC      | No `otherwise` in switch                                       |
-//! | MOCUP      | Operator precedence issue                                      |
-//! | MDUPC      | Duplicate case in switch                                       |
-//! | MNANC      | Comparison with NaN (alternate form)                           |
-//! | MULCC      | Multiple conditions could be simplified                        |
-//! | MEXCEP     | Catch without identifier                                       |
-//! | PFUIXE     | Parfor index used in eval                                      |
-//! | PFBFN      | Builtin function in parfor                                     |
-//! | PFWHOS     | who/whos in parfor                                             |
-//! | PFTUSE     | Temporary variable misuse in parfor                            |
-//! | PFRNC      | Reduction not consistent in parfor                             |
-//! | FWPARF     | For loop could be parfor                                       |
-//! | PFTRIV     | Parfor could be for                                            |
+//! | Check ID   | Severity | Fix | Description                                                    |
+//! |------------|----------|-----|----------------------------------------------------------------|
+//! | IFBDUP     | error    | no  | Duplicate if-branch bodies                                     |
+//! | IFCDUP     | error    | no  | Duplicate if-branch conditions                                 |
+//! | CTRUE      | error    | no  | Condition is always true (`if true`, `while 1`)                |
+//! | CFALSE     | error    | no  | Condition is always false (`if false`, `while 0`)              |
+//! | SHOCIRT    | error    | no  | Short-circuit `&&` with non-scalar LHS                         |
+//! | SHOCIRF    | error    | no  | Short-circuit `\|\|` with non-scalar LHS                      |
+//! | DEBUGFUN   | error    | no  | Debug function in code (keyboard, dbstop, etc.)                |
+//! | INCR       | error    | no  | Suspicious self-increment `x = x + 1`                         |
+//! | DECR       | error    | no  | Suspicious self-decrement `x = x - 1`                         |
+//! | CMDAND     | error    | yes | `&` used where `&&` intended (boolean context)                 |
+//! | CMDOR      | error    | yes | `\|` used where `\|\|` intended (boolean context)              |
+//! | RHSFN      | error    | yes | Function name used on RHS without `@`                          |
+//! | FNAN       | error    | yes | Comparison with NaN (use `isnan` instead)                      |
+//! | LOGEMP     | error    | yes | `length(x) == 0` instead of `isempty(x)`                      |
+//! | STCUL      | error    | no  | `strcmpi` with same-case arguments                             |
+//! | LBODUP     | error    | no  | Duplicate case values in switch                                |
+//! | FUNFUN     | error    | no  | Passing function name as string instead of handle              |
+//! | DEFSIZE    | error    | yes | `size(x) == [m n]` instead of `isequal(size(x), [m n])`       |
+//! | VARARG     | error    | no  | Misuse of varargin/varargout                                   |
+//! | STRCMPCSTR | error    | no  | `strcmp` with single-char comparison                            |
+//! | ASSRT      | error    | no  | `assert` with constant true condition                          |
+//! | BDSCA2     | error    | no  | Suspicious scalar/array operation                              |
+//! | NOPRC      | error    | no  | No `otherwise` in switch                                       |
+//! | MOCUP      | error    | no  | Operator precedence issue                                      |
+//! | MDUPC      | error    | no  | Duplicate case in switch                                       |
+//! | MNANC      | error    | yes | Comparison with NaN (alternate form)                           |
+//! | MULCC      | error    | yes | Multiple conditions could be simplified                        |
+//! | MEXCEP     | error    | no  | Catch without identifier                                       |
+//! | PFUIXE     | error    | no  | Parfor index used in eval                                      |
+//! | PFBFN      | error    | no  | Builtin function in parfor                                     |
+//! | PFWHOS     | error    | no  | who/whos in parfor                                             |
+//! | PFTUSE     | error    | no  | Temporary variable misuse in parfor                            |
+//! | PFRNC      | error    | no  | Reduction not consistent in parfor                             |
+//! | FWPARF     | error    | no  | For loop could be parfor                                       |
+//! | PFTRIV     | error    | no  | Parfor could be for                                            |
+//!
+//! ## Fix
+//!
+//! Rewrites the flagged construct into the safe equivalent. For example:
+//!
+//! - `&` → `&&` and `|` → `||` in boolean contexts.
+//! - `x == NaN` → `isnan(x)` (and `x ~= NaN` → `~isnan(x)`).
+//! - `length(x) == 0` → `isempty(x)` and `size(x) == [m n]` → `isequal(size(x), [m n])`.
+//! - Bare function names on the RHS of an assignment get an `@` prefix.
+//! - Duplicate boolean conditions are collapsed (`a && a` → `a`).
+//!
+//! ## Examples
+//!
+//! ### Incorrect
+//!
+//! ```matlab
+//! if x == NaN
+//!     disp('not a number');
+//! end
+//! while true
+//!     % infinite
+//! end
+//! ```
+//!
+//! ### Correct
+//!
+//! ```matlab
+//! if isnan(x)
+//!     disp('not a number');
+//! end
+//! while true % intentional
+//!     % ...
+//! end
+//! ```
 //!
 //! ## Configuration
 //!

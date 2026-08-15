@@ -348,12 +348,17 @@ Documentation uses [VitePress](https://vitepress.dev/):
 - Dependencies: `package.json` `devDependencies` (`vitepress`, `lucide-vue-next`)
 - Preview: `bun run docs:dev` (runs `docs:gen` first)
 - Build: `bun run docs:build` (runs `docs:gen`, then `vitepress build docs`)
-- Generated tables: the "Data-Driven Check IDs" section of `docs/rules.md` and
-  the category engine pages (`docs/rules/<cat>.md`) are produced by
-  `docs/scripts/gen_rules_docs.ts` (TypeScript). `docs:build` regenerates them first so
-  they never drift from the sources.
-- Editing rule docs: after changing `data/*.toml` or an engine's doc-comment
-  table, run `bun run docs:gen` to refresh the generated tables/pages.
+- **Rule pages are generated from source docstrings.** Every rule module in
+  `crates/mlt_rules/src` carries a standardized `//!` header docstring (schema
+  documented in `docs/scripts/SCHEMA.md`) with a ```` ```mlt ```` front-matter
+  block and fixed `## Rule` / `## Fix` / `## Examples` sections. The rule index
+  table in `docs/rules.md` and the per-rule pages in `docs/rules/*.md` are
+  produced by `docs/scripts/gen_rules_docs.ts`. `docs:build` regenerates them
+  first so they never drift from the sources.
+- Editing rule docs: edit the rule's docstring (or `data/*.toml` for
+  data-driven engines), then run `bun run docs:gen` to refresh the generated
+  pages and the rules.md index. `bun docs/scripts/gen_rules_docs.ts --check`
+  fails when generated docs are stale.
 
 ### Documentation Structure
 
@@ -368,20 +373,42 @@ docs/
 │   ├── editors.md              # Editor integration
 │   └── ci-cd.md                # CI/CD integration
 ├── configuration.md            # .mlt.toml schema reference
-├── rules.md                    # Rules overview + table
-└── <rule_id>.md                # One page per rule (flat, not nested)
+├── rules.md                    # Rules overview + generated rule index table
+└── rules/<slug>.md             # One generated page per rule engine
 ```
 
-### Rule Documentation Template
+### Rule Documentation Schema
 
-Every rule page follows this structure (see `docs/nosemi.md` as the canonical example):
+Every rule module's `//!` docstring IS its documentation. Full spec:
+`docs/scripts/SCHEMA.md`. Summary:
 
-1. `# RULE_ID - <Human Name>`
-2. Default severity + auto-fix badge + category + can-be-disabled
-3. "What this rule does"
-4. "Why this matters" (bullet points)
-5. "Examples" → Correct / Incorrect / Fixed (MATLAB code blocks)
-6. "Configuration" (TOML example + parameters table)
-7. "Automatic fixes" (describe what the fix does)
-8. "Target node types" (tree-sitter nodes)
-9. "Related rules"
+```
+//! # <META_ID>: <Human Title>
+//!
+//! ```mlt
+//! id = "<META_ID>"
+//! title = "<Human Title>"
+//! category = "<category-slug>"
+//! severity = "<error|warning|info>"
+//! fix = <true|false>
+//! icon = "lucide/<name>"       # optional
+//! slug = "<url-slug>"          # optional
+//! data_file = "<name>.toml"    # optional — data-driven engine
+//! ```
+//!
+//! ## Rule
+//! <what the rule does>
+//!
+//! ## Check IDs                # engines only
+//! | Check ID | Severity | Fix | Description |
+//!
+//! ## Fix                      # only when fix = true
+//! <what the auto-fix rewrites>
+//!
+//! ## Examples
+//! ### Correct / ### Incorrect / ### Fixed
+```
+
+When migrating a rule module to the schema, run `bun run docs:gen` and confirm
+the generated page in `docs/rules/` renders the expected check anchors, then
+`bun docs/scripts/gen_rules_docs.ts --check`.
