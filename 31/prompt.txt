@@ -1,0 +1,25 @@
+Group: GOODPRAC G1 — OOP/Class/Property rules (12: ATTF, ATTOF, MCPO, MCSAC, MOBSRV, MDEPIN, MCCPI, MGMD, MCCPE, MTHANS, MHERM, MNUML)
+Module: crates/mlt_rules/src/good_practices.rs
+
+You are the Implementer in mlt's rule pipeline. Implement GOODPRAC G1 exactly per the approved plan.
+
+READ the plan at /tmp/opencode/plans/GOODPRAC_G1.md INCLUDING the corrected/deferred sections.
+
+Implementation steps:
+1. Read crates/mlt_rules/src/good_practices.rs (engine structure: TARGET_NODES, is_check_enabled, hybrid check()/check_file(), existing OOP checks).
+2. Read crates/mlt_rules/src/analysis/metadata.rs (ClassMeta, PropertiesBlockMeta, AttributeMeta, PropertyMeta, FunctionMeta).
+3. Run the astprobe (cd /tmp/opencode/astprobe && cargo run) on classdef samples to confirm AST shapes.
+4. Implement: file-level checks ATTF/ATTOF/MCPO/MCSAC/MOBSRV/MDEPIN/MCCPI/MGMD/MTHANS/MCCPE in check_file; node-level MHERM/MNUML in check(). All gated by is_check_enabled.
+5. Update module `//!` doc table with 12 rows. Create/extend docs/good-practices.md. Add rows to docs/rules.md + zensical.toml nav.
+6. Add tests: fire/no-fire/disabled per check.
+
+Verify:
+cargo build
+cargo clippy --all-targets
+cargo test
+
+Fix failures until clean. Do NOT add code comments unless the plan requires them. Do NOT commit.
+
+NOTE: One of 5 parallel flows editing good_practices.rs + docs/rules.md + zensical.toml. Use stable anchors; re-verify compilation. Only add YOUR check IDs/functions.
+
+Return a summary: files created/modified, AST findings, fires/not-fires verified, cargo results, deviations.
