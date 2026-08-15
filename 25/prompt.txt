@@ -1,0 +1,47 @@
+You are splitting the `language_spec` rule engine in `crates/mlt_rules/src/language_spec.rs` (102 check_ methods, 263 tests, ~10.9k lines — the largest file) into a directory of one-file-per-check modules. PURE MECHANICAL REFACTOR — zero behavior change.
+
+## CRITICAL CONSTRAINTS
+- Do NOT delete or modify `crates/mlt_rules/src/language_spec.rs`.
+- Do NOT modify `crates/mlt_rules/src/lib.rs`.
+- Only CREATE new files under `crates/mlt_rules/src/language_spec/`.
+- Do NOT commit.
+
+## Target layout
+```
+crates/mlt_rules/src/language_spec/
+├── mod.rs                        # LanguageSpecEngine, config, impl Rule (check_file dispatch), inventory::submit!,
+│                                #   shared free helpers + shared STATE (ContextFrame, LoopContext, ParforAnalysis,
+│                                #   NestedForInfo, check_dfs + visit_children traversal machinery), module doc,
+│                                #   shared #[cfg(test)] helpers
+├── check_*.rs                    # one file per independent check
+└── ...
+```
+
+## How to do it
+1. Read `crates/mlt_rules/src/language_spec.rs` fully. It is organized in `impl LanguageSpecEngine` blocks with clear section comments (parfor, class/OOP, function validation, arguments-block, script, global/persistent, break/continue, naming).
+2. `mod.rs` gets:
+   - module `//!` doc, `use` statements, `LanguageSpecConfig`, `LanguageSpecEngine` struct,
+   - ALL shared state structs: `LoopContext`, `ContextFrame`, `NestedForInfo`, `ParforAnalysis`, `BlockRole`, `ArgumentsBlockMeta` + their impl blocks,
+   - the DFS traversal machinery: `check_dfs`, `visit_children`, `is_parfor_node`, `extract_for_variable`, `extract_iterator_variable`, `extract_assignment_lhs_name`, `current_parfor_analysis_mut`, `node_is_inside_lambda` and any helpers that take/thread `context_stack` or `ParforAnalysis` (these are NOT independent — they share mutable traversal state),
+   - ALL shared free helper functions (e.g. `operator_text`, `arguments_text`, `args_tokens`, `contains_identifier`, `fopen_is_read_only`, `range_is_positive_constants`, `collect_identifiers`, etc.),
+   - the `impl Rule for LanguageSpecEngine` with `check_file()` dispatch,
+   - `inventory::submit!`.
+   Make shared free helpers and shared-state structs `pub(crate)` (or `pub(super)`).
+3. Each INDEPENDENT `check_*` method → own file `language_spec/check_<name>.rs`. Independent means it only uses `self` config/`is_check_enabled` + shared helpers, and does NOT take `context_stack`/shared mutable state. The many `check_mc*` (class), `check_fv*`/`check_tin*`/`check_ttoo*` (function validation), `check_script*`, `check_global*`, `check_break*`, `check_useswns`, and the standalone parfor sub-checks that don't thread state → each gets a file.
+   - If a `check_*` method is a private helper called by another check (not a top-level dispatched check), keep it in the same file as its caller.
+   - If a `check_*` method threads `context_stack`/`&mut ParforAnalysis` as a parameter, it is NOT independent → keep in mod.rs.
+4. Move tests with their check: `use super::*; use crate::test_util::{has_id, lint_file}; use mlt_core::Config;` + local `engine()` helper. Generic tests stay in mod.rs. Note some tests may exercise multiple checks (integration) — keep those in mod.rs.
+
+## Verification (REQUIRED)
+- Diff each moved method body against original (identical except `pub(crate)` + indentation).
+- Confirm each check ID appears exactly once across `language_spec/`.
+- Confirm dispatch references match; moved-test count matches.
+You may write a diff script; do NOT run `cargo build`. Given the file's size, work carefully and systematically (e.g., extract section by section).
+
+## Report back
+- Files created
+- Moved vs kept methods (and why for any kept — expect the DFS/context machinery to stay)
+- Verification results
+- Risks/notes
+
+Do not touch anything outside `crates/mlt_rules/src/language_spec/`.
