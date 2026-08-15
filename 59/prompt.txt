@@ -1,0 +1,22 @@
+Rule ID: STLOW
+Category: Readability (3.3)
+Module: crates/mlt_rules/src/readability.rs
+
+You are the Implementer in mlt's rule pipeline. Implement STLOW exactly per the approved plan.
+
+READ the approved plan at /tmp/opencode/plans/STLOW.md first. It is a sub-check of the existing READABILITY_ENGINE (no new module, no lib.rs change, no inventory::submit!).
+
+Then implement:
+- crates/mlt_rules/src/readability.rs: add STLOW detection (integrate into check_strcmp or a new check_stlow, dispatched for the strcmp family), an is_all_case helper, and all tests in the plan (fires, not-fires, config, fix).
+- docs/stlow.md (new, per docs/nosemi.md template; note sub-check + READABILITY_ENGINE disabled_checks config).
+- docs/rules.md: add row.
+- zensical.toml: add nav entry.
+
+Verify:
+cargo build
+cargo clippy --all-targets
+cargo test
+
+Fix any failures until clean. Do NOT add code comments unless the plan requires them. Do NOT commit.
+
+Return a summary: files created/modified, whether it fires/not-fires on the plan's examples, cargo results, deviations from the plan.
