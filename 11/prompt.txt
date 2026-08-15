@@ -1,0 +1,32 @@
+Split the `unused` rule engine in `crates/mlt_rules/src/unused.rs` (1,376 lines, 15 check_ methods, 34 tests) into a directory of one-file-per-check modules. PURE MECHANICAL REFACTOR — zero behavior change.
+
+## CRITICAL CONSTRAINTS
+- Do NOT delete or modify `crates/mlt_rules/src/unused.rs`.
+- Do NOT modify `crates/mlt_rules/src/lib.rs`.
+- Only CREATE new files under `crates/mlt_rules/src/unused/`.
+- Do NOT commit.
+
+## Target layout
+```
+crates/mlt_rules/src/unused/
+├── mod.rs                        # engine, config, impl Rule, inventory::submit!, shared helpers (pub(crate)), module doc, test helpers
+├── check_*.rs                    # one file per independent check
+└── ...
+```
+
+## How to do it
+1. Read the whole file. It is `impl UnusedEngine` blocks of `check_*` methods (file-level, using SymbolTable/control-flow) plus free helpers and consts.
+2. mod.rs keeps: module `//!` doc, `use` statements, config, `UnusedEngine` struct, ALL free helpers + consts (make `pub(crate)`), the `impl Rule` (check_file dispatch), `inventory::submit!`, shared test helpers (`engine()`).
+3. Each INDEPENDENT `check_*` method → its own file `unused/check_<name>.rs`. A check method and its recursive walker/helper (e.g. `walk_for_no_effect` called by `check_no_effect`) MUST stay in the SAME file. Methods sharing mutable traversal state stay together in mod.rs.
+4. Move tests with their check. Add `use super::*; use crate::test_util::{has_id, lint_file}; use mlt_core::Config;` + local `engine()`.
+
+## Verification (REQUIRED)
+Write a python script that diffs each moved method body against the original (identical except `pub(crate)` + indentation), confirms every check ID appears exactly once across `unused/`, dispatch calls match, moved-test count + bodies match. Do NOT run `cargo build`.
+
+## Report back
+- Files created
+- Moved vs kept methods
+- Verification results
+- Risks/notes
+
+Do not touch anything outside `crates/mlt_rules/src/unused/`.
