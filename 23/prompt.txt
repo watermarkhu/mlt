@@ -1,0 +1,36 @@
+You are splitting the `unused` rule engine in `crates/mlt_rules/src/unused.rs` (15 check_ methods, 34 tests) into a directory of one-file-per-check modules. PURE MECHANICAL REFACTOR — zero behavior change.
+
+## CRITICAL CONSTRAINTS
+- Do NOT delete or modify `crates/mlt_rules/src/unused.rs`.
+- Do NOT modify `crates/mlt_rules/src/lib.rs`.
+- Only CREATE new files under `crates/mlt_rules/src/unused/`.
+- Do NOT commit.
+
+## Target layout
+```
+crates/mlt_rules/src/unused/
+├── mod.rs                        # UnusedEngine, config, impl Rule (dispatch), inventory::submit!,
+│                                #   shared free helpers (pub(crate)), module doc, shared #[cfg(test)] helpers
+├── check_*.rs                    # one file per independent check
+└── ...
+```
+
+## How to do it
+1. Read `crates/mlt_rules/src/unused.rs` fully.
+2. `mod.rs` gets: module `//!` doc, `use` statements, config, `UnusedEngine` struct, ALL free helpers + consts, the `impl Rule` with `check_file()` dispatch, and `inventory::submit!`. Make shared free helpers `pub(crate)`.
+3. Each INDEPENDENT `check_*` method → own file `unused/check_<name>.rs`: `use super::*; impl UnusedEngine { pub(crate) fn check_<name> ... }` + that check's tests. Methods sharing MUTABLE traversal state (e.g. a walker called by its checker) stay together in one file.
+4. Move tests with their check; generic tests stay in mod.rs.
+
+## Verification (REQUIRED)
+- Diff each moved method body against original (identical except `pub(crate)` + indentation).
+- Confirm each check ID appears exactly once across `unused/`.
+- Confirm dispatch references match; moved-test count matches.
+You may write a diff script; do NOT run `cargo build`.
+
+## Report back
+- Files created
+- Moved vs kept methods
+- Verification results
+- Risks/notes
+
+Do not touch anything outside `crates/mlt_rules/src/unused/`.
