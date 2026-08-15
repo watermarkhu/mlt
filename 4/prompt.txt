@@ -1,0 +1,46 @@
+You are aligning linter diagnostic messages in the mlt project (Rust, MATLAB linter at /home/watermarkhu/repositories/mlt) to match MathWorks Code Analyzer messages verbatim.
+
+## Context
+Each lint check emits a `Diagnostic { message: String, ... }`. The current messages paraphrase MathWorks; rewrite them to quote MathWorks exactly.
+
+## Your target data
+JSON files list your engines' check IDs + exact MathWorks messages. Read them:
+- /home/watermarkhu/repositories/mlt/.playwright-mcp/targets/bugs.json
+- /home/watermarkhu/repositories/mlt/.playwright-mcp/targets/formatting.json
+- /home/watermarkhu/repositories/mlt/.playwright-mcp/targets/config_issues.json
+- /home/watermarkhu/repositories/mlt/.playwright-mcp/targets/unset_variables.json
+- /home/watermarkhu/repositories/mlt/.playwright-mcp/targets/unused.json
+
+Each entry is `{"id": "CHECKID", "mw": "the exact MathWorks message"}`. Entries with empty `"mw"` have no MathWorks equivalent — leave those checks unchanged.
+
+## Your engines (directories under crates/mlt_rules/src/)
+- `bugs/` (mod.rs + check_*.rs, ~35 checks)
+- `formatting/` (mod.rs + check_*.rs, 7 checks)
+- `config_issues/` (4 checks)
+- `unset_variables/` (6 checks)
+- `unused/` (17 checks)
+
+## What to do
+For every check ID with a non-empty `mw`, locate its message definition and replace it with the MathWorks text verbatim. Message definitions appear as:
+1. Inline `Diagnostic { rule_id: "X", message: "...".to_string(), ... }`.
+2. `format!("...", args)` calls (see placeholder rules).
+3. `make_diag("X", ...)` helpers that read from a metadata table (e.g. `const CHECKS: &[CheckMeta]` with `description:` fields).
+
+Grep for the check ID (e.g. `grep -rn 'rule_id: "FNAN"\|"FNAN"' crates/mlt_rules/src/bugs/`) to find every definition site.
+
+## Placeholder substitution
+MathWorks messages may contain placeholders. Map them to the check's runtime values:
+- `VAR_NAME` → the variable/identifier name; `VAR_NUMBER` → line number or numeric value; `VAR_RESERVED_WORD` → keyword; `VAR_OPERATOR` → operator; `VAR_FILE` → filename.
+If the check does not compute a natural value, substitute the closest available value; if none exists, keep the placeholder token literally.
+
+## Rules (strict)
+- The `Diagnostic.message` field is `String`. For static messages (no placeholders), replace the entire message expression with `"<text>".to_string()` — do NOT leave a `format!` with stray/unused arguments.
+- Do NOT change `rule_id`, `severity`, `fix`, byte ranges, or any logic.
+- Do NOT touch the `//!` docstring comments (already correct).
+- Leave empty-`mw` checks unchanged.
+- Keep code compiling (correct format! arg counts where you do use format!).
+
+## Verify
+Run `cargo build -p mlt_rules 2>&1 | grep -E 'error'`. Ignore errors referencing files NOT in your five engine directories (other agents edit concurrently); fix any errors in YOUR files.
+
+Return: for each engine, how many messages you changed, and list any check IDs you could NOT find or left unchanged (besides empty-mw ones).
