@@ -1,0 +1,39 @@
+You are implementing Phase 7 MATLAB Code Analyzer checks in the `mlt` Rust linter (repo: /home/watermarkhu/repositories/mlt). Work ONLY in `crates/mlt_rules/src/compatibility/` (specifically `generic.rs` and a new `generic/check_unset_vars.rs`). Do NOT touch `good_practices/`, `mlt_core/`, or `analysis/typing.rs` (already built).
+
+## Shared infrastructure available
+
+- `crate::analysis::symbols::SymbolTable` — `SymbolTable::build(tree, source)`, scopes (`ScopeKind::NestedFunction`), `defs_of`/`uses_of`, `scope_at(byte_offset)`.
+- `crate::analysis::control_flow::analyze_definite_assignment(func_node, source)` returns `DefiniteAssignment { definitely_assigned, possibly_unset }`.
+- `crate::analysis::metadata::FileMeta` — `.class`, `.functions`, `.local_functions`.
+
+## Conventions (study first)
+
+- `crates/mlt_rules/src/compatibility/generic.rs` is the dispatch point for AST-pattern compat checks. It has `collect_node_checks(engine, node, source, diagnostics)` (per-node) and `collect_file_checks(engine, tree, source, diagnostics)` (whole-file, called from `CompatibilityEngine::check_generic`). The file-level pass currently dispatches `check_global_redefinitions` and `check_nested_import_inheritance` from `check_forward_gates.rs`.
+- Per-check files in `compatibility/generic/` do `use super::super::CompatibilityEngine;` + `impl CompatibilityEngine { pub(crate) fn check_xxx(...) }`. See `check_forward_gates.rs` for the established pattern (including how it pushes `Diagnostic` and how its `collect_file_checks` is called from `generic.rs`).
+- `push_diag`-style helpers: `check_forward_gates.rs` has a local `push_diag(id, message, node, severity, &mut diagnostics)`. You can add a similar helper in your file (or reuse if it's `pub(crate)` in generic.rs — check first).
+- Diagnostics use `Severity::Warning` for these three checks.
+- Tests: each `check_*.rs` has `#[cfg(test)] mod tests` using `crate::test_util::{has_id, lint_file}` and `crate::compatibility::CompatibilityEngine` + `Config::default()`.
+
+## Checks to implement — new file `generic/check_unset_vars.rs`
+
+Implement `pub(crate) fn collect_file_checks(engine, tree, source, diagnostics)` OR wire each check into `generic::collect_file_checks` (see how `check_forward_gates::collect_file_checks` is exposed and called from `generic.rs` — replicate that pattern: add `check_unset_vars::collect_file_checks(...)` call inside `generic.rs::collect_file_checks`).
+
+All three are **Severity::Warning**, gated on the engine's check-enabling. The `CompatibilityEngine` is a zero-sized struct; check how `check_forward_gates.rs` gates individual checks (it doesn't gate via config since COMPAT engine has no disabled list — verify; if there's no per-check gate, that's fine and matches the other generic checks).
+
+1. **IDISVARLOW** "To avoid a potential conflict with functions on the path, explicitly define the variable before indexing into it." — file-level. Walk the tree for `function_call`/indexing patterns where a variable is indexed (`x(i)`, `x{i}`, `x.field`) BEFORE it is assigned anywhere in the enclosing scope. Use `SymbolTable`: if a name has a `use` at an offset earlier than any `def` of that name in the same scope, and the use is an indexing context (the identifier is followed by `(`/`{`), fire IDISVARLOW on the use. Conservative: skip if the name is a builtin (`true,false,pi,inf,nan,eps,i,j,end,ans,varargin,varargout`) or a known function call (the identifier is the callee name of a `function_call`). 
+2. **IDISVARHIGH** "Variable must be explicitly defined before first use. In some cases, the definition was not required in previous releases, but it is now required." — file-level. Like IDISVARLOW but fires for ANY first use (read) of a name that has no prior definition in scope, where the name is NOT a callee (so plain reads like `x + 1` or passing `x` to a function). Conservative: only fire when the symbol table shows a use with zero prior defs in the same scope and the identifier is not a function-call callee and not a builtin. Distinguish from existing `NODEF` (in `unset_variables/`) — the plan: IDISVARHIGH is the strict behavior-change variant; keep your detection narrow (only clear first-use-before-def, not branch-partial cases).
+3. **SHVAI** "Explicitly define shared variables in the parent function before calling the nested function. MATLAB does not share uninitialized variables between a nested function and the parent function." — file-level. Detect: a nested function scope reads/writes a variable `x` that is ALSO used in the parent function, but `x` has no definition in the parent BEFORE the nested function's definition. Use `SymbolTable`: find `ScopeKind::NestedFunction` scopes; for each name used inside the nested function, check the parent scope — if the parent has defs of that name but all occur at offsets AFTER the nested function's start offset (so the shared var is not initialized before the nested function), fire SHVAI on the nested function node or the first parent def. Conservative: only fire when the parent has NO def before the nested function start.
+
+## Wiring
+
+- In `crates/mlt_rules/src/compatibility/generic.rs`, add `mod check_unset_vars;` (or wherever sibling mods are declared — check the top of generic.rs) and call `check_unset_vars::collect_file_checks(self, tree, source, diagnostics);` inside `collect_file_checks`.
+- Match the module doc style of the other generic files.
+
+## Verify (from repo root /home/watermarkhu/repositories/mlt)
+- `cargo build`
+- `cargo test -p mlt_rules compatibility` — new + existing pass (fires, not-fires per check)
+- `cargo clippy --all-targets` — ZERO warnings
+- Full `cargo test -p mlt_rules` at the end.
+
+## Return
+Files created/modified, per-check detection summary, tests added, final build/test/clippy results. Do NOT commit.
