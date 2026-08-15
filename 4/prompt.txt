@@ -1,0 +1,39 @@
+You are fixing the `mlt` MATLAB linter (Rust, at /home/watermarkhu/repositories/mlt) to remove hallucinated checks and reimplement semantically-mismatched checks in the `good_practices` engine.
+
+## Background
+`mlt` aims for parity with MATLAB Code Analyzer, using the same check IDs. Two problems remain in `crates/mlt_rules/src/good_practices/`:
+1. Some check IDs are mlt-invented (no MathWorks equivalent) — remove them.
+2. Some checks use a MathWorks ID but detect the WRONG thing — reimplement them to match MathWorks.
+
+The messages have ALREADY been aligned to MathWorks verbatim (leave them). The `//!` docstring `## Check IDs` table has already been rewritten (leave its remaining rows; just delete rows for removed checks).
+
+## 1. REMOVE these hallucinated checks (no MathWorks equivalent)
+- `COMFS` and `SEMFS` — both live in `crates/mlt_rules/src/good_practices/check_comfs_semfs.rs`. Delete that file, its `mod check_comfs_semfs;` declaration in `mod.rs`, its dispatch call `diagnostics.extend(self.check_comfs_semfs(...))`, its docstring table rows, and its tests (search `check_comfs_semfs` and the IDs in `mod.rs`).
+- `ADPROPLC` — the "read" branch in `check_app_designer.rs` (the block guarded by `is_check_enabled("ADPROPLC")`, the `rule_id: "ADPROPLC"` Diagnostic, its docstring row, the `ADPROPLC` references in the `any_enabled`/condition checks, and tests). Keep `ADPROP` and `ADMTHDINV`.
+- `BDSCA` — the `collect_bdsca` pass in `check_logical_usage.rs` (guarded by `is_check_enabled("BDSCA")`), the `collect_bdsca` function, its docstring row in `mod.rs`, and its tests. Keep BDLGI/BDLOG1/BDLOG2/BDSCI.
+
+## 2. RENAME
+- Rename `FXSET` → `FXSETA` everywhere in `good_practices/` (in `check_fxset.rs`, `mod.rs` dispatch, docstring table, and tests). `FXSETA` is the correct MathWorks ID; the logic (a for-loop iterator variable assigned inside the loop body) is already correct, so just change the ID string.
+
+## 3. REIMPLEMENT these mismatched checks to match MathWorks semantics
+For each, read the current implementation, then rewrite its DETECTION LOGIC so it actually triggers on what MathWorks describes (keep the already-aligned message and the ID):
+
+- `ADPROP` (in check_app_designer.rs): MathWorks = "VAR_NAME is also the name of a property, which may be confusing. Use app.PropertyName syntax to reference the property, or change one of the names to improve readability." — verify current logic flags a bare identifier that shadows a property name; fix if it instead detects something else.
+- `COMNC` (check_comnc.rs): MathWorks = "Comment with percent (%) following comma acts as a row separator. Replace the comma with a semicolon... or replace the percent (%) with an ellipsis (...)". Current logic flags "comment needs a space after %" — reimplement to detect a `%` comment that follows a comma on the same line (comma then comment).
+- `CTCH` (check_ctch.rs): MathWorks = "Best practice is for CATCH to be followed by an identifier that gets the error information." Current logic flags "empty catch block" — reimplement to flag a `catch` clause WITHOUT an identifier (`catch` vs `catch ME`).
+- `DISPLAY`: MathWorks = "Overloading DISPLAY is not recommended." Current logic flags "overriding display() is discouraged; override disp()". Reimplement to flag a method/function named `display` (overloading the builtin `display`), recommending against it.
+- `EVLDUAL` (check in eval-related file): MathWorks = "This use of 'eval' is unnecessary and can be removed. Call the evaluated function directly." Reimplement to flag an unnecessary `eval('funcname(args)')` where the argument is a literal function call that could be written directly.
+- `MEXCEP` (check_misc... or wherever `rule_id: "MEXCEP"` is emitted in good_practices): MathWorks = "To report an MException as a warning, use a format specifier to ensure the message is not truncated." Reimplement to flag a `warning(ME)` / `warning(exception)` call (passing an MException directly to warning, which truncates the message).
+- `NBRAK1` (check_nbrak1.rs or similar): MathWorks = "If you intend to specify expression precedence, use parentheses () instead of brackets []." Reimplement to flag `[...]` used for grouping/precedence where `(...)` is intended.
+- `SEPEX` (check in misc file): MathWorks = "Consider using newline, semicolon, or comma before this statement for readability." Current logic flags "multiple statements on one line" — reimplement to flag a statement that follows another statement on the same line without a semicolon/comma separator.
+- `STRNU`: MathWorks = "This variable, apparently a structure, is changed but the value might be unused." Current logic flags "str2double vs str2num". Reimplement to detect a variable assigned the result of `struct(...)` (or a structure) whose value is never used.
+- `UNRPWR` (check_unrpwr.rs or misc): MathWorks = "Consider using parentheses to explicitly specify operator precedence." Reimplement to flag a power expression `-x^2` / `(-x)^2` ambiguity (unary minus + power) and suggest parentheses.
+- `WLAST` (check_wlast.rs or misc): MathWorks = "WARNING('') does not reset the warning state. Use LASTWARN('') instead." Current logic flags "warning() is the last statement" — reimplement to flag `warning('')` (empty string argument) which does NOT reset warning state.
+- `ELARLOG`: MathWorks = "The VAR_NAME operator in the expression VAR_NAME(A VAR_NAME B) is unexpected. Should ... be ...?" — reimplement to detect a logical `&`/`|` operator used where a short-circuit `&&`/`||` is intended (e.g. inside an `if`/`while` condition), suggesting the short-circuit form.
+
+IMPORTANT: The messages are already aligned to MathWorks verbatim; do NOT change message text. Only change the DETECTION logic, ID strings (for rename), or remove code (for removals). Keep `Severity`, `fix`, byte ranges sensible. Add/adjust unit tests for reimplemented checks (fire + no-fire cases).
+
+## Verify
+Run `cargo build -p mlt_rules 2>&1 | grep -E 'error'` and `cargo test -p mlt_rules good_practices 2>&1 | tail -5`. Ignore errors referencing files OUTSIDE good_practices (other agents edit concurrently). Fix all errors in your files. Also delete any now-unused helper functions you orphan.
+
+Return: which checks you removed, renamed, and reimplemented, and note any check you could not confidently reimplement.
