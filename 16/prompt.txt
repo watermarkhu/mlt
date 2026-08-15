@@ -1,0 +1,36 @@
+You are splitting the `incomplete_analysis` rule engine in `crates/mlt_rules/src/incomplete_analysis.rs` (3 check_ methods, 28 tests) into a directory of one-file-per-check modules. PURE MECHANICAL REFACTOR — zero behavior change.
+
+## CRITICAL CONSTRAINTS
+- Do NOT delete or modify `crates/mlt_rules/src/incomplete_analysis.rs`.
+- Do NOT modify `crates/mlt_rules/src/lib.rs`.
+- Only CREATE new files under `crates/mlt_rules/src/incomplete_analysis/`.
+- Do NOT commit.
+
+## Target layout
+```
+crates/mlt_rules/src/incomplete_analysis/
+├── mod.rs                        # IncompleteAnalysisEngine, config, impl Rule (dispatch), inventory::submit!,
+│                                #   shared free helpers (pub(crate)), module doc, shared #[cfg(test)] helpers
+├── check_*.rs                    # one file per independent check
+└── ...
+```
+
+## How to do it
+1. Read `crates/mlt_rules/src/incomplete_analysis.rs` fully. Note the engine's `check_file` runs many sub-checks; some are inline in `check_file` and some are `check_*` methods. The `collect_metrics` walker and threshold helpers are shared state — keep them in mod.rs.
+2. `mod.rs` gets: module `//!` doc, `use` statements, config (with all default_* threshold fns), engine struct, the shared `collect_metrics`/`Metrics` walker + helpers, the `impl Rule` with `check_file()` dispatch, and `inventory::submit!`. Make shared helpers `pub(crate)`.
+3. Each INDEPENDENT `check_*` method (or logical sub-check group) → own file `incomplete_analysis/check_<name>.rs`: `use super::*; impl IncompleteAnalysisEngine { pub(crate) fn check_<name> ... }` + that check's tests. Inline sub-checks inside `check_file` that are simple threshold guards can be extracted into their own check methods/files IF the extraction is mechanical and behavior-identical; otherwise leave them inline in mod.rs.
+4. Move tests with their check; generic tests stay in mod.rs.
+
+## Verification (REQUIRED)
+- Diff each moved method body against original (identical except `pub(crate)` + indentation).
+- Confirm each check ID appears exactly once across `incomplete_analysis/`.
+- Confirm dispatch references match; moved-test count matches.
+You may write a diff script; do NOT run `cargo build`.
+
+## Report back
+- Files created
+- Moved vs kept methods/guards
+- Verification results
+- Risks/notes
+
+Do not touch anything outside `crates/mlt_rules/src/incomplete_analysis/`.
