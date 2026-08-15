@@ -1,0 +1,19 @@
+Rule ID: QUIT
+Category: Incomplete Analysis (3.6)
+Module: crates/mlt_rules/src/incomplete_analysis.rs
+
+You are the Reviewer in mlt's rule pipeline (plan in main → Reviewer → Implementer). Review the implementation plan for QUIT.
+
+READ the plan at /tmp/opencode/plans/QUIT.md first.
+
+Then verify against the codebase:
+- Read crates/mlt_rules/src/incomplete_analysis.rs (especially check_file(), how metrics.error_count is computed, the module doc table, and can_be_disabled).
+- Read crates/mlt_core/src/ to understand FileContext and Rule.
+- Optionally run the AST probe in /tmp/opencode/astprobe to confirm how unterminated constructs (e.g. `function f(` or `if true` without end) parse — ERROR vs MISSING at top level.
+
+Adjudicate: does the trigger (root node is ERROR, or first named child of source_file is ERROR/MISSING) work and not conflict with EOFER/EOFMI/TMSMS? Is it too narrow or too broad? Recommend the best trigger.
+
+You MUST return your full review in your final message. Return exactly:
+- `VERDICT: APPROVED` or `VERDICT: CHANGES REQUIRED`
+- A short list of required corrections (or confirmations if approved)
+- The corrected, complete implementation plan (repeat the whole plan with fixes) — self-contained, since the Implementer only sees your message.
