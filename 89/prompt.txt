@@ -1,0 +1,43 @@
+You are migrating rule module docstrings in the `mlt` Rust project at /home/watermarkhu/repositories/mlt to a standardized documentation schema so that docs/scripts/gen_rules_docs.ts can generate documentation pages from them.
+
+## The schema (MUST read first)
+Read `docs/scripts/SCHEMA.md` in full — it defines the exact docstring format.
+
+## Reference implementations (MUST read)
+These two modules are already migrated correctly and are your ground truth:
+- `crates/mlt_rules/src/nosemi.rs` (single-check flat rule)
+- `crates/mlt_rules/src/bugs/mod.rs` (multi-check engine with `## Check IDs` table, `## Fix`, `## Examples`)
+
+## Your modules (migrate BOTH)
+1. `crates/mlt_rules/src/language_spec/mod.rs` (meta ID `LANGUAGE_SPEC_ENGINE`, category `language-specification`, severity Error, ~167 check IDs)
+2. `crates/mlt_rules/src/good_practices/mod.rs` (meta ID `GOOD_PRACTICES_ENGINE`, category `good-practices`, severity Warning, ~106 check IDs)
+
+## Front-matter slugs (keep existing URLs)
+Use `slug = "language-spec"` and `slug = "good-practices"`. Icons: `lucide/book-marked` and `lucide/check-circle` respectively.
+
+## What to do
+1. Read each module's current `//!` docstring and the `Rule` impl. These engines are LARGE — the check IDs may be emitted from many `check_*.rs` submodules AND from the mod.rs itself. **Verify the exact check IDs by grepping the entire module directory for `rule_id:` literals** (e.g. `grep -rn 'rule_id:' crates/mlt_rules/src/language_spec/`), and also `grep -rn 'fix: Some' crates/mlt_rules/src/language_spec/` to find which checks emit fixes. Do NOT trust the old docstring tables blindly — they may be stale or incomplete.
+2. Rewrite the `//!` header to the schema format:
+   - `# <META_ID>: <Title>` H1
+   - ```mlt front-matter block with id/title/category/severity/fix/icon/slug
+   - `## Rule` — what the engine does (prose), including the check-ID family structure if useful (e.g. FV* family).
+   - `## Check IDs` — a `| Check ID | Severity | Fix | Description |` markdown table listing EVERY check ID the engine emits. Since these engines are large, the table will be long — that is expected and fine. Determine per-check `severity` (usually the engine default) and `fix` (`yes` only if that check's emitted Diagnostic sets `fix: Some(...)`).
+   - `## Fix` — ONLY if `fix = true` (at least one check emits a fix). Describe the rewrites. Otherwise omit the section.
+   - `## Examples` — with `### Incorrect` and `### Correct` MATLAB blocks covering representative checks. If there are fixes, add a `### Fixed` with a diff.
+   - Keep the existing `## Configuration` section (TOML) as-is after Examples.
+3. Preserve useful module-level prose (architecture notes, group descriptions like "Structure/Ordering/Validation") by folding it into `## Rule`.
+4. IMPORTANT: keep the `//!` doc comment valid Rust — every line starts with `//!` and it ends cleanly before the first `use`/`mod` statement.
+
+## Verification (mandatory)
+For EACH migrated module run:
+```
+bun docs/scripts/gen_rules_docs.ts --check-module language-spec
+bun docs/scripts/gen_rules_docs.ts --check-module good-practices
+```
+Each must exit 0. If it fails, fix and re-run. Other agents may be editing other modules concurrently — only YOUR modules' check results matter.
+
+Also run `cargo build` at the end.
+
+Do NOT run the plain write mode, do NOT edit `docs/rules.md`, `docs/scripts/gen_rules_docs.ts`, `docs/scripts/SCHEMA.md`, or any file outside your two modules. Do NOT commit.
+
+Return a summary of which check IDs each module now documents, and which checks have fixes.
