@@ -1,0 +1,76 @@
+You are implementing MATLAB Code Analyzer Good Practices checks in the `mlt` Rust linter. This closes the Phase 3 Good Practices gap. Work ONLY in `crates/mlt_rules/src/good_practices/` (the `check_*.rs` files and `mod.rs`). Do NOT touch other modules.
+
+## Codebase conventions (study these first)
+
+- Engine is `GoodPracticesEngine` in `crates/mlt_rules/src/good_practices/mod.rs`. Per-check implementations live in sibling `check_*.rs` files doing `use super::*;` and `impl GoodPracticesEngine { pub(crate) fn check_xxx(&self, ...) -> Vec<Diagnostic> }`. They're registered via `mod check_xxx;` in mod.rs and dispatched from `check()` (node-level, `NodeContext`) or `check_file()` (file-level, `FileContext`) — both around mod.rs:616-719.
+- Config: `GoodPracticesConfig { disabled_checks: Vec<String>, ... }`. Each check MUST gate on `self.config.disabled_checks` — the pattern used is e.g. `config.disabled_checks.iter().all(|c| c != "EVLDOT")` (see mod.rs:~871). Follow whichever pattern the module already uses (`is_check_enabled`-style or inline `.all()`).
+- Diagnostic construction: look at existing checks (e.g. `check_unrpwr.rs`, `check_noans.rs`) for how they build `Diagnostic { rule_id, message, severity, byte_range, line, column, fix }` with `Severity::Warning`.
+- Metadata: `crate::analysis::metadata::{ClassMeta, FileMeta, PropertyMeta, MethodsBlockMeta, PropertiesBlockMeta}`; symbols `crate::analysis::symbols::SymbolTable`. For OOP checks you may need to walk `class_definition` tree-sitter nodes and their `properties`/`methods` children.
+- Tests: each check_*.rs has `#[cfg(test)] mod tests` using `use crate::test_util::{has_id, lint_file, lint_nodes};`. `lint_file(&*engine(), source)` runs file-level + node-level checks; `has_id(&diags, "ID")`. Write fires + not-fires tests per check. Look at `check_simpt.rs` or `check_noin.rs` for the harness pattern.
+- `tree_sitter::Node` helpers already used in the module: `node_text(node, source)`, `node.kind()`, `node.child_by_field_name(...)`, walking children via `node.walk()`/`node.children(&mut cursor)`.
+
+## Checks to implement — ALL Severity::Warning, gated by disabled_checks config
+
+Use the exact official messages below (substitute VAR_NAME with the actual name where indicated).
+
+### New file `check_app_designer.rs` (ADMTHDINV, ADPROP, ADPROPLC)
+
+These relate to MATLAB App Designer `app` object usage. They are heuristic: fire when an identifier named `app` is used in ways the message describes. Implement conservatively:
+
+1. **ADMTHDINV** "Use VAR_NAME(app, ...) to call this function." — a `function_call` where a method-like name is called without `app` as first arg in an App Designer context. Heuristic: fire on a bare function call `foo(...)` (no dot) that appears inside a class that inherits from `matlab.apps.AppBase` (detect via superclass text containing `matlab.apps`), when `app` is not passed. Keep very conservative (only fire inside such classes).
+2. **ADPROP** "Use app.VAR_NAME to refer to this property." — inside an App Designer class (superclass `matlab.apps.AppBase`), an assignment to a bare property identifier `x = ...` that is also referenced as `app.x` elsewhere. Heuristic: fire on assignments to identifiers (non-function) inside App Designer methods.
+3. **ADPROPLC** "Use app.VAR_NAME to reference a property of app." — inside an App Designer class, a bare identifier read (not `app.x`) that is a defined property. Conservative heuristic.
+
+Because detecting App Designer context reliably is hard, these three may be implemented as: detect a `classdef` whose `superclasses` text contains `matlab.apps.AppBase`; inside its methods, flag bare property reads/writes. Provide fires + not-fires tests. If too noisy, prefer NOT firing.
+
+### New file `check_oop_practice.rs` (MCNPN, MCNPR, MCSNOV, MCSOH, MCVM, MCCSPS, MCSUP)
+
+File-level OOP checks. Walk `class_definition` nodes; use the class's `properties` and `methods` children.
+
+4. **MCNPN** "VAR_NAME is referenced but is not a property, method, or event name defined in this class." — inside a class, a `self.X`/`obj.X` member reference where `X` is not among the class's declared properties/methods/events. Fire on the member-access node.
+5. **MCNPR** "VAR_NAME is not a property, but is the target of an assignment." — inside a class, an assignment `obj.X = ...` where `X` is not a declared property.
+6. **MCSNOV** "Set function in value class must return the modified object." — a `set.X(obj, val)` method in a VALUE class (class does not inherit from `handle`) that does not return the modified object (no output). 
+7. **MCSOH** "Set function in handle class does not need to return the modified object." — a `set.X(obj, val)` method in a HANDLE class that DOES return the modified object (has an output).
+8. **MCVM** "Value class method that modifies the object must return the modified object." — a value-class method (non-setter) that mutates `obj`/`self` (e.g. `obj.X = ...` or `self = ...` assignments) but has no output. Conservative: only fire for methods that assign to `obj.X`/`self.X` and declare no output.
+9. **MCCSPS** "Constant property VAR_NAME is not modified. 'VAR_NAME.VAR_NAME' creates a struct named VAR_NAME with a field named VAR_NAME." — a `Constant` property name used as a struct field base (e.g. `Class.ConstProp.x` style). Conservative heuristic: fire when a Constant property name is used in a dot-access chain that is not a member access. Provide fires/not-fires.
+10. **MCSUP** "The set method for the property VAR_NAME should not access another property (VAR_NAME)." — a `set.X(obj, val)` method that reads/writes a DIFFERENT property `obj.Y` inside its body.
+
+Use `ClassMeta`/metadata where convenient, but walking `class_definition` nodes directly with `tree_sitter` is fine. For "is a handle class", check the `superclasses` node text for `handle`. For setter detection, method names matching `^set\.` / `^get\.`.
+
+### New file `check_parfor_reduction.rs` (PFRIN, PFRUS)
+
+Parfor reduction-variable checks (file-level or node-level on `for_statement` where the loop is a parfor).
+
+11. **PFRIN** "The reduction variable VAR_NAME might not be set before the PARFOR loop." — a parfor loop uses a reduction variable (e.g. `acc = acc + ...` inside the loop) that is not initialized/assigned before the parfor. Use `SymbolTable` to check whether the variable has a definition before the parfor statement.
+12. **PFRUS** "The reduction variable VAR_NAME might not be used after the PARFOR loop." — a parfor loop defines a reduction variable that is never used after the parfor.
+
+Detect reduction variables inside a parfor body: identifiers assigned via an op-assign-like pattern (`x = x op ...`) or passed through accumulation functions. Keep conservative.
+
+### New file `check_misc_general.rs` (SUBSINDEX, VTFIN, CTOINW, FXUP)
+
+13. **SUBSINDEX** "Do not overload 'subsindex' for fundamental data types." — a method named `subsindex` defined in a class. Fire on the method.
+14. **VTFIN** "VAR_NAME should be the first input argument to the VAR_NAME function." — a validation function (name starting with `validate` or a class validation method) whose first input is not the value being validated. Conservative: fire on a `validate*` function whose first input parameter is not referenced first in the body.
+15. **CTOINW** "Use of constructed object as input to constructor is not necessary." — a constructor call `ClassName(ClassName(...))` where a constructed object of the same class is passed as an input to its own constructor. Fire on the outer `function_call`.
+16. **FXUP** "Outer loop index VAR_NAME is set inside a nested function." — a nested function (function_definition inside another function_definition) assigns to a variable that is the loop index of an enclosing `for` loop. Conservative: detect nested function inside a function that contains a `for_statement`, and the nested function assigns to the loop variable.
+
+## Deferred checks — DO NOT IMPLEMENT
+
+These are deferred to Phase 7 (require type inference): `BDLGI, BDLOG1, BDLOG2, BDSCA, BDSCI, GTARG, LTARG, MCHDP, MCHDT, SHVAU`. Skip them entirely.
+
+## Dispatch wiring
+
+- Add `mod check_app_designer; mod check_oop_practice; mod check_parfor_reduction; mod check_misc_general;` to the `mod` list in `good_practices/mod.rs`.
+- Node-level checks (ADMTHDINV, ADPROP, ADPROPLC, SUBSINDEX, CTOINW if node-level) → dispatch in `check()`.
+- File-level checks (MCNPN, MCNPR, MCSNOV, MCSOH, MCVM, MCCSPS, MCSUP, PFRIN, PFRUS, VTFIN, FXUP) → dispatch in `check_file()`.
+- Each check gates on `disabled_checks` per the module's convention.
+
+## Verification (run from repo root `/home/watermarkhu/repositories/mlt`)
+
+- `cargo build` — must compile
+- `cargo test -p mlt_rules good_practices` — new + existing tests pass
+- `cargo clippy --all-targets` — ZERO warnings (fix any you introduce)
+- Full `cargo test -p mlt_rules` at the end.
+
+## What to return
+
+Report: files created/modified, each check ID + how detected, tests added, and final `cargo build`/`cargo test -p mlt_rules good_practices`/`cargo clippy --all-targets` results. Do NOT commit anything.
