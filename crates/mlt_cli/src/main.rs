@@ -23,6 +23,11 @@ struct Cli {
     /// Path to config file (default: .mlt.toml in current directory).
     #[arg(long, value_name = "PATH")]
     config: Option<PathBuf>,
+
+    /// Named preset to base the configuration on (all, mathworks, recommended).
+    /// Overrides the `[lint] preset` value in the config file.
+    #[arg(long, value_name = "PRESET")]
+    preset: Option<String>,
 }
 
 fn main() {
@@ -36,7 +41,19 @@ fn main() {
 
 fn run(cli: Cli) -> Result<()> {
     // Load configuration from .mlt.toml (or --config path).
-    let config = load_config(cli.config.as_deref())?;
+    let mut config = load_config(cli.config.as_deref())?;
+
+    // A --preset override takes priority over the config file's `[lint] preset`.
+    if let Some(name) = &cli.preset {
+        config.preset = mlt_core::preset::resolve(name).ok_or_else(|| {
+            let names = mlt_core::preset::PRESETS
+                .iter()
+                .map(|p| p.name)
+                .collect::<Vec<_>>()
+                .join(", ");
+            anyhow::anyhow!("unknown preset '{name}' (expected one of: {names})")
+        })?;
+    }
 
     // Build rule registry from configuration (only enabled rules).
     let rules = mlt_rules::active_rules(&config);

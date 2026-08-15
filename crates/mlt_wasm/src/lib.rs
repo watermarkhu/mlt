@@ -105,6 +105,10 @@ mod wasm {
         /// Whether `%#ok<...>` inline suppression directives are honored.
         #[serde(default = "default_true")]
         pub inline_suppression: bool,
+        /// Named preset to base the configuration on ("all", "mathworks",
+        /// "recommended"). Defaults to "mathworks" when absent.
+        #[serde(default)]
+        pub preset: Option<String>,
     }
 
     fn default_true() -> bool {
@@ -119,6 +123,11 @@ mod wasm {
                 inline_suppression: self.inline_suppression,
                 ..Config::default()
             };
+
+            if let Some(name) = &self.preset {
+                config.preset = mlt_core::preset::resolve(name)
+                    .unwrap_or_else(|| mlt_core::preset::default_preset());
+            }
 
             // If `enable` is provided, disable every rule we know about first.
             let all_rule_ids = mlt_rules::all_rules(&Config::default())
@@ -157,8 +166,13 @@ mod wasm {
     }
 
     /// Build a `Linter` from a JS-facing config (shared with tests).
-    fn from_config(config: LinterConfig) -> Linter {
-        let mlt_config = config.to_config();
+    #[cfg(test)]
+    pub(crate) fn from_config(config: LinterConfig) -> Linter {
+        build_linter(config.to_config())
+    }
+
+    /// Build a `Linter` from a resolved `mlt_core::Config`.
+    fn build_linter(mlt_config: Config) -> Linter {
         let rules = mlt_rules::active_rules(&mlt_config);
         let registry = RuleRegistry::new(rules, &mlt_config);
         let mut linter = mlt_core::Linter::new(registry);
@@ -183,7 +197,21 @@ mod wasm {
                 serde_wasm_bindgen::from_value(options)
                     .map_err(|e| JsValue::from_str(&format!("Invalid config: {e}")))?
             };
-            Ok(from_config(linter_config))
+            Ok(build_linter(linter_config.to_config()))
+        }
+
+        /// Create a `Linter` from a `.mlt.toml` configuration string.
+        ///
+        /// This mirrors the CLI's config file, including the `[lint] preset`
+        /// field, so embedders can ship a project config as a string.
+        ///
+        /// # Arguments
+        /// * `content` - `.mlt.toml` file contents.
+        #[wasm_bindgen]
+        pub fn from_config_toml(content: &str) -> Result<Linter, JsValue> {
+            let config = Config::from_toml(content)
+                .map_err(|e| JsValue::from_str(&format!("Invalid config: {e}")))?;
+            Ok(build_linter(config))
         }
 
         /// Lint MATLAB content and return warnings as JSON.
@@ -364,5 +392,46 @@ mod wasm {
             }
             assert!(serde_json::from_str::<Vec<serde_json::Value>>(&warnings).is_ok());
         }
+    }
+}
+
+#[cfg(all(test, feature = "wasm"))]
+mod preset_tests {
+    use crate::wasm::*;
+
+    #[test]
+    fn from_config_toml_reads_preset() {
+        // `recommended` disables formatting (which includes NOSEMI).
+        let l = Linter::from_config_toml("[lint]\npreset = \"recommended\"\n").unwrap();
+        let mut l = l;
+        let warnings = l.check("x = 1\n", None);
+        let parsed: Vec<serde_json::Value> = serde_json::from_str(&warnings).unwrap();
+        assert!(
+            !parsed.iter().any(|w| w["rule_id"] == "NOSEMI"),
+            "NOSEMI (formatting) should be disabled under 'recommended', got: {warnings}"
+        );
+    }
+
+    #[test]
+    fn from_config_toml_mathworks_keeps_formatting() {
+        let mut l = Linter::from_config_toml("").unwrap();
+        let warnings = l.check("x = 1\n", None);
+        let parsed: Vec<serde_json::Value> = serde_json::from_str(&warnings).unwrap();
+        assert!(
+            parsed.iter().any(|w| w["rule_id"] == "NOSEMI"),
+            "NOSEMI should be enabled under the default mathworks preset, got: {warnings}"
+        );
+    }
+
+    #[test]
+    fn linter_config_preset_field() {
+        let config = LinterConfig {
+            preset: Some("recommended".to_string()),
+            ..Default::default()
+        };
+        let mut l = from_config(config);
+        let warnings = l.check("x = 1\n", None);
+        let parsed: Vec<serde_json::Value> = serde_json::from_str(&warnings).unwrap();
+        assert!(!parsed.iter().any(|w| w["rule_id"] == "NOSEMI"));
     }
 }

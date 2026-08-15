@@ -25,6 +25,7 @@ use serde::de::DeserializeOwned;
 use serde::Deserialize;
 
 use crate::diagnostic::Severity;
+use crate::preset::{self, PresetDef};
 use crate::rule::Category;
 
 // ---------------------------------------------------------------------------
@@ -39,6 +40,9 @@ pub enum ConfigError {
 
     #[error("invalid severity value '{0}' (expected: error, warn, info, off)")]
     InvalidSeverity(String),
+
+    #[error("unknown preset '{0}' (expected one of: {1})")]
+    UnknownPreset(String, String),
 }
 
 // ---------------------------------------------------------------------------
@@ -64,6 +68,12 @@ pub struct LintSection {
     #[serde(default = "default_true")]
     pub inline_suppression: bool,
 
+    /// Named preset to base the configuration on (e.g. "all", "mathworks",
+    /// "recommended"). Defaults to the built-in [`crate::preset::DEFAULT_PRESET`]
+    /// when absent.
+    #[serde(default)]
+    pub preset: Option<String>,
+
     /// Per-rule configuration. Keys are rule IDs (e.g., "NOSEMI").
     /// Values are either a severity string or a full config table.
     #[serde(default)]
@@ -80,6 +90,7 @@ impl Default for LintSection {
         Self {
             exclude: Vec::new(),
             inline_suppression: true,
+            preset: None,
             rules: HashMap::new(),
             categories: HashMap::new(),
         }
@@ -138,6 +149,8 @@ pub struct Config {
     /// Per-category severity overrides, keyed by [`Category`].
     /// A value of `None` means the category is disabled ("off").
     pub categories: HashMap<Category, Option<Severity>>,
+    /// The active configuration preset.
+    pub preset: &'static PresetDef,
     /// Whether `%#ok<...>` inline suppression directives are honored.
     /// Defaults to `true`, mirroring MATLAB's inline suppression behavior.
     pub inline_suppression: bool,
@@ -149,6 +162,7 @@ impl Default for Config {
             exclude: Vec::new(),
             rules: HashMap::new(),
             categories: HashMap::new(),
+            preset: preset::default_preset(),
             inline_suppression: true,
         }
     }
@@ -229,10 +243,24 @@ impl Config {
             }
         }
 
+        // Resolve the preset (defaults to DEFAULT_PRESET when not specified).
+        let preset = match &file.lint.preset {
+            Some(name) => preset::resolve(name).ok_or_else(|| {
+                let names = preset::PRESETS
+                    .iter()
+                    .map(|p| p.name)
+                    .collect::<Vec<_>>()
+                    .join(", ");
+                ConfigError::UnknownPreset(name.clone(), names)
+            })?,
+            None => preset::default_preset(),
+        };
+
         Ok(Self {
             exclude: file.lint.exclude,
             rules,
             categories,
+            preset,
             inline_suppression: file.lint.inline_suppression,
         })
     }
@@ -286,7 +314,7 @@ impl Config {
     /// Resolution order:
     /// 1. Per-rule config takes precedence (if rule is explicitly configured).
     /// 2. Per-category config applies if the rule has no explicit config.
-    /// 3. Default: enabled.
+    /// 3. The active preset (a category disabled by the preset is off by default).
     pub fn is_rule_enabled_for_category(&self, rule_id: &str, category: Category) -> bool {
         // Per-rule override takes precedence.
         if let Some(rc) = self.rules.get(rule_id) {
@@ -297,8 +325,8 @@ impl Config {
             // None means category is disabled ("off").
             return cat_severity.is_some();
         }
-        // Default: enabled.
-        true
+        // Default from the preset: enabled unless the preset disables it.
+        !self.preset.disables(category)
     }
 
     /// Get the configured severity override for a rule, if any.
@@ -511,5 +539,62 @@ M003 = "warn"
         let m003 = &config.rules["M003"];
         assert!(m003.enabled);
         assert_eq!(m003.severity, Some(Severity::Warning));
+    }
+}
+
+#[cfg(test)]
+mod preset_config_tests {
+    use super::*;
+
+    #[test]
+    fn default_config_uses_mathworks_preset() {
+        let config = Config::default();
+        assert_eq!(config.preset.name, "mathworks");
+    }
+
+    #[test]
+    fn empty_toml_uses_mathworks_preset() {
+        let config = Config::from_toml("").unwrap();
+        assert_eq!(config.preset.name, "mathworks");
+    }
+
+    #[test]
+    fn explicit_preset_is_resolved() {
+        let config = Config::from_toml("[lint]\npreset = \"recommended\"\n").unwrap();
+        assert_eq!(config.preset.name, "recommended");
+    }
+
+    #[test]
+    fn unknown_preset_errors() {
+        let err = Config::from_toml("[lint]\npreset = \"bogus\"\n").unwrap_err();
+        assert!(err.to_string().contains("bogus"));
+        assert!(err.to_string().contains("all"));
+        assert!(err.to_string().contains("mathworks"));
+    }
+
+    #[test]
+    fn preset_disables_naming_by_default() {
+        let config = Config::from_toml("").unwrap();
+        // Naming is disabled by the mathworks preset.
+        assert!(!config.is_rule_enabled_for_category("NAMING_ENGINE", Category::Naming));
+        // A non-disabled category is enabled.
+        assert!(config.is_rule_enabled_for_category("BUGS_ENGINE", Category::Bugs));
+    }
+
+    #[test]
+    fn explicit_category_reenables_preset_disabled() {
+        // The user re-enables naming explicitly.
+        let config = Config::from_toml(
+            "[lint]\npreset = \"mathworks\"\n\n[lint.categories]\nnaming = \"warn\"\n",
+        )
+        .unwrap();
+        assert!(config.is_rule_enabled_for_category("NAMING_ENGINE", Category::Naming));
+    }
+
+    #[test]
+    fn all_preset_enables_everything() {
+        let config = Config::from_toml("[lint]\npreset = \"all\"\n").unwrap();
+        assert!(config.is_rule_enabled_for_category("NAMING_ENGINE", Category::Naming));
+        assert!(config.is_rule_enabled_for_category("CUSTOM_CHECKS", Category::CustomChecks));
     }
 }

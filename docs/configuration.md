@@ -14,7 +14,43 @@ mlt looks for `.mlt.toml` in the current working directory by default. You can o
 mlt --config path/to/config.toml src/**/*.m
 ```
 
-If no config file is found and `--config` is not specified, mlt uses default settings (all rules enabled at their default severity).
+If no config file is found and `--config` is not specified, mlt uses the built-in **`mathworks`** preset (see [Presets](#presets)).
+
+## Presets
+
+Presets are named, curated sets of default category overrides. Pick one with
+`[lint] preset`, or the `--preset` CLI flag, which takes priority over the
+config file.
+
+| Preset | Disabled categories | Description |
+| ------ | ------------------- | ----------- |
+| `mathworks` *(default)* | `custom-checks`, `naming` | Matches MATLAB Code Analyzer's factory configuration: complexity metrics and naming conventions are opt-in. |
+| `all` | — | Every rule enabled. |
+| `recommended` | `performance`, `readability`, `formatting`, `suggested-improvements`, `naming`, `custom-checks` | Errors and warnings on; Info-level style/suggestion checks off. |
+
+```toml
+[lint]
+preset = "recommended"
+```
+
+```bash
+mlt --preset all src/**/*.m
+```
+
+Precedence: `--preset` > `[lint] preset` > `mathworks`. Explicit
+`[lint.categories]` / `[lint.rules]` entries always win over the preset, so a
+preset-disabled category can be re-enabled:
+
+```toml
+[lint]
+preset = "recommended"
+
+[lint.categories]
+readability = "info"   # re-enable the readability suggestions
+```
+
+Presets are defined in `crates/mlt_core/src/preset.rs`; adding one is a single
+row in the `PRESETS` table.
 
 ## Schema Overview
 
@@ -22,6 +58,7 @@ If no config file is found and `--config` is not specified, mlt uses default set
 [lint]
 # Global lint settings
 exclude = ["vendor/**", "third_party/**"]
+preset = "recommended"          # Preset: all | mathworks | recommended
 
 [lint.categories]
 # Per-category severity overrides
@@ -56,6 +93,18 @@ exclude = [
 
 **Type:** Array of strings (glob patterns)
 **Default:** `[]` (no exclusions)
+
+### `preset`
+
+The named preset to base the configuration on. See [Presets](#presets).
+
+```toml
+[lint]
+preset = "recommended"
+```
+
+**Type:** string (`"all"`, `"mathworks"`, or `"recommended"`)
+**Default:** `"mathworks"`
 
 ## `[lint.categories]` Section
 
@@ -147,8 +196,8 @@ All other keys in the table are rule-specific parameters (see **Per-Engine Param
 
 When no `.mlt.toml` is present:
 
-- All rules are **enabled**
-- Each rule uses its **default severity** (typically `"warn"`)
+- The **`mathworks`** preset is active (Custom Checks and Naming are off)
+- All other rules are **enabled** at their default severity (typically `"warn"`)
 - No files are excluded
 - No rule-specific parameters are set
 

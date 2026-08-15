@@ -22,6 +22,7 @@ mlt [OPTIONS] <FILES>...
 | --------------------- | ------------------------------------------------ |
 | `--fix`               | Apply automatic fixes where available            |
 | `--config <PATH>`     | Path to config file (default: `.mlt.toml` in CWD) |
+| `--preset <PRESET>`   | Preset to use (`all`, `mathworks`, `recommended`); overrides `[lint] preset` |
 | `-h`, `--help`        | Print help information                           |
 | `-V`, `--version`     | Print version information                        |
 
@@ -71,7 +72,7 @@ By default, mlt looks for `.mlt.toml` in the current working directory. Override
 mlt --config configs/strict.toml src/**/*.m
 ```
 
-If `--config` is specified and the file does not exist, mlt exits with an error. If no `--config` is given and `.mlt.toml` is not found, mlt uses default settings (all rules enabled at their default severity).
+If `--config` is specified and the file does not exist, mlt exits with an error. If no `--config` is given and `.mlt.toml` is not found, mlt uses the `mathworks` preset (see [Configuration](../configuration.md#presets)).
 
 ## Exit Codes
 
