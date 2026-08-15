@@ -1,22 +1,18 @@
 use super::*;
 
 impl GoodPracticesEngine {
-    /// ADMTHDINV / ADPROP / ADPROPLC: App Designer member-access checks.
+    /// ADMTHDINV / ADPROP: App Designer member-access checks.
     ///
     /// Fires inside methods of a class derived from `matlab.apps.AppBase`:
     /// - ADMTHDINV: a class method is called without `app` as its first argument.
     /// - ADPROP: a class property is assigned through a bare identifier instead
     ///   of `app.PROP`.
-    /// - ADPROPLC: a class property is read through a bare identifier instead of
-    ///   `app.PROP`.
     pub(crate) fn check_app_designer(
         &self,
         tree: &tree_sitter::Tree,
         source: &str,
     ) -> Vec<Diagnostic> {
-        let any_enabled = self.is_check_enabled("ADMTHDINV")
-            || self.is_check_enabled("ADPROP")
-            || self.is_check_enabled("ADPROPLC");
+        let any_enabled = self.is_check_enabled("ADMTHDINV") || self.is_check_enabled("ADPROP");
         if !any_enabled {
             return Vec::new();
         }
@@ -74,9 +70,9 @@ impl GoodPracticesEngine {
             }
         }
 
-        // ADPROP / ADPROPLC: symbol-table based, restricted to the App Designer
+        // ADPROP: symbol-table based, restricted to the App Designer
         // class's method scopes.
-        if self.is_check_enabled("ADPROP") || self.is_check_enabled("ADPROPLC") {
+        if self.is_check_enabled("ADPROP") {
             let sym = SymbolTable::build(tree, source);
             for scope in &sym.scopes {
                 if scope.kind != crate::analysis::symbols::ScopeKind::Method {
@@ -89,49 +85,26 @@ impl GoodPracticesEngine {
                     continue;
                 }
 
-                if self.is_check_enabled("ADPROP") {
-                    for d in &scope.defs {
-                        if d.kind == crate::analysis::symbols::DefKind::Assignment
-                            && properties.contains(&d.name)
-                            && !scope.defs.iter().any(|o| {
-                                o.name == d.name
-                                    && o.kind == crate::analysis::symbols::DefKind::InputArg
-                            })
-                        {
-                            diagnostics.push(Diagnostic {
-                                rule_id: "ADPROP",
-                                message: format!(
-                                    "{} is also the name of a property, which may be confusing. Use app.PropertyName syntax to reference the property, or change one of the names to improve readability.",
-                                    d.name
-                                ),
-                                severity: Severity::Warning,
-                                byte_range: d.byte_range.clone(),
-                                line: d.line,
-                                column: d.column,
-                                fix: None,
-                            });
-                        }
-                    }
-                }
-
-                if self.is_check_enabled("ADPROPLC") {
-                    for u in &scope.uses {
-                        if properties.contains(&u.name)
-                            && !scope.defs.iter().any(|d| d.name == u.name)
-                        {
-                            diagnostics.push(Diagnostic {
-                                rule_id: "ADPROPLC",
-                                message: format!(
-                                    "Use app.{} to reference a property of app.",
-                                    u.name
-                                ),
-                                severity: Severity::Warning,
-                                byte_range: u.byte_range.clone(),
-                                line: u.line,
-                                column: u.column,
-                                fix: None,
-                            });
-                        }
+                for d in &scope.defs {
+                    if d.kind == crate::analysis::symbols::DefKind::Assignment
+                        && properties.contains(&d.name)
+                        && !scope.defs.iter().any(|o| {
+                            o.name == d.name
+                                && o.kind == crate::analysis::symbols::DefKind::InputArg
+                        })
+                    {
+                        diagnostics.push(Diagnostic {
+                            rule_id: "ADPROP",
+                            message: format!(
+                                "{} is also the name of a property, which may be confusing. Use app.PropertyName syntax to reference the property, or change one of the names to improve readability.",
+                                d.name
+                            ),
+                            severity: Severity::Warning,
+                            byte_range: d.byte_range.clone(),
+                            line: d.line,
+                            column: d.column,
+                            fix: None,
+                        });
                     }
                 }
             }
@@ -245,28 +218,13 @@ mod tests {
     }
 
     #[test]
-    fn test_adproplc_fires_on_bare_property_read() {
-        let source = format!(
-            "{APP_CLASS}    properties\n        Count = 0\n    end\n\
-             methods\n        function results = compute(app, x)\n            results = x + Count;\n        end\n    end\nend\n"
-        );
-        let ids = app_designer_ids(&source);
-        assert!(ids.contains(&"ADPROPLC"), "got: {ids:?}");
-    }
-
-    #[test]
-    fn test_adprop_adproplc_silent_with_app_qualified_access() {
+    fn test_adprop_silent_with_app_qualified_access() {
         let source = format!(
             "{APP_CLASS}    properties\n        Count = 0\n    end\n\
              methods\n        function results = compute(app, x)\n            app.Count = x;\n            results = app.Count;\n        end\n    end\nend\n"
         );
         let ids = app_designer_ids(&source);
-        let app_ids: Vec<&str> = ids
-            .iter()
-            .copied()
-            .filter(|id| *id == "ADPROP" || *id == "ADPROPLC")
-            .collect();
-        assert!(app_ids.is_empty(), "got: {app_ids:?}");
+        assert!(!ids.contains(&"ADPROP"), "got: {ids:?}");
     }
 
     #[test]
@@ -274,11 +232,7 @@ mod tests {
         let eng = GoodPracticesEngine {
             config: GoodPracticesConfig {
                 max_variable_name_length: 63,
-                disabled_checks: vec![
-                    "ADMTHDINV".to_string(),
-                    "ADPROP".to_string(),
-                    "ADPROPLC".to_string(),
-                ],
+                disabled_checks: vec!["ADMTHDINV".to_string(), "ADPROP".to_string()],
             },
         };
         let source = format!(

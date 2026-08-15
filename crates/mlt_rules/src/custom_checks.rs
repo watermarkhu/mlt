@@ -438,21 +438,6 @@ impl CustomChecksEngine {
             }
         }
 
-        // Also check for system() / unix() calls (informational only, SYSBANG targets `!`)
-        if node.kind() == "system_command" {
-            let pos = node.start_position();
-            diagnostics.push(Diagnostic {
-                rule_id: "SYSBANG",
-                message: "System command used (!); consider using system() or unix() instead"
-                    .to_string(),
-                severity: Severity::Warning,
-                byte_range: node.start_byte()..node.end_byte(),
-                line: pos.row + 1,
-                column: pos.column + 1,
-                fix: None,
-            });
-        }
-
         let mut cursor = node.walk();
         for child in node.children(&mut cursor) {
             Self::walk_for_system_commands(child, source, diagnostics);

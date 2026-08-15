@@ -1,16 +1,19 @@
-//! SETNU check: output of a function assigned but never used.
+//! SETNU check: variable is assigned but its value is never subsequently used.
 
 use super::*;
 
 impl UnusedEngine {
-    /// Run SETNU check: output of function call assigned but never used.
-    /// This is a refinement of NASGU specifically for function call outputs.
+    /// Run SETNU check: a variable that is assigned (set) but whose assigned
+    /// value is never subsequently used. Unlike NASGU (which fires when a
+    /// variable is never used at all), SETNU fires per-assignment when the
+    /// value written at that point is never read before the next assignment.
     pub(crate) fn check_setnu(&self, table: &SymbolTable, diagnostics: &mut Vec<Diagnostic>) {
         if self.is_check_disabled("SETNU") {
             return;
         }
 
         for scope in &table.scopes {
+            // Output arguments are "used" externally, so skip them.
             let output_args: HashSet<&str> = scope
                 .defs
                 .iter()
@@ -30,14 +33,26 @@ impl UnusedEngine {
                 if self.should_ignore_name(name) {
                     continue;
                 }
-                // SETNU is for function call outputs; we only emit if the var
-                // is never used. We differentiate from NASGU by checking later,
-                // but to avoid duplication with NASGU, SETNU only fires if
-                // NASGU is disabled.
-                if !self.is_check_disabled("NASGU") {
-                    continue;
-                }
-                if !scope.is_used(name) {
+
+                // Find the next assignment of this name after the current one.
+                let next_assignment = scope.defs.iter().find(|d| {
+                    d.kind == DefKind::Assignment
+                        && d.name == *name
+                        && d.byte_range.start > def.byte_range.start
+                });
+
+                // The value is "subsequently used" only if there is a use of
+                // this name after the current assignment and (if the variable
+                // is reassigned) before the next assignment.
+                let subsequently_used = scope.uses.iter().any(|u| {
+                    u.name == *name
+                        && u.byte_range.start > def.byte_range.start
+                        && next_assignment
+                            .map(|na| u.byte_range.start < na.byte_range.start)
+                            .unwrap_or(true)
+                });
+
+                if !subsequently_used {
                     diagnostics.push(Diagnostic {
                         rule_id: "SETNU",
                         message: "Variable is set, but might be unused.".to_string(),
@@ -63,24 +78,35 @@ mod tests {
         UnusedEngine::from_config(&Config::default())
     }
 
-    /// Build an engine with the given params (e.g., `disabled_checks = [...]`).
-    fn engine_with(params: &str) -> Box<dyn Rule> {
-        let config = Config::from_toml(&format!("[lint.rules.UNUSED_ENGINE]\n{params}\n")).unwrap();
-        UnusedEngine::from_config(&config)
-    }
-
-    // -- SETNU: output assigned but never used (only when NASGU off) --------
+    // -- SETNU: assignment whose value is never subsequently used ------------
 
     #[test]
-    fn setnu_fires_when_nasgu_disabled() {
-        let engine = engine_with("disabled_checks = [\"NASGU\"]");
-        let diags = lint_file(&*engine, "function foo()\n    x = 5;\nend\n");
+    fn setnu_fires_on_unused_assignment() {
+        let diags = lint_file(&*engine(), "function foo()\n    x = 5;\nend\n");
         assert!(has_id(&diags, "SETNU"), "got: {diags:?}");
     }
 
     #[test]
-    fn setnu_ok_when_nasgu_enabled() {
-        let diags = lint_file(&*engine(), "function foo()\n    x = 5;\nend\n");
+    fn setnu_fires_when_overwritten_before_use() {
+        let diags = lint_file(
+            &*engine(),
+            "function foo()\n    x = 1;\n    x = 2;\n    disp(x);\nend\n",
+        );
+        assert!(has_id(&diags, "SETNU"), "got: {diags:?}");
+    }
+
+    #[test]
+    fn setnu_ok_when_value_used() {
+        let diags = lint_file(
+            &*engine(),
+            "function foo()\n    x = 1;\n    disp(x);\nend\n",
+        );
+        assert!(!has_id(&diags, "SETNU"), "got: {diags:?}");
+    }
+
+    #[test]
+    fn setnu_ok_on_output_arg() {
+        let diags = lint_file(&*engine(), "function y = foo()\n    y = 1;\nend\n");
         assert!(!has_id(&diags, "SETNU"), "got: {diags:?}");
     }
 }

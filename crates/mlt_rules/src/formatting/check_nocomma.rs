@@ -1,88 +1,53 @@
-//! NOCOMMA check: use commas to separate elements in a row.
+//! NOCOMMA check: extra (trailing) comma in a matrix/cell row.
 
 use super::*;
 
 impl FormattingEngine {
-    /// In `matrix` or `cell` nodes, check if `row` children have elements
-    /// separated by spaces instead of commas. Look for adjacent expression
-    /// nodes without a `,` between them.
-    pub(crate) fn check_nocomma(
-        &self,
-        node: Node,
-        source: &str,
-        diagnostics: &mut Vec<Diagnostic>,
-    ) {
+    /// For `matrix` and `cell` nodes, flag a trailing comma in a `row`
+    /// (e.g., `[1, 2,]`) as unnecessary.
+    pub(crate) fn check_nocomma(&self, node: Node, diagnostics: &mut Vec<Diagnostic>) {
         let child_count = node.child_count();
         for i in 0..child_count {
             let Some(child) = node.child(i) else {
                 continue;
             };
             if child.kind() == "row" {
-                self.check_row_commas(child, source, diagnostics);
+                self.check_row_trailing_comma(child, diagnostics);
             }
         }
     }
 
-    /// Check a single `row` node for missing commas between elements.
-    fn check_row_commas(&self, row: Node, source: &str, diagnostics: &mut Vec<Diagnostic>) {
-        // Collect expression children (skip punctuation like "[", "]", ",", ";").
-        let mut prev_expr: Option<Node> = None;
-        let child_count = row.child_count();
-
-        for i in 0..child_count {
-            let Some(child) = row.child(i) else {
-                continue;
-            };
-            let kind = child.kind();
-
-            // Reset tracking on comma or semicolon. A zero-width comma token
-            // is inserted by the grammar when an element separator is missing.
-            if kind == "," {
-                if child.start_byte() == child.end_byte() {
-                    let pos = child.start_position();
-                    diagnostics.push(Diagnostic {
-                        rule_id: "NOCOMMA",
-                        message: "Extra comma is unnecessary.".to_string(),
-                        severity: Severity::Info,
-                        byte_range: child.start_byte()..child.start_byte(),
-                        line: pos.row + 1,
-                        column: pos.column + 1,
-                        fix: Some(Fix::insert(child.start_byte(), ", ")),
-                    });
-                }
-                prev_expr = None;
-                continue;
-            }
-            if kind == ";" {
-                prev_expr = None;
-                continue;
-            }
-
-            // Skip non-expression tokens (brackets, whitespace nodes).
-            if is_punctuation(kind) {
-                continue;
-            }
-
-            // If we have a previous expression and no comma was found between,
-            // check whether there was only whitespace separating them.
-            if let Some(prev) = prev_expr {
-                let gap = &source[prev.end_byte()..child.start_byte()];
-                if !gap.is_empty() && gap.chars().all(|c| c == ' ' || c == '\t') {
-                    let pos = child.start_position();
-                    let insert_pos = prev.end_byte();
-                    diagnostics.push(Diagnostic {
-                        rule_id: "NOCOMMA",
-                        message: "Extra comma is unnecessary.".to_string(),
-                        severity: Severity::Info,
-                        byte_range: prev.end_byte()..child.start_byte(),
-                        line: pos.row + 1,
-                        column: pos.column + 1,
-                        fix: Some(Fix::new(insert_pos..insert_pos + 1, ", ")),
-                    });
-                }
-            }
-            prev_expr = Some(child);
+    /// Flag a `row` whose last element is a real (non-zero-width) comma.
+    ///
+    /// A zero-width comma is a missing separator inserted by the grammar for
+    /// space-separated elements; a real comma at the end of a row is an extra
+    /// trailing comma the user typed.
+    fn check_row_trailing_comma(&self, row: Node, diagnostics: &mut Vec<Diagnostic>) {
+        let count = row.child_count();
+        if count == 0 {
+            return;
         }
+        let Some(last) = row.child(count - 1) else {
+            return;
+        };
+        if last.kind() != "," {
+            return;
+        }
+        // Zero-width commas are "missing" separators, not extra commas.
+        if last.start_byte() >= last.end_byte() {
+            return;
+        }
+
+        let pos = last.start_position();
+        diagnostics.push(Diagnostic {
+            rule_id: "NOCOMMA",
+            message: "Extra comma is unnecessary.".to_string(),
+            severity: Severity::Info,
+            byte_range: last.start_byte()..last.end_byte(),
+            line: pos.row + 1,
+            column: pos.column + 1,
+            fix: Some(Fix::new(last.start_byte()..last.end_byte(), String::new())),
+        });
     }
 }
 
@@ -94,23 +59,30 @@ mod tests {
     // -- NOCOMMA -------------------------------------------------------------
 
     #[test]
-    fn nocomma_space_separated_row() {
-        let source = "x = [1 2 3];\n";
+    fn nocomma_trailing_comma_in_matrix() {
+        let source = "x = [1, 2,];\n";
         let diags = lint(source);
         assert!(has_id(&diags, "NOCOMMA"), "got: {diags:?}");
     }
 
     #[test]
-    fn nocomma_comma_separated_row() {
+    fn nocomma_trailing_comma_in_cell() {
+        let source = "c = {1, 2,};\n";
+        let diags = lint(source);
+        assert!(has_id(&diags, "NOCOMMA"), "got: {diags:?}");
+    }
+
+    #[test]
+    fn nocomma_ok_without_trailing_comma() {
         let source = "x = [1, 2, 3];\n";
         let diags = lint(source);
         assert!(!has_id(&diags, "NOCOMMA"), "got: {diags:?}");
     }
 
     #[test]
-    fn nocomma_cell_space_separated() {
-        let source = "c = {1 2};\n";
+    fn nocomma_ok_space_separated() {
+        let source = "x = [1 2 3];\n";
         let diags = lint(source);
-        assert!(has_id(&diags, "NOCOMMA"), "got: {diags:?}");
+        assert!(!has_id(&diags, "NOCOMMA"), "got: {diags:?}");
     }
 }

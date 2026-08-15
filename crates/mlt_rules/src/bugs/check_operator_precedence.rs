@@ -1,50 +1,128 @@
 use super::*;
+use std::collections::HashSet;
 
 impl BugsEngine {
-    /// MOCUP: Operator precedence issue — mixed `&`/`|` with comparison operators
-    /// without explicit parentheses.
-    pub(crate) fn check_operator_precedence(&self, node: Node, source: &str) -> Vec<Diagnostic> {
-        if node.kind() != "binary_operator" {
-            return Vec::new();
-        }
+    /// MOCUP: a variable is cleared (via `clear`/`clearvars`) but an `onCleanup`
+    /// object whose cleanup function references that variable is still live, so
+    /// the cleanup function will hit an undefined variable when it runs.
+    pub(crate) fn check_mocup(&self, root: Node, source: &str) -> Vec<Diagnostic> {
+        // First pass: collect variable names referenced by onCleanup cleanup
+        // functions.
+        let mut cleanup_refs: HashSet<String> = HashSet::new();
+        Self::collect_cleanup_refs(root, source, &mut cleanup_refs);
 
-        let op = find_operator_text(node, source);
-        if op != "&" && op != "|" {
-            return Vec::new();
-        }
+        // Second pass: flag `clear`/`clearvars` of a cleanup-referenced variable.
+        let mut diagnostics = Vec::new();
+        Self::walk_clear_commands(root, source, &cleanup_refs, &mut diagnostics);
+        diagnostics
+    }
 
-        // Check if a child is a comparison_operator without parentheses.
-        let has_unparenthesized_cmp = node
-            .child(0)
-            .is_some_and(|c| c.kind() == "comparison_operator")
-            || node
-                .child(2)
-                .is_some_and(|c| c.kind() == "comparison_operator");
-
-        // Check if there's a mix of & and | at the same level.
-        let has_mixed = node.child(0).is_some_and(|c| {
-            if c.kind() == "binary_operator" {
-                let child_op = find_operator_text(c, source);
-                (op == "&" && child_op == "|") || (op == "|" && child_op == "&")
-            } else {
-                false
+    fn collect_cleanup_refs(node: Node, source: &str, cleanup_refs: &mut HashSet<String>) {
+        if is_oncleanup_call(node, source) {
+            let mut identifiers = HashSet::new();
+            let mut call_names = HashSet::new();
+            collect_identifiers(node, source, &mut identifiers);
+            collect_function_call_names(node, source, &mut call_names);
+            for id in identifiers.difference(&call_names) {
+                cleanup_refs.insert(id.clone());
             }
-        });
-
-        if has_unparenthesized_cmp || has_mixed {
-            let pos = node.start_position();
-            vec![Diagnostic {
-                rule_id: "MOCUP",
-                message: "Variable VAR_NAME may be cleared before the cleanup function that references VAR_NAME executes, resulting in an undefined variable error.".to_string(),
-                severity: Severity::Error,
-                byte_range: node.start_byte()..node.end_byte(),
-                line: pos.row + 1,
-                column: pos.column + 1,
-                fix: None,
-            }]
-        } else {
-            Vec::new()
         }
+
+        let mut cursor = node.walk();
+        for child in node.children(&mut cursor) {
+            Self::collect_cleanup_refs(child, source, cleanup_refs);
+        }
+    }
+
+    fn walk_clear_commands(
+        node: Node,
+        source: &str,
+        cleanup_refs: &HashSet<String>,
+        diagnostics: &mut Vec<Diagnostic>,
+    ) {
+        if let Some(vars) = clear_command_vars(node, source) {
+            for v in vars {
+                if cleanup_refs.contains(&v) {
+                    let pos = node.start_position();
+                    diagnostics.push(Diagnostic {
+                        rule_id: "MOCUP",
+                        message: "Variable VAR_NAME may be cleared before the cleanup function that references VAR_NAME executes, resulting in an undefined variable error.".to_string(),
+                        severity: Severity::Error,
+                        byte_range: node.start_byte()..node.end_byte(),
+                        line: pos.row + 1,
+                        column: pos.column + 1,
+                        fix: None,
+                    });
+                }
+            }
+        }
+
+        let mut cursor = node.walk();
+        for child in node.children(&mut cursor) {
+            Self::walk_clear_commands(child, source, cleanup_refs, diagnostics);
+        }
+    }
+}
+
+/// If `node` clears variables (via `clear`/`clearvars` in command or function
+/// form), return the cleared variable names.
+fn clear_command_vars(node: Node, source: &str) -> Option<Vec<String>> {
+    match node.kind() {
+        "command" => {
+            let text = node_text(node, source).trim();
+            let mut words = text.split_whitespace();
+            if words.next() != Some("clear") {
+                return None;
+            }
+            Some(
+                words
+                    .filter(|w| !w.starts_with('-'))
+                    .map(|w| w.to_string())
+                    .collect(),
+            )
+        }
+        "function_call" => {
+            let name = extract_call_name(node, source)?;
+            if name != "clear" && name != "clearvars" {
+                return None;
+            }
+            let vars = collect_call_args(node, source)
+                .iter()
+                .map(|a| a.trim().trim_matches(|c| c == '\'' || c == '"').to_string())
+                .filter(|a| !a.is_empty() && !a.starts_with('-'))
+                .collect();
+            Some(vars)
+        }
+        _ => None,
+    }
+}
+
+/// Whether `node` is an `onCleanup(...)` call.
+fn is_oncleanup_call(node: Node, source: &str) -> bool {
+    node.kind() == "function_call" && extract_call_name(node, source) == Some("onCleanup")
+}
+
+/// Collect all identifier names in the subtree.
+fn collect_identifiers(node: Node, source: &str, out: &mut HashSet<String>) {
+    if node.kind() == "identifier" {
+        out.insert(node_text(node, source).trim().to_string());
+    }
+    let mut cursor = node.walk();
+    for child in node.children(&mut cursor) {
+        collect_identifiers(child, source, out);
+    }
+}
+
+/// Collect all function-call name identifiers in the subtree.
+fn collect_function_call_names(node: Node, source: &str, out: &mut HashSet<String>) {
+    if node.kind() == "function_call" {
+        if let Some(name) = node.child_by_field_name("name") {
+            out.insert(node_text(name, source).trim().to_string());
+        }
+    }
+    let mut cursor = node.walk();
+    for child in node.children(&mut cursor) {
+        collect_function_call_names(child, source, out);
     }
 }
 
@@ -56,16 +134,41 @@ mod tests {
     // -- MOCUP ---------------------------------------------------------------
 
     #[test]
-    fn mocup_fires_on_unparenthesized_comparison() {
-        let src = "y = a & b | c;\n";
-        let diags = node_diags(src);
+    fn mocup_fires_on_clear_of_cleanup_referenced_var() {
+        let src = "\
+clear X
+c = onCleanup(@() disp(X));
+";
+        let diags = file_diags(src);
         assert!(has_id(&diags, "MOCUP"), "got: {diags:?}");
     }
 
     #[test]
-    fn mocup_no_fire_without_mix() {
-        let src = "y = a + b * c;\n";
-        let diags = node_diags(src);
+    fn mocup_fires_on_clear_function_form() {
+        let src = "\
+clear('x')
+c = onCleanup(@() cleanupFn(x));
+";
+        let diags = file_diags(src);
+        assert!(has_id(&diags, "MOCUP"), "got: {diags:?}");
+    }
+
+    #[test]
+    fn mocup_no_fire_when_cleanup_var_not_cleared() {
+        let src = "\
+c = onCleanup(@() disp(x));
+";
+        let diags = file_diags(src);
+        assert!(!has_id(&diags, "MOCUP"), "got: {diags:?}");
+    }
+
+    #[test]
+    fn mocup_no_fire_when_cleared_var_not_referenced() {
+        let src = "\
+clear x
+x = 1;
+";
+        let diags = file_diags(src);
         assert!(!has_id(&diags, "MOCUP"), "got: {diags:?}");
     }
 }

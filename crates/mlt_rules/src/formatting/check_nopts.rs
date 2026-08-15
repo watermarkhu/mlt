@@ -1,40 +1,38 @@
-//! NOPTS check: add parentheses around condition in if/while.
+//! NOPTS check: statement in a script that produces output without a semicolon.
 
 use super::*;
 
-// ---------------------------------------------------------------------------
-// NOPTS: Add parentheses around condition in if/while
-// ---------------------------------------------------------------------------
-
 impl FormattingEngine {
-    /// For `if_statement` and `while_statement`, check if the condition
-    /// expression is wrapped in a `parenthesis` node. If so, suggest
-    /// removing the outer parens since MATLAB does not require them.
+    /// Flag an `assignment` statement at script level that is not terminated by
+    /// a semicolon, so it echoes its result to the console.
     pub(crate) fn check_nopts(&self, node: Node, source: &str, diagnostics: &mut Vec<Diagnostic>) {
-        let condition = match node.kind() {
-            "if_statement" | "while_statement" => node.child_by_field_name("condition"),
-            _ => None,
-        };
-
-        let Some(cond) = condition else {
+        let is_statement_level = node
+            .parent()
+            .map(|p| STATEMENT_PARENTS.contains(&p.kind()))
+            .unwrap_or(false);
+        if !is_statement_level {
             return;
-        };
-
-        if cond.kind() == "parenthesis" {
-            let pos = cond.start_position();
-            // The fix removes the outer parentheses, keeping the inner content.
-            let inner_text = inner_paren_text(cond, source);
-            diagnostics.push(Diagnostic {
-                rule_id: "NOPTS",
-                message: "Add a semicolon after the statement to hide the output (in a script)."
-                    .to_string(),
-                severity: Severity::Info,
-                byte_range: cond.start_byte()..cond.end_byte(),
-                line: pos.row + 1,
-                column: pos.column + 1,
-                fix: Some(Fix::new(cond.start_byte()..cond.end_byte(), inner_text)),
-            });
         }
+        // Only scripts (not function bodies).
+        if is_in_function(node) {
+            return;
+        }
+        if has_trailing_semicolon(node, source) {
+            return;
+        }
+
+        let start = node.start_position();
+        let end_byte = node.end_byte();
+        diagnostics.push(Diagnostic {
+            rule_id: "NOPTS",
+            message: "Add a semicolon after the statement to hide the output (in a script)."
+                .to_string(),
+            severity: Severity::Info,
+            byte_range: node.start_byte()..node.end_byte(),
+            line: start.row + 1,
+            column: start.column + 1,
+            fix: Some(Fix::insert(end_byte, ";")),
+        });
     }
 }
 
@@ -46,15 +44,22 @@ mod tests {
     // -- NOPTS ---------------------------------------------------------------
 
     #[test]
-    fn nopts_parenthesized_condition() {
-        let source = "if (x > 0)\n    y = 1;\nend\n";
+    fn nopts_assignment_in_script_without_semicolon() {
+        let source = "x = 5\n";
         let diags = lint(source);
         assert!(has_id(&diags, "NOPTS"), "got: {diags:?}");
     }
 
     #[test]
-    fn nopts_unparenthesized_condition() {
-        let source = "if x > 0\n    y = 1;\nend\n";
+    fn nopts_ok_with_semicolon() {
+        let source = "x = 5;\n";
+        let diags = lint(source);
+        assert!(!has_id(&diags, "NOPTS"), "got: {diags:?}");
+    }
+
+    #[test]
+    fn nopts_not_fire_in_function() {
+        let source = "function f()\n    x = 5\nend\n";
         let diags = lint(source);
         assert!(!has_id(&diags, "NOPTS"), "got: {diags:?}");
     }

@@ -298,22 +298,19 @@ impl CodegenEngine {
         let mut diags = Vec::new();
         let root = tree.root_node();
 
-        // EMSCR: Script detection — a file with no function_definition at top level
-        if self.is_enabled("EMSCR") {
-            let has_top_level_function = has_child_of_kind(&root, "function_definition");
-            if !has_top_level_function {
-                // File is a script (no function definitions)
-                let start = root.start_position();
-                diags.push(Diagnostic {
-                    rule_id: "EMSCR",
-                    message: check_description("EMSCR").to_string(),
-                    severity: Severity::Error,
-                    byte_range: 0..root.end_byte().min(1),
-                    line: start.row + 1,
-                    column: start.column + 1,
-                    fix: None,
-                });
-            }
+        // EMSCR: Script detection — a file whose first meaningful statement is
+        // not a `function_definition` or `class_definition`.
+        if self.is_enabled("EMSCR") && is_script_file(&root) {
+            let start = root.start_position();
+            diags.push(Diagnostic {
+                rule_id: "EMSCR",
+                message: check_description("EMSCR").to_string(),
+                severity: Severity::Error,
+                byte_range: 0..root.end_byte().min(1),
+                line: start.row + 1,
+                column: start.column + 1,
+                fix: None,
+            });
         }
 
         // EMNST: Nested function detection
@@ -483,14 +480,19 @@ pub(crate) fn matrix_contains_var(node: tree_sitter::Node, source: &str, var_nam
     false
 }
 
-/// Check if a node has a direct child of a specific kind.
-pub(crate) fn has_child_of_kind(node: &tree_sitter::Node, kind: &str) -> bool {
-    let count = node.child_count();
+/// Returns `true` if a `source_file` is a script (top-level statements that are
+/// not a `function_definition` or `class_definition`).
+fn is_script_file(root: &tree_sitter::Node) -> bool {
+    let count = root.child_count();
     for i in 0..count {
-        if let Some(child) = node.child(i) {
-            if child.kind() == kind {
-                return true;
-            }
+        let Some(child) = root.child(i) else {
+            continue;
+        };
+        match child.kind() {
+            "comment" | "line_continuation" => continue,
+            "function_definition" | "class_definition" => return false,
+            // Any other top-level statement means the file is a script.
+            _ => return true,
         }
     }
     false
@@ -547,6 +549,13 @@ mod tests {
     #[test]
     fn emscr_not_fire_on_function_file() {
         let src = "function f()\n    x = 1;\nend\n";
+        let diags = lint_file(&*engine(), src);
+        assert!(!has_id(&diags, "EMSCR"), "got: {diags:?}");
+    }
+
+    #[test]
+    fn emscr_not_fire_on_class_file() {
+        let src = "classdef Foo\n    methods\n        function f()\n        end\n    end\nend\n";
         let diags = lint_file(&*engine(), src);
         assert!(!has_id(&diags, "EMSCR"), "got: {diags:?}");
     }

@@ -431,11 +431,6 @@ mod tests {
         assert_call_fires("whitebg", "WHITEBG");
     }
 
-    #[test]
-    fn textread_fires_dtextread() {
-        assert_call_fires("textread", "DTEXTREAD");
-    }
-
     // -- command form --------------------------------------------------------
 
     #[test]

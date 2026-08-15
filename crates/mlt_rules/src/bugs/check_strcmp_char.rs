@@ -1,8 +1,9 @@
 use super::*;
 
 impl BugsEngine {
-    /// STRCMPCSTR: `strcmp` with single-character string comparison.
-    pub(crate) fn check_strcmp_char(&self, node: Node, source: &str) -> Vec<Diagnostic> {
+    /// STRCMPCSTR: `strcmp` compared against a cell array of strings, which
+    /// always returns false for string elements of the cell array.
+    pub(crate) fn check_strcmp_cell(&self, node: Node, source: &str) -> Vec<Diagnostic> {
         if node.kind() != "function_call" {
             return Vec::new();
         }
@@ -16,19 +17,9 @@ impl BugsEngine {
             return Vec::new();
         }
 
-        let args = collect_call_args(node, source);
-        if args.len() < 2 {
-            return Vec::new();
-        }
+        let has_cell_arg = arg_nodes(node).iter().any(|a| a.kind() == "cell");
 
-        // Check if either argument is a single-character string literal.
-        let has_single_char = args.iter().any(|arg| {
-            let trimmed = arg.trim();
-            (trimmed.starts_with('\'') && trimmed.ends_with('\'') && trimmed.len() == 3)
-                || (trimmed.starts_with('"') && trimmed.ends_with('"') && trimmed.len() == 3)
-        });
-
-        if has_single_char {
+        if has_cell_arg {
             let pos = node.start_position();
             vec![Diagnostic {
                 rule_id: "STRCMPCSTR",
@@ -53,14 +44,14 @@ mod tests {
     // -- STRCMPCSTR ----------------------------------------------------------
 
     #[test]
-    fn strcmpcstr_fires_on_single_char_arg() {
-        let src = "strcmp('a', 'b');\n";
+    fn strcmpcstr_fires_on_cell_array_arg() {
+        let src = "strcmp({'a', 'b'}, 'a');\n";
         let diags = node_diags(src);
         assert!(has_id(&diags, "STRCMPCSTR"), "got: {diags:?}");
     }
 
     #[test]
-    fn strcmpcstr_no_fire_on_multi_char_args() {
+    fn strcmpcstr_no_fire_on_char_args() {
         let src = "strcmp('ab', 'cd');\n";
         let diags = node_diags(src);
         assert!(!has_id(&diags, "STRCMPCSTR"), "got: {diags:?}");

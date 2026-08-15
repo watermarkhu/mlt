@@ -39,7 +39,7 @@ generator in `docs/scripts/gen_rules_docs.ts`. Rebuild the docs (`bun run docs:g
 to refresh them whenever `data/compatibility.toml` or
 `data/suggested_improvements.toml` changes.
 
-### Compatibility Considerations (1012 checks)
+### Compatibility Considerations (899 checks)
 
 | Check ID | Message |
 | -------- | ------- |
@@ -299,106 +299,6 @@ to refresh them whenever `data/compatibility.toml` or
 | [`AFNLMS`](rules/compatibility.md#afnlms) | 'adaptfilt.nlms' has been removed. With appropriate code changes, use 'dsp.LMSFilter' instead. |
 | [`AFRLS`](rules/compatibility.md#afrls) | 'adaptfilt.rls' has been removed. With appropriate code changes, use 'dsp.RLSFilter' instead. |
 | [`AFBLMS`](rules/compatibility.md#afblms) | 'adaptfilt.blms' has been removed. With appropriate code changes, use 'dsp.BlockLMSFilter' instead. |
-| [`DNANMEAN`](rules/compatibility.md#dnanmean) | 'nanmean' is not recommended. With appropriate code changes, use 'mean' instead. |
-| [`DNANSTD`](rules/compatibility.md#dnanstd) | 'nanstd' is not recommended. With appropriate code changes, use 'std' instead. |
-| [`DNANVAR`](rules/compatibility.md#dnanvar) | 'nanvar' is not recommended. With appropriate code changes, use 'var' instead. |
-| [`DNANMEDIAN`](rules/compatibility.md#dnanmedian) | 'nanmedian' is not recommended. With appropriate code changes, use 'median' instead. |
-| [`DNANMIN`](rules/compatibility.md#dnanmin) | 'nanmin' is not recommended. With appropriate code changes, use 'min' instead. |
-| [`DNANMAX`](rules/compatibility.md#dnanmax) | 'nanmax' is not recommended. With appropriate code changes, use 'max' instead. |
-| [`DNANSUM`](rules/compatibility.md#dnansum) | 'nansum' is not recommended. With appropriate code changes, use 'sum' instead. |
-| [`DNANCOV`](rules/compatibility.md#dnancov) | 'nancov' is not recommended. With appropriate code changes, use 'cov' instead. |
-| [`DWAVREAD`](rules/compatibility.md#dwavread) | 'wavread' has been removed. Use 'audioread' instead. |
-| [`DWAVWRITE`](rules/compatibility.md#dwavwrite) | 'wavwrite' has been removed. Use 'audiowrite' instead. |
-| [`DAUREAD`](rules/compatibility.md#dauread) | 'auread' has been removed. Use 'audioread' instead. |
-| [`DAUWRITE`](rules/compatibility.md#dauwrite) | 'auwrite' has been removed. Use 'audiowrite' instead. |
-| [`DQUAD2`](rules/compatibility.md#dquad2) | 'quad' is not recommended. Use 'integral' instead. |
-| [`DQUADL2`](rules/compatibility.md#dquadl2) | 'quadl' is not recommended. Use 'integral' instead. |
-| [`DQUADV2`](rules/compatibility.md#dquadv2) | 'quadv' is not recommended. Use 'integral' with 'ArrayValued' option instead. |
-| [`DDBLQD2`](rules/compatibility.md#ddblqd2) | 'dblquad' is not recommended. Use 'integral2' instead. |
-| [`DTRIQD2`](rules/compatibility.md#dtriqd2) | 'triplequad' is not recommended. Use 'integral3' instead. |
-| [`DEZPLOT`](rules/compatibility.md#dezplot) | 'ezplot' is not recommended. Use 'fplot' instead. |
-| [`DEZMESH`](rules/compatibility.md#dezmesh) | 'ezmesh' is not recommended. With appropriate code changes, use 'fmesh' instead. |
-| [`DEZSURF`](rules/compatibility.md#dezsurf) | 'ezsurf' is not recommended. With appropriate code changes, use 'fsurf' instead. |
-| [`DEZCONTOUR`](rules/compatibility.md#dezcontour) | 'ezcontour' is not recommended. Use 'fcontour' instead. |
-| [`DEZPOLAR`](rules/compatibility.md#dezpolar) | 'ezpolar' is not recommended. With appropriate code changes, use 'fpolarplot' instead. |
-| [`DEZPLOT3`](rules/compatibility.md#dezplot3) | 'ezplot3' is not recommended. Use 'fplot3' instead. |
-| [`DEZSURFC`](rules/compatibility.md#dezsurfc) | 'ezsurfc' is not recommended. Use 'fsurf' instead. |
-| [`DEZMESHC`](rules/compatibility.md#dezmeshc) | 'ezmeshc' is not recommended. Use 'fmesh' instead. |
-| [`DEZCONTOURF`](rules/compatibility.md#dezcontourf) | 'ezcontourf' is not recommended. Use 'fcontour' instead. |
-| [`DPLOTYY`](rules/compatibility.md#dplotyy) | 'plotyy' is not recommended. With appropriate code changes, use 'yyaxis' instead. |
-| [`DPOLAR`](rules/compatibility.md#dpolar) | 'polar' (MATLAB) is not recommended. Use 'polarplot' instead. |
-| [`DCOMPASS`](rules/compatibility.md#dcompass) | 'compass' is not recommended. With appropriate code changes, use 'compassplot' instead. |
-| [`DROSE`](rules/compatibility.md#drose) | 'rose' is not recommended. With appropriate code changes, use 'polarhistogram' instead. |
-| [`DHIST`](rules/compatibility.md#dhist) | 'hist' is not recommended. With appropriate code changes, use 'histogram' instead. |
-| [`DHISTC`](rules/compatibility.md#dhistc) | 'histc' is not recommended. With appropriate code changes, use 'histcounts' instead. |
-| [`DCAXIS`](rules/compatibility.md#dcaxis) | 'caxis' is not recommended. Use 'clim' instead, which is a direct replacement. |
-| [`DHOLDALL`](rules/compatibility.md#dholdall) | 'hold('all')' is not recommended. Use 'hold('on')' instead, which is a direct replacement. |
-| [`DCSVREAD`](rules/compatibility.md#dcsvread) | 'csvread' is not recommended. Use 'readmatrix' instead. |
-| [`DCSVWRITE`](rules/compatibility.md#dcsvwrite) | 'csvwrite' is not recommended. Use 'writematrix' instead. |
-| [`DDLMREAD`](rules/compatibility.md#ddlmread) | 'dlmread' is not recommended. Use 'readmatrix' instead. |
-| [`DDLMWRITE`](rules/compatibility.md#ddlmwrite) | 'dlmwrite' is not recommended. Use 'writematrix' instead. |
-| [`DXLSREAD`](rules/compatibility.md#dxlsread) | 'xlsread' is not recommended. Use 'readtable', 'readmatrix', or 'readcell' instead. |
-| [`DXLSWRITE`](rules/compatibility.md#dxlswrite) | 'xlswrite' is not recommended. Use 'writetable', 'writematrix', or 'writecell' instead. |
-| [`DTEXTREAD`](rules/compatibility.md#dtextread) | 'textread' has been removed. Use 'textscan' instead. |
-| [`DSTRREAD`](rules/compatibility.md#dstrread) | 'strread' has been removed. Use 'textscan' instead. |
-| [`DURLREAD`](rules/compatibility.md#durlread) | 'urlread' is not recommended. Use 'webread' instead. |
-| [`DURLWRITE`](rules/compatibility.md#durlwrite) | 'urlwrite' is not recommended. Use 'websave' instead. |
-| [`DH5READ`](rules/compatibility.md#dh5read) | 'hdf5read' has been removed. Use 'h5read' instead. |
-| [`DH5WRITE`](rules/compatibility.md#dh5write) | 'hdf5write' has been removed. Use 'h5write' instead. |
-| [`DH5INFO`](rules/compatibility.md#dh5info) | 'hdf5info' has been removed. Use 'h5info' instead. |
-| [`DIM2BW`](rules/compatibility.md#dim2bw) | 'im2bw' is not recommended. With appropriate code changes, use 'imbinarize' instead. |
-| [`DIMFREEHAND`](rules/compatibility.md#dimfreehand) | 'imfreehand' is not recommended. Use 'drawfreehand' instead. |
-| [`DIMRECT`](rules/compatibility.md#dimrect) | 'imrect' is not recommended. With appropriate code changes, use 'drawrectangle' instead. |
-| [`DIMLINE`](rules/compatibility.md#dimline) | 'imline' is not recommended. With appropriate code changes, use 'drawline' instead. |
-| [`DIMPOINT`](rules/compatibility.md#dimpoint) | 'impoint' is not recommended. Use 'drawpoint' instead. |
-| [`DIMPOLY`](rules/compatibility.md#dimpoly) | 'impoly' is not recommended. With appropriate code changes, use 'drawpolygon' or 'drawpolyline' instead. |
-| [`DIMELLIPSE`](rules/compatibility.md#dimellipse) | 'imellipse' is not recommended. Use 'drawellipse' instead. |
-| [`DROIFILL`](rules/compatibility.md#droifill) | 'roifill' is not recommended. With appropriate code changes, use 'regionfill' instead. |
-| [`DDATASET`](rules/compatibility.md#ddataset) | 'dataset' is not recommended. Use 'table' instead. |
-| [`DNOMINAL`](rules/compatibility.md#dnominal) | 'nominal' has been removed. Use 'categorical' instead. |
-| [`DORDINAL`](rules/compatibility.md#dordinal) | 'ordinal' has been removed. Use 'categorical' with 'Ordinal' option instead. |
-| [`DDATENUM`](rules/compatibility.md#ddatenum) | 'datenum' is not recommended. Use 'datetime' instead. |
-| [`DDATESTR`](rules/compatibility.md#ddatestr) | 'datestr' is not recommended. Use 'string' or 'char' on datetime objects instead. |
-| [`DDATEVEC`](rules/compatibility.md#ddatevec) | 'datevec' is not recommended. Use datetime properties (Year, Month, Day, etc.) instead. |
-| [`DCLOCK`](rules/compatibility.md#dclock) | 'clock' is not recommended. With appropriate code changes, use 'datetime(\ |
-| [`DDATE`](rules/compatibility.md#ddate) | 'date' is not recommended. With appropriate code changes, use 'datetime(\ |
-| [`DNOW`](rules/compatibility.md#dnow) | 'now' is not recommended. Use 'datetime(\ |
-| [`DTODAY`](rules/compatibility.md#dtoday) | 'today' (datenum) is not recommended. Use 'datetime(\ |
-| [`DTIC`](rules/compatibility.md#dtic) | Using 'tic'/'toc' for profiling is not recommended. Use 'timeit' for accurate timing. |
-| [`DDEBLANK`](rules/compatibility.md#ddeblank) | 'deblank' is not recommended. Use 'strtrim' or 'strip' instead. |
-| [`DFINDSTR`](rules/compatibility.md#dfindstr) | 'findstr' has been removed. Use 'strfind' or 'contains' instead. |
-| [`DSTRMATCH`](rules/compatibility.md#dstrmatch) | 'strmatch' has been removed. Use 'startsWith', 'matches', or 'strcmp' instead. |
-| [`DSTRVCAT`](rules/compatibility.md#dstrvcat) | 'strvcat' has been removed. Use 'char' or string arrays instead. |
-| [`DGENVARNAME`](rules/compatibility.md#dgenvarname) | 'genvarname' has been removed. Use 'matlab.lang.makeValidName' instead. |
-| [`DGUIDE`](rules/compatibility.md#dguide) | 'guide' (GUIDE) is not recommended. Use App Designer instead. |
-| [`DINPUTDLG`](rules/compatibility.md#dinputdlg) | 'inputdlg' is not recommended for new apps. Use App Designer UI components instead. |
-| [`DWARNDLG`](rules/compatibility.md#dwarndlg) | 'warndlg' is not recommended. Use 'uialert' instead. |
-| [`DERRORDLG`](rules/compatibility.md#derrordlg) | 'errordlg' is not recommended. Use 'uialert' instead. |
-| [`DMSGBOX`](rules/compatibility.md#dmsgbox) | 'msgbox' is not recommended. Use 'uialert' or 'uiconfirm' instead. |
-| [`DQUESTDLG`](rules/compatibility.md#dquestdlg) | 'questdlg' is not recommended. Use 'uiconfirm' instead. |
-| [`DSERIAL`](rules/compatibility.md#dserial) | 'serial' will be removed in a future release. With appropriate code changes, use 'serialport' instead. |
-| [`DGPIB2`](rules/compatibility.md#dgpib2) | 'gpib' is not recommended. Use 'visadev' instead. |
-| [`DVISA2`](rules/compatibility.md#dvisa2) | 'visa' is not recommended. Use 'visadev' instead. |
-| [`DTCPIP2`](rules/compatibility.md#dtcpip2) | 'tcpip' is not recommended. Use 'tcpclient' or 'tcpserver' instead. |
-| [`DUDP2`](rules/compatibility.md#dudp2) | 'udp' is not recommended. Use 'udpport' instead. |
-| [`DFMINUNC_OPT`](rules/compatibility.md#dfminuncopt) | 'optimset' is not recommended for newer solvers. Use 'optimoptions' instead. |
-| [`DADDPREF`](rules/compatibility.md#daddpref) | 'addpref' is not recommended. Use 'matlab.settings' or 'settings' instead. |
-| [`DGETPREF`](rules/compatibility.md#dgetpref) | 'getpref' is not recommended. Use 'matlab.settings' or 'settings' instead. |
-| [`DSETPREF`](rules/compatibility.md#dsetpref) | 'setpref' is not recommended. Use 'matlab.settings' or 'settings' instead. |
-| [`DRMPREF`](rules/compatibility.md#drmpref) | 'rmpref' is not recommended. Use 'matlab.settings' or 'settings' instead. |
-| [`DISPREF`](rules/compatibility.md#dispref) | 'ispref' is not recommended. Use 'matlab.settings' or 'settings' instead. |
-| [`DINLINE2`](rules/compatibility.md#dinline2) | 'inline' has been removed. Use anonymous functions (@(x) ...) instead. |
-| [`DSYM2POLY`](rules/compatibility.md#dsym2poly) | 'sym2poly' is not recommended. Use 'coeffs' instead. |
-| [`DFLIPUD`](rules/compatibility.md#dflipud) | For vectors, 'flipud' can be replaced by 'flip'. |
-| [`DFLIPLR`](rules/compatibility.md#dfliplr) | For vectors, 'fliplr' can be replaced by 'flip'. |
-| [`DISDIR`](rules/compatibility.md#disdir) | 'isdir' is not recommended. Use 'isfolder' instead, which is a direct replacement. |
-| [`DFILEATTRIB`](rules/compatibility.md#dfileattrib) | 'fileattrib' is not recommended. With appropriate code changes, use 'filePermissions' instead. |
-| [`DVERLESSTHAN`](rules/compatibility.md#dverlessthan) | 'verLessThan' is not recommended. Use 'isMATLABReleaseOlderThan' instead. |
-| [`DNARGCHK`](rules/compatibility.md#dnargchk) | 'nargchk' has been removed. Use 'narginchk' instead. |
-| [`DNARGOUTCHK`](rules/compatibility.md#dnargoutchk) | The error-string form of 'nargoutchk' is not recommended. Use the narginchk-style calling form instead. |
-| [`DCOMBNK`](rules/compatibility.md#dcombnk) | 'combnk' is not recommended. With appropriate code changes, use 'nchoosek' instead. |
-| [`DMATLABPOOL`](rules/compatibility.md#dmatlabpool) | 'matlabpool' has been removed. Use 'parpool' instead. |
-| [`DDISTCOMP`](rules/compatibility.md#ddistcomp) | Older 'distributed' syntax is not recommended. Use newer parallel computing patterns. |
 | [`DLABINDEX`](rules/compatibility.md#dlabindex) | 'labindex' is not recommended. Use 'spmdIndex' instead, which is a direct replacement. |
 | [`DNUMLABS`](rules/compatibility.md#dnumlabs) | 'numlabs' is not recommended. Use 'spmdSize' instead, which is a direct replacement. |
 | [`DLABBARRIER`](rules/compatibility.md#dlabbarrier) | 'labBarrier' is not recommended. Use 'spmdBarrier' instead, which is a direct replacement. |
@@ -407,19 +307,6 @@ to refresh them whenever `data/compatibility.toml` or
 | [`DLABBROADCAST`](rules/compatibility.md#dlabbroadcast) | 'labBroadcast' is not recommended. Use 'spmdBroadcast' instead, which is a direct replacement. |
 | [`DLABSENDRECEIVE`](rules/compatibility.md#dlabsendreceive) | 'labSendReceive' is not recommended. Use 'spmdSendReceive' instead, which is a direct replacement. |
 | [`DLABPROBE`](rules/compatibility.md#dlabprobe) | 'labProbe' is not recommended. Use 'spmdProbe' instead, which is a direct replacement. |
-| [`DBARTLETT`](rules/compatibility.md#dbartlett) | 'bartlett' will be removed. Use 'barthannwin' or window functions from Signal Processing Toolbox. |
-| [`DBLACKMANHARRIS`](rules/compatibility.md#dblackmanharris) | 'blackmanharris' is not recommended. Use 'blackmanharris' from Signal Processing Toolbox with updated syntax. |
-| [`DBOHMANWIN`](rules/compatibility.md#dbohmanwin) | 'bohmanwin' window function syntax has been updated. |
-| [`DGAUSSWIN`](rules/compatibility.md#dgausswin) | 'gausswin' window function syntax has been updated. |
-| [`DKAISER`](rules/compatibility.md#dkaiser) | Use updated 'kaiser' window syntax. |
-| [`DHAMMING`](rules/compatibility.md#dhamming) | Use updated 'hamming' window syntax. |
-| [`DHANNING`](rules/compatibility.md#dhanning) | 'hanning' is not recommended. Use 'hann' instead. |
-| [`DPBURG`](rules/compatibility.md#dpburg) | 'pburg' function syntax has been updated. |
-| [`DPCOV`](rules/compatibility.md#dpcov) | 'pcov' function syntax has been updated. |
-| [`DPMTM`](rules/compatibility.md#dpmtm) | 'pmtm' function syntax has been updated. |
-| [`DPMUSIC`](rules/compatibility.md#dpmusic) | 'pmusic' function syntax has been updated. |
-| [`DPWELCH`](rules/compatibility.md#dpwelch) | 'pwelch' function syntax has been updated. |
-| [`DPYULEAR`](rules/compatibility.md#dpyulear) | 'pyulear' function syntax has been updated. |
 | [`AXSTATE`](rules/compatibility.md#axstate) | 'axis('state')' has been removed. With appropriate code changes, use 'XLimMode', 'YLimMode', 'ZLimMode', 'Visible', 'XDir', and 'YDir' properties of an axes object instead. |
 | [`FDDECI1`](rules/compatibility.md#fddeci1) | The 'Raised Cosine' response method of 'fdesign.decimator' object has been removed. With appropriate code changes use 'comm.RaisedCosineReceiveFilter' object instead. |
 | [`FDDECI2`](rules/compatibility.md#fddeci2) | The 'Square Root Raised Cosine' response method of 'fdesign.decimator' object has been removed. With appropriate code changes use 'comm.RaisedCosineReceiveFilter' object instead. |

@@ -26,6 +26,14 @@ impl UnusedEngine {
 // No-effect statement walker (free function to satisfy clippy)
 // ---------------------------------------------------------------------------
 
+/// Returns `true` if a `comparison_operator` node is an equality (`==`)
+/// comparison rather than `<`, `<=`, `>`, `>=`, or `~=`.
+fn comparison_is_equality(node: Node) -> bool {
+    // comparison_operator is `seq(expression, operator, expression)`; the
+    // operator token is the middle child and its kind is the literal text.
+    node.child(1).map(|op| op.kind() == "==").unwrap_or(false)
+}
+
 /// Recursively walk tree to find statement-level expressions with no effect.
 pub(crate) fn walk_for_no_effect(
     node: Node,
@@ -42,8 +50,8 @@ pub(crate) fn walk_for_no_effect(
     if is_statement_level {
         let kind = node.kind();
 
-        // EQEFF: comparison operator at statement level.
-        if !eqeff_disabled && kind == COMPARISON_NODE {
+        // EQEFF: `==` comparison at statement level (likely meant `=`).
+        if !eqeff_disabled && kind == COMPARISON_NODE && comparison_is_equality(node) {
             let pos = node.start_position();
             diagnostics.push(Diagnostic {
                 rule_id: "EQEFF",
@@ -119,6 +127,12 @@ mod tests {
             &*engine(),
             "function foo(a, b)\n    x = (a == b);\n    disp(x);\nend\n",
         );
+        assert!(!has_id(&diags, "EQEFF"), "got: {diags:?}");
+    }
+
+    #[test]
+    fn eqeff_not_fire_on_other_comparisons() {
+        let diags = lint_file(&*engine(), "function foo(a, b)\n    a < b;\nend\n");
         assert!(!has_id(&diags, "EQEFF"), "got: {diags:?}");
     }
 }

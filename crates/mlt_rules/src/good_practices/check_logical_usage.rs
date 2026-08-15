@@ -1,4 +1,4 @@
-//! Logical-usage checks (BDLGI, BDLOG1, BDLOG2, BDSCA, BDSCI).
+//! Logical-usage checks (BDLGI, BDLOG1, BDLOG2, BDSCI).
 //!
 //! These checks reason about variables used in boolean contexts (bare `if x` /
 //! `while x` conditions) and short-circuit operators. They consume the
@@ -8,7 +8,6 @@
 //! - BDLGI  — the condition variable was assigned from an arithmetic operator.
 //! - BDLOG1 — the condition variable is logical but not scalar.
 //! - BDLOG2 — the condition value is scalar but not provably logical.
-//! - BDSCA  — a `&&` / `||` operand is a non-scalar logical array.
 //! - BDSCI  — the condition variable was assigned from an array-producing
 //!   expression (`a:b`, `[...]`, `{...}`).
 //!
@@ -32,7 +31,7 @@ struct AssignmentClasses {
 }
 
 impl GoodPracticesEngine {
-    /// BDLGI / BDLOG1 / BDLOG2 / BDSCA / BDSCI: file-level logical-usage
+    /// BDLGI / BDLOG1 / BDLOG2 / BDSCI: file-level logical-usage
     /// checks driven by the type environment.
     pub(crate) fn check_logical_usage(
         &self,
@@ -42,7 +41,6 @@ impl GoodPracticesEngine {
         let any_enabled = self.is_check_enabled("BDLGI")
             || self.is_check_enabled("BDLOG1")
             || self.is_check_enabled("BDLOG2")
-            || self.is_check_enabled("BDSCA")
             || self.is_check_enabled("BDSCI");
         if !any_enabled {
             return Vec::new();
@@ -97,10 +95,7 @@ impl GoodPracticesEngine {
             );
         }
 
-        // ---- Pass 3: BDSCA — `&&`/`||` with a non-scalar logical operand ---
-        if self.is_check_enabled("BDSCA") {
-            collect_bdsca(tree.root_node(), &env, source, &mut diagnostics);
-        }
+        // ---- Pass 3: BDSCA removed (no MathWorks equivalent) ---------------
 
         diagnostics
     }
@@ -284,43 +279,6 @@ fn check_bare_condition(
     }
 }
 
-/// BDSCA: walk the whole tree and flag `&&` / `||` operators with a
-/// non-scalar logical operand.
-fn collect_bdsca(node: Node, env: &TypeEnv, source: &str, diagnostics: &mut Vec<Diagnostic>) {
-    if node.kind() == "boolean_operator" || node.kind() == "boolean_operator_short" {
-        let op = find_operator_text(node, source);
-        let op = if op.is_empty() { "&&" } else { op.as_str() };
-        let mut cursor = node.walk();
-        for child in node.children(&mut cursor) {
-            if !child.is_named() || child.kind() != "identifier" {
-                continue;
-            }
-            let name = node_text(child, source);
-            let info = env.type_of(name);
-            if info.kind != TypeKind::Logical || info.scalar {
-                continue;
-            }
-            let pos = node.start_position();
-            diagnostics.push(Diagnostic {
-                rule_id: "BDSCA",
-                message: format!("Unexpected use of {op} in a scalar context."),
-                severity: Severity::Warning,
-                byte_range: node.start_byte()..node.end_byte(),
-                line: pos.row + 1,
-                column: pos.column + 1,
-                fix: None,
-            });
-            break;
-        }
-    }
-    let mut cursor = node.walk();
-    for child in node.children(&mut cursor) {
-        if child.is_named() {
-            collect_bdsca(child, env, source, diagnostics);
-        }
-    }
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -427,35 +385,6 @@ mod tests {
         assert!(logical_ids(source, "BDSCI").is_empty());
     }
 
-    // -- BDSCA --------------------------------------------------------------
-
-    #[test]
-    fn test_bdsca_fires_on_short_circuit_with_array_operand() {
-        let source = "x = a > b;\nif x && y\n    z = 1;\nend\n";
-        let ids = logical_ids(source, "BDSCA");
-        assert_eq!(ids.len(), 1, "got: {:?}", logical_ids(source, "BDSCA"));
-        let tree = parse(source);
-        let eng = engine();
-        let diag = eng
-            .check_logical_usage(&tree, source)
-            .into_iter()
-            .find(|d| d.rule_id == "BDSCA")
-            .unwrap();
-        assert!(diag.message.contains("&&"), "got: {}", diag.message);
-    }
-
-    #[test]
-    fn test_bdsca_silent_when_operands_are_logical_scalars() {
-        let source = "x = true;\nif x && y\n    z = 1;\nend\n";
-        assert!(logical_ids(source, "BDSCA").is_empty());
-    }
-
-    #[test]
-    fn test_bdsca_silent_for_elementwise_operator() {
-        let source = "x = a > b;\ny = x & y;\n";
-        assert!(logical_ids(source, "BDSCA").is_empty());
-    }
-
     // -- config -------------------------------------------------------------
 
     #[test]
@@ -467,7 +396,6 @@ mod tests {
                     "BDLGI".to_string(),
                     "BDLOG1".to_string(),
                     "BDLOG2".to_string(),
-                    "BDSCA".to_string(),
                     "BDSCI".to_string(),
                 ],
             },

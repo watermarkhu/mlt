@@ -1,9 +1,9 @@
-//! VANUS check: value assigned to `ans` is unused.
+//! VANUS check: `varargin` input argument declared but never used.
 
 use super::*;
 
 impl UnusedEngine {
-    /// Run VANUS check: value assigned to `ans` is unused.
+    /// Run VANUS check: a `varargin` input argument that is never used.
     pub(crate) fn check_vanus(&self, table: &SymbolTable, diagnostics: &mut Vec<Diagnostic>) {
         if self.is_check_disabled("VANUS") {
             return;
@@ -11,13 +11,13 @@ impl UnusedEngine {
 
         for scope in &table.scopes {
             for def in &scope.defs {
-                if def.kind != DefKind::Assignment {
+                if def.kind != DefKind::InputArg {
                     continue;
                 }
-                if def.name != "ans" {
+                if def.name != "varargin" {
                     continue;
                 }
-                if !scope.is_used("ans") {
+                if !scope.is_used("varargin") {
                     diagnostics.push(Diagnostic {
                         rule_id: "VANUS",
                         message: "Input argument 'varargin' might be unused.".to_string(),
@@ -43,19 +43,19 @@ mod tests {
         UnusedEngine::from_config(&Config::default())
     }
 
-    // -- VANUS: value assigned to `ans` unused ------------------------------
+    // -- VANUS: unused `varargin` input argument -----------------------------
 
     #[test]
-    fn vanus_fires_on_unused_ans_assignment() {
-        let diags = lint_file(&*engine(), "function foo()\n    ans = 5;\nend\n");
+    fn vanus_fires_on_unused_varargin() {
+        let diags = lint_file(&*engine(), "function foo(varargin)\nend\n");
         assert!(has_id(&diags, "VANUS"), "got: {diags:?}");
     }
 
     #[test]
-    fn vanus_ok_when_ans_used() {
+    fn vanus_ok_when_varargin_used() {
         let diags = lint_file(
             &*engine(),
-            "function foo()\n    ans = 5;\n    disp(ans);\nend\n",
+            "function foo(varargin)\n    x = varargin{1};\n    disp(x);\nend\n",
         );
         assert!(!has_id(&diags, "VANUS"), "got: {diags:?}");
     }

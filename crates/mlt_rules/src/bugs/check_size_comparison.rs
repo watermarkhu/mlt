@@ -1,64 +1,53 @@
 use super::*;
 
 impl BugsEngine {
-    /// DEFSIZE: `size(x) == [m n]` instead of `isequal(size(x), [m n])`.
-    pub(crate) fn check_size_comparison(&self, node: Node, source: &str) -> Vec<Diagnostic> {
-        if node.kind() != "comparison_operator" {
-            return Vec::new();
-        }
-
-        let lhs = match node.child(0) {
-            Some(c) => c,
-            None => return Vec::new(),
-        };
-        let rhs = match node.child(2) {
-            Some(c) => c,
-            None => return Vec::new(),
-        };
-
-        let op = find_operator_text(node, source);
-        if op != "==" && op != "~=" {
-            return Vec::new();
-        }
-
-        // Check for `size(x) == [m n]` or `[m n] == size(x)`.
-        let (call_node, array_node) = if lhs.kind() == "function_call" && rhs.kind() == "matrix" {
-            (lhs, rhs)
-        } else if rhs.kind() == "function_call" && lhs.kind() == "matrix" {
-            (rhs, lhs)
-        } else {
-            return Vec::new();
-        };
-
-        let func_name = match extract_call_name(call_node, source) {
-            Some(n) => n,
-            None => return Vec::new(),
-        };
-
-        if func_name != "size" {
-            return Vec::new();
-        }
-
-        let call_text = node_text(call_node, source);
-        let array_text = node_text(array_node, source);
-        let pos = node.start_position();
-
-        let replacement = if op == "==" {
-            format!("isequal({call_text}, {array_text})")
-        } else {
-            format!("~isequal({call_text}, {array_text})")
-        };
-
-        vec![Diagnostic {
-            rule_id: "DEFSIZE",
-            message: "Do not overload 'size' for fundamental data types.".to_string(),
-            severity: Severity::Error,
-            byte_range: node.start_byte()..node.end_byte(),
-            line: pos.row + 1,
-            column: pos.column + 1,
-            fix: Some(Fix::new(node.start_byte()..node.end_byte(), replacement)),
-        }]
+    /// DEFSIZE: a user-defined function named `size` overloads the builtin
+    /// `size` for fundamental data types.
+    pub(crate) fn check_size_overload(&self, root: Node, source: &str) -> Vec<Diagnostic> {
+        let mut diagnostics = Vec::new();
+        Self::walk_size_overload(root, source, &mut diagnostics);
+        diagnostics
     }
+
+    fn walk_size_overload(node: Node, source: &str, diagnostics: &mut Vec<Diagnostic>) {
+        if node.kind() == "function_definition" {
+            if let Some(name_node) = node.child_by_field_name("name") {
+                // A `size` method defined on a user-defined class is a legal
+                // overload; only a free function shadows the builtin.
+                if node_text(name_node, source).trim() == "size" && !is_inside_class_method(node) {
+                    let pos = name_node.start_position();
+                    diagnostics.push(Diagnostic {
+                        rule_id: "DEFSIZE",
+                        message: "Do not overload 'size' for fundamental data types.".to_string(),
+                        severity: Severity::Error,
+                        byte_range: name_node.start_byte()..name_node.end_byte(),
+                        line: pos.row + 1,
+                        column: pos.column + 1,
+                        fix: None,
+                    });
+                }
+            }
+        }
+
+        let mut cursor = node.walk();
+        for child in node.children(&mut cursor) {
+            Self::walk_size_overload(child, source, diagnostics);
+        }
+    }
+}
+
+/// Whether a `function_definition` sits inside a class `methods` block.
+fn is_inside_class_method(node: Node) -> bool {
+    let mut current = node.parent();
+    while let Some(parent) = current {
+        match parent.kind() {
+            "methods" => return true,
+            "class_definition" | "source_file" => return false,
+            _ => {}
+        }
+        current = parent.parent();
+    }
+    false
 }
 
 #[cfg(test)]
@@ -69,16 +58,43 @@ mod tests {
     // -- DEFSIZE -------------------------------------------------------------
 
     #[test]
-    fn defsize_fires_on_size_eq_matrix() {
-        let src = "y = size(x) == [1 2];\n";
-        let diags = node_diags(src);
+    fn defsize_fires_on_size_function_definition() {
+        let src = "\
+function y = size(x)
+    y = 1;
+end
+";
+        let diags = file_diags(src);
         assert!(has_id(&diags, "DEFSIZE"), "got: {diags:?}");
     }
 
     #[test]
-    fn defsize_no_fire_on_size_eq_scalar() {
-        let src = "y = size(x) == 1;\n";
-        let diags = node_diags(src);
+    fn defsize_fires_on_multioutput_size() {
+        let src = "\
+function [m, n] = size(x)
+    m = 1;
+    n = 2;
+end
+";
+        let diags = file_diags(src);
+        assert!(has_id(&diags, "DEFSIZE"), "got: {diags:?}");
+    }
+
+    #[test]
+    fn defsize_no_fire_on_other_function() {
+        let src = "\
+function y = mysize(x)
+    y = 1;
+end
+";
+        let diags = file_diags(src);
+        assert!(!has_id(&diags, "DEFSIZE"), "got: {diags:?}");
+    }
+
+    #[test]
+    fn defsize_no_fire_on_size_usage() {
+        let src = "y = size(x) == [1 2];\n";
+        let diags = file_diags(src);
         assert!(!has_id(&diags, "DEFSIZE"), "got: {diags:?}");
     }
 }

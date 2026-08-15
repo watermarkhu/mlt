@@ -47,32 +47,32 @@
 //! ### Incorrect
 //!
 //! ```matlab
-//! x = [1 2 3];
-//! y = (a);
-//! if (x > 0)
-//!     disp('hello');
+//! x = [1, 2,];          % NOCOMMA: extra comma
+//! [a b] = f();          % NCOMMA: separate outputs with commas
+//! function g()
+//!     y = compute()     % NOPRT: semicolon to hide output (in a function)
 //! end
 //! ```
 //!
 //! ### Correct
 //!
 //! ```matlab
-//! x = [1, 2, 3];
-//! y = a;
-//! if x > 0
-//!     disp hello;
+//! x = [1, 2];
+//! [a, b] = f();
+//! function g()
+//!     y = compute();
 //! end
 //! ```
 //!
 //! ### Fixed
 //!
 //! ```diff
-//! - x = [1 2 3];
-//! + x = [1, 2, 3];
-//! - y = (a);
-//! + y = a;
-//! - if (x > 0)
-//! + if x > 0
+//! - x = [1, 2,];
+//! + x = [1, 2];
+//! - [a b] = f();
+//! + [a, b] = f();
+//! - y = compute()
+//! + y = compute();
 //! ```
 //!
 //! ## Configuration
@@ -248,9 +248,9 @@ impl FormattingEngine {
         // Note: multiple checks can apply to the same node type, so dispatch
         // each independently rather than using mutually-exclusive match arms.
 
-        // NOCOMMA: matrix/cell rows with space-separated elements
+        // NOCOMMA: extra/trailing comma in matrix/cell rows
         if (kind == "matrix" || kind == "cell") && self.enabled.nocomma {
-            self.check_nocomma(node, source, diagnostics);
+            self.check_nocomma(node, diagnostics);
         }
 
         // NO4LP: indentation in loop/conditional bodies
@@ -267,23 +267,23 @@ impl FormattingEngine {
             self.check_align(node, source, diagnostics);
         }
 
-        // NOPTS: unnecessary parentheses around condition
-        if matches!(kind, "if_statement" | "while_statement") && self.enabled.nopts {
+        // NOPTS: statement in a script that produces output without a semicolon
+        if kind == "assignment" && self.enabled.nopts {
             self.check_nopts(node, source, diagnostics);
         }
 
-        // NOPRT: unnecessary parentheses around simple expressions
-        if kind == "parenthesis" && self.enabled.noprt {
+        // NOPRT: statement in a function that produces output without a semicolon
+        if kind == "assignment" && self.enabled.noprt {
             self.check_noprt(node, source, diagnostics);
         }
 
-        // PRTCAL: function syntax that could be command syntax
+        // PRTCAL: bare function call statement without a semicolon
         if kind == "function_call" && self.enabled.prtcal {
             self.check_prtcal(node, source, diagnostics);
         }
 
-        // NCOMMA: function call args separated by spaces
-        if kind == "function_call" && self.enabled.ncomma {
+        // NCOMMA: output variables not separated by commas
+        if kind == "multioutput_variable" && self.enabled.ncomma {
             self.check_ncomma(node, source, diagnostics);
         }
 
@@ -306,20 +306,17 @@ pub(crate) fn is_punctuation(kind: &str) -> bool {
     matches!(kind, "[" | "]" | "{" | "}" | "(" | ")" | ";" | "," | "...")
 }
 
-/// Find the direct `arguments` child of a `function_call` node.
-///
-/// The grammar does not expose `arguments` as a named field on
-/// `function_call`, so it must be located by walking the children.
-pub(crate) fn find_arguments_child(node: Node) -> Option<Node> {
-    let child_count = node.child_count();
-    for i in 0..child_count {
-        if let Some(child) = node.child(i) {
-            if child.kind() == "arguments" {
-                return Some(child);
-            }
+/// Returns `true` if a node is inside a `function_definition` (i.e., in a
+/// function/method body) as opposed to at script level.
+pub(crate) fn is_in_function(node: Node) -> bool {
+    let mut current = node.parent();
+    while let Some(p) = current {
+        if p.kind() == "function_definition" {
+            return true;
         }
+        current = p.parent();
     }
-    None
+    false
 }
 
 /// Get the byte offset of the start of the line containing `byte_offset`.
@@ -330,46 +327,39 @@ pub(crate) fn line_start_byte(source: &str, byte_offset: usize) -> usize {
         .unwrap_or(0)
 }
 
-/// Extract the text inside parentheses, stripping the outer `(` and `)`.
-pub(crate) fn inner_paren_text(paren_node: Node, source: &str) -> String {
-    // Find the first and last non-paren children.
-    let child_count = paren_node.child_count();
-    if child_count < 3 {
-        // Malformed — return as-is minus outer chars.
-        let text = &source[paren_node.start_byte()..paren_node.end_byte()];
-        return text
-            .strip_prefix('(')
-            .and_then(|s| s.strip_suffix(')'))
-            .unwrap_or(text)
-            .to_string();
+/// Determine whether a statement node is followed by a semicolon.
+///
+/// In tree-sitter-matlab's grammar, semicolons (`;`) and newlines are statement
+/// terminators that appear as sibling nodes after the statement. We check the
+/// source text immediately following the node for a `;` (skipping whitespace
+/// on the same line).
+pub(crate) fn has_trailing_semicolon(node: Node, source: &str) -> bool {
+    // Strategy 1: Check next siblings for ";".
+    let mut sibling = node.next_sibling();
+    while let Some(sib) = sibling {
+        let kind = sib.kind();
+        if kind == "comment" || kind == "line_continuation" {
+            sibling = sib.next_sibling();
+            continue;
+        }
+        if kind == ";" {
+            return true;
+        }
+        break;
     }
-    // Content is between the opening "(" and closing ")" nodes.
-    let start = paren_node.start_byte() + 1; // skip "("
-    let end = paren_node.end_byte().saturating_sub(1); // skip ")"
-    source[start..end].trim().to_string()
-}
 
-/// Find the single inner expression node of a `parenthesis` node.
-/// Returns `None` if the parenthesis contains more than one expression
-/// or a complex expression (e.g., binary operator).
-pub(crate) fn find_inner_expr(paren_node: Node) -> Option<Node> {
-    let mut inner = None;
-    let child_count = paren_node.child_count();
-    for i in 0..child_count {
-        let Some(child) = paren_node.child(i) else {
-            continue;
-        };
-        let kind = child.kind();
-        if kind == "(" || kind == ")" {
-            continue;
+    // Strategy 2: Fallback — scan the source text after the node end.
+    let after = &source[node.end_byte()..];
+    for ch in after.chars() {
+        match ch {
+            ';' => return true,
+            '\n' | '\r' => return false,
+            ' ' | '\t' => continue,
+            _ => return false,
         }
-        // If we already found one expression, this paren has multiple — skip.
-        if inner.is_some() {
-            return None;
-        }
-        inner = Some(child);
     }
-    inner
+
+    false
 }
 
 // ---------------------------------------------------------------------------

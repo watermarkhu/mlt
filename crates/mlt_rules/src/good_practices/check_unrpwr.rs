@@ -45,3 +45,67 @@ impl GoodPracticesEngine {
         }]
     }
 }
+
+#[cfg(test)]
+mod dump_tests {
+    use super::*;
+    fn dump(src: &str) {
+        let tree = parse(src);
+        fn rec(n: tree_sitter::Node, depth: usize, src: &str) {
+            let ind = "  ".repeat(depth);
+            let txt = &src[n.start_byte()..n.end_byte()];
+            println!("{}{}: {:?}", ind, n.kind(), txt);
+            let mut c = n.walk();
+            for ch in n.children(&mut c) {
+                rec(ch, depth + 1, src);
+            }
+        }
+        println!("===== {} =====", src.escape_debug());
+        rec(tree.root_node(), 0, src);
+    }
+    #[test]
+    fn dump_trees() {
+        dump("-x^2;\n");
+        dump("(-x)^2;\n");
+        dump("x = -2^2;\n");
+        dump("try\ncatch\nend\n");
+        dump("try\ncatch ME\nend\n");
+        dump("warning('');\n");
+        dump("warning(ME);\n");
+        dump("eval('load(filename)');\n");
+        dump("x = 1; y = 2;\n");
+        dump("x = 1, y = 2;\n");
+        dump("[x];\n");
+        dump("[x+y];\n");
+        dump("[1 2 3];\n");
+        dump("s = struct('a', 1);\n");
+        dump("a = [1, 2, % comment\n3];\n");
+        dump("disp(x);\n");
+    }
+}
+#[cfg(test)]
+mod dump2_tests {
+    use super::*;
+    fn dump(src: &str) {
+        let tree = parse(src);
+        fn rec(n: tree_sitter::Node, depth: usize, src: &str) {
+            let ind = "  ".repeat(depth);
+            let txt = &src[n.start_byte()..n.end_byte()];
+            println!("{}{}: {:?}", ind, n.kind(), txt);
+            let mut c = n.walk();
+            for ch in n.children(&mut c) {
+                rec(ch, depth + 1, src);
+            }
+        }
+        println!("===== {} =====", src.escape_debug());
+        rec(tree.root_node(), 0, src);
+    }
+    #[test]
+    fn dump_trees() {
+        dump("disp a disp b\n");
+        dump("disp a  disp b\n");
+        dump("x = 1  y = 2\n");
+        dump("x = 1 y = 2\n");
+        dump("if x\n  a = 1  b = 2\nend\n");
+    }
+}

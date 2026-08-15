@@ -78,32 +78,32 @@ Each check rewrites the flagged construct directly:
 ### Incorrect
 
 ```matlab
-x = [1 2 3];
-y = (a);
-if (x > 0)
-    disp('hello');
+x = [1, 2,];          % NOCOMMA: extra comma
+[a b] = f();          % NCOMMA: separate outputs with commas
+function g()
+    y = compute()     % NOPRT: semicolon to hide output (in a function)
 end
 ```
 
 ### Correct
 
 ```matlab
-x = [1, 2, 3];
-y = a;
-if x > 0
-    disp hello;
+x = [1, 2];
+[a, b] = f();
+function g()
+    y = compute();
 end
 ```
 
 ### Fixed
 
 ```diff
-- x = [1 2 3];
-+ x = [1, 2, 3];
-- y = (a);
-+ y = a;
-- if (x > 0)
-+ if x > 0
+- x = [1, 2,];
++ x = [1, 2];
+- [a b] = f();
++ [a, b] = f();
+- y = compute()
++ y = compute();
 ```
 
 ## Configuration

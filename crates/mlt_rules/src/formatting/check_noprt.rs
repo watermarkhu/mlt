@@ -1,59 +1,37 @@
-//! NOPRT check: remove unnecessary parentheses.
+//! NOPRT check: statement in a function that produces output without a semicolon.
 
 use super::*;
 
-// ---------------------------------------------------------------------------
-// NOPRT: Remove unnecessary parentheses
-// ---------------------------------------------------------------------------
-
 impl FormattingEngine {
-    /// Detect `parenthesis` nodes that are unnecessary — e.g., `(x)` where
-    /// x is a simple identifier or number, and the parenthesis is not a
-    /// function call argument or condition.
+    /// Flag an `assignment` statement inside a function that is not terminated
+    /// by a semicolon, so it echoes its result to the console.
     pub(crate) fn check_noprt(&self, node: Node, source: &str, diagnostics: &mut Vec<Diagnostic>) {
-        // Only flag parenthesized simple expressions (identifier, number, string).
-        let inner = find_inner_expr(node);
-        let Some(inner_node) = inner else {
+        let is_statement_level = node
+            .parent()
+            .map(|p| STATEMENT_PARENTS.contains(&p.kind()))
+            .unwrap_or(false);
+        if !is_statement_level {
             return;
-        };
-
-        let inner_kind = inner_node.kind();
-        if inner_kind != "identifier" && inner_kind != "number" && inner_kind != "string" {
+        }
+        // Only function bodies (not scripts).
+        if !is_in_function(node) {
+            return;
+        }
+        if has_trailing_semicolon(node, source) {
             return;
         }
 
-        // Don't flag if the parent is a function_call (arguments), or if it is
-        // the condition of an if/while (that's NOPTS territory).
-        if let Some(parent) = node.parent() {
-            let pk = parent.kind();
-            if pk == "function_call" || pk == "arguments" {
-                return;
-            }
-            // Skip if this is a condition node (handled by NOPTS).
-            if (pk == "if_statement" || pk == "while_statement")
-                && parent
-                    .child_by_field_name("condition")
-                    .map(|c| c.id() == node.id())
-                    .unwrap_or(false)
-            {
-                return;
-            }
-        }
-
-        let pos = node.start_position();
-        let inner_text = &source[inner_node.start_byte()..inner_node.end_byte()];
+        let start = node.start_position();
+        let end_byte = node.end_byte();
         diagnostics.push(Diagnostic {
             rule_id: "NOPRT",
             message: "Add a semicolon after the statement to hide the output (in a function)."
                 .to_string(),
             severity: Severity::Info,
             byte_range: node.start_byte()..node.end_byte(),
-            line: pos.row + 1,
-            column: pos.column + 1,
-            fix: Some(Fix::new(
-                node.start_byte()..node.end_byte(),
-                inner_text.to_string(),
-            )),
+            line: start.row + 1,
+            column: start.column + 1,
+            fix: Some(Fix::insert(end_byte, ";")),
         });
     }
 }
@@ -66,15 +44,22 @@ mod tests {
     // -- NOPRT ---------------------------------------------------------------
 
     #[test]
-    fn noprt_unnecessary_parens() {
-        let source = "y = (x);\n";
+    fn noprt_assignment_in_function_without_semicolon() {
+        let source = "function f()\n    x = 5\nend\n";
         let diags = lint(source);
         assert!(has_id(&diags, "NOPRT"), "got: {diags:?}");
     }
 
     #[test]
-    fn noprt_binary_expression_kept() {
-        let source = "y = (a + b) * c;\n";
+    fn noprt_ok_with_semicolon() {
+        let source = "function f()\n    x = 5;\nend\n";
+        let diags = lint(source);
+        assert!(!has_id(&diags, "NOPRT"), "got: {diags:?}");
+    }
+
+    #[test]
+    fn noprt_not_fire_in_script() {
+        let source = "x = 5\n";
         let diags = lint(source);
         assert!(!has_id(&diags, "NOPRT"), "got: {diags:?}");
     }

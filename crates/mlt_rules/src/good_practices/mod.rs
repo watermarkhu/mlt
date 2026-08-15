@@ -84,11 +84,9 @@
 //! | SPEVB | warning | no | Using EVALIN('base') or ASSIGNIN('base') inside an SPMD block refers to the worker machines' base workspaces. |
 //! | SPGV | warning | no | Using the GLOBAL or PERSISTENT variable VAR_NAME in an SPMD block might fail because it is accessed on a worker machine. |
 //! | DSPMDA | warning | no | Distributed array must be created outside of an SPMD block. |
-//! | COMFS | warning | no | Comma makes the file a script, so functions are local |
 //! | DUALC | warning | no | Command might be prematurely ended by comma. |
 //! | RMFLD | warning | no | RMFIELD output must be assigned back to the structure. |
 //! | RMWRN | warning | no | The warning with tag VAR_NAME has been removed from MATLAB, so this statement has no effect. |
-//! | SEMFS | warning | no | Semicolon makes the file a script, so functions are local |
 //! | STFLD | warning | no | SETFIELD output must be assigned back to the structure. |
 //! | STRSZ | warning | no | Use STRCMP to compare character vectors that can have different sizes. |
 //! | ATTF | warning | no | The Code Analyzer is unable to determine if the expression assigned to the VAR_NAME attribute evaluates to true or false. |
@@ -109,7 +107,6 @@
 //! | BDLGI | warning | no | Variable might be set by a nonlogical operator. |
 //! | BDLOG1 | warning | no | A scalar logical value is expected in the conditional expression. Use 'any' or 'all' to reduce the array to a logical scalar. |
 //! | BDLOG2 | warning | no | A scalar logical value is expected in the conditional expression. Use 'any' or 'all' to reduce the array to a logical scalar, or compare the scalar value to 0. |
-//! | BDSCA | warning | no | `&&`/` |
 //! | BDSCI | warning | no | Variable might be set by a nonscalar operator. |
 //! | MCHDP | warning | no | A property default value that is a handle will cause all instances to share the same object data. To avoid sharing, create the property value in the constructor. For intentional sharing, consider using a Constant property. |
 //! | MCHDT | warning | no | Declaring the value of a property as a handle might cause all instances to share the same default handle. To avoid sharing, create the handle for this property in the constructor. To express that sharing is intentional, use the Constant property attribute. |
@@ -117,7 +114,7 @@
 //! | GTARG | warning | no | Function might be called with too many arguments. |
 //! | LTARG | warning | no | Function might be called with too few arguments. |
 //! | CTPCT | warning | no | The format might not agree with the argument count. |
-//! | FXSET | warning | no | Loop index variable is changed inside of a `for` loop |
+//! | FXSETA | warning | no | Loop index variable is changed inside of a `for` loop |
 //! | SIMPT | warning | no | This import statement runs before any other code in function VAR_NAME. Consider placing it at the top of the function body. |
 //! | TLEV | warning | no | VAR_NAME could be very inefficient unless it is a top-level statement in its function. |
 //! | UNONC | warning | no | Assign the onCleanup output argument to a variable. Do not use the tilde operator (~) in place of a variable. |
@@ -128,7 +125,6 @@
 //! | FXUP | warning | no | Outer loop variable VAR_NAME is set inside a nested function. |
 //! | ADMTHDINV | warning | no | Use VAR_NAME(app, ...) to call this function. |
 //! | ADPROP | warning | no | VAR_NAME is also the name of a property, which may be confusing. Use app.PropertyName syntax to reference the property, or change one of the names to improve readability. |
-//! | ADPROPLC | warning | no | Property read through a bare identifier instead of `app.PROP` |
 //! | MCNPN | warning | no | VAR_NAME is referenced but is not a property, method, or event name defined in this class. |
 //! | MCNPR | warning | no | VAR_NAME is not a property, but is the target of an assignment. |
 //! | MCSNOV | warning | no | Set function in value class must return the modified object. |
@@ -204,7 +200,6 @@ mod check_app_designer;
 mod check_arity;
 mod check_attf_attof;
 mod check_chain;
-mod check_comfs_semfs;
 mod check_comnc;
 mod check_comnot;
 mod check_compnop;
@@ -343,7 +338,7 @@ pub(crate) const TARGET_NODES: &[&str] = &[
     "for_statement",
     "spmd_statement",
     "comment",
-    "parenthesized_expression",
+    "matrix",
 ];
 
 // ---------------------------------------------------------------------------
@@ -373,83 +368,36 @@ impl GoodPracticesEngine {
         !self.config.disabled_checks.iter().any(|id| id == check_id)
     }
 
-    /// WLAST: `warning` is the last statement in a function (may need `error` instead).
+    /// WLAST: `warning('')` does not reset the warning state.
     fn check_wlast(&self, tree: &tree_sitter::Tree, source: &str) -> Vec<Diagnostic> {
         if !self.is_check_enabled("WLAST") {
             return Vec::new();
         }
 
-        let meta = FileMeta::build(tree, source);
         let mut diagnostics = Vec::new();
-
-        for func in &meta.functions {
-            self.check_wlast_in_range(
-                tree.root_node(),
-                source,
-                func.byte_range.clone(),
-                &mut diagnostics,
-            );
-        }
-        for func in &meta.local_functions {
-            self.check_wlast_in_range(
-                tree.root_node(),
-                source,
-                func.byte_range.clone(),
-                &mut diagnostics,
-            );
+        let mut calls = Vec::new();
+        collect_nodes_of_kind(tree.root_node(), "function_call", &mut calls);
+        for call in calls {
+            if get_function_call_name(call, source) != Some("warning") {
+                continue;
+            }
+            if !call_has_empty_string_arg(call, source) {
+                continue;
+            }
+            let pos = call.start_position();
+            diagnostics.push(Diagnostic {
+                rule_id: "WLAST",
+                message: "WARNING('') does not reset the warning state. Use LASTWARN('') instead."
+                    .to_string(),
+                severity: Severity::Warning,
+                byte_range: call.start_byte()..call.end_byte(),
+                line: pos.row + 1,
+                column: pos.column + 1,
+                fix: None,
+            });
         }
 
         diagnostics
-    }
-
-    /// Helper: check if the last statement in a byte range is a `warning()` call.
-    fn check_wlast_in_range(
-        &self,
-        root: Node,
-        source: &str,
-        range: std::ops::Range<usize>,
-        diagnostics: &mut Vec<Diagnostic>,
-    ) {
-        // Find the function_definition node covering this range.
-        let func_node = find_node_in_range(root, &range);
-        let func_node = match func_node {
-            Some(n) if n.kind() == "function_definition" => n,
-            _ => return,
-        };
-
-        // Get the block child (function body).
-        let block = match find_child_of_kind(func_node, "block") {
-            Some(b) => b,
-            None => return,
-        };
-
-        // Find the last named non-`end` child.
-        let last_stmt = last_named_child_not_end(block);
-        let last_stmt = match last_stmt {
-            Some(s) => s,
-            None => return,
-        };
-
-        // Check if it's a warning() call.
-        if last_stmt.kind() != "function_call" {
-            return;
-        }
-        let name = get_function_call_name(last_stmt, source);
-        if name != Some("warning") {
-            return;
-        }
-
-        let pos = last_stmt.start_position();
-        diagnostics.push(Diagnostic {
-            rule_id: "WLAST",
-            message: "WARNING('') does not reset the warning state. Use LASTWARN('') instead."
-                .to_string(),
-            severity: Severity::Warning,
-            byte_range: last_stmt.start_byte()..last_stmt.end_byte(),
-            line: pos.row + 1,
-            column: pos.column + 1,
-            fix: None,
-        });
     }
 
     /// RMFLD: `rmfield` result must be assigned back to the structure.
@@ -685,7 +633,6 @@ impl Rule for GoodPracticesEngine {
 
         // String / comparison checks.
         diagnostics.extend(self.check_stcmp(node, source));
-        diagnostics.extend(self.check_strnu(node, source));
         diagnostics.extend(self.check_stci(node, source));
         diagnostics.extend(self.check_stisa(node, source));
 
@@ -754,11 +701,11 @@ impl Rule for GoodPracticesEngine {
         diagnostics.extend(self.check_iters(ctx.tree, ctx.source));
         diagnostics.extend(self.check_gvmis(ctx.tree, ctx.source));
         diagnostics.extend(self.check_sepex(ctx.tree, ctx.source));
+        diagnostics.extend(self.check_strnu(ctx.tree, ctx.source));
         diagnostics.extend(self.check_fndef(ctx.tree, ctx.source));
         diagnostics.extend(self.check_valst(ctx.tree, ctx.source));
         diagnostics.extend(self.check_fval(ctx.tree, ctx.source));
         diagnostics.extend(self.check_fncolnd(ctx.tree, ctx.source));
-        diagnostics.extend(self.check_comfs_semfs(ctx.tree, ctx.source));
 
         // OOP / class / property checks.
         diagnostics.extend(self.check_attf_attof(ctx.tree, ctx.source));
@@ -842,20 +789,6 @@ pub(crate) fn first_named_child(node: Node) -> Option<Node> {
     None
 }
 
-/// Get the last named child that is not `end`.
-pub(crate) fn last_named_child_not_end(node: Node) -> Option<Node> {
-    let mut result = None;
-    let count = node.child_count();
-    for i in 0..count {
-        if let Some(child) = node.child(i) {
-            if child.is_named() && child.kind() != "end" {
-                result = Some(child);
-            }
-        }
-    }
-    result
-}
-
 /// Check if a node is at statement level (parent is `source_file` or `block`).
 pub(crate) fn is_statement_level(node: Node) -> bool {
     node.parent()
@@ -870,6 +803,23 @@ pub(crate) fn get_function_call_name<'a>(node: Node<'a>, source: &'a str) -> Opt
     }
     let name_node = node.child_by_field_name("name")?;
     Some(node_text(name_node, source))
+}
+
+/// Check whether a function call's first argument is an empty string literal
+/// (`''` or `""`).
+pub(crate) fn call_has_empty_string_arg(node: Node, source: &str) -> bool {
+    let Some(args) = find_child_of_kind(node, "arguments") else {
+        return false;
+    };
+    let Some(first) = first_named_child(args) else {
+        return false;
+    };
+    if first.kind() != "string" {
+        return false;
+    }
+    let text = node_text(first, source).trim();
+    let inner = text.trim_matches(|c| c == '\'' || c == '"');
+    inner.is_empty()
 }
 
 /// Extract the command name from a `command` node.
@@ -1085,29 +1035,6 @@ pub(crate) fn find_element_wise_boolean_in_condition(
         }
         find_element_wise_boolean_in_condition(child, source, diagnostics);
     }
-}
-
-/// Find the function_definition node overlapping a byte range.
-pub(crate) fn find_node_in_range<'a>(
-    root: Node<'a>,
-    range: &std::ops::Range<usize>,
-) -> Option<Node<'a>> {
-    if root.kind() == "function_definition"
-        && root.start_byte() == range.start
-        && root.end_byte() == range.end
-    {
-        return Some(root);
-    }
-    let mut cursor = root.walk();
-    for child in root.children(&mut cursor) {
-        if child.start_byte() > range.end || child.end_byte() < range.start {
-            continue;
-        }
-        if let Some(found) = find_node_in_range(child, range) {
-            return Some(found);
-        }
-    }
-    None
 }
 
 /// Collect statements grouped by line number (for SEPEX).
@@ -1692,7 +1619,7 @@ pub(crate) fn collect_loop_assignments(
             if left.kind() == "identifier" && node_text(left, source) == var_name {
                 let pos = node.start_position();
                 diagnostics.push(Diagnostic {
-                    rule_id: "FXSET",
+                    rule_id: "FXSETA",
                     message: format!("Loop index {var_name} is changed inside of a FOR loop."),
                     severity: Severity::Warning,
                     byte_range: node.start_byte()..node.end_byte(),
@@ -1982,8 +1909,6 @@ mod tests {
                     "STFLD".to_string(),
                     "STRSZ".to_string(),
                     "DUALC".to_string(),
-                    "COMFS".to_string(),
-                    "SEMFS".to_string(),
                 ],
             },
         };
@@ -2006,10 +1931,6 @@ mod tests {
         let root = tree.root_node();
         let cmd = find_child_of_kind(root, "command").unwrap();
         assert!(eng.check_dualc(cmd, source).is_empty());
-
-        let source = "x = 1,\ny = 2;\nfunction f()\nend\n";
-        let tree = parse(source);
-        assert!(eng.check_comfs_semfs(&tree, source).is_empty());
     }
 
     #[test]
@@ -2122,7 +2043,7 @@ eval(x + y);\nonCleanup(@f);\n[~] = onCleanup(@f);\nc = computer('arch');\nfprin
 
         let mut ids = Vec::new();
         collect_diagnostics(&eng, tree.root_node(), source, &mut ids);
-        for want in ["FXSET", "SIMPT", "TLEV", "UNONC", "MIPC1", "CTPCT"] {
+        for want in ["FXSETA", "SIMPT", "TLEV", "UNONC", "MIPC1", "CTPCT"] {
             assert!(
                 ids.iter().any(|id| id == &want),
                 "expected {want} to fire, got: {ids:?}"
@@ -2137,7 +2058,7 @@ eval(x + y);\nonCleanup(@f);\n[~] = onCleanup(@f);\nc = computer('arch');\nfprin
                 max_variable_name_length: 63,
                 disabled_checks: vec![
                     "CTPCT".to_string(),
-                    "FXSET".to_string(),
+                    "FXSETA".to_string(),
                     "SIMPT".to_string(),
                     "TLEV".to_string(),
                     "UNONC".to_string(),

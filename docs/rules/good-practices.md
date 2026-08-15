@@ -351,12 +351,6 @@ Severity: **warning** · Auto-fix: **no**
 
 Distributed array must be created outside of an SPMD block.
 
-### COMFS
-
-Severity: **warning** · Auto-fix: **no**
-
-Comma makes the file a script, so functions are local
-
 ### DUALC
 
 Severity: **warning** · Auto-fix: **no**
@@ -374,12 +368,6 @@ RMFIELD output must be assigned back to the structure.
 Severity: **warning** · Auto-fix: **no**
 
 The warning with tag VAR_NAME has been removed from MATLAB, so this statement has no effect.
-
-### SEMFS
-
-Severity: **warning** · Auto-fix: **no**
-
-Semicolon makes the file a script, so functions are local
 
 ### STFLD
 
@@ -501,12 +489,6 @@ Severity: **warning** · Auto-fix: **no**
 
 A scalar logical value is expected in the conditional expression. Use 'any' or 'all' to reduce the array to a logical scalar, or compare the scalar value to 0.
 
-### BDSCA
-
-Severity: **warning** · Auto-fix: **no**
-
-`&&`/`
-
 ### BDSCI
 
 Severity: **warning** · Auto-fix: **no**
@@ -549,7 +531,7 @@ Severity: **warning** · Auto-fix: **no**
 
 The format might not agree with the argument count.
 
-### FXSET
+### FXSETA
 
 Severity: **warning** · Auto-fix: **no**
 
@@ -614,12 +596,6 @@ Use VAR_NAME(app, ...) to call this function.
 Severity: **warning** · Auto-fix: **no**
 
 VAR_NAME is also the name of a property, which may be confusing. Use app.PropertyName syntax to reference the property, or change one of the names to improve readability.
-
-### ADPROPLC
-
-Severity: **warning** · Auto-fix: **no**
-
-Property read through a bare identifier instead of `app.PROP`
 
 ### MCNPN
 

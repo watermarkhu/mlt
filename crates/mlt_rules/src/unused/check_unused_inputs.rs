@@ -1,24 +1,23 @@
-//! NUSED/INUSA/INUSD checks: input arguments that are never used.
+//! INUSA/INUSD checks: input arguments that are never used.
 
 use super::*;
 
 impl UnusedEngine {
-    /// Run NUSED/INUSA/INUSD checks: input arguments that are never used.
+    /// Run INUSA/INUSD checks: input arguments that are never used.
     pub(crate) fn check_unused_inputs(
         &self,
         table: &SymbolTable,
         diagnostics: &mut Vec<Diagnostic>,
     ) {
-        let nused_disabled = self.is_check_disabled("NUSED");
         let inusa_disabled = self.is_check_disabled("INUSA");
         let inusd_disabled = self.is_check_disabled("INUSD");
 
-        if nused_disabled && inusa_disabled && inusd_disabled {
+        if inusa_disabled && inusd_disabled {
             return;
         }
 
         for scope in &table.scopes {
-            // Only check function/method scopes (not scripts or lambdas).
+            // Only check function scopes (not scripts or lambdas).
             if !matches!(
                 scope.kind,
                 ScopeKind::Function
@@ -40,21 +39,7 @@ impl UnusedEngine {
                 }
 
                 if !scope.is_used(name) {
-                    // NUSED: general "input arg not used"
-                    if !nused_disabled {
-                        diagnostics.push(Diagnostic {
-                            rule_id: "NUSED",
-                            message: "Global or persistent variable might be unused or unset in this function or script.".to_string(),
-                            severity: Severity::Warning,
-                            byte_range: def.byte_range.clone(),
-                            line: def.line,
-                            column: def.column,
-                            fix: None,
-                        });
-                    }
-
-                    // INUSA: input argument not used in function (same as NUSED
-                    // but different check ID for compatibility).
+                    // INUSA: input argument not used in function.
                     if !inusa_disabled {
                         diagnostics.push(Diagnostic {
                             rule_id: "INUSA",
@@ -67,7 +52,7 @@ impl UnusedEngine {
                         });
                     }
 
-                    // INUSD: input argument could be removed.
+                    // INUSD: input argument could be replaced with ~.
                     if !inusd_disabled {
                         diagnostics.push(Diagnostic {
                             rule_id: "INUSD",
@@ -95,19 +80,7 @@ mod tests {
         UnusedEngine::from_config(&Config::default())
     }
 
-    // -- NUSED / INUSA / INUSD: unused input arguments ----------------------
-
-    #[test]
-    fn nused_fires_on_unused_input() {
-        let diags = lint_file(&*engine(), "function foo(x)\nend\n");
-        assert!(has_id(&diags, "NUSED"), "got: {diags:?}");
-    }
-
-    #[test]
-    fn nused_ok_when_input_used() {
-        let diags = lint_file(&*engine(), "function foo(x)\n    disp(x);\nend\n");
-        assert!(!has_id(&diags, "NUSED"), "got: {diags:?}");
-    }
+    // -- INUSA / INUSD: unused input arguments ----------------------
 
     #[test]
     fn inusa_fires_on_unused_input() {

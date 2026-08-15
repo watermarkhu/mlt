@@ -93,6 +93,7 @@ mod check_defnu;
 mod check_manu;
 mod check_nasgu;
 mod check_noeff_eqeff;
+mod check_nused;
 mod check_preall;
 mod check_puse;
 mod check_setnu;
@@ -396,6 +397,7 @@ impl Rule for UnusedEngine {
         self.check_nasgu(&table, &mut diagnostics);
         self.check_unused_inputs(&table, &mut diagnostics);
         self.check_asglu(&table, &mut diagnostics);
+        self.check_nused(&table, &mut diagnostics);
         self.check_puse(&table, &mut diagnostics);
         self.check_setnu(&table, &mut diagnostics);
         self.check_preall(&table, &mut diagnostics);

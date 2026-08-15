@@ -1,9 +1,9 @@
-//! PUSE check: global/persistent variable declared but never used.
+//! PUSE check: persistent variable declared but never used.
 
 use super::*;
 
 impl UnusedEngine {
-    /// Run PUSE check: global/persistent variables declared but not used.
+    /// Run PUSE check: persistent variables declared but not used.
     pub(crate) fn check_puse(&self, table: &SymbolTable, diagnostics: &mut Vec<Diagnostic>) {
         if self.is_check_disabled("PUSE") {
             return;
@@ -11,7 +11,7 @@ impl UnusedEngine {
 
         for scope in &table.scopes {
             for def in &scope.defs {
-                if !matches!(def.kind, DefKind::Global | DefKind::Persistent) {
+                if def.kind != DefKind::Persistent {
                     continue;
                 }
                 let name = &def.name;
@@ -46,20 +46,26 @@ mod tests {
         UnusedEngine::from_config(&Config::default())
     }
 
-    // -- PUSE: global/persistent declared but not used ----------------------
+    // -- PUSE: persistent declared but not used ------------------------------
 
     #[test]
-    fn puse_fires_on_unused_global() {
-        let diags = lint_file(&*engine(), "function foo()\n    global g;\nend\n");
+    fn puse_fires_on_unused_persistent() {
+        let diags = lint_file(&*engine(), "function foo()\n    persistent p;\nend\n");
         assert!(has_id(&diags, "PUSE"), "got: {diags:?}");
     }
 
     #[test]
-    fn puse_ok_when_global_used() {
+    fn puse_ok_when_persistent_used() {
         let diags = lint_file(
             &*engine(),
-            "function foo()\n    global g;\n    disp(g);\nend\n",
+            "function foo()\n    persistent p;\n    disp(p);\nend\n",
         );
+        assert!(!has_id(&diags, "PUSE"), "got: {diags:?}");
+    }
+
+    #[test]
+    fn puse_not_fire_on_unused_global() {
+        let diags = lint_file(&*engine(), "function foo()\n    global g;\nend\n");
         assert!(!has_id(&diags, "PUSE"), "got: {diags:?}");
     }
 }

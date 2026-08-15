@@ -87,7 +87,7 @@ Use 'A \|\| B' or 'A \| B' to test whether either A or B is true in MATLAB.
 
 ### RHSFN
 
-Severity: **error** · Auto-fix: **yes**
+Severity: **error** · Auto-fix: **no**
 
 The expression cannot be assigned to multiple values.
 
@@ -123,7 +123,7 @@ The first input argument must be a function handle. Did you mean '@VAR_NAME'?
 
 ### DEFSIZE
 
-Severity: **error** · Auto-fix: **yes**
+Severity: **error** · Auto-fix: **no**
 
 Do not overload 'size' for fundamental data types.
 
@@ -177,7 +177,7 @@ NaN never compares equal to any value, so this case will never be matched.
 
 ### MULCC
 
-Severity: **error** · Auto-fix: **yes**
+Severity: **error** · Auto-fix: **no**
 
 This case cannot be matched due to a call to UPPER or LOWER on the SWITCH value.
 
@@ -217,27 +217,13 @@ Severity: **error** · Auto-fix: **no**
 
 Parfor reduction variable VAR_NAME must be used in the same position in each assignment statement when using non-commutative reduction operations '*', '[,]', or '[;]'.
 
-### FWPARF
-
-Severity: **error** · Auto-fix: **no**
-
-For loop could be parfor
-
-### PFTRIV
-
-Severity: **error** · Auto-fix: **no**
-
-Parfor could be for
-
 ## Automatic fixes
 
 Rewrites the flagged construct into the safe equivalent. For example:
 
 - `&` → `&&` and `|` → `||` in boolean contexts.
 - `x == NaN` → `isnan(x)` (and `x ~= NaN` → `~isnan(x)`).
-- `length(x) == 0` → `isempty(x)` and `size(x) == [m n]` → `isequal(size(x), [m n])`.
-- Bare function names on the RHS of an assignment get an `@` prefix.
-- Duplicate boolean conditions are collapsed (`a && a` → `a`).
+- `isempty(cond)` on a logical expression → `~any(cond, "all")`.
 
 ## Examples
 

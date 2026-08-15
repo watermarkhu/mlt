@@ -78,12 +78,6 @@
 //! | PFUTVR | error | no | Variable VAR_NAME may have been intended as a reduction variable, but is an uninitialized temporary. |
 //! | PFVARS | error | no | Parfor loop contains too many variables. |
 //! | PFVSUB | error | no | Indexing parfor loop variables is not supported in parfor loops. |
-//! | PFANSRE | error | no | 'ans' is not supported as a reduction variable |
-//! | PFANSSL | error | no | 'ans' is not supported as a sliced variable |
-//! | PFDF | error | no | FOR with DRANGE becomes a conventional FOR inside a PARFOR |
-//! | PFPIE | error | no | Valid indices for a sliced variable are restricted |
-//! | PFSAME | error | no | Sliced variable indexed in different ways |
-//! | PFTIN | error | no | Temporary variable must be set before it is used |
 //! | ATUNK | error | no | Unknown attribute name. |
 //! | ATLAB | error | no | Attribute 'Input' and 'Output' must not be assigned a value or negated. |
 //! | ATNAS | error | no | Set attribute to a single meta-class object or a cell array of meta-class objects. |
@@ -435,6 +429,9 @@ impl Rule for LanguageSpecEngine {
             &mut diagnostics,
         );
 
+        // 1b. SPGP: assignment to a global/persistent variable inside spmd
+        self.check_spmd_gp_assignment(root, ctx.source, &symbol_table, &mut diagnostics);
+
         // 2. Class/OOP checks
         if let Some(ref class) = meta.class {
             self.check_class_rules(class, &meta, ctx, &mut diagnostics);
@@ -758,20 +755,6 @@ impl LanguageSpecEngine {
                         fix: None,
                     });
                 }
-                // Check: SPGP — global inside spmd
-                if current_context == LoopContext::Spmd {
-                    let pos = node.start_position();
-                    diagnostics.push(Diagnostic {
-                        rule_id: "SPGP",
-                        message: "Setting the GLOBAL or PERSISTENT variable VAR_NAME in an SPMD block might fail because the set happens on a worker machine."
-                            .to_string(),
-                        severity: Severity::Error,
-                        byte_range: node.start_byte()..node.end_byte(),
-                        line: pos.row + 1,
-                        column: pos.column + 1,
-                        fix: None,
-                    });
-                }
             }
 
             "persistent_operator" => {
@@ -783,20 +766,6 @@ impl LanguageSpecEngine {
                         message:
                             "Persistent variable declarations are not supported in parfor loops."
                                 .to_string(),
-                        severity: Severity::Error,
-                        byte_range: node.start_byte()..node.end_byte(),
-                        line: pos.row + 1,
-                        column: pos.column + 1,
-                        fix: None,
-                    });
-                }
-                // Check: SPGP — persistent inside spmd
-                if current_context == LoopContext::Spmd {
-                    let pos = node.start_position();
-                    diagnostics.push(Diagnostic {
-                        rule_id: "SPGP",
-                        message: "Setting the GLOBAL or PERSISTENT variable VAR_NAME in an SPMD block might fail because the set happens on a worker machine."
-                            .to_string(),
                         severity: Severity::Error,
                         byte_range: node.start_byte()..node.end_byte(),
                         line: pos.row + 1,
@@ -859,24 +828,9 @@ impl LanguageSpecEngine {
             }
 
             "function_definition" => {
-                // Check: PFNF — nested function definition inside parfor
-                if current_context == LoopContext::Parfor {
-                    let pos = node.start_position();
-                    diagnostics.push(Diagnostic {
-                        rule_id: "PFNF",
-                        message: "Nested functions cannot be called from within parfor loops."
-                            .to_string(),
-                        severity: Severity::Error,
-                        byte_range: node.start_byte()..node.end_byte(),
-                        line: pos.row + 1,
-                        column: pos.column + 1,
-                        fix: None,
-                    });
-                    // Don't recurse into nested function_definitions from parfor context
-                    return;
-                }
-                if current_context == LoopContext::Spmd {
-                    // Don't recurse into function_definitions from spmd context
+                // Nested function definitions cannot appear inside a parfor/spmd
+                // body; do not recurse into them from a parallel context.
+                if current_context == LoopContext::Parfor || current_context == LoopContext::Spmd {
                     return;
                 }
                 // For Normal/Loop context, recurse normally into function body
@@ -899,7 +853,13 @@ impl LanguageSpecEngine {
                 }
                 // C1 checks (only inside parfor blocks)
                 if current_context == LoopContext::Parfor {
-                    self.check_parfor_function_call(node, source, context_stack, diagnostics);
+                    self.check_parfor_function_call(
+                        node,
+                        source,
+                        context_stack,
+                        nested_functions,
+                        diagnostics,
+                    );
                 }
                 // Message-specification checks (any context)
                 self.check_error_warning_message(node, source, diagnostics);
@@ -1015,6 +975,111 @@ impl LanguageSpecEngine {
 }
 
 // ---------------------------------------------------------------------------
+// SPGP: setting a global/persistent variable inside an spmd block
+// ---------------------------------------------------------------------------
+
+impl LanguageSpecEngine {
+    /// SPGP: flag an assignment to a global or persistent variable inside an
+    /// `spmd` block, substituting the variable name for VAR_NAME.
+    ///
+    /// A `global`/`persistent` declaration alone does not fire; only an
+    /// assignment to such a variable inside the spmd body does.
+    pub(crate) fn check_spmd_gp_assignment(
+        &self,
+        root: tree_sitter::Node,
+        source: &str,
+        symbol_table: &SymbolTable,
+        diagnostics: &mut Vec<Diagnostic>,
+    ) {
+        self.spmd_gp_assignment_dfs(root, source, symbol_table, false, diagnostics);
+    }
+
+    /// DFS helper for [`Self::check_spmd_gp_assignment`].
+    fn spmd_gp_assignment_dfs(
+        &self,
+        node: tree_sitter::Node,
+        source: &str,
+        symbol_table: &SymbolTable,
+        in_spmd: bool,
+        diagnostics: &mut Vec<Diagnostic>,
+    ) {
+        match node.kind() {
+            "spmd_statement" => {
+                let mut cursor = node.walk();
+                for child in node.children(&mut cursor) {
+                    self.spmd_gp_assignment_dfs(child, source, symbol_table, true, diagnostics);
+                }
+                return;
+            }
+            "assignment" if in_spmd => {
+                if let Some(name) = self.assignment_lhs_var_name(node, source) {
+                    if self.is_global_or_persistent_in_scope(symbol_table, node.start_byte(), &name)
+                    {
+                        self.push_diag(
+                            node,
+                            "SPGP",
+                            &format!(
+                                "Setting the GLOBAL or PERSISTENT variable {name} in an SPMD block might fail because the set happens on a worker machine."
+                            ),
+                            diagnostics,
+                        );
+                    }
+                }
+            }
+            _ => {}
+        }
+        let mut cursor = node.walk();
+        for child in node.children(&mut cursor) {
+            self.spmd_gp_assignment_dfs(child, source, symbol_table, in_spmd, diagnostics);
+        }
+    }
+
+    /// Whether `name` is declared `global` or `persistent` in the scope (or an
+    /// ancestor scope) containing the given byte offset.
+    fn is_global_or_persistent_in_scope(
+        &self,
+        symbol_table: &SymbolTable,
+        byte: usize,
+        name: &str,
+    ) -> bool {
+        let Some(idx) = symbol_table
+            .scopes
+            .iter()
+            .enumerate()
+            .filter(|(_, s)| s.byte_range.contains(&byte))
+            .min_by_key(|(_, s)| s.byte_range.end - s.byte_range.start)
+            .map(|(i, _)| i)
+        else {
+            return false;
+        };
+        let mut cur = Some(idx);
+        while let Some(i) = cur {
+            let scope = &symbol_table.scopes[i];
+            if scope
+                .defs
+                .iter()
+                .any(|d| d.name == name && matches!(d.kind, DefKind::Global | DefKind::Persistent))
+            {
+                return true;
+            }
+            cur = scope.parent;
+        }
+        false
+    }
+
+    /// Extract the variable name assigned to, handling both simple (`x = ...`)
+    /// and indexed (`x(i) = ...`) left-hand sides.
+    fn assignment_lhs_var_name(&self, node: tree_sitter::Node, source: &str) -> Option<String> {
+        let lhs = node.child_by_field_name("left")?;
+        match lhs.kind() {
+            "identifier" => Some(node_text(lhs, source).to_string()),
+            "function_call" => callee_name(lhs, source),
+            _ => None,
+        }
+    }
+}
+
+// ---------------------------------------------------------------------------
 // Parfor variable / slicing / reduction checks (C1 group)
 // ---------------------------------------------------------------------------
 
@@ -1073,17 +1138,6 @@ impl LanguageSpecEngine {
             );
         }
 
-        // PFDF: a FOR loop with DRANGE (old PARFOR syntax) nested inside a
-        // parfor becomes a conventional FOR loop.
-        if self.nested_for_uses_drange(node, source) {
-            self.push_diag(
-                node,
-                "PFDF",
-                "FOR with DRANGE (old PARFOR) becomes a conventional FOR when used inside a PARFOR loop.",
-                diagnostics,
-            );
-        }
-
         let (range_start, range_end, is_const_pos) = self.nested_for_range_info(node, source);
         if let Some(analysis) = current_parfor_analysis_mut(context_stack) {
             analysis.nested_fors.push(NestedForInfo {
@@ -1096,25 +1150,6 @@ impl LanguageSpecEngine {
             });
             analysis.var_names.insert(var);
         }
-    }
-
-    /// Whether a nested `for` loop's iterator is a `drange(...)` expression
-    /// (old PARFOR syntax).
-    fn nested_for_uses_drange(&self, node: tree_sitter::Node, source: &str) -> bool {
-        let mut cursor = node.walk();
-        for child in node.children(&mut cursor) {
-            if child.kind() == "iterator" {
-                let mut inner = child.walk();
-                for c in child.children(&mut inner) {
-                    if c.kind() == "function_call"
-                        && callee_name(c, source).as_deref() == Some("drange")
-                    {
-                        return true;
-                    }
-                }
-            }
-        }
-        false
     }
 
     /// Record an assignment inside a parfor body: variable classification
@@ -1136,21 +1171,6 @@ impl LanguageSpecEngine {
         }
         let lhs_name = node_text(lhs_node, source).to_string();
         let rhs = node.child_by_field_name("right");
-
-        // PFANSRE: 'ans' is not supported as a reduction variable in parfor
-        // loops (e.g. `ans = ans + x`).
-        if lhs_name == "ans" {
-            if let Some(rhs_node) = rhs {
-                if contains_identifier(rhs_node, source, "ans") {
-                    self.push_diag(
-                        node,
-                        "PFANSRE",
-                        "'ans' is not supported as a reduction variable in parfor loops.",
-                        diagnostics,
-                    );
-                }
-            }
-        }
 
         let Some(analysis) = current_parfor_analysis_mut(context_stack) else {
             return;
@@ -1256,19 +1276,30 @@ impl LanguageSpecEngine {
     }
 
     /// Handle a function call inside a parfor body: banned functions (PFEVC,
-    /// PFINPT, PFNACK, PFNAIO, PFLD, PFSV, FPFORP, FWFORP, PFCEL), loop-variable
-    /// indexing (PFVSUB, PFFSUB), and indexed-access recording for the
-    /// sliced-variable checks.
+    /// PFINPT, PFNACK, PFNAIO, PFLD, PFSV, FPFORP, FWFORP, PFCEL), nested function
+    /// calls (PFNF), loop-variable indexing (PFVSUB, PFFSUB), and indexed-access
+    /// recording for the sliced-variable checks.
     fn check_parfor_function_call(
         &self,
         node: tree_sitter::Node,
         source: &str,
         context_stack: &mut [ContextFrame],
+        nested_functions: &HashSet<String>,
         diagnostics: &mut Vec<Diagnostic>,
     ) {
         let Some(name) = callee_name(node, source) else {
             return;
         };
+
+        // PFNF: calling a nested function from within a parfor loop body.
+        if nested_functions.contains(&name) {
+            self.push_diag(
+                node,
+                "PFNF",
+                "Nested functions cannot be called from within parfor loops.",
+                diagnostics,
+            );
+        }
 
         // Snapshot the parfor state needed for the immediate checks.
         let snapshot = context_stack
@@ -1401,17 +1432,6 @@ impl LanguageSpecEngine {
                     }
                 }
             }
-        }
-
-        // PFANSSL: 'ans' is not supported as a sliced variable in parfor loops.
-        // In MATLAB, `ans(...)` / `ans{...}` always indexes the `ans` variable.
-        if name == "ans" {
-            self.push_diag(
-                node,
-                "PFANSSL",
-                "'ans' is not supported as a sliced variable in parfor loops.",
-                diagnostics,
-            );
         }
 
         // Loop-variable indexing and indexed-access recording.
@@ -1633,108 +1653,6 @@ impl LanguageSpecEngine {
                         diagnostics,
                     );
                 }
-            }
-        }
-
-        // PFTIN: temporary variable must be set inside the PARFOR-loop before
-        // it is used (same detection as PFUTMP).
-        for (var, set_starts) in &analysis.temp_assigns {
-            if predefined.contains(var) {
-                continue;
-            }
-            let first_set = set_starts.iter().min().copied();
-            let mut read_starts: Vec<usize> = Vec::new();
-            if let Some(rs) = analysis.whole_reads.get(var) {
-                read_starts.extend(rs.iter().copied());
-            }
-            if let Some(rs) = analysis.indexed_reads.get(var) {
-                read_starts.extend(rs.iter().map(|(_, s, _, _)| *s));
-            }
-            if let (Some(fs), Some(fr)) = (first_set, read_starts.into_iter().min()) {
-                if fr < fs {
-                    self.push_diag_bytes(
-                        source,
-                        fr,
-                        fr + 1,
-                        "PFTIN",
-                        &format!(
-                            "The temporary variable '{var}' must be set inside the \
-                             PARFOR-loop before it is used."
-                        ),
-                        diagnostics,
-                    );
-                }
-            }
-        }
-
-        // PFPIE: valid indices for a sliced variable are restricted in parfor
-        // loops (nested indexing or arithmetic on indices).
-        {
-            let mut reported_pie = HashSet::new();
-            for (var, writes) in &analysis.sliced_lhs {
-                for (args, start, end, _) in writes {
-                    if parfor_index_is_complex(args) && reported_pie.insert(var.clone()) {
-                        self.push_diag_bytes(
-                            source,
-                            *start,
-                            *end,
-                            "PFPIE",
-                            &format!("Valid indices for {var} are restricted in PARFOR loops."),
-                            diagnostics,
-                        );
-                        break;
-                    }
-                }
-            }
-            for (var, reads) in &analysis.indexed_reads {
-                if !analysis.sliced_lhs.contains_key(var) {
-                    continue;
-                }
-                for (args, start, end, _) in reads {
-                    if parfor_index_is_complex(args) && reported_pie.insert(var.clone()) {
-                        self.push_diag_bytes(
-                            source,
-                            *start,
-                            *end,
-                            "PFPIE",
-                            &format!("Valid indices for {var} are restricted in PARFOR loops."),
-                            diagnostics,
-                        );
-                        break;
-                    }
-                }
-            }
-        }
-
-        // PFSAME: a sliced variable indexed in different ways (different number
-        // of subscripts, or mixed `()`/`{}` indexing).
-        for (var, writes) in &analysis.sliced_lhs {
-            let mut sigs: Vec<(usize, bool)> = writes
-                .iter()
-                .map(|(args, _, _, cell)| (subscript_count(args), *cell))
-                .collect();
-            if let Some(reads) = analysis.indexed_reads.get(var) {
-                sigs.extend(
-                    reads
-                        .iter()
-                        .map(|(args, _, _, cell)| (subscript_count(args), *cell)),
-                );
-            }
-            sigs.sort();
-            sigs.dedup();
-            if sigs.len() > 1 {
-                let first = writes.iter().map(|(_, s, _, _)| *s).min().unwrap_or(0);
-                self.push_diag_bytes(
-                    source,
-                    first,
-                    first + 1,
-                    "PFSAME",
-                    &format!(
-                        "In a PARFOR loop, variable {var} is indexed in different ways, \
-                         potentially causing dependencies between iterations."
-                    ),
-                    diagnostics,
-                );
             }
         }
 
@@ -2373,19 +2291,6 @@ pub(crate) fn args_tokens(args: &str) -> Vec<String> {
         .filter(|s| !s.is_empty())
         .map(|s| s.to_string())
         .collect()
-}
-
-/// Whether an index expression is complex (nested indexing or arithmetic on
-/// the indices) — used by PFPIE.
-pub(crate) fn parfor_index_is_complex(args: &str) -> bool {
-    args.chars()
-        .any(|c| matches!(c, '+' | '-' | '*' | '/' | '^' | '(' | ')'))
-}
-
-/// Number of subscripts in an index expression (comma-separated parts) — used
-/// by PFSAME.
-pub(crate) fn subscript_count(args: &str) -> usize {
-    args.split(',').count()
 }
 
 /// Whether `name` occurs as an identifier anywhere inside `node`.
@@ -3559,13 +3464,14 @@ end
     }
 
     #[test]
-    fn test_pfnf_nested_function_in_parfor() {
+    fn test_pfnf_nested_function_call_in_parfor() {
         let source = "\
 function foo()
     parfor i = 1:10
-        function y = helper(x)
-            y = x + 1;
-        end
+        y = helper(i);
+    end
+    function z = helper(x)
+        z = x + 1;
     end
 end
 ";
@@ -3573,7 +3479,28 @@ end
         let pfnf = filter_by_id(&diags, "PFNF");
         assert!(
             !pfnf.is_empty(),
-            "PFNF should fire for nested function inside parfor"
+            "PFNF should fire for nested function call inside parfor"
+        );
+    }
+
+    #[test]
+    fn test_pfnf_no_fire_local_function_call() {
+        let source = "\
+function main()
+    parfor i = 1:10
+        y = helper(i);
+    end
+end
+
+function z = helper(x)
+    z = x + 1;
+end
+";
+        let diags = check_source(source, "main.m");
+        let pfnf = filter_by_id(&diags, "PFNF");
+        assert!(
+            pfnf.is_empty(),
+            "PFNF should NOT fire for a top-level local function call"
         );
     }
 
@@ -3632,17 +3559,62 @@ end
     }
 
     #[test]
-    fn test_spgp_global_in_spmd() {
+    fn test_spgp_global_assignment_in_spmd() {
         let source = "\
 function foo()
+    global x;
     spmd
-        global x;
+        x = 1;
     end
 end
 ";
         let diags = check_source(source, "foo.m");
         let spgp = filter_by_id(&diags, "SPGP");
-        assert!(!spgp.is_empty(), "SPGP should fire for global inside spmd");
+        assert!(
+            !spgp.is_empty(),
+            "SPGP should fire for assignment to a global inside spmd"
+        );
+    }
+
+    #[test]
+    fn test_spgp_persistent_assignment_in_spmd() {
+        let source = "\
+function foo()
+    persistent p;
+    spmd
+        p = p + 1;
+    end
+end
+";
+        let diags = check_source(source, "foo.m");
+        let spgp = filter_by_id(&diags, "SPGP");
+        assert!(
+            !spgp.is_empty(),
+            "SPGP should fire for assignment to a persistent inside spmd"
+        );
+        let message = spgp[0].message.clone();
+        assert!(
+            message.contains('p'),
+            "SPGP message should substitute the variable name, got: {message}"
+        );
+    }
+
+    #[test]
+    fn test_spgp_no_fire_declaration_only() {
+        let source = "\
+function foo()
+    global x;
+    spmd
+        y = 1;
+    end
+end
+";
+        let diags = check_source(source, "foo.m");
+        let spgp = filter_by_id(&diags, "SPGP");
+        assert!(
+            spgp.is_empty(),
+            "SPGP should NOT fire for a declaration alone (no assignment to the global)"
+        );
     }
 
     // ===== Class/OOP rule tests =====
@@ -4755,258 +4727,6 @@ end
         assert!(
             filter_by_id(&diags, "PFVSUB").is_empty(),
             "PFVSUB should NOT fire for indexing a sliced variable"
-        );
-    }
-
-    // -- PFANSRE -------------------------------------------------------------
-
-    #[test]
-    fn test_pfansre_fires_ans_reduction() {
-        let source = "\
-function f()
-    parfor i = 1:10
-        ans = ans + i;
-    end
-end
-";
-        let diags = check_source(source, "f.m");
-        assert!(
-            !filter_by_id(&diags, "PFANSRE").is_empty(),
-            "PFANSRE should fire for 'ans = ans + i' in a parfor"
-        );
-    }
-
-    #[test]
-    fn test_pfansre_no_fire_plain_temp() {
-        let source = "\
-function f()
-    parfor i = 1:10
-        y = i;
-    end
-end
-";
-        let diags = check_source(source, "f.m");
-        assert!(
-            filter_by_id(&diags, "PFANSRE").is_empty(),
-            "PFANSRE should NOT fire for a plain temporary assignment"
-        );
-    }
-
-    // -- PFANSSL -------------------------------------------------------------
-
-    #[test]
-    fn test_pfanssl_fires_ans_indexing() {
-        let source = "\
-function f()
-    parfor i = 1:10
-        ans(i) = i;
-        q = ans(i);
-    end
-end
-";
-        let diags = check_source(source, "f.m");
-        assert!(
-            !filter_by_id(&diags, "PFANSSL").is_empty(),
-            "PFANSSL should fire when 'ans' is indexed in a parfor"
-        );
-    }
-
-    #[test]
-    fn test_pfanssl_no_fire_plain_ans_read() {
-        let source = "\
-function f()
-    parfor i = 1:10
-        y = ans;
-    end
-end
-";
-        let diags = check_source(source, "f.m");
-        assert!(
-            filter_by_id(&diags, "PFANSSL").is_empty(),
-            "PFANSSL should NOT fire for a non-indexed read of 'ans'"
-        );
-    }
-
-    // -- PFDF ----------------------------------------------------------------
-
-    #[test]
-    fn test_pfdf_fires_drange_nested_for() {
-        let source = "\
-function f()
-    parfor i = 1:10
-        for j = drange(1:5)
-            x(i, j) = i;
-        end
-    end
-end
-";
-        let diags = check_source(source, "f.m");
-        assert!(
-            !filter_by_id(&diags, "PFDF").is_empty(),
-            "PFDF should fire for a nested for with DRANGE inside a parfor"
-        );
-    }
-
-    #[test]
-    fn test_pfdf_no_fire_plain_nested_for() {
-        let source = "\
-function f()
-    parfor i = 1:10
-        for j = 1:5
-            x(i, j) = i;
-        end
-    end
-end
-";
-        let diags = check_source(source, "f.m");
-        assert!(
-            filter_by_id(&diags, "PFDF").is_empty(),
-            "PFDF should NOT fire for a plain nested for inside a parfor"
-        );
-    }
-
-    // -- PFPIE ---------------------------------------------------------------
-
-    #[test]
-    fn test_pfpie_fires_complex_index() {
-        let source = "\
-function f()
-    parfor i = 1:10
-        x(i + 1) = i;
-        x(A(i)) = i;
-    end
-end
-";
-        let diags = check_source(source, "f.m");
-        assert!(
-            !filter_by_id(&diags, "PFPIE").is_empty(),
-            "PFPIE should fire for complex index expressions on a sliced variable"
-        );
-    }
-
-    #[test]
-    fn test_pfpie_no_fire_simple_index() {
-        let source = "\
-function f()
-    parfor i = 1:10
-        x(i, :) = i;
-    end
-end
-";
-        let diags = check_source(source, "f.m");
-        assert!(
-            filter_by_id(&diags, "PFPIE").is_empty(),
-            "PFPIE should NOT fire for simple index expressions"
-        );
-    }
-
-    // -- PFSAME --------------------------------------------------------------
-
-    #[test]
-    fn test_pfsame_fires_different_indexing() {
-        let source = "\
-function f()
-    parfor i = 1:10
-        x(i) = i;
-        x(i, :) = i;
-    end
-end
-";
-        let diags = check_source(source, "f.m");
-        assert!(
-            !filter_by_id(&diags, "PFSAME").is_empty(),
-            "PFSAME should fire when a sliced variable is indexed in different ways"
-        );
-    }
-
-    #[test]
-    fn test_pfsame_no_fire_consistent_indexing() {
-        let source = "\
-function f()
-    parfor i = 1:10
-        x(i) = i;
-        y = x(i);
-    end
-end
-";
-        let diags = check_source(source, "f.m");
-        assert!(
-            filter_by_id(&diags, "PFSAME").is_empty(),
-            "PFSAME should NOT fire when a sliced variable is always indexed the same way"
-        );
-    }
-
-    // -- PFTIN ---------------------------------------------------------------
-
-    #[test]
-    fn test_pftin_fires_temp_used_before_set() {
-        let source = "\
-function f()
-    parfor i = 1:10
-        y = t + i;
-        t = i;
-    end
-end
-";
-        let diags = check_source(source, "f.m");
-        assert!(
-            !filter_by_id(&diags, "PFTIN").is_empty(),
-            "PFTIN should fire when a temporary is used before it is set"
-        );
-    }
-
-    #[test]
-    fn test_pftin_no_fire_set_before_use() {
-        let source = "\
-function f()
-    parfor i = 1:10
-        t = i;
-        y = t + 1;
-    end
-end
-";
-        let diags = check_source(source, "f.m");
-        assert!(
-            filter_by_id(&diags, "PFTIN").is_empty(),
-            "PFTIN should NOT fire when the temporary is set before use"
-        );
-    }
-
-    // -- New PF* checks respect disabled config ------------------------------
-
-    #[test]
-    fn test_new_pf_checks_respect_disabled_config() {
-        let mut rule_config = LanguageSpecConfig::default();
-        rule_config.disabled_checks.push("PFANSRE".to_string());
-        rule_config.disabled_checks.push("PFDF".to_string());
-        let engine = LanguageSpecEngine {
-            config: rule_config,
-        };
-        let source = "\
-function f()
-    parfor i = 1:10
-        ans = ans + i;
-        for j = drange(1:5)
-            x(i, j) = i;
-        end
-    end
-end
-";
-        let tree = parse_matlab(source);
-        let path = Path::new("f.m");
-        let ctx = FileContext {
-            tree: &tree,
-            source,
-            file_path: path,
-        };
-        let diags = engine.check_file(&ctx);
-        assert!(
-            filter_by_id(&diags, "PFANSRE").is_empty(),
-            "PFANSRE should be disabled via config disabled_checks"
-        );
-        assert!(
-            filter_by_id(&diags, "PFDF").is_empty(),
-            "PFDF should be disabled via config disabled_checks"
         );
     }
 

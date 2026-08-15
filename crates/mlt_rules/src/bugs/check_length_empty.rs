@@ -1,62 +1,50 @@
 use super::*;
 
 impl BugsEngine {
-    /// LOGEMP: `length(x) == 0` should be `isempty(x)`.
-    pub(crate) fn check_length_empty(&self, node: Node, source: &str) -> Vec<Diagnostic> {
-        if node.kind() != "comparison_operator" {
+    /// LOGEMP: `isempty(...)` applied to a logical expression, which produces
+    /// incorrect results for logical arrays.
+    pub(crate) fn check_isempty_logical(&self, node: Node, source: &str) -> Vec<Diagnostic> {
+        if node.kind() != "function_call" {
             return Vec::new();
         }
 
-        let lhs = match node.child(0) {
-            Some(c) => c,
-            None => return Vec::new(),
-        };
-        let rhs = match node.child(2) {
-            Some(c) => c,
-            None => return Vec::new(),
-        };
-
-        let op = find_operator_text(node, source);
-        if op != "==" {
-            return Vec::new();
-        }
-
-        // Check for `length(x) == 0` or `0 == length(x)`.
-        let (call_node, zero_node) =
-            if lhs.kind() == "function_call" && node_text(rhs, source).trim() == "0" {
-                (lhs, rhs)
-            } else if rhs.kind() == "function_call" && node_text(lhs, source).trim() == "0" {
-                (rhs, lhs)
-            } else {
-                return Vec::new();
-            };
-
-        let func_name = match extract_call_name(call_node, source) {
+        let func_name = match extract_call_name(node, source) {
             Some(n) => n,
             None => return Vec::new(),
         };
 
-        if func_name != "length" && func_name != "numel" {
+        if func_name != "isempty" {
             return Vec::new();
         }
 
-        // Extract the argument to length().
-        let arg_text = extract_first_arg_text(call_node, source).unwrap_or("x");
+        let first_arg = match first_arg_node(node) {
+            Some(n) => n,
+            None => return Vec::new(),
+        };
 
-        let pos = node.start_position();
-        let _ = zero_node; // suppress unused warning
-        vec![Diagnostic {
-            rule_id: "LOGEMP",
-            message: "Using 'isempty' on a logical expression creates incorrect results. To determine if all the conditions are false, use '~any(..., \"all\")' instead.".to_string(),
-            severity: Severity::Error,
-            byte_range: node.start_byte()..node.end_byte(),
-            line: pos.row + 1,
-            column: pos.column + 1,
-            fix: Some(Fix::new(
-                node.start_byte()..node.end_byte(),
-                format!("isempty({arg_text})"),
-            )),
-        }]
+        let is_logical = matches!(
+            first_arg.kind(),
+            "comparison_operator" | "boolean_operator" | "not_operator"
+        );
+
+        if is_logical {
+            let arg_text = node_text(first_arg, source);
+            let pos = node.start_position();
+            vec![Diagnostic {
+                rule_id: "LOGEMP",
+                message: "Using 'isempty' on a logical expression creates incorrect results. To determine if all the conditions are false, use '~any(..., \"all\")' instead.".to_string(),
+                severity: Severity::Error,
+                byte_range: node.start_byte()..node.end_byte(),
+                line: pos.row + 1,
+                column: pos.column + 1,
+                fix: Some(Fix::new(
+                    node.start_byte()..node.end_byte(),
+                    format!("~any({arg_text}, \"all\")"),
+                )),
+            }]
+        } else {
+            Vec::new()
+        }
     }
 }
 
@@ -68,15 +56,22 @@ mod tests {
     // -- LOGEMP --------------------------------------------------------------
 
     #[test]
-    fn logemp_fires_on_length_eq_zero() {
-        let src = "y = length(x) == 0;\n";
+    fn logemp_fires_on_isempty_comparison() {
+        let src = "y = isempty(x == 1);\n";
         let diags = node_diags(src);
         assert!(has_id(&diags, "LOGEMP"), "got: {diags:?}");
     }
 
     #[test]
-    fn logemp_no_fire_on_nonzero_length() {
-        let src = "y = length(x) > 0;\n";
+    fn logemp_fires_on_isempty_boolean() {
+        let src = "y = isempty(a && b);\n";
+        let diags = node_diags(src);
+        assert!(has_id(&diags, "LOGEMP"), "got: {diags:?}");
+    }
+
+    #[test]
+    fn logemp_no_fire_on_plain_isempty() {
+        let src = "y = isempty(x);\n";
         let diags = node_diags(src);
         assert!(!has_id(&diags, "LOGEMP"), "got: {diags:?}");
     }

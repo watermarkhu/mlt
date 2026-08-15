@@ -260,42 +260,6 @@ Severity: **error** · Auto-fix: **no**
 
 Indexing parfor loop variables is not supported in parfor loops.
 
-### PFANSRE
-
-Severity: **error** · Auto-fix: **no**
-
-'ans' is not supported as a reduction variable
-
-### PFANSSL
-
-Severity: **error** · Auto-fix: **no**
-
-'ans' is not supported as a sliced variable
-
-### PFDF
-
-Severity: **error** · Auto-fix: **no**
-
-FOR with DRANGE becomes a conventional FOR inside a PARFOR
-
-### PFPIE
-
-Severity: **error** · Auto-fix: **no**
-
-Valid indices for a sliced variable are restricted
-
-### PFSAME
-
-Severity: **error** · Auto-fix: **no**
-
-Sliced variable indexed in different ways
-
-### PFTIN
-
-Severity: **error** · Auto-fix: **no**
-
-Temporary variable must be set before it is used
-
 ### ATUNK
 
 Severity: **error** · Auto-fix: **no**

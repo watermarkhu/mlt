@@ -1,9 +1,9 @@
 use super::*;
 
 impl GoodPracticesEngine {
-    /// FXSET: the `for` loop iterator variable is assigned inside the loop body.
+    /// FXSETA: the `for` loop iterator variable is assigned inside the loop body.
     pub(crate) fn check_fxset(&self, node: Node, source: &str) -> Vec<Diagnostic> {
-        if !self.is_check_enabled("FXSET") || node.kind() != "for_statement" {
+        if !self.is_check_enabled("FXSETA") || node.kind() != "for_statement" {
             return Vec::new();
         }
 
@@ -33,7 +33,7 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_fxset_fires_on_iterator_assignment() {
+    fn test_fxseta_fires_on_iterator_assignment() {
         let source = "for i = 1:10\n  i = 5;\nend\n";
         let tree = parse(source);
         let root = tree.root_node();
@@ -42,11 +42,11 @@ mod tests {
         let for_node = find_child_of_kind(root, "for_statement").unwrap();
         let diags = eng.check_fxset(for_node, source);
         assert_eq!(diags.len(), 1);
-        assert_eq!(diags[0].rule_id, "FXSET");
+        assert_eq!(diags[0].rule_id, "FXSETA");
     }
 
     #[test]
-    fn test_fxset_silent_on_read_only_iterator() {
+    fn test_fxseta_silent_on_read_only_iterator() {
         let source = "for i = 1:10\n  y = i;\nend\n";
         let tree = parse(source);
         let root = tree.root_node();
@@ -58,7 +58,7 @@ mod tests {
     }
 
     #[test]
-    fn test_fxset_silent_on_other_variable_assignment() {
+    fn test_fxseta_silent_on_other_variable_assignment() {
         let source = "for i = 1:10\n  j = 5;\nend\n";
         let tree = parse(source);
         let root = tree.root_node();
