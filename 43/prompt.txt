@@ -1,0 +1,23 @@
+Group: SYNTAX G2 — Unterminated strings/comments (STRIN, DOUQT, INBLK)
+Module: crates/mlt_rules/src/syntax_errors.rs
+
+You are the Implementer in mlt's rule pipeline. Implement the SYNTAX G2 group exactly per the approved plan.
+
+READ the approved plan at /tmp/opencode/plans/SYNTAX_G2.md first.
+
+Implement:
+- crates/mlt_rules/src/syntax_errors.rs: add `check_unterminated(root, source)` method (STRIN: unterminated single-quoted char vector with transpose false-positive guard; DOUQT: unclosed `"` at EOF; INBLK: comment starting with `%{` without `%}`), dispatch in `check_file`, module doc rows, tests (fires/not-fires/config per check; include transpose not-fire cases).
+- docs/strin.md, docs/douqt.md, docs/inblk.md (new, per docs/nosemi.md template).
+- docs/rules.md: add 3 rows.
+- zensical.toml: add 3 nav entries.
+
+NOTE: This is a parallel flow with 7 other groups editing the same syntax_errors.rs file. Use stable anchors and re-verify the file compiles after your edits. Only add YOUR check IDs and functions.
+
+Verify:
+cargo build
+cargo clippy --all-targets
+cargo test
+
+Fix failures until clean. Do NOT add code comments unless the plan requires them. Do NOT commit.
+
+Return a summary: files created/modified, fires/not-fires verified (especially transpose not-fire), cargo results, deviations.
