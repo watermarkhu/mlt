@@ -1,0 +1,39 @@
+You are splitting the `readability` rule engine in `crates/mlt_rules/src/readability.rs` into a directory of one-file-per-check modules. This is a PURE MECHANICAL REFACTOR — zero behavior change.
+
+## CRITICAL CONSTRAINTS
+- Do NOT delete or modify `crates/mlt_rules/src/readability.rs`.
+- Do NOT modify `crates/mlt_rules/src/lib.rs`.
+- Only CREATE new files under `crates/mlt_rules/src/readability/`.
+- Do NOT commit.
+
+## Target layout
+```
+crates/mlt_rules/src/readability/
+├── mod.rs                        # ReadabilityEngine, config, impl Rule (dispatch), inventory::submit!,
+│                                #   shared free helpers (pub(crate)), module doc, shared #[cfg(test)] helpers
+├── check_isa.rs                  # use super::*; impl ReadabilityEngine { pub(crate) fn check_isa ... } + tests
+├── check_strcmp.rs               # ...
+└── ...                           # one file per independent check
+```
+
+## How to do it
+1. Read `crates/mlt_rules/src/readability.rs` fully.
+2. `mod.rs` gets: module `//!` doc, `use` statements, `ReadabilityConfig`, `ReadabilityEngine` struct, ALL free helpers (`find_arguments`, `is_empty_string`, `is_inside_if_condition`, `extract_operator_text`, ISA_REPLACEMENTS const, TARGET_NODES, etc.), the `impl Rule for ReadabilityEngine` with `check()`/`check_file()` dispatch, and `inventory::submit!`. Make shared free helpers `pub(crate)`.
+3. For each INDEPENDENT `check_*` method (node-level pattern matcher using only `self.is_check_enabled` + shared helpers): create `readability/check_<name>.rs` with `use super::*; impl ReadabilityEngine { pub(crate) fn check_<name> ... }` + that check's tests.
+4. Note: `check_mfamb` is a FILE-LEVEL check implemented via `check_file` (uses SymbolTable). It is independent (self-contained) — give it its own file `check_mfamb.rs`. The `check()` dispatch and `check_file()` dispatch stay in mod.rs.
+5. Move tests: test functions for a specific moved check go into that check's file with `use super::*; use crate::test_util::{has_id, lint_nodes, lint_file}; use mlt_core::Config;` + local `engine()` helper. Generic tests stay in mod.rs.
+
+## Verification (REQUIRED)
+- For each moved `check_*` method, extract body from `readability.rs` and diff against the new file (identical except `pub(crate)` + indentation).
+- Confirm each check ID string appears exactly once across `readability/`.
+- Confirm dispatch references match.
+- Confirm moved-test count matches.
+You may write a python/rust diff script; do NOT run `cargo build`.
+
+## Report back
+- Files created
+- Moved vs kept-in-mod.rs methods (with reasons)
+- Verification results
+- Risks/notes
+
+Do not touch anything outside `crates/mlt_rules/src/readability/`.
