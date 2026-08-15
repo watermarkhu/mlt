@@ -1,0 +1,5 @@
+Rule ID: STLOW
+Category: Readability (3.3)
+Module: crates/mlt_rules/src/readability.rs
+
+Follow your planner workflow: look up STLOW on the MathWorks check index via Playwright (fallback archive ~/.local/share/opencode/tool-output/REDACTED), read the existing readability.rs engine, AGENTS.md, nosemi.rs, and docs/nosemi.md. Produce a self-contained implementation plan. This is one of 5 readability checks being implemented in parallel in the same module (COMNL, STLOW, FLUDLR, MFAMB, FVINR) — keep your additions isolated to distinct check IDs and functions.
