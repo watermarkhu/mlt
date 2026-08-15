@@ -1,0 +1,47 @@
+{
+  "cli_version": "0.10.0",
+  "checkpoint_id": "01M02XD0Y7VFBN7BM2JV5MZ8GX",
+  "session_id": "ses_01e6489e8ffeBJ5Xl0j8jW1uxt",
+  "strategy": "manual-commit",
+  "created_at": "2026-08-15T14:32:30.644128974Z",
+  "branch": "feat",
+  "checkpoints_count": 3,
+  "save_step_count": 1,
+  "files_touched": [],
+  "agent": "OpenCode",
+  "model": "deepseek-v4-pro",
+  "turn_id": "a1968dbc5e63",
+  "compact_transcript_start": 0,
+  "token_usage": {
+    "input_tokens": 17331091,
+    "cache_creation_tokens": 0,
+    "cache_read_tokens": 1171032448,
+    "output_tokens": 793102,
+    "api_call_count": 2531
+  },
+  "session_metrics": {
+    "turn_count": 3
+  },
+  "prompt_attributions": [
+    {
+      "checkpoint_number": 1,
+      "user_lines_added": 0,
+      "user_lines_removed": 198,
+      "agent_lines_added": 0,
+      "agent_lines_removed": 0,
+      "user_removed_per_file": {
+        ".github/.pinact.yaml": 22,
+        ".github/CODEOWNERS": 1,
+        ".github/renovate.json5": 12,
+        ".github/workflows/release.yml": 163
+      }
+    },
+    {
+      "checkpoint_number": 2,
+      "user_lines_added": 0,
+      "user_lines_removed": 0,
+      "agent_lines_added": 0,
+      "agent_lines_removed": 0
+    }
+  ]
+}
