@@ -1,0 +1,18 @@
+Rule IDs: BADFP, BADHBH, BADHBB, BADHBHT, BADHBBT, HEXTOOLONG, BINARYTOOLONG
+Category: Syntax Errors (3.7)
+Module: crates/mlt_rules/src/syntax_errors.rs
+
+You are the Reviewer in mlt's rule pipeline. Review the implementation plan for the SYNTAX G1 group (number literal validation).
+
+READ the plan at /tmp/opencode/plans/SYNTAX_G1.md first.
+
+Then verify against the codebase:
+- Read crates/mlt_rules/src/syntax_errors.rs (especially the engine structure, check_file dispatch, check_error_nodes, and the tests mod).
+- Run the AST probe in /tmp/opencode/astprobe if needed to confirm how `1.2.3`, `0xFFG`, `0b102`, and long hex/binary literals parse.
+
+Adjudicate: is the number-node source-scan approach implementable? Are the suffix limits correct (u8=2/s16=4/u32=8/u64=16 hex digits; u8=8/16/32/64 binary digits)? Does the BADFP detection (truncated number node + trailing ERROR) work? Are MUST/MUST NOT cases right? Are the file/step/test requirements complete? Note: tree-sitter may truncate number nodes (e.g. `0xFFG` → `0xFF`), so the detection may need to scan source after the number node.
+
+Return exactly:
+- `VERDICT: APPROVED` or `VERDICT: CHANGES REQUIRED`
+- A short list of required corrections (or confirmations if approved)
+- The corrected, complete implementation plan (repeat the whole plan with fixes) — self-contained, since the Implementer only sees your message.
