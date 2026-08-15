@@ -1,0 +1,24 @@
+Group: LANGSPEC C3 — Function validation (38: FVAPN, FVATF, FVBTN, FVDAN, FVDAP, FVDNF, FVDREP, FVIDV, FVIOA, FVMCL, FVNDE, FVNIV, FVNREP, FVNSC, FVNVL, FVOBI, FVOCON, FVOND, FVONV, FVOOD, FVOOI, FVOON, FVORDI, FVORDN, FVORDO, FVORDP, FVORM, FVOVREP, FVREPD, FVREPO, FVSOR, FVSORO, FVUBD, FVVCON, FVVIN, FVVREP, TINVALDIM, TTOOFEWDIMS)
+Module: crates/mlt_rules/src/language_spec.rs
+
+You are the Reviewer in mlt's rule pipeline. Review the LANGSPEC C3 plan.
+
+READ the plan at /tmp/opencode/plans/LANGSPEC_C3.md first.
+
+Then verify against the codebase:
+- Read crates/mlt_rules/src/language_spec.rs (especially check_function_validation, check_fvnst, find_nested_functions_with_args, check_vtpod).
+- Read crates/mlt_rules/src/analysis/metadata.rs (FunctionMeta, ArgValidation fields: name, dimensions, type_constraint, validators, default_value).
+- Run the astprobe (cd /tmp/opencode/astprobe && cargo run) to confirm the arguments_statement AST (probe samples 0 and 4: property children, attributes child).
+
+Key adjudications:
+1. The plan relies on FunctionMeta.argument_validations + raw arguments_statement AST. Confirm both are available/parseable.
+2. The (Input)/(Output) attribute is an `attributes` child — confirm. How to distinguish input vs output blocks?
+3. FVSOR/FVSORO need comparing arguments-block declarations with the function line's function_arguments/function_output. Is FunctionMeta.inputs/outputs sufficient?
+4. Which checks genuinely need raw AST vs. parsed metadata? Flag any that can't be reliably implemented.
+5. Note: check_vtpod is a no-op stub here (implemented in syntax_errors from Wave B). Confirm the plan's instruction to leave it.
+6. Are MUST/MUST NOT cases right? file/step/test requirements complete?
+
+Return exactly:
+- `VERDICT: APPROVED` or `VERDICT: CHANGES REQUIRED`
+- A short list of required corrections (or confirmations if approved)
+- The corrected, complete implementation plan (repeat the whole plan with fixes) — self-contained, since the Implementer only sees your message.
