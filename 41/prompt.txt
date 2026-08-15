@@ -1,0 +1,22 @@
+Group: LANGSPEC C1 — Parfor/SPMD checks (28: FPFORP, FWFORP, PFANON, PFANSLP, PFANSNS, PFCEL, PFCTXT, PFEVC, PFFRNG, PFFSUB, PFINCR, PFINPT, PFLD, PFMLTI, PFNACK, PFNAIO, PFNAR, PFRFH, PFRNG, PFSLO, PFSLRD, PFSLW, PFSV, PFUNK, PFUTMP, PFUTVR, PFVARS, PFVSUB)
+Module: crates/mlt_rules/src/language_spec.rs
+
+You are the Reviewer in mlt's rule pipeline. Review the LANGSPEC C1 plan.
+
+READ the plan at /tmp/opencode/plans/LANGSPEC_C1.md first.
+
+Then verify against the codebase:
+- Read crates/mlt_rules/src/language_spec.rs (especially check_dfs, LoopContext, ContextFrame, and the existing parfor checks PFPF/PFBRK/PFRTN/PFSPMD/PFPERS/PFGLOB/PFNF/PFFORA/PFXST).
+- Run the astprobe (cd /tmp/opencode/astprobe && cargo run) to confirm how parfor parses (probe sample 2: parfor i=1:10 → for_statement with parfor keyword).
+
+Key adjudications:
+1. The plan says for_statement is used for both for and parfor, distinguished by the first child kind (parfor vs for). Confirm this.
+2. Is the banned-function approach (PFEVC/PFINPT/PFNACK/PFNAIO/PFLD/PFSV) implementable in the existing check_dfs dispatch?
+3. FPFORP/FWFORP need file-handle tracking (fopen→write flag). Is a conservative best-effort acceptable, or should these be deferred?
+4. The dataflow checks (PFSLO, PFSLRD, PFSLW, PFUTMP, PFUTVR, PFVARS) — assess feasibility with SymbolTable + AST walking.
+5. Are MUST/MUST NOT cases right? file/step/test requirements complete?
+
+Return exactly:
+- `VERDICT: APPROVED` or `VERDICT: CHANGES REQUIRED`
+- A short list of required corrections (or confirmations if approved)
+- The corrected, complete implementation plan (repeat the whole plan with fixes) — self-contained, since the Implementer only sees your message.
