@@ -3,9 +3,27 @@
   "checkpoint_id": "01M02Z3V5D2C67P351J4ZF11JB",
   "strategy": "manual-commit",
   "branch": "feat",
-  "checkpoints_count": 28,
+  "checkpoints_count": 29,
   "files_touched": [
-    "crates/mlt_rules/src/codegen/mod.rs"
+    "crates/mlt_rules/src/codegen/mod.rs",
+    "crates/mlt_rules/src/compatibility/mod.rs",
+    "crates/mlt_rules/src/config_issues/mod.rs",
+    "crates/mlt_rules/src/custom_checks.rs",
+    "crates/mlt_rules/src/deployment/mod.rs",
+    "crates/mlt_rules/src/formatting/mod.rs",
+    "crates/mlt_rules/src/incomplete_analysis/mod.rs",
+    "crates/mlt_rules/src/naming.rs",
+    "crates/mlt_rules/src/suggested_improvements.rs",
+    "crates/mlt_rules/src/syntax_errors/mod.rs",
+    "crates/mlt_rules/src/system_objects/mod.rs",
+    "crates/mlt_rules/src/unset_variables/mod.rs",
+    "crates/mlt_rules/src/unsupported/mod.rs",
+    "crates/mlt_rules/src/unused/mod.rs",
+    "docs/rules/config-issues.md",
+    "docs/rules/incomplete-analysis.md",
+    "docs/rules/syntax-errors.md",
+    "docs/rules/unset-variables.md",
+    "docs/rules/unused.md"
   ],
   "sessions": [
     {
@@ -77,13 +95,20 @@
       "compact_transcript": "/9/transcript.jsonl",
       "content_hash": "/9/content_hash.txt",
       "prompt": "/9/prompt.txt"
+    },
+    {
+      "metadata": "/10/metadata.json",
+      "transcript": "/10/full.jsonl",
+      "compact_transcript": "/10/transcript.jsonl",
+      "content_hash": "/10/content_hash.txt",
+      "prompt": "/10/prompt.txt"
     }
   ],
   "token_usage": {
-    "input_tokens": 637925,
+    "input_tokens": 688207,
     "cache_creation_tokens": 0,
-    "cache_read_tokens": 21852288,
-    "output_tokens": 89871,
-    "api_call_count": 355
+    "cache_read_tokens": 23648768,
+    "output_tokens": 96675,
+    "api_call_count": 393
   }
 }

@@ -1,0 +1,55 @@
+You are appending compatibility-check data entries to `crates/mlt_rules/src/data/compatibility.toml` in the `mlt` MATLAB linter. This is a PURE DATA EXPANSION task — no Rust code changes.
+
+## Input
+Your assigned batch is at `/tmp/opencode/compat_batch1.tsv` — lines of `ID<TAB>Severity<TAB>Message`. Read it fully.
+
+## Task
+For EACH line in the batch, append a TOML entry to the `crates/mlt_rules/src/data/compatibility.toml` file. The file uses this exact format (append new `[[checks]]` blocks at the END of the file):
+
+```toml
+[[checks]]
+id = "XXXX"
+function_name = "somefunction"
+severity = "error"     # lowercase: "error" or "warning"
+message = "'...' has been removed. Use '...' instead."
+category = "compatibility"
+```
+
+## How to derive fields
+- `id`: the ID from the TSV (keep as-is).
+- `severity`: map "Error"→"error", "Warning"→"warning".
+- `message`: use the message from the TSV verbatim. It may contain `VAR_NAME` placeholders — keep them as-is. Escape any double quotes inside the message as `\"` (the TOML uses double-quoted strings).
+- `function_name`: derive from the message. The convention in the existing file (see below) is:
+  - If the message names a deprecated function in quotes (e.g. `'modem.pamdemod' has been removed`), use that quoted name (e.g. `modem.pamdemod`).
+  - If the message is about a removed *option/parameter* of a function (e.g. `'Algorithm' option for the 'intlinprog' solver has been removed`), use the PARENT function name (e.g. `intlinprog`).
+  - If the message references multiple candidates or a class, use the most specific function/class name that the engine can match on a `function_call`/`command` node.
+  - If no sensible function name exists, use the lowercased ID-based heuristic ONLY if it clearly matches (e.g. INTLLEG1 → intlinprog, SESSION → session) — otherwise use the parent function from the message.
+- `category`: always `"compatibility"`.
+
+## CRITICAL constraints
+- Do NOT modify existing entries in the file — only APPEND new `[[checks]]` blocks.
+- Do NOT modify any Rust file. Do NOT commit.
+- Preserve the existing file content exactly (header comments, existing sections). Append after the last entry.
+
+## Reference convention (existing entries in the file)
+Look at a few existing entries (e.g. `BUFSIZE`, `CHKGR`, `WEBBEHAVE`) to match the exact style:
+```toml
+[[checks]]
+id = "BUFSIZE"
+function_name = "textscan"
+severity = "error"
+message = "Option 'Bufsize' has been removed. Manual buffering in 'textscan' is n..."
+category = "compatibility"
+```
+
+## Verification (REQUIRED)
+1. After appending, run: `cargo build` — this must succeed (the engine's `LazyLock` parses the TOML at build/construct time; a malformed TOML will fail the build). Fix any TOML syntax errors you introduced.
+2. Run a python check: parse the file and confirm every ID in your batch is now present exactly once.
+3. Run `cargo test -p mlt_rules compatibility` to confirm the engine tests still pass.
+4. Confirm you appended exactly the number of entries in your batch (213).
+
+## Report back
+- Count of entries appended
+- Verification results (build, TOML parse, ID presence, tests)
+- Any IDs where function_name was ambiguous and what you chose
+- Warnings/notes (e.g. IDs already present, skipped)
