@@ -1,0 +1,19 @@
+Rule ID: FLUDLR
+Category: Readability (3.3)
+Module: crates/mlt_rules/src/readability.rs
+
+You are the Reviewer in mlt's rule pipeline (plan in main → Reviewer → Implementer). Review the implementation plan for FLUDLR.
+
+READ the plan at /tmp/opencode/plans/FLUDLR.md first.
+
+Then verify against the codebase:
+- Read crates/mlt_rules/src/readability.rs (especially check_function_call dispatch, find_arguments, diag() helper, and the module doc at lines 1-42 that currently mis-describes FLUDLR as "prefer fullfile").
+- Read crates/mlt_rules/src/lib.rs, crates/mlt_rules/src/nosemi.rs, AGENTS.md "Adding a New Rule", and docs/nosemi.md.
+- Optionally run the AST probe in /tmp/opencode/astprobe to confirm the flipud(fliplr(x)) nested-call structure.
+
+Check: detection logic (flipud outer + fliplr inner with exactly 1 arg each) correct? fix replacement rot90(x,2) built correctly? the doc fix at line ~28 included? MUST/MUST NOT cases right? files/steps/tests complete?
+
+Return exactly:
+- `VERDICT: APPROVED` or `VERDICT: CHANGES REQUIRED`
+- A short list of required corrections (or confirmations if approved)
+- The corrected, complete implementation plan (repeat the whole plan with fixes) — self-contained, since the Implementer only sees your message.
