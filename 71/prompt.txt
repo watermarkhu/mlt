@@ -1,0 +1,19 @@
+Rule ID: MFAMB
+Category: Readability (3.3)
+Module: crates/mlt_rules/src/readability.rs
+
+You are the Reviewer in mlt's rule pipeline (plan in main → Reviewer → Implementer). Review the implementation plan for MFAMB.
+
+READ the plan at /tmp/opencode/plans/MFAMB.md first.
+
+Then verify against the codebase:
+- Read crates/mlt_rules/src/readability.rs (especially check_function_call dispatch, how it reads the callee name, and the engine's node-level architecture — it has no symbol table).
+- Read crates/mlt_rules/src/analysis/symbols.rs to see if a symbol table is available and whether using it is feasible from a node-level check (it may NOT be — the engine gets only NodeContext).
+- Read crates/mlt_rules/src/lib.rs, AGENTS.md "Adding a New Rule", and docs/nosemi.md.
+
+This is the hardest of the 5 readability checks. Key question to adjudicate: the plan proposes a conservative whole-file scan (fire only when the bare-identifier callee is ALSO assigned as a variable in the same file AND is not a small denylist of builtins), because tree-sitter cannot distinguish `x(1)` indexing from `x(1)` calling. Assess: is that pragmatic interpretation sound? Is the whole-file scan from NodeContext feasible (walk tree root via ctx? or scan ctx.source)? Could a symbol-table approach be cleaner? Recommend the most implementable approach that avoids massive false positives. Validate the MUST/MUST NOT cases.
+
+Return exactly:
+- `VERDICT: APPROVED` or `VERDICT: CHANGES REQUIRED`
+- A short list of required corrections (or confirmations if approved)
+- The corrected, complete implementation plan (repeat the whole plan with fixes) — self-contained, since the Implementer only sees your message.
