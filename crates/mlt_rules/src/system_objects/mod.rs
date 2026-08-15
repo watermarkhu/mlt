@@ -24,17 +24,17 @@
 //!
 //! ## Check IDs
 //!
-//! | Check ID   | Severity | Fix | Description |
-//! |------------|----------|-----|-------------|
-//! | SONUMIN    | error    | no  | System object method called with wrong number of inputs |
-//! | SONUMOUT   | error    | no  | System object method called with wrong number of outputs |
-//! | SODEPPROP  | warning  | no  | Deprecated system object property; use the recommended replacement |
-//! | SOINITPROP | warning  | no  | DiscreteState properties must be initialized within a 'resetImpl' method |
-//! | SODFLTVAL  | error    | no  | Property default value uses a function call, which may not be valid |
-//! | SORSRVDNM  | warning  | no  | Reserved name used for system object member; choose a different name |
-//! | SOTUNPROP1 | warning  | no  | Logical attribute not supported for tunable properties on MATLAB System blocks |
-//! | SOTUNPROP3 | warning  | no  | Tunable properties on System blocks must be numeric; char property is made Nontunable |
-//! | SOTUNPROP4 | warning  | no  | Tunable properties on System blocks must be numeric; string property is made Nontunable |
+//! | Check ID | Severity | Fix | Description |
+//! | --- | --- | --- | --- |
+//! | SONUMIN | error | no | If 'stepImpl' accepts variable number of inputs, then you must define a 'getNumInputsImpl' method. |
+//! | SONUMOUT | error | no | If 'stepImpl' returns variable number of outputs, then you must define a 'getNumOutputsImpl' method. |
+//! | SODEPPROP | warning | no | Dependent properties are not supported for MATLAB System blocks. VAR_NAME property is not included on System block. |
+//! | SOINITPROP | warning | no | Initialize DiscreteState property VAR_NAME within a 'resetImpl' method. |
+//! | SODFLTVAL | error | no | Invalid initialization of DiscreteState property VAR_NAME. Initialize property within a 'resetImpl' method. |
+//! | SORSRVDNM | warning | no | VAR_NAME property is a reserved name. |
+//! | SOTUNPROP1 | warning | no | Logical attribute not supported for tunable properties on MATLAB System blocks. VAR_NAME property is made Nontunable on System block. |
+//! | SOTUNPROP3 | warning | no | Tunable properties on MATLAB System blocks must be numeric. VAR_NAME property is made Nontunable on System block because it is a char. |
+//! | SOTUNPROP4 | warning | no | Tunable properties on MATLAB System blocks must be numeric. VAR_NAME property is made Nontunable on System block because it is a string. |
 //!
 //! ## Examples
 //!

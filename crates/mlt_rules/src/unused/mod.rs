@@ -21,25 +21,25 @@
 //!
 //! ## Check IDs
 //!
-//! | Check ID | Severity | Fix | Description                                                       |
-//! |----------|----------|-----|-------------------------------------------------------------------|
-//! | NASGU    | warning  | no  | Variable is assigned but never used                               |
-//! | NUSED    | warning  | no  | Variable is defined (input arg) but never used                    |
-//! | NOEFF    | warning  | no  | Statement has no effect (expression result discarded)             |
-//! | EQEFF    | warning  | no  | Comparison has no effect (result not used)                        |
-//! | ASGLU    | warning  | no  | Assignment to a variable that is immediately overwritten          |
-//! | SETNU    | warning  | no  | Output of function assigned but never used                        |
-//! | PUSE     | warning  | no  | Persistent/global variable set but not used                       |
-//! | PREALL   | warning  | no  | Variable preallocated but unused                                  |
-//! | INUSA    | warning  | no  | Input argument not used in function                               |
-//! | INUSD    | warning  | no  | Input argument defined but could be removed                       |
-//! | VANUS    | info     | no  | Value assigned to `ans` is unused                                 |
-//! | DEFNU    | warning  | no  | Local function defined but never called                           |
-//! | UNRCH    | warning  | no  | Unreachable code after return/break/continue                      |
-//! | MANU     | warning  | no  | Method defined but never called                                   |
-//! | VUNUS    | warning  | no  | Variable assigned in all branches but unused after                |
-//! | MSNU     | warning  | no  | Struct field set but never read                                   |
-//! | MSNE     | info     | no  | Struct field doesn't exist (assigned but possibly a typo)         |
+//! | Check ID | Severity | Fix | Description |
+//! | --- | --- | --- | --- |
+//! | NASGU | warning | no | Value assigned to variable might be unused. |
+//! | NUSED | warning | no | Global or persistent variable might be unused or unset in this function or script. |
+//! | NOEFF | warning | no | The operation or expression VAR_OPERATOR has no evident effect. |
+//! | EQEFF | warning | no | To assign values to variables, use =. The == operator compares equality of values. |
+//! | ASGLU | warning | no | Value assigned to variable might be unused. Consider replacing the variable with ~ instead. |
+//! | SETNU | warning | no | Variable is set, but might be unused. |
+//! | PUSE | warning | no | Persistent variable might be unused. |
+//! | PREALL | warning | no | The preallocated value assigned to variable might be unused. |
+//! | INUSA | warning | no | Input argument might be unused after the function arguments block(s). |
+//! | INUSD | warning | no | Input argument might be unused. Consider replacing the argument with ~ instead. |
+//! | VANUS | info | no | Input argument 'varargin' might be unused. |
+//! | DEFNU | warning | no | Function might be unused. |
+//! | UNRCH | warning | no | This statement (and possibly following ones) cannot be reached. |
+//! | MANU | warning | no | Input argument might be unused. Consider replacing the argument with ~, or make this method Static instead. |
+//! | VUNUS | warning | no | VAR_OPERATOR produces a value that might be unused. |
+//! | MSNU | warning | no | A Code Analyzer message was once suppressed here, but the message is no longer generated. |
+//! | MSNE | info | no | No Code Analyzer check is found for this check ID. |
 //!
 //! ## Examples
 //!

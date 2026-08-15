@@ -23,17 +23,17 @@
 //! ## Check IDs
 //!
 //! | Check ID | Severity | Fix | Description |
-//! |----------|----------|-----|-------------|
-//! | MCCD     | error    | no  | 'cd' should not be used in deployed applications |
-//! | MCPRD    | error    | no  | Path modification functions should not be used in deployed applications |
-//! | MCHLP    | warning  | no  | 'help'/'doc' are not available in deployed applications |
-//! | MCKBD    | warning  | no  | 'keyboard' is not available in deployed applications |
-//! | MCSVP    | warning  | no  | 'savepath' is not available in deployed applications |
-//! | MCMLR    | warning  | no  | 'matlabroot' returns the MCR root, not the MATLAB root |
-//! | MCABF    | error    | no  | 'addpath' with an absolute path will fail in deployed applications |
-//! | MCMFL    | warning  | no  | 'mfilename' behaves differently in deployed applications |
-//! | MCTBX    | warning  | no  | Toolbox function may not be available without proper toolbox compilation |
-//! | MCLL     | error    | no  | License checking is not available in deployed applications |
+//! | --- | --- | --- | --- |
+//! | MCCD | error | no | MCC use of the CD function is problematic. |
+//! | MCPRD | error | no | MCC allows only one argument in the PRINTDLG function. |
+//! | MCHLP | warning | no | MCC does not permit the HELP function. |
+//! | MCKBD | warning | no | MCC does not permit the KEYBOARD function. |
+//! | MCSVP | warning | no | MCC does not permit the SAVEPATH function. |
+//! | MCMLR | warning | no | MCC use of the MATLABROOT function is problematic. |
+//! | MCABF | error | no | MCC use of absolute file names is likely to fail. |
+//! | MCMFL | warning | no | MCC allows writing .m files, but they cannot be executed by the deployed application. |
+//! | MCTBX | warning | no | MCC use of toolbox folder file names is likely to fail. |
+//! | MCLL | error | no | MCC does not allow C++ files to be read directly using LOADLIBRARY. |
 //!
 //! ## Examples
 //!

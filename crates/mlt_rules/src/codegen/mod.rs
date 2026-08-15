@@ -25,23 +25,23 @@
 //!
 //! ## Check IDs
 //!
-//! | Check ID             | Severity | Fix | Description                                                           |
-//! |----------------------|----------|-----|-----------------------------------------------------------------------|
-//! | EMVDF                | error    | no  | Variable-size data is not supported for code generation               |
-//! | EMGRO                | error    | no  | Growing arrays inside loops is not supported for code generation      |
-//! | EMFCN                | error    | no  | Function is not supported for code generation                         |
-//! | EMCEL                | error    | no  | Cell arrays are not supported for code generation                     |
-//! | EMTC                 | error    | no  | Try-catch statements are not supported for code generation            |
-//! | EMIMP                | error    | no  | Import statements are not supported for code generation               |
-//! | EMNST                | error    | no  | Nested functions are not supported for code generation                |
-//! | EMSCR                | error    | no  | Scripts are not supported; use functions instead                      |
-//! | EMPFR                | error    | no  | Parfor is not supported for code generation                           |
-//! | EMRIFAV              | error    | no  | Arguments validation block is not fully supported for code generation |
-//! | EMLOAD               | error    | no  | 'load' is not supported for code generation                           |
-//! | EMS2N                | error    | no  | 'str2num' is not supported; use 'str2double'                          |
-//! | PRMNOIN              | error    | no  | No input validation available in generated code                       |
-//! | LOOPPRAGMAWITHOUTFOR | error    | no  | coder.loop pragma must be immediately followed by a for-loop          |
-//! | FPASE                | error    | no  | Assignment to a scaled fixed-point expression may lose precision      |
+//! | Check ID | Severity | Fix | Description |
+//! | --- | --- | --- | --- |
+//! | EMVDF | error | no | Code generation requires that all elements of a variable are defined before indexing into the variable. |
+//! | EMGRO | error | no | For code generation, grow an array by using 'end + 1' indexing. |
+//! | EMFCN | error | no | This function is not supported in code generation. |
+//! | EMCEL | error | no | Fixed-point conversion does not support cell arrays. |
+//! | EMTC | error | no | TRY/CATCH is unsupported for code generation. |
+//! | EMIMP | error | no | Code generation does not support import statements. |
+//! | EMNST | error | no | Fixed-point conversion does not support nested functions. |
+//! | EMSCR | error | no | Code generation does not support scripts. |
+//! | EMPFR | error | no | HDL code generation does not support parfor statements. |
+//! | EMRIFAV | error | no | Code generation does not support repeating arguments with validation. |
+//! | EMLOAD | error | no | The output of a call to LOAD is not assigned to a variable. For code generation, assign the output of LOAD to a variable without subscripting. |
+//! | EMS2N | error | no | Code generation does not support 'str2num'. Use 'str2double' instead. |
+//! | PRMNOIN | error | no | For code generation, specify a binaryOccupancyMap object in the constructor of the mobileRobotPRM object. |
+//! | LOOPPRAGMAWITHOUTFOR | error | no | A coder.loop.Control transform must be immediately followed by a for loop. |
+//! | FPASE | error | no | Direct assignment to a possible fixed-point type is not recommended. Use the subscripted assignment syntax 'var(:) =' instead. |
 //!
 //! ## Examples
 //!

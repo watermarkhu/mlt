@@ -32,247 +32,247 @@ this module keeps the engine, the dispatch, the file-level growth walk
 
 Severity: **info** · Auto-fix: **no**
 
-Variable appears to grow inside a loop; consider preallocating
+Variable appears to change size on every loop iteration. Consider preallocating for speed.
 
 ### SAGROW
 
 Severity: **info** · Auto-fix: **no**
 
-Struct field appears to grow inside a loop; consider preallocating
+Variable appears to change size on every loop iteration (within a script). Consider preallocating for speed.
 
 ### AND2
 
 Severity: **info** · Auto-fix: **yes**
 
-Use `&&` (short-circuit) instead of `&` for scalar logical operations
+When both arguments are numeric scalars, consider replacing & with && for performance.
 
 ### OR2
 
 Severity: **info** · Auto-fix: **yes**
 
-Use `\|\|` (short-circuit) instead of `\|` for scalar logical operations
+When both arguments are numeric scalars, consider replacing \| with \|\| for performance.
 
 ### MINV
 
 Severity: **info** · Auto-fix: **no**
 
-Use `A\b` instead of `inv(A)*b` for better numerical stability and performance
+INV(A)*b can be slower and less accurate than A\b. Consider using A\b for INV(A)*b or b/A for b*INV(A).
 
 ### GFLD
 
 Severity: **info** · Auto-fix: **no**
 
-Use dynamic field names `s.(name)` instead of `getfield`
+Use dynamic fieldnames with structures instead of GETFIELD.
 
 ### SFLD
 
 Severity: **info** · Auto-fix: **no**
 
-Use dynamic field names `s.(name) = val` instead of `setfield`
+Use dynamic fieldnames with structures instead of SETFIELD.
 
 ### EXIST
 
 Severity: **info** · Auto-fix: **no**
 
-Use `isfile` or `isfolder` instead of `exist(..., 'file')`
+EXIST with two input arguments is generally faster and clearer than with one input argument.
 
 ### PFBNS
 
 Severity: **info** · Auto-fix: **no**
 
-Array initialized as empty then grown; preallocate for known size
+The entire array or structure VAR_NAME is a broadcast variable. This might result in unnecessary communication overhead.
 
 ### CCAT
 
 Severity: **info** · Auto-fix: **no**
 
-Use string concatenation or `join` instead of repeated `strcat`
+For improved performance, concatenate cell arrays using [] instead of extracting cell arrays and reconstructing them.
 
 ### CCAT1
 
 Severity: **info** · Auto-fix: **no**
 
-Consider using `join` for cell array of character vector concatenation
+{ A{I} } can usually be replaced by A(I) or A(I)', which can be much faster.
 
 ### ISMT
 
 Severity: **info** · Auto-fix: **no**
 
-Use `isempty(x)` instead of `length(x)==0`
+Using ISEMPTY is usually faster than comparing LENGTH to 0.
 
 ### ISCL
 
 Severity: **info** · Auto-fix: **no**
 
-Use `isscalar(x)` instead of `length(x)==1`
+To improve performance, use 'isscalar' instead of length comparison.
 
 ### ST2NM
 
 Severity: **info** · Auto-fix: **yes**
 
-Use `str2double` instead of `str2num` for performance and security
+If you are operating on scalar values, consider using 'str2double' for faster performance.
 
 ### FLPST
 
 Severity: **info** · Auto-fix: **yes**
 
-Use `flip` instead of `flipud`/`fliplr` on vectors
+For better performance in some cases, use SORT with the 'descend' option.
 
 ### MXFND
 
 Severity: **info** · Auto-fix: **no**
 
-Use `max(x,[],'all')` instead of nested `max(max(x))`
+Use FIND with the 'first' or 'last' option.
 
 ### EFIND
 
 Severity: **info** · Auto-fix: **no**
 
-Use logical indexing instead of `find` when used as a subscript
+To improve performance, replace ISEMPTY(FIND(X)) with ISEMPTY(FIND( X, 1 )).
 
 ### UDIM
 
 Severity: **info** · Auto-fix: **no**
 
-Specify the dimension argument in `sum`/`max`/`min`/`prod`/`mean`
+Instead of using transpose (' or .'), consider using a different DIMENSION input argument to VAR_NAME.
 
 ### FREAD
 
 Severity: **info** · Auto-fix: **no**
 
-Specify the precision argument in `fread` for performance
+FREAD(FID,...,'*char') is more efficient than CHAR(FREAD(...)).
 
 ### N2UNI
 
 Severity: **info** · Auto-fix: **no**
 
-Consider using `unique` instead of `setdiff`+`union` patterns
+Instead of using 'native2unicode' with 'fread', specify the character encoding scheme in the call to 'fopen'.
 
 ### TNMLP
 
 Severity: **info** · Auto-fix: **no**
 
-Move `tic`/`toc` outside the loop body for accurate timing
+Move the toolbox function out of the loop for better performance.
 
 ### LAXES
 
 Severity: **info** · Auto-fix: **no**
 
-Cache the axes handle returned by `gca`/`gcf` instead of repeated calls
+Calling AXES(h) in a loop can be slow. Consider moving the call to AXES outside the loop.
 
 ### MMTC
 
 Severity: **info** · Auto-fix: **no**
 
-Use `.^2` instead of `.*` with the same operand
+This use of MAT2CELL should probably be replaced by a simpler, faster call to NUM2CELL.
 
 ### MRPBW
 
 Severity: **info** · Auto-fix: **yes**
 
-Use `imbinarize` instead of deprecated `im2bw`
+To use less memory, replace BWLABEL(bw) by LOGICAL(bw) in a call of REGIONPROPS.
 
 ### SPRIX
 
 Severity: **info** · Auto-fix: **no**
 
-Avoid indexing sparse matrices with full logical arrays
+This sparse indexing expression is likely to be slow.
 
 ### TRSRT
 
 Severity: **info** · Auto-fix: **no**
 
-Use `mink`/`maxk` instead of sorting then indexing
+Transposing the input to 'sort' is often unnecessary.
 
 ### GRIDD
 
 Severity: **info** · Auto-fix: **no**
 
-Consider using `meshgrid` or `ndgrid` for grid generation
+Consider replacing GRIDDATA with SCATTEREDINTERPOLANT for better performance.
 
 ### CLALL
 
 Severity: **info** · Auto-fix: **no**
 
-`clear all` also clears breakpoints; use `clearvars` instead
+Using 'clear' with the 'all' option usually decreases code performance and is often unnecessary.
 
 ### CLCLS
 
 Severity: **info** · Auto-fix: **no**
 
-`clear classes` is a slow operation; avoid in production code
+Using 'clear' with the 'classes' option will decrease code performance and is often unnecessary.
 
 ### CLFUNC
 
 Severity: **info** · Auto-fix: **no**
 
-`clear functions` is a slow operation; avoid in production code
+Using 'clear' with the 'functions' option usually decreases code performance and is often unnecessary.
 
 ### CLJAVA
 
 Severity: **info** · Auto-fix: **no**
 
-`clear java` is a slow operation; avoid in production code
+Using 'clear' with the 'java' option usually decreases code performance and is often unnecessary.
 
 ### CLMEX
 
 Severity: **info** · Auto-fix: **no**
 
-`clear mex` clears all MEX files from memory; use specific names
+Using 'clear' with the 'mex' option usually decreases code performance and is often unnecessary.
 
 ### CLEAR0ARGS
 
 Severity: **info** · Auto-fix: **no**
 
-`clear` with no arguments clears all variables; use `clearvars` instead
+Avoid using 'clear' to clear more than necessary, this decreases code performance and is usually unnecessary.
 
 ### RGXP1
 
 Severity: **info** · Auto-fix: **no**
 
-Regex pattern can be simplified for performance
+Using REGEXP(str, pattern, 'ONCE') is faster in this case.
 
 ### RGXPI
 
 Severity: **info** · Auto-fix: **no**
 
-Use `regexpi` instead of `regexp` with the `ignorecase` option
+Using REGEXPI(str, pattern, 'ONCE') is faster in this case.
 
 ### TRIM1
 
 Severity: **info** · Auto-fix: **yes**
 
-Use `strtrim` instead of `deblank` for more thorough whitespace removal
+Use STRTRIM(str) instead of nesting FLIPLR and DEBLANK calls.
 
 ### TRIM2
 
 Severity: **info** · Auto-fix: **yes**
 
-Use `strip` instead of `strtrim` for more flexible whitespace removal
+Use STRTRIM(str) instead of DEBLANK(STRJUST(str,'left')).
 
 ### STTOK
 
 Severity: **info** · Auto-fix: **no**
 
-Use `split` instead of `strtok` in a loop for better performance
+Use one call to 'split' instead of calling 'strtok' in a loop.
 
 ### STNCI
 
 Severity: **info** · Auto-fix: **no**
 
-Use `strcmpi` instead of wrapping `strcmp` with `lower`
+Use STRNCMPI(str1,str2) instead of using UPPER/LOWER in a call to STRNCMP.
 
 ### STCCS
 
 Severity: **info** · Auto-fix: **no**
 
-Use `contains` instead of `~isempty(strfind(...))`
+It appears that STRCMPI/STRNCMPI can be replaced by a faster, case sensitive compare.
 
 ### FNDSB
 
 Severity: **info** · Auto-fix: **yes**
 
-Use `contains` or `matches` instead of `findstr`
+For array or cell array, performance can be improved using logical indexing instead of 'find'.
 
 ## Automatic fixes
 

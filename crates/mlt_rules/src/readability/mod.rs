@@ -29,42 +29,42 @@
 //! ## Check IDs
 //!
 //! | Check ID | Severity | Fix | Description |
-//! |----------|----------|-----|-------------|
-//! | ASGSL    | info     | no  | Assignment inside a conditional expression |
-//! | COMNL    | info     | yes | Newline following comma acts as a row separator in a matrix |
-//! | SPERR    | info     | no  | Prefer a message identifier for `error` |
-//! | SPWRN    | info     | no  | Prefer a message identifier for `warning` |
-//! | NCHKE    | info     | no  | Use `narginchk`/`nargoutchk` for argument validation |
-//! | DSPSP    | info     | yes | Prefer `fprintf` over `disp(sprintf(...))` |
-//! | DSPSY    | info     | no  | Prefer `disp` over `display` |
-//! | STLOW    | info     | yes | Unnecessary UPPER/LOWER call in a comparison |
-//! | FLUDLR   | info     | yes | Use `rot90(x, 2)` instead of `flipud(fliplr(x))`/`fliplr(flipud(x))` |
-//! | RPMT1    | info     | yes | Trivial multiplication by 1 |
-//! | RPMT0    | info     | yes | Multiplication by 0 |
-//! | RPMTT    | info     | yes | Boolean tautology (`x \|\| true`) |
-//! | RPMTF    | info     | yes | Boolean contradiction (`x && false`) |
-//! | RPMTI    | info     | yes | Trivial addition of 0 |
-//! | RPMTN    | info     | yes | Trivial subtraction of 0 |
-//! | PSIZE    | info     | yes | Use `numel(x)` instead of `prod(size(x))` |
-//! | LOGSUM   | info     | no  | Use `any` instead of `sum(logical) > 0` |
-//! | LOGL     | info     | no  | Use logical indexing instead of `x(find(condition))` |
-//! | ISCHR    | info     | yes | Use `ischar(x)` instead of `isa(x, 'char')` |
-//! | ISSTR    | info     | yes | Use `isstring(x)` instead of `isa(x, 'string')` |
-//! | ISLOG    | info     | yes | Use `islogical(x)` instead of `isa(x, 'logical')` |
-//! | ISCEL    | info     | yes | Use `iscell(x)` instead of `isa(x, 'cell')` |
-//! | IJCL     | info     | no  | `i`/`j` used as a variable (shadows the complex unit) |
-//! | ISMAT    | info     | yes | Use `isnumeric(x)` instead of `isa(x, 'double')` |
-//! | ISROW    | info     | yes | Use `isrow(x)` instead of `size(x, 1) == 1` |
-//! | ISCOL    | info     | yes | Use `iscolumn(x)` instead of `size(x, 2) == 1` |
-//! | NBRAK2   | info     | yes | Unnecessary brackets around a scalar expression |
-//! | MFAMB    | info     | no  | Cannot determine whether a name is a variable or function |
-//! | FVINR    | info     | yes | Add an `(Input)` attribute to `arguments` blocks for readability |
-//! | STREMP   | info     | yes | Use `strlength(s)==0` instead of `strcmp(s, '')` |
-//! | STRCL1   | info     | no  | Use `startsWith`/`endsWith` instead of `strncmp`/`strncmpi` |
-//! | STRCLFH  | info     | no  | Use `contains` instead of `strfind` for presence checks |
-//! | STRIFCND | info     | no  | Simplify if-conditions involving string comparisons |
-//! | CHARTEN  | info     | yes | Use `newline` instead of `char(10)` |
-//! | SPRINTFN | info     | yes | Use `num2str` over simple `sprintf` for number formatting |
+//! | --- | --- | --- | --- |
+//! | ASGSL | info | no | Assignment to variable might be unnecessary. |
+//! | COMNL | info | yes | Newline following comma acts as a row separator. Replace the comma with a semicolon to make the row separation clearer. Alternatively, use an ellipsis (...) to continue the current row on the next line. |
+//! | SPERR | info | no | ERROR takes SPRINTF-like arguments directly. |
+//! | SPWRN | info | no | WARNING takes SPRINTF-like arguments directly. |
+//! | NCHKE | info | no | Use NARGOUTCHK without ERROR. |
+//! | DSPSP | info | yes | 'disp(sprintf(...))' can usually be replaced by 'fprintf(...\n)'. |
+//! | DSPSY | info | no | 'display(sprintf(...))' can usually be replaced by 'fprintf(...\n)'. |
+//! | STLOW | info | yes | In this comparison the call to UPPER/LOWER is unnecessary. |
+//! | FLUDLR | info | yes | For readability, consider using rot90(x,2) instead of flipud(fliplr(x)) or fliplr(flipud(x)). |
+//! | RPMT1 | info | yes | For readability, consider using 'ones(x,y)' instead of 'repmat(1,x,y)'. |
+//! | RPMT0 | info | yes | For readability, consider using 'zeros(x,y)' instead of 'repmat(0,x,y)'. |
+//! | RPMTT | info | yes | For readability, consider using 'true(x,y)' instead of 'repmat(true,x,y)'. |
+//! | RPMTF | info | yes | For readability, consider using 'false(x,y)' instead of 'repmat(false,x,y)'. |
+//! | RPMTI | info | yes | For readability, consider using 'Inf(x,y)' instead of 'repmat(Inf,x,y)'. |
+//! | RPMTN | info | yes | For readability, consider using 'NaN(x,y)' instead of 'repmat(NaN,x,y)'. |
+//! | PSIZE | info | yes | NUMEL(x) is usually faster than PROD(SIZE(x)). |
+//! | LOGSUM | info | no | Consider using 'nnz' instead of 'sum' for logical vectors to improve readability. |
+//! | LOGL | info | no | Use 'true' or 'false' instead of 'logical(1)' or 'logical(0)'. |
+//! | ISCHR | info | yes | Use ISCHAR instead of comparing the class to 'char'. |
+//! | ISSTR | info | yes | Use ISSTRUCT instead of comparing the class to 'struct'. |
+//! | ISLOG | info | yes | Use ISLOGICAL instead of comparing the class to 'logical'. |
+//! | ISCEL | info | yes | Use ISCELL instead of comparing the class to 'cell'. |
+//! | IJCL | info | no | For improved robustness, consider replacing i and j by 1i. |
+//! | ISMAT | info | yes | When checking if a variable is a matrix consider using ISMATRIX. |
+//! | ISROW | info | yes | When checking if a variable is a row vector consider using ISROW. |
+//! | ISCOL | info | yes | When checking if a variable is a column vector consider using ISCOLUMN. |
+//! | NBRAK2 | info | yes | Use of brackets [] is unnecessary. |
+//! | MFAMB | info | no | Code Analyzer cannot determine whether VAR_NAME is a variable or a function, and assumes it is a function. |
+//! | FVINR | info | yes | For readability, add Input attribute to the input arguments block. |
+//! | STREMP | info | yes | For readability, use '~contains(str1, str2)' instead of 'isempty(strfind(str1, str2))'. |
+//! | STRCL1 | info | no | For readability, use '~contains(str1, str2)' instead of 'cellfun('isempty', strfind(str1, str2))'. |
+//! | STRCLFH | info | no | For readability, use '~contains(str1, str2)' instead of 'cellfun(@isempty, strfind(str1, str2))'. |
+//! | STRIFCND | info | no | For readability, use 'contains(str1, str2)' instead of 'strfind(str1, str2)'. |
+//! | CHARTEN | info | yes | For readability, consider using 'newline' instead of 'char(10)'. |
+//! | SPRINTFN | info | yes | For readability, consider using the 'newline' function instead of 'sprintf('\n')'. |
 //!
 //! ## Fix
 //!

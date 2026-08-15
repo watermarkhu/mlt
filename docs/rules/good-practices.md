@@ -31,325 +31,325 @@ Designer methods.
 
 Severity: **warning** · Auto-fix: **no**
 
-`try` without `catch`
+TRY statement should have a CATCH statement to check for unexpected errors.
 
 ### CTCH
 
 Severity: **warning** · Auto-fix: **no**
 
-`catch` block is empty
+Best practice is for CATCH to be followed by an identifier that gets the error information.
 
 ### WLAST
 
 Severity: **warning** · Auto-fix: **no**
 
-`warning` called as last statement in function
+WARNING('') does not reset the warning state. Use LASTWARN('') instead.
 
 ### WNTAG
 
 Severity: **warning** · Auto-fix: **no**
 
-`warning` without message ID
+The first argument of WARNING should be a message identifier. Using a message identifier allows users better control over the message.
 
 ### ERTAG
 
 Severity: **warning** · Auto-fix: **no**
 
-`error` without message ID
+The first argument of ERROR should be a message identifier.
 
 ### MEXCEP
 
 Severity: **warning** · Auto-fix: **no**
 
-`catch` without exception variable
+To report an MException as a warning, use a format specifier to ensure the message is printed correctly. For example, 'warning(E.identifier, "%s", E.message)'.
 
 ### STCMP
 
 Severity: **warning** · Auto-fix: **no**
 
-Use `strcmp`/`strcmpi` instead of `==` for strings
+Use STRCMP instead of == or ~= to compare character vectors, or convert character vectors to string scalars for direct comparison.
 
 ### STCI
 
 Severity: **warning** · Auto-fix: **no**
 
-Use `strcmpi` for case-insensitive comparison
+Use STRCMPI(str1,str2) instead of using UPPER/LOWER in a call to STRCMP.
 
 ### STISA
 
 Severity: **warning** · Auto-fix: **no**
 
-Use `isa` instead of `class` + `strcmp`
+Consider using ISA instead of comparing the class name.
 
 ### STRNU
 
 Severity: **warning** · Auto-fix: **no**
 
-Use `str2double` instead of `str2num`
+This variable, apparently a structure, is changed but the value might be unused.
 
 ### EVLCS
 
 Severity: **warning** · Auto-fix: **no**
 
-Avoid `eval`
+'eval' is inefficient and makes code less clear. Call the statement directly.
 
 ### EVLDOT
 
 Severity: **warning** · Auto-fix: **no**
 
-Avoid `eval` for dynamic field access
+'eval' is inefficient and makes code less clear. Use dynamic field names to access structure fields or object properties instead.
 
 ### EVLEQ
 
 Severity: **warning** · Auto-fix: **no**
 
-Avoid `eval` for dynamic variable creation
+'eval' is inefficient and makes code less clear. Assign to the variable directly.
 
 ### EVLSYS
 
 Severity: **warning** · Auto-fix: **no**
 
-Avoid `eval` for system commands
+'eval' is inefficient and makes code less clear. To make calls to the operating system use the system function instead.
 
 ### EVLDUAL
 
 Severity: **warning** · Auto-fix: **no**
 
-Avoid `evalin`
+This use of 'eval' is unnecessary and can be removed. Call the evaluated function directly using parentheses. For example, use 'load(filename)' instead of 'eval(['load ' filename])'.
 
 ### EVLSEQVAR
 
 Severity: **warning** · Auto-fix: **no**
 
-Avoid `eval` to create sequential variables
+Using 'eval' to dynamically assign variables is not recommended.
 
 ### NOANS
 
 Severity: **warning** · Auto-fix: **no**
 
-Statement result assigned to `ans`
+Using ANS as a variable is not recommended as ANS is frequently overwritten by MATLAB.
 
 ### LOAD
 
 Severity: **warning** · Auto-fix: **no**
 
-`load` without output variable
+To avoid conflicts with functions on the path, specify variables to load from file.
 
 ### SEPEX
 
 Severity: **info** · Auto-fix: **no**
 
-Multiple statements on one line
+Consider using newline, semicolon, or comma before this statement for readability.
 
 ### NBRAK1
 
 Severity: **info** · Auto-fix: **yes**
 
-Unnecessary brackets around scalar
+If you intend to specify expression precedence, use parentheses () instead of brackets [].
 
 ### LNGNM
 
 Severity: **warning** · Auto-fix: **no**
 
-Variable name exceeds length
+Names longer than VAR_NUMBER characters are not supported. This name has been truncated to VAR_NUMBER characters.
 
 ### CHAIN
 
 Severity: **info** · Auto-fix: **no**
 
-Method chaining on one line
+Expressions like a VAR_NAME b VAR_NAME c are interpreted as (a VAR_NAME b) VAR_NAME c. Typically, to test a VAR_NAME b VAR_NAME c mathematically, if all arguments are numeric scalars, use (a VAR_NAME b) && (b VAR_NAME c), otherwise use (a VAR_NAME b) & (b VAR_NAME c).
 
 ### DISPLAY
 
 Severity: **warning** · Auto-fix: **no**
 
-Override `display` is discouraged
+Overloading DISPLAY is not recommended.
 
 ### FNDEF
 
 Severity: **warning** · Auto-fix: **no**
 
-Function not defined at expected location
+Function name VAR_NAME is known to MATLAB by its file name: VAR_FILE.
 
 ### NOIN
 
 Severity: **info** · Auto-fix: **no**
 
-Function has no input validation
+Method VAR_NAME should either be a static method or have at least one input argument.
 
 ### VALST
 
 Severity: **info** · Auto-fix: **no**
 
-Validate function arguments
+VAR_NAME must be the last argument in the argument list.
 
 ### PROP
 
 Severity: **info** · Auto-fix: **no**
 
-Property validation missing
+VAR_NAME is also the name of a property, which may be confusing. Use obj.PropertyName syntax to reference the property, or rename this variable to improve readability.
 
 ### CPROP
 
 Severity: **info** · Auto-fix: **no**
 
-Constant property could be method
+VAR_NAME is also the name of a property, which may be confusing. Use obj.PropertyName syntax to reference the property, or rename the property to improve readability.
 
 ### FVAL
 
 Severity: **warning** · Auto-fix: **no**
 
-Function value not used
+Calling functions using 'feval' is usually not necessary. Call the function directly instead.
 
 ### FNCOLND
 
 Severity: **warning** · Auto-fix: **no**
 
-`end` used as column index without dimension
+Consider explicitly defining the array, and then using the END operator to index into it.
 
 ### COMNC
 
 Severity: **info** · Auto-fix: **yes**
 
-Comment lacks space after `%`
+Comment with percent (%) following comma acts as a row separator. Replace the comma with a semicolon to make the row separation clearer. Alternatively, replace the percent (%) with an ellipsis (...) to add a comment inside a row.
 
 ### ITERS
 
 Severity: **warning** · Auto-fix: **no**
 
-Loop variable shadows outer variable
+The Code Analyzer type analysis may be incorrect here.
 
 ### LOGPROD
 
 Severity: **warning** · Auto-fix: **no**
 
-Use `all` instead of `prod` on logical
+Using 'prod' on a logical expression is hard to understand and might be incorrect. Consider using 'all' instead.
 
 ### LOGMIN
 
 Severity: **warning** · Auto-fix: **no**
 
-Use `all` instead of `min` on logical
+Using 'min' on a logical expression is hard to understand and might be incorrect. Consider using 'all' instead.
 
 ### LOGMAX
 
 Severity: **warning** · Auto-fix: **no**
 
-Use `any` instead of `max` on logical
+Using 'max' on a logical expression is hard to understand and might be incorrect. Consider using 'any' instead.
 
 ### ELARLOG
 
 Severity: **warning** · Auto-fix: **no**
 
-Element-wise `&`/`\|` on logicals in if/while
+The VAR_NAME operator in the expression VAR_NAME(A VAR_NAME B) is unexpected. Should this be VAR_NAME(A) VAR_NAME B?
 
 ### SHOCIRAA
 
 Severity: **warning** · Auto-fix: **no**
 
-Short-circuit in array context
+Using the VAR_NAME operator in the expression VAR_NAME(A VAR_NAME B) is probably unintended.
 
 ### UNRPWR
 
 Severity: **warning** · Auto-fix: **no**
 
-Power of negative base may be complex
+Consider using parentheses to explicitly specify operator precedence.
 
 ### ADAPPREF
 
 Severity: **warning** · Auto-fix: **no**
 
-Avoid `addpref` (use settings)
+Use app as the first argument for VAR_NAME.
 
 ### KEYBOARDFUN
 
 Severity: **warning** · Auto-fix: **no**
 
-`keyboard` left in code
+Consider removing 'keyboard' function once you have finished debugging. This function may have security implications.
 
 ### GVMIS
 
 Severity: **warning** · Auto-fix: **no**
 
-Global variable used but never declared
+Global variables are inefficient and make errors difficult to diagnose. Use a function with input variables instead.
 
 ### PFEVB
 
 Severity: **warning** · Auto-fix: **no**
 
-EVALIN('base')/ASSIGNIN('base') inside a PARFOR loop refers to worker base workspace
+Using EVALIN('base') or ASSIGNIN('base') inside a PARFOR loop refers to the worker machines' base workspaces.
 
 ### PFGP
 
 Severity: **warning** · Auto-fix: **no**
 
-Assigning to GLOBAL/PERSISTENT variable inside a PARFOR loop
+Avoid assigning to GLOBAL or PERSISTENT variable VAR_NAME inside a PARFOR loop.
 
 ### PFGV
 
 Severity: **warning** · Auto-fix: **no**
 
-Using a GLOBAL variable in a PARFOR loop
+Avoid using GLOBAL variable VAR_NAME in a PARFOR loop.
 
 ### PFIIN
 
 Severity: **warning** · Auto-fix: **no**
 
-The input variable should be initialized before the PARFOR loop
+The input variable VAR_NAME should be initialized before the PARFOR loop.
 
 ### PFOUS
 
 Severity: **warning** · Auto-fix: **no**
 
-The output variable might not be used after the PARFOR loop
+The output variable VAR_NAME might not be used after the PARFOR loop.
 
 ### PFRNI
 
 Severity: **warning** · Auto-fix: **yes**
 
-Explicit increment in a PARFOR loop; parfor only supports an increment of one
+The parfor loop can only use a step size of 1 or -1.
 
 ### PFRIN
 
 Severity: **warning** · Auto-fix: **no**
 
-The reduction variable might not be set before the PARFOR loop
+The reduction variable VAR_NAME might not be set before the PARFOR loop.
 
 ### PFRUS
 
 Severity: **warning** · Auto-fix: **no**
 
-The reduction variable might not be used after the PARFOR loop
+The reduction variable VAR_NAME might not be used after the PARFOR loop.
 
 ### PFTUSW
 
 Severity: **warning** · Auto-fix: **no**
 
-The temporary variable might be used after the PARFOR loop
+The temporary variable VAR_NAME might be used after the PARFOR loop on line VAR_NUMBER. The value set on this line is not available after the loop.
 
 ### PFUIXW
 
 Severity: **warning** · Auto-fix: **no**
 
-The index variable might be used after the PARFOR loop
+The index variable VAR_NAME might be used after the PARFOR loop on line VAR_NUMBER. The value set on this line is not available after the loop.
 
 ### SPEVB
 
 Severity: **warning** · Auto-fix: **no**
 
-EVALIN('base')/ASSIGNIN('base') inside an SPMD block refers to worker base workspace
+Using EVALIN('base') or ASSIGNIN('base') inside an SPMD block refers to the worker machines' base workspaces.
 
 ### SPGV
 
 Severity: **warning** · Auto-fix: **no**
 
-GLOBAL/PERSISTENT variable in an SPMD block might fail on a worker
+Using the GLOBAL or PERSISTENT variable VAR_NAME in an SPMD block might fail because it is accessed on a worker machine.
 
 ### DSPMDA
 
 Severity: **warning** · Auto-fix: **no**
 
-Distributed array must be created outside of an SPMD block
+Distributed array must be created outside of an SPMD block.
 
 ### COMFS
 
@@ -361,19 +361,19 @@ Comma makes the file a script, so functions are local
 
 Severity: **warning** · Auto-fix: **no**
 
-Command might be prematurely ended by comma
+Command might be prematurely ended by comma.
 
 ### RMFLD
 
 Severity: **warning** · Auto-fix: **no**
 
-`rmfield` output must be assigned back to the structure
+RMFIELD output must be assigned back to the structure.
 
 ### RMWRN
 
 Severity: **warning** · Auto-fix: **no**
 
-Warning tag has been removed from MATLAB
+The warning with tag VAR_NAME has been removed from MATLAB, so this statement has no effect.
 
 ### SEMFS
 
@@ -385,169 +385,169 @@ Semicolon makes the file a script, so functions are local
 
 Severity: **warning** · Auto-fix: **no**
 
-`setfield` output must be assigned back to the structure
+SETFIELD output must be assigned back to the structure.
 
 ### STRSZ
 
 Severity: **warning** · Auto-fix: **no**
 
-Use `strcmp` to compare character vectors of different sizes
+Use STRCMP to compare character vectors that can have different sizes.
 
 ### ATTF
 
 Severity: **warning** · Auto-fix: **no**
 
-Unable to determine if the `Abstract` attribute expression is true or false
+The Code Analyzer is unable to determine if the expression assigned to the VAR_NAME attribute evaluates to true or false.
 
 ### ATTOF
 
 Severity: **info** · Auto-fix: **no**
 
-Setting the class attribute `Abstract` to false is not recommended
+Setting the class attribute Abstract to false is not recommended.
 
 ### MCPO
 
 Severity: **warning** · Auto-fix: **no**
 
-`SetObservable`/`GetObservable`/`AbortSet` property has no effect in a value class
+VAR_NAME property has no effect in a value class.
 
 ### MCSAC
 
 Severity: **warning** · Auto-fix: **no**
 
-`SetAccess` cannot be set on Constant properties
+SetAccess cannot be set on Constant properties.
 
 ### MOBSRV
 
 Severity: **info** · Auto-fix: **no**
 
-`SetObservable`/`GetObservable` on a Constant property has no effect
+Using SetObservable or GetObservable on a Constant property has no effect.
 
 ### MDEPIN
 
 Severity: **warning** · Auto-fix: **no**
 
-Default values should not be assigned to dependent properties
+Default values should not be assigned to dependent properties because dependent properties do not store the values.
 
 ### MCCPI
 
 Severity: **warning** · Auto-fix: **no**
 
-Initialize the Constant property or make it an Abstract Constant property
+Initialize the Constant property or make it an Abstract Constant property.
 
 ### MGMD
 
 Severity: **warning** · Auto-fix: **no**
 
-`get` method should be implemented for each dependent property without private `GetAccess`
+'get' method should be implemented for each dependent property that does not also have private 'GetAccess' attribute.
 
 ### MCCPE
 
 Severity: **warning** · Auto-fix: **no**
 
-Attempting to call a property or event as a function
+Attempting to call a property or event VAR_NAME as a function.
 
 ### MTHANS
 
 Severity: **info** · Auto-fix: **no**
 
-Using `ANS` as a method name is not recommended
+Using ANS as a method name is not recommended as ANS is frequently overwritten by MATLAB.
 
 ### MHERM
 
 Severity: **info** · Auto-fix: **no**
 
-Parenthesize the multiplication of a variable and its transpose
+Parenthesize the multiplication of VAR_NAME and its transpose to ensure the result is Hermitian.
 
 ### MNUML
 
 Severity: **warning** · Auto-fix: **no**
 
-Use `VAR_NAME(numel(...), numel(...))` to create a square matrix
+To create a square matrix, use VAR_NAME(numel(...), numel(...)). Alternatively, use VAR_NAME(size(...)) to create an array with same size as input array.
 
 ### COMPNOP
 
 Severity: **warning** · Auto-fix: **yes**
 
-Comparison with `true` simplifies to the function call itself
+This logical comparison simplifies to VAR_NAME(...). Did you mean to use VAR_NAME to evaluate function argument: VAR_NAME(...VAR_NAME...)?
 
 ### COMPNOT
 
 Severity: **warning** · Auto-fix: **yes**
 
-Comparison with `~= true` or `== false` simplifies to `~call(...)`
+This logical comparison simplifies to ~VAR_NAME(...). Did you mean to use VAR_NAME to evaluate function argument: VAR_NAME(...VAR_NAME...)?
 
 ### M3COL
 
 Severity: **warning** · Auto-fix: **no**
 
-Three colons (`a:b:c:d`) in an expression is probably unintended
+Using three colons (a:b:c:d) in an expression is probably unintended.
 
 ### BDLGI
 
 Severity: **warning** · Auto-fix: **no**
 
-Variable might be set by a nonlogical operator
+Variable might be set by a nonlogical operator.
 
 ### BDLOG1
 
 Severity: **warning** · Auto-fix: **no**
 
-Non-scalar logical value used in a conditional expression
+A scalar logical value is expected in the conditional expression. Use 'any' or 'all' to reduce the array to a logical scalar.
 
 ### BDLOG2
 
 Severity: **warning** · Auto-fix: **no**
 
-Scalar non-logical value used in a conditional expression
+A scalar logical value is expected in the conditional expression. Use 'any' or 'all' to reduce the array to a logical scalar, or compare the scalar value to 0.
 
 ### BDSCA
 
 Severity: **warning** · Auto-fix: **no**
 
-`&&`/`\|\|` used in a scalar context with a non-scalar operand
+`&&`/`
 
 ### BDSCI
 
 Severity: **warning** · Auto-fix: **no**
 
-Variable might be set by a nonscalar operator
+Variable might be set by a nonscalar operator.
 
 ### MCHDP
 
 Severity: **warning** · Auto-fix: **no**
 
-Property default that directly constructs a handle is shared by all instances
+A property default value that is a handle will cause all instances to share the same object data. To avoid sharing, create the property value in the constructor. For intentional sharing, consider using a Constant property.
 
 ### MCHDT
 
 Severity: **warning** · Auto-fix: **no**
 
-Property default that resolves to a handle is shared by all instances
+Declaring the value of a property as a handle might cause all instances to share the same default handle. To avoid sharing, create the handle for this property in the constructor. To express that sharing is intentional, use the Constant property attribute.
 
 ### SHVAU
 
 Severity: **warning** · Auto-fix: **no**
 
-Ambiguous shared-variable usage between a nested function and its parent
+Confusing usage of name VAR_NAME on lines VAR_NUMBER and VAR_NUMBER. Initialize VAR_NAME before line VAR_NUMBER to make it a shared variable or rename VAR_NAME on line VAR_NUMBER to disambiguate.
 
 ### GTARG
 
 Severity: **warning** · Auto-fix: **no**
 
-Function might be called with too many arguments
+Function might be called with too many arguments.
 
 ### LTARG
 
 Severity: **warning** · Auto-fix: **no**
 
-Function might be called with too few arguments
+Function might be called with too few arguments.
 
 ### CTPCT
 
 Severity: **warning** · Auto-fix: **no**
 
-`sprintf`/`fprintf` format might not agree with the argument count
+The format might not agree with the argument count.
 
 ### FXSET
 
@@ -559,61 +559,61 @@ Loop index variable is changed inside of a `for` loop
 
 Severity: **warning** · Auto-fix: **no**
 
-`import` statement does not run first in a function
+This import statement runs before any other code in function VAR_NAME. Consider placing it at the top of the function body.
 
 ### TLEV
 
 Severity: **warning** · Auto-fix: **no**
 
-Dynamic-code function used as a sub-expression, not a top-level statement
+VAR_NAME could be very inefficient unless it is a top-level statement in its function.
 
 ### UNONC
 
 Severity: **warning** · Auto-fix: **no**
 
-`onCleanup` output must be assigned to a variable, not `~`
+Assign the onCleanup output argument to a variable. Do not use the tilde operator (~) in place of a variable.
 
 ### MIPC1
 
 Severity: **warning** · Auto-fix: **no**
 
-`computer('arch')` is platform-specific
+Calling the computer function with 'arch' returns 'win64', 'glnxa64', or 'maca64'.
 
 ### SUBSINDEX
 
 Severity: **warning** · Auto-fix: **no**
 
-Do not overload `subsindex` for fundamental data types
+Do not overload 'subsindex' for fundamental data types.
 
 ### VTFIN
 
 Severity: **warning** · Auto-fix: **no**
 
-Validated value should be the first input to a `validate*` function
+VAR_NAME should be the first input argument to the VAR_NAME function.
 
 ### CTOINW
 
 Severity: **warning** · Auto-fix: **no**
 
-Constructed object passed to its own constructor
+Use of constructed object as input to constructor is not necessary.
 
 ### FXUP
 
 Severity: **warning** · Auto-fix: **no**
 
-Outer loop index set inside a nested function
+Outer loop variable VAR_NAME is set inside a nested function.
 
 ### ADMTHDINV
 
 Severity: **warning** · Auto-fix: **no**
 
-Class method called without `app` as the first argument
+Use VAR_NAME(app, ...) to call this function.
 
 ### ADPROP
 
 Severity: **warning** · Auto-fix: **no**
 
-Property assigned through a bare identifier instead of `app.PROP`
+VAR_NAME is also the name of a property, which may be confusing. Use app.PropertyName syntax to reference the property, or change one of the names to improve readability.
 
 ### ADPROPLC
 
@@ -625,43 +625,43 @@ Property read through a bare identifier instead of `app.PROP`
 
 Severity: **warning** · Auto-fix: **no**
 
-Member access on the object that is not declared in the class
+VAR_NAME is referenced but is not a property, method, or event name defined in this class.
 
 ### MCNPR
 
 Severity: **warning** · Auto-fix: **no**
 
-Assignment target on the object that is not a property
+VAR_NAME is not a property, but is the target of an assignment.
 
 ### MCSNOV
 
 Severity: **warning** · Auto-fix: **no**
 
-Value-class setter does not return the modified object
+Set function in value class must return the modified object.
 
 ### MCSOH
 
 Severity: **warning** · Auto-fix: **no**
 
-Handle-class setter unnecessarily returns the modified object
+Set function in handle class does not need to return the modified object.
 
 ### MCVM
 
 Severity: **warning** · Auto-fix: **no**
 
-Value-class method modifying the object has no output
+Value class method that modifies the object must return the modified object.
 
 ### MCCSPS
 
 Severity: **warning** · Auto-fix: **no**
 
-Constant property name used as a struct in a dot-access chain
+Constant property VAR_NAME is not modified. 'VAR_NAME.VAR_NAME' creates a struct named VAR_NAME with a field named VAR_NAME.
 
 ### MCSUP
 
 Severity: **warning** · Auto-fix: **no**
 
-Setter accesses a property other than the one it sets
+The set method for the property VAR_NAME should not access another property (VAR_NAME).
 
 ## Automatic fixes
 

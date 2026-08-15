@@ -20,33 +20,33 @@
 //!
 //! ## Check IDs
 //!
-//! | Check ID | Severity | Fix | Description                                       |
-//! |----------|----------|-----|---------------------------------------------------|
-//! | SYSBANG  | warning  | no  | System command used (!)                           |
-//! | FCNIL    | warning  | no  | Function input count exceeds limit                |
-//! | FCNOL    | warning  | no  | Function output count exceeds limit               |
-//! | FCNLL    | warning  | no  | Function line count exceeds limit                 |
-//! | LLMNC    | warning  | no  | Line length exceeds limit                         |
-//! | MNCSN    | warning  | no  | Statement nesting depth exceeds limit             |
-//! | DAFTC    | warning  | no  | Too many children in tree                         |
-//! | DAFPV    | warning  | no  | Too many persistent variables                     |
-//! | DAFCO    | warning  | no  | Too many conditions in expression                 |
-//! | DAFBR    | warning  | no  | Too many branches in switch/if                    |
-//! | DAFRT    | warning  | no  | Too many return points                            |
-//! | DAFSC    | warning  | no  | Too many semicolons on one line                   |
-//! | DAFNF    | warning  | no  | Too many nested functions                         |
-//! | DAFCF    | warning  | no  | Too many called functions                         |
-//! | DAFAF    | warning  | no  | Too many anonymous functions                      |
-//! | DAFCV    | warning  | no  | Too many local variables                          |
-//! | DAFCVC   | warning  | no  | Too many local constants                          |
-//! | DAFVI    | warning  | no  | Too many input arguments used                     |
-//! | DAFVO    | warning  | no  | Too many output arguments used                    |
-//! | CYCCOM   | warning  | no  | Cyclomatic complexity of function exceeds limit   |
-//! | SCYCCOM  | warning  | no  | Strict cyclomatic complexity exceeds limit        |
-//! | ACYCCOM  | warning  | no  | Average cyclomatic complexity exceeds limit       |
-//! | MCYCCOM  | warning  | no  | Method cyclomatic complexity exceeds limit        |
-//! | MSCYCCOM | warning  | no  | Method strict cyclomatic complexity exceeds limit |
-//! | MACYCCOM | warning  | no  | Method average cyclomatic complexity exceeds limit|
+//! | Check ID | Severity | Fix | Description |
+//! | --- | --- | --- | --- |
+//! | SYSBANG | warning | no | Use of bang operator is disallowed by custom code analyzer configuration. |
+//! | FCNIL | warning | no | Function has more than VAR_NUMBER input arguments. This makes the function difficult to understand and maintain. |
+//! | FCNOL | warning | no | Function has more than VAR_NUMBER output arguments. This makes the function difficult to understand and maintain. |
+//! | FCNLL | warning | no | Function has more than VAR_NUMBER lines. This makes the function difficult to understand and maintain. |
+//! | LLMNC | warning | no | Line has more than VAR_NUMBER characters (including whitespaces). This makes the line difficult to understand and maintain. |
+//! | MNCSN | warning | no | This control statement is deeply nested (nesting level = VAR_NUMBER) and might have more deeply nested control statements. This makes the code difficult to understand and maintain. |
+//! | DAFTC | warning | no | Use of try/catch statement is disallowed by custom code analyzer configuration. |
+//! | DAFPV | warning | no | Use of persistent variable is disallowed by custom code analyzer configuration. |
+//! | DAFCO | warning | no | Use of continue statement is disallowed by custom code analyzer configuration. |
+//! | DAFBR | warning | no | Use of break statement is disallowed by custom code analyzer configuration. |
+//! | DAFRT | warning | no | Use of return statement is disallowed by custom code analyzer configuration. |
+//! | DAFSC | warning | no | Use of a script is disallowed by custom code analyzer configuration. |
+//! | DAFNF | warning | no | Use of a nested function is disallowed by custom code analyzer configuration. |
+//! | DAFCF | warning | no | Use of command syntax to call a function is disallowed by custom code analyzer configuration. |
+//! | DAFAF | warning | no | Use of an anonymous function is disallowed by custom code analyzer configuration. |
+//! | DAFCV | warning | no | Use of character vector is disallowed by custom code analyzer configuration. |
+//! | DAFCVC | warning | no | Use of cell array of character vectors is disallowed by custom code analyzer configuration. |
+//! | DAFVI | warning | no | Use of varargin is disallowed by custom code analyzer configuration. |
+//! | DAFVO | warning | no | Use of varargout is disallowed by custom code analyzer configuration. |
+//! | CYCCOM | warning | no | Function has a McCabe cyclomatic complexity of more than VAR_NUMBER. This makes the function difficult to understand and maintain. |
+//! | SCYCCOM | warning | no | Script has a McCabe cyclomatic complexity of more than VAR_NUMBER. This makes the script difficult to understand and maintain. |
+//! | ACYCCOM | warning | no | Anonymous function has a McCabe cyclomatic complexity of more than VAR_NUMBER. This makes the anonymous function difficult to understand and maintain. |
+//! | MCYCCOM | warning | no | Function has a modified cyclomatic complexity of more than VAR_NUMBER. This makes the function difficult to understand and maintain. |
+//! | MSCYCCOM | warning | no | Script has a modified cyclomatic complexity of more than VAR_NUMBER. This makes the script difficult to understand and maintain. |
+//! | MACYCCOM | warning | no | Anonymous function has a modified cyclomatic complexity of more than VAR_NUMBER. This makes the anonymous function difficult to understand and maintain. |
 //!
 //! ## Examples
 //!

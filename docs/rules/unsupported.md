@@ -23,79 +23,79 @@ diagnostic carries the specific check ID (e.g. `MCADE`, `FEATUD`).
 
 Severity: **warning** · Auto-fix: **no**
 
-ADE (Application Deployment Environment) function is no longer supported
+Using Description as an attribute is unsupported and might have been changed without notice or might be removed without notice. There is no simple replacement for this.
 
 ### AWTIUD
 
 Severity: **warning** · Auto-fix: **no**
 
-Await syntax is not supported in this context
+'awtinvoke' is unsupported and might have been changed without notice or might be removed without notice. With appropriate code changes, use javaMethodEDT instead.
 
 ### AXCHUD
 
 Severity: **warning** · Auto-fix: **no**
 
-ActiveX/COM automation is deprecated; use modern alternatives
+'axescheck' is unsupported and might have been changed without notice or might be removed without notice. There is no simple replacement for this.
 
 ### FEATUD
 
 Severity: **warning** · Auto-fix: **no**
 
-'feature' is an undocumented internal function; avoid in production code
+'feature' and flags passed to it are unsupported and might have been changed without notice or might be removed without notice. There is no simple replacement for this.
 
 ### FNDPUD
 
 Severity: **warning** · Auto-fix: **no**
 
-'findprop' is deprecated; use 'findobj' or property access instead
+'findpackage' is unsupported and might have been changed without notice or might be removed without notice. There is no simple replacement for this.
 
 ### HGCNUD
 
 Severity: **warning** · Auto-fix: **no**
 
-Handle Graphics container object pattern is deprecated
+'hgconvertunits' is unsupported and might have been changed without notice or might be removed without notice. There is no simple replacement for this.
 
 ### IMPKG
 
 Severity: **warning** · Auto-fix: **no**
 
-Import package syntax is not supported in this context
+Functions in internal.matlab namespace are unsupported and might have been changed without notice or might be removed without notice. There is no simple replacement for this.
 
 ### ISMBUD
 
 Severity: **warning** · Auto-fix: **no**
 
-'isMember' (camelCase) is deprecated; use 'ismember' (lowercase)
+'ismembc' is unsupported and might have been changed without notice or might be removed without notice. There is no simple replacement for this.
 
 ### MIPKG
 
 Severity: **warning** · Auto-fix: **no**
 
-'meta.package' is an internal API; use 'what' or package-qualified names instead
+Functions in MATLAB's internal namespaces are unsupported and might have been changed without notice or might be removed without notice. There is no simple replacement for this.
 
 ### SEPTUD
 
 Severity: **warning** · Auto-fix: **no**
 
-'serial' is deprecated; use 'serialport' instead
+'setptr' is unsupported and might have been changed without notice or might be removed without notice. There is no simple replacement for this.
 
 ### SYDEUD
 
 Severity: **warning** · Auto-fix: **no**
 
-System.Data .NET interop is platform-specific and may not be available
+'system_dependent' is unsupported and might have been changed without notice or might be removed without notice. There is no simple replacement for this.
 
 ### UIRSUD
 
 Severity: **warning** · Auto-fix: **no**
 
-'uiresume' used outside of a figure callback context
+'uirestore' is unsupported and might have been changed without notice or might be removed without notice. There is no simple replacement for this.
 
 ### UISUUD
 
 Severity: **warning** · Auto-fix: **no**
 
-Deprecated UI setup pattern; use modern App Designer patterns
+'uisuspend' is unsupported and might have been changed without notice or might be removed without notice. There is no simple replacement for this.
 
 ## Examples
 

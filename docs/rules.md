@@ -70,7 +70,7 @@ to refresh them whenever `data/compatibility.toml` or
 | [`JAVCM`](rules/compatibility.md#javcm) | 'javacomponent' is undocumented and will be removed in a future release. There is no simple replacement for this. |
 | [`COMMERRATE`](rules/compatibility.md#commerrate) | 'commtest.ErrorRate' has been removed. Use 'comm.ErrorRate' or BERTool instead. |
 | [`TCRESULT`](rules/compatibility.md#tcresult) | 'testconsole.Results' has been removed. Use 'comm.ErrorRate' or BERTool instead. |
-| [`OPGLI`](rules/compatibility.md#opgli) | 'opengl' has been removed. There is no simple replacement for this. |
+| [`OPGLI`](rules/compatibility.md#opgli) | 'opengl('info')' has been removed. With appropriate code changes, use 'rendererinfo' instead. |
 | [`CNNCGD`](rules/compatibility.md#cnncgd) | 'cnncodegen' with default 'targetlib' as 'cudnn' has been removed. With appropriate code changes, use 'codegen' instead. |
 | [`COMMSCOPEED`](rules/compatibility.md#commscopeed) | 'commscope.eyediagram' has been removed. For line plotting, use the eyediagram function. There is no simple replacement for histogram plotting and measurement analysis. |
 | [`COMMED`](rules/compatibility.md#commed) | 'comm.EyeDiagram' has been removed. For line plotting, use the eyediagram function. There is no simple replacement for histogram plotting and measurement analysis. |
@@ -81,160 +81,160 @@ to refresh them whenever `data/compatibility.toml` or
 | [`SIZEM`](rules/compatibility.md#sizem) | 'sizem' has been removed. With appropriate code changes, use 'rastersize' property of a map raster reference object instead. |
 | [`LIMIM`](rules/compatibility.md#limim) | 'limitm' has been removed. With appropriate code changes, use 'LatitudeLimits' and 'LongitudeLimits' properties of a geographic raster reference object instead. |
 | [`MAPBX`](rules/compatibility.md#mapbx) | 'mapbbox' has been removed. With appropriate code changes, use 'XWorldLimits' and 'YWorldLimits' properties of a map raster reference object instead. |
-| [`DBITMAX`](rules/compatibility.md#dbitmax) | 'bitmax' has been removed. Use 'flintmax' instead. |
-| [`COLORDEF`](rules/compatibility.md#colordef) | 'colordef' will be removed in a future release. There is no simple replacement for this. |
-| [`GRAYMON`](rules/compatibility.md#graymon) | 'graymon' will be removed in a future release. There is no simple replacement for this. |
-| [`WHITEBG`](rules/compatibility.md#whitebg) | 'whitebg' will be removed in a future release. There is no simple replacement for this. |
-| [`PRINTOPT`](rules/compatibility.md#printopt) | 'printopt' will be removed in a future release. There is no simple replacement for this. |
-| [`HGEXPORT`](rules/compatibility.md#hgexport) | 'hgexport' will be removed in a future release. Use 'exportgraphics' or 'copygraphics' instead. |
-| [`HANK2SYS`](rules/compatibility.md#hank2sys) | 'hank2sys' will be removed in a future release. There is no simple replacement for this. |
-| [`HGSAVE`](rules/compatibility.md#hgsave) | 'hgsave' will be removed in a future release. Use 'savefig' instead. |
+| [`DBITMAX`](rules/compatibility.md#dbitmax) | 'bitmax' has been removed. With appropriate code changes, use 'flintmax' instead. |
+| [`COLORDEF`](rules/compatibility.md#colordef) | 'colordef' has been removed. There is no simple replacement for this. |
+| [`GRAYMON`](rules/compatibility.md#graymon) | 'graymon' has been removed. There is no simple replacement for this. |
+| [`WHITEBG`](rules/compatibility.md#whitebg) | 'whitebg' has been removed. There is no simple replacement for this. |
+| [`PRINTOPT`](rules/compatibility.md#printopt) | 'printopt' has been removed. There is no simple replacement for this. |
+| [`HGEXPORT`](rules/compatibility.md#hgexport) | 'hgexport' has been removed. With appropriate code changes, use 'print' instead. |
+| [`HANK2SYS`](rules/compatibility.md#hank2sys) | 'hank2sys' has been removed. There is no simple replacement for this. |
+| [`HGSAVE`](rules/compatibility.md#hgsave) | 'hgsave' will be removed in a future release. Use 'savefig' instead, which is a direct replacement. |
 | [`HAND2STCT`](rules/compatibility.md#hand2stct) | 'handle2struct' will be removed in a future release. There is no simple replacement for this. |
-| [`HILBIIR`](rules/compatibility.md#hilbiir) | 'hilbiir' will be removed in a future release. There is no simple replacement for this. |
-| [`MOVIE2`](rules/compatibility.md#movie2) | 'movie2avi' will be removed in a future release. Use 'VideoWriter' instead. |
-| [`SERIAL`](rules/compatibility.md#serial) | 'serial' will be removed in a future release. Use 'serialport' instead. |
-| [`GPIB`](rules/compatibility.md#gpib) | 'gpib' will be removed in a future release. Use 'visadev' instead. |
-| [`VISA`](rules/compatibility.md#visa) | 'visa' will be removed in a future release. Use 'visadev' instead. |
-| [`UDPP`](rules/compatibility.md#udpp) | 'udp' will be removed in a future release. Use 'udpport' instead. |
-| [`BLUTH`](rules/compatibility.md#bluth) | 'Bluetooth' (Instrument Control) will be removed in a future release. Use 'bluetooth' instead. |
-| [`IMTOOL`](rules/compatibility.md#imtool) | 'imtool' will be removed in a future release. Use 'imageViewer' instead. |
-| [`IMJAV`](rules/compatibility.md#imjav) | 'imjava' will be removed in a future release. There is no simple replacement for this. |
-| [`DPOOL`](rules/compatibility.md#dpool) | 'parpool' legacy syntax will be removed in a future release. Use updated syntax instead. |
-| [`MUPAD`](rules/compatibility.md#mupad) | 'mupad' will be removed in a future release. Use MATLAB Live Editor instead. |
-| [`FBUILDER`](rules/compatibility.md#fbuilder) | 'filterBuilder' will be removed in a future release. Use 'designfilt' instead. |
-| [`FDATOOL`](rules/compatibility.md#fdatool) | 'fdatool' will be removed in a future release. Use 'filterDesigner' instead. |
-| [`WINTOOL`](rules/compatibility.md#wintool) | 'wintool' will be removed in a future release. Use 'windowDesigner' instead. |
-| [`FVTOOL`](rules/compatibility.md#fvtool) | 'fvtool' will be removed in a future release. Use 'filterAnalyzer' instead. |
-| [`FISNEW`](rules/compatibility.md#fisnew) | 'newfis' will be removed in a future release. Use 'mamfis' or 'sugfis' instead. |
-| [`FISADV`](rules/compatibility.md#fisadv) | 'addvar' will be removed in a future release. Use 'addInput' or 'addOutput' instead. |
-| [`FISRMV`](rules/compatibility.md#fisrmv) | 'rmvar' will be removed in a future release. Use 'removeInput' or 'removeOutput' instead. |
-| [`FISRMF`](rules/compatibility.md#fisrmf) | 'rmmf' will be removed in a future release. Use 'removeMF' instead. |
-| [`FISM2S`](rules/compatibility.md#fism2s) | 'mfedit' will be removed in a future release. There is no simple replacement for this. |
-| [`FISPSR`](rules/compatibility.md#fispsr) | 'parsrule' will be removed in a future release. Use 'addRule' instead. |
-| [`NPI2PI`](rules/compatibility.md#npi2pi) | 'npi2pi' will be removed in a future release. Use 'wrapToPi' instead. |
-| [`NPI22PI`](rules/compatibility.md#npi22pi) | 'zero22pi' will be removed in a future release. Use 'wrapTo2Pi' instead. |
-| [`CLASSREGTREE`](rules/compatibility.md#classregtree) | 'classregtree' will be removed in a future release. Use 'fitctree' or 'fitrtree' instead. |
-| [`SVMCLASSIFY`](rules/compatibility.md#svmclassify) | 'svmclassify' will be removed in a future release. Use 'predict' on a trained SVM model instead. |
-| [`SVMTRAIN`](rules/compatibility.md#svmtrain) | 'svmtrain' will be removed in a future release. Use 'fitcsvm' instead. |
-| [`PRINCOMP`](rules/compatibility.md#princomp) | 'princomp' will be removed in a future release. Use 'pca' instead. |
-| [`PROBDIST`](rules/compatibility.md#probdist) | 'ProbDist' will be removed in a future release. Use probability distribution objects instead. |
-| [`PROBDISTPARAMETRIC`](rules/compatibility.md#probdistparametric) | 'ProbDistParametric' will be removed in a future release. Use probability distribution objects instead. |
-| [`PROBDISTKERNEL`](rules/compatibility.md#probdistkernel) | 'ProbDistKernel' will be removed in a future release. Use probability distribution objects instead. |
-| [`PROBDISTUNIVKERNEL`](rules/compatibility.md#probdistunivkernel) | 'ProbDistUnivKernel' will be removed in a future release. Use probability distribution objects instead. |
-| [`PROBDISTUNIVPARAM`](rules/compatibility.md#probdistunivparam) | 'ProbDistUnivParam' will be removed in a future release. Use probability distribution objects instead. |
-| [`FITNAIVEBAYES`](rules/compatibility.md#fitnaivebayes) | 'NaiveBayes.fit' will be removed in a future release. Use 'fitcnb' instead. |
-| [`CAPABLE`](rules/compatibility.md#capable) | 'capable' will be removed in a future release. Use 'capability' instead. |
-| [`EWMAPLOT`](rules/compatibility.md#ewmaplot) | 'ewmaplot' will be removed in a future release. Use 'controlchart' instead. |
-| [`SCHART`](rules/compatibility.md#schart) | 'schart' will be removed in a future release. Use 'controlchart' instead. |
-| [`XBARPLOT`](rules/compatibility.md#xbarplot) | 'xbarplot' will be removed in a future release. Use 'controlchart' instead. |
-| [`RANDSD`](rules/compatibility.md#randsd) | 'randseed' will be removed in a future release. Use 'rng' instead. |
-| [`DRNDINT`](rules/compatibility.md#drndint) | 'randint' will be removed in a future release. Use 'randi' instead. |
-| [`ISGLOB`](rules/compatibility.md#isglob) | 'isglobal' will be removed in a future release. There is no simple replacement for this. |
-| [`DGRAPHICSVER`](rules/compatibility.md#dgraphicsver) | 'graphicsversion' will be removed in a future release. There is no simple replacement for this. |
-| [`DNOANI`](rules/compatibility.md#dnoani) | 'noanimate' will be removed in a future release. There is no simple replacement for this. |
-| [`EPSM`](rules/compatibility.md#epsm) | 'epsm' will be removed in a future release. Use 'eps' instead. |
-| [`DEXIFRD`](rules/compatibility.md#dexifrd) | 'exifread' will be removed in a future release. Use 'imfinfo' instead. |
-| [`HDFGD`](rules/compatibility.md#hdfgd) | 'hdfgd' will be removed in a future release. There is no simple replacement for this. |
-| [`HDFSD`](rules/compatibility.md#hdfsd) | 'hdfsd' will be removed in a future release. There is no simple replacement for this. |
-| [`HDFSW`](rules/compatibility.md#hdfsw) | 'hdfsw' will be removed in a future release. There is no simple replacement for this. |
-| [`HDFTL`](rules/compatibility.md#hdftl) | 'hdftl' will be removed in a future release. There is no simple replacement for this. |
-| [`HYPERCUBE`](rules/compatibility.md#hypercube) | 'hypercube' will be removed in a future release. Use 'blockedImage' instead. |
-| [`BIGIMAGE`](rules/compatibility.md#bigimage) | 'bigimage' will be removed in a future release. Use 'blockedImage' instead. |
-| [`BIGIMAGEDS`](rules/compatibility.md#bigimageds) | 'bigimageDatastore' will be removed in a future release. Use 'blockedImageDatastore' instead. |
-| [`LABELVOL`](rules/compatibility.md#labelvol) | 'labelvolshow' will be removed in a future release. Use 'labeloverlay3' instead. |
-| [`COMPATVOL`](rules/compatibility.md#compatvol) | 'volshow' will be removed in a future release. Use 'viewer3d' with 'volshow' instead. |
-| [`DEMLC`](rules/compatibility.md#demlc) | 'emlc' will be removed in a future release. Use 'codegen' instead. |
-| [`DEMLMEX`](rules/compatibility.md#demlmex) | 'emlmex' will be removed in a future release. Use 'codegen' instead. |
-| [`COMMBI`](rules/compatibility.md#commbi) | 'biterr' (legacy) will be removed in a future release. Use 'comm.ErrorRate' instead. |
-| [`PNZOM`](rules/compatibility.md#pnzom) | 'panzoom' will be removed in a future release. Use 'zoom' and 'pan' instead. |
-| [`SPTL`](rules/compatibility.md#sptl) | 'sptool' will be removed in a future release. Use 'signalAnalyzer' instead. |
-| [`NDWT`](rules/compatibility.md#ndwt) | 'ndwt' will be removed in a future release. Use 'waveletTransform3' instead. |
-| [`INDWT`](rules/compatibility.md#indwt) | 'indwt' will be removed in a future release. Use 'waveletTransform3' inverse instead. |
-| [`NDWT2`](rules/compatibility.md#ndwt2) | 'ndwt2' will be removed in a future release. There is no simple replacement for this. |
-| [`INDWT2`](rules/compatibility.md#indwt2) | 'indwt2' will be removed in a future release. There is no simple replacement for this. |
-| [`WEBMP`](rules/compatibility.md#webmp) | 'webmap' will be removed in a future release. Use geographic map visualizations instead. |
-| [`SERLL`](rules/compatibility.md#serll) | 'seriallist' will be removed in a future release. Use 'serialportlist' instead. |
-| [`RNG2BW`](rules/compatibility.md#rng2bw) | 'range2bw' will be removed in a future release. Use 'rangeres2bw' instead. |
-| [`BW2RNG`](rules/compatibility.md#bw2rng) | 'bw2range' will be removed in a future release. Use 'bw2rangeres' instead. |
-| [`DCSHELP`](rules/compatibility.md#dcshelp) | 'docsearch' will be removed in a future release. There is no simple replacement for this. |
+| [`HILBIIR`](rules/compatibility.md#hilbiir) | 'hilbiir' has been removed. With appropriate code changes, use 'fdesign.hilbert' or 'hilbert' instead. |
+| [`MOVIE2`](rules/compatibility.md#movie2) | 'movie2avi' has been removed. With appropriate code changes, use 'VideoWriter' instead. |
+| [`SERIAL`](rules/compatibility.md#serial) | 'serial' will be removed in a future release. With appropriate code changes, use 'serialport' instead. |
+| [`GPIB`](rules/compatibility.md#gpib) | 'gpib' will be removed in a future release. With appropriate code changes, use 'visadev' instead. |
+| [`VISA`](rules/compatibility.md#visa) | 'visa' will be removed in a future release. With appropriate code changes, use 'visadev' instead. |
+| [`UDPP`](rules/compatibility.md#udpp) | 'udp' will be removed in a future release. With appropriate code changes, use 'udpport' instead. |
+| [`BLUTH`](rules/compatibility.md#bluth) | 'Bluetooth' will be removed in a future release. With appropriate code changes, use 'bluetooth' instead. |
+| [`IMTOOL`](rules/compatibility.md#imtool) | 'imtool' will be removed in a future release. With appropriate code changes, use 'imageViewer' instead. |
+| [`IMJAV`](rules/compatibility.md#imjav) | 'im2java2d' has been removed. There is no simple replacement for this. |
+| [`DPOOL`](rules/compatibility.md#dpool) | 'matlabpool' has been removed. With appropriate code changes, use 'parpool' instead. |
+| [`MUPAD`](rules/compatibility.md#mupad) | 'mupad' has been removed. With appropriate code changes, use 'Live Editor' instead. |
+| [`FBUILDER`](rules/compatibility.md#fbuilder) | 'filterbuilder' will be removed in a future release. Use 'filterBuilder' instead, which is a direct replacement. |
+| [`FDATOOL`](rules/compatibility.md#fdatool) | 'fdatool' will be removed in a future release. Use 'filterDesigner' instead, which is a direct replacement. |
+| [`WINTOOL`](rules/compatibility.md#wintool) | 'wintool' will be removed in a future release. Use 'windowDesigner' instead, which is a direct replacement. |
+| [`FVTOOL`](rules/compatibility.md#fvtool) | 'fvtool' will be removed in a future release. With appropriate code changes, use 'filterAnalyzer' instead. |
+| [`FISNEW`](rules/compatibility.md#fisnew) | 'newfis' has been removed. With appropriate code changes, use 'mamfis' or 'sugfis' instead. |
+| [`FISADV`](rules/compatibility.md#fisadv) | 'addvar' has been removed. With appropriate code changes, use 'addInput' or 'addOutput' instead. |
+| [`FISRMV`](rules/compatibility.md#fisrmv) | 'rmvar' has been removed. With appropriate code changes, use 'removeInput' or 'removeOutput' instead. |
+| [`FISRMF`](rules/compatibility.md#fisrmf) | 'rmmf' has been removed. With appropriate code changes, use 'removeMF' instead. |
+| [`FISM2S`](rules/compatibility.md#fism2s) | 'mam2sug' has been removed. Use 'convertToSugeno' instead, which is a direct replacement. |
+| [`FISPSR`](rules/compatibility.md#fispsr) | 'parsrule' has been removed. With appropriate code changes, use 'addRule' or 'fisrule' instead. |
+| [`NPI2PI`](rules/compatibility.md#npi2pi) | 'npi2pi' has been removed. With appropriate code changes, use 'wrapTo180' or 'wrapToPi' instead. |
+| [`NPI22PI`](rules/compatibility.md#npi22pi) | 'zero22pi' has been removed. With appropriate code changes, use 'wrapTo360' or 'wrapTo2Pi' instead. |
+| [`CLASSREGTREE`](rules/compatibility.md#classregtree) | 'classregtree' has been removed. With appropriate code changes, use 'fitctree' or 'fitrtree' instead. |
+| [`SVMCLASSIFY`](rules/compatibility.md#svmclassify) | 'svmclassify' has been removed. With appropriate code changes, use 'ClassificationSVM' instead. |
+| [`SVMTRAIN`](rules/compatibility.md#svmtrain) | 'svmtrain' has been removed. With appropriate code changes, use 'fitcsvm' instead. |
+| [`PRINCOMP`](rules/compatibility.md#princomp) | 'princomp' has been removed. With appropriate code changes, use 'pca' instead. |
+| [`PROBDIST`](rules/compatibility.md#probdist) | 'ProbDist' has been removed. With appropriate code changes, use 'prob.ProbabilityDistribution' instead. |
+| [`PROBDISTPARAMETRIC`](rules/compatibility.md#probdistparametric) | 'ProbDistParametric' has been removed. With appropriate code changes, use 'prob.ProbabilityDistribution' instead. |
+| [`PROBDISTKERNEL`](rules/compatibility.md#probdistkernel) | 'ProbDistKernel' has been removed. With appropriate code changes, use 'prob.ProbabilityDistribution' instead. |
+| [`PROBDISTUNIVKERNEL`](rules/compatibility.md#probdistunivkernel) | 'ProbDistUnivKernel' has been removed. With appropriate code changes, use 'makedist' instead. |
+| [`PROBDISTUNIVPARAM`](rules/compatibility.md#probdistunivparam) | 'ProbDistUnivParam' has been removed. With appropriate code changes, use 'makedist' instead. |
+| [`FITNAIVEBAYES`](rules/compatibility.md#fitnaivebayes) | 'fitNaiveBayes' has been removed. With appropriate code changes, use 'fitcnb' instead. |
+| [`CAPABLE`](rules/compatibility.md#capable) | 'capable' has been removed. With appropriate code changes, use 'capability' instead. |
+| [`EWMAPLOT`](rules/compatibility.md#ewmaplot) | 'ewmaplot' has been removed. With appropriate code changes, use 'controlchart' instead. |
+| [`SCHART`](rules/compatibility.md#schart) | 'schart' has been removed. With appropriate code changes, use 'controlchart' instead. |
+| [`XBARPLOT`](rules/compatibility.md#xbarplot) | 'xbarplot' has been removed. With appropriate code changes, use 'controlchart' instead. |
+| [`RANDSD`](rules/compatibility.md#randsd) | 'randseed' has been removed. With appropriate code changes, use 'rng' instead. |
+| [`DRNDINT`](rules/compatibility.md#drndint) | 'randint' has been removed. With appropriate code changes, use 'randi' instead. |
+| [`ISGLOB`](rules/compatibility.md#isglob) | 'isglobal' has been removed. There is no simple replacement for this. |
+| [`DGRAPHICSVER`](rules/compatibility.md#dgraphicsver) | 'graphicsversion' has been removed. With appropriate code changes, use 'verLessThan('matlab','8.4.0')' instead. |
+| [`DNOANI`](rules/compatibility.md#dnoani) | 'noanimate' has been removed. There is no simple replacement for this. |
+| [`EPSM`](rules/compatibility.md#epsm) | 'epsm' has been removed. With appropriate code changes, use '1.0E-6' or 'deg2rad(1.0E-6)' instead. |
+| [`DEXIFRD`](rules/compatibility.md#dexifrd) | 'exifread' has been removed. With appropriate code changes, use 'imfinfo' instead. |
+| [`HDFGD`](rules/compatibility.md#hdfgd) | 'hdfgd' has been removed. With appropriate code changes, use 'matlab.io.hdfeos.gd' instead. |
+| [`HDFSD`](rules/compatibility.md#hdfsd) | 'hdfsd' has been removed. With appropriate code changes, use 'matlab.io.hdfeos.sd' instead. |
+| [`HDFSW`](rules/compatibility.md#hdfsw) | 'hdfsw' has been removed. With appropriate code changes, use 'matlab.io.hdfeos.sw' instead. |
+| [`HDFTL`](rules/compatibility.md#hdftl) | 'hdftool' has been removed. There is no simple replacement for this. |
+| [`HYPERCUBE`](rules/compatibility.md#hypercube) | 'hypercube' will be removed in a future release. With appropriate code changes, use 'imhypercube', 'geohypercube', 'immulticube' or 'geomulticube' instead. |
+| [`BIGIMAGE`](rules/compatibility.md#bigimage) | 'bigimage' has been removed. With appropriate code changes, use 'blockedImage' instead. |
+| [`BIGIMAGEDS`](rules/compatibility.md#bigimageds) | 'bigimageDatastore' has been removed. With appropriate code changes, use 'blockedImageDatastore' instead. |
+| [`LABELVOL`](rules/compatibility.md#labelvol) | 'labelvolshow' has been removed. With appropriate code changes, use 'volshow' instead. |
+| [`COMPATVOL`](rules/compatibility.md#compatvol) | 'images.compatibility.volshow.R2022a.volshow' has been removed. With appropriate code changes, use 'volshow' instead. |
+| [`DEMLC`](rules/compatibility.md#demlc) | 'emlc' has been removed. With appropriate code changes, use 'codegen' instead. |
+| [`DEMLMEX`](rules/compatibility.md#demlmex) | 'emlmex' has been removed. With appropriate code changes, use 'codegen' instead. |
+| [`COMMBI`](rules/compatibility.md#commbi) | 'comm.BitToInteger' has been removed. With appropriate code changes, use 'bit2int' instead. |
+| [`PNZOM`](rules/compatibility.md#pnzom) | 'panzoom' has been removed. With appropriate code changes, use 'zoom' instead. |
+| [`SPTL`](rules/compatibility.md#sptl) | 'sptool' has been removed. Use 'signalAnalyzer' or 'filterDesigner' instead. |
+| [`NDWT`](rules/compatibility.md#ndwt) | 'ndwt' has been removed. With appropriate code changes, use 'modwt' instead. |
+| [`INDWT`](rules/compatibility.md#indwt) | 'indwt' has been removed. With appropriate code changes, use 'imodwt' instead. |
+| [`NDWT2`](rules/compatibility.md#ndwt2) | 'ndwt2' has been removed. With appropriate code changes, use 'swt2' instead. |
+| [`INDWT2`](rules/compatibility.md#indwt2) | 'indwt2' has been removed. With appropriate code changes, use 'iswt2' instead. |
+| [`WEBMP`](rules/compatibility.md#webmp) | 'webmap' will be removed in a future release. With appropriate code changes, use a geographic axes object instead. |
+| [`SERLL`](rules/compatibility.md#serll) | 'seriallist' will be removed in a future release. Use 'serialportlist' instead, which is a direct replacement. |
+| [`RNG2BW`](rules/compatibility.md#rng2bw) | 'range2bw' will be removed in a future release. Use 'rangeres2bw' instead, which is a direct replacement. |
+| [`BW2RNG`](rules/compatibility.md#bw2rng) | 'bw2range' will be removed in a future release. Use 'bw2rangeres' instead, which is a direct replacement. |
+| [`DCSHELP`](rules/compatibility.md#dcshelp) | 'cshelp' will be removed in a future release. There is no simple replacement for this. |
 | [`DFIGFLAG`](rules/compatibility.md#dfigflag) | 'figflag' will be removed in a future release. There is no simple replacement for this. |
 | [`DPOPUP`](rules/compatibility.md#dpopup) | 'popupstr' will be removed in a future release. There is no simple replacement for this. |
-| [`ACTXC`](rules/compatibility.md#actxc) | 'actxcontrol' will be removed in a future release. There is no simple replacement for this. |
-| [`ACTXL`](rules/compatibility.md#actxl) | 'actxcontrollist' will be removed in a future release. There is no simple replacement for this. |
-| [`ACTXS`](rules/compatibility.md#actxs) | 'actxcontrolselect' will be removed in a future release. There is no simple replacement for this. |
-| [`SOAPM`](rules/compatibility.md#soapm) | 'createSoapMessage' will be removed in a future release. Use 'matlab.net.http' instead. |
-| [`SOAPS`](rules/compatibility.md#soaps) | 'callSoapService' will be removed in a future release. Use 'matlab.net.http' instead. |
-| [`SOAPR`](rules/compatibility.md#soapr) | 'parseSoapResponse' will be removed in a future release. Use 'matlab.net.http' instead. |
-| [`SOAPC`](rules/compatibility.md#soapc) | 'createClassFromWsdl' will be removed in a future release. Use 'matlab.net.http' instead. |
-| [`VREDT`](rules/compatibility.md#vredt) | 'vredit' will be removed in a future release. There is no simple replacement for this. |
-| [`VRPLY`](rules/compatibility.md#vrply) | 'vrplay' will be removed in a future release. There is no simple replacement for this. |
-| [`VRCNVS`](rules/compatibility.md#vrcnvs) | 'vrcanvas' will be removed in a future release. There is no simple replacement for this. |
-| [`VRFIG`](rules/compatibility.md#vrfig) | 'vrfigure' will be removed in a future release. There is no simple replacement for this. |
-| [`VRVIEW`](rules/compatibility.md#vrview) | 'vrview' will be removed in a future release. There is no simple replacement for this. |
-| [`VRWRLD`](rules/compatibility.md#vrwrld) | 'vrworld' will be removed in a future release. There is no simple replacement for this. |
-| [`VRNDE`](rules/compatibility.md#vrnde) | 'vrnode' will be removed in a future release. There is no simple replacement for this. |
-| [`VRJOYSTK`](rules/compatibility.md#vrjoystk) | 'vrjoystick' will be removed in a future release. There is no simple replacement for this. |
-| [`VRSPCMOUSE`](rules/compatibility.md#vrspcmouse) | 'vrspacemouse' will be removed in a future release. There is no simple replacement for this. |
-| [`SLRTBNCH`](rules/compatibility.md#slrtbnch) | 'slrtbench' will be removed in a future release. There is no simple replacement for this. |
-| [`RCSIIR`](rules/compatibility.md#rcsiir) | 'rcosine' (IIR) will be removed in a future release. Use 'rcosdesign' instead. |
-| [`RCSFIR`](rules/compatibility.md#rcsfir) | 'rcosine' (FIR) will be removed in a future release. Use 'rcosdesign' instead. |
-| [`G2B`](rules/compatibility.md#g2b) | 'gray2bin' will be removed in a future release. There is no simple replacement for this. |
-| [`B2G`](rules/compatibility.md#b2g) | 'bin2gray' will be removed in a future release. There is no simple replacement for this. |
-| [`EYESCOPE`](rules/compatibility.md#eyescope) | 'eyediagram' will be removed in a future release. Use 'comm.EyeDiagram' instead. |
-| [`DLDPCENC`](rules/compatibility.md#dldpcenc) | 'fec.ldpcenc' will be removed in a future release. Use 'comm.LDPCEncoder' instead. |
-| [`DLDPCDEC`](rules/compatibility.md#dldpcdec) | 'fec.ldpcdec' will be removed in a future release. Use 'comm.LDPCDecoder' instead. |
-| [`WEIBCDF`](rules/compatibility.md#weibcdf) | 'weibcdf' will be removed in a future release. Use 'wblcdf' instead. |
-| [`WEIBFIT`](rules/compatibility.md#weibfit) | 'weibfit' will be removed in a future release. Use 'wblfit' instead. |
-| [`WEIBINV`](rules/compatibility.md#weibinv) | 'weibinv' will be removed in a future release. Use 'wblinv' instead. |
-| [`WEIBLIKE`](rules/compatibility.md#weiblike) | 'weiblike' will be removed in a future release. Use 'wbllike' instead. |
-| [`WEIBPDF`](rules/compatibility.md#weibpdf) | 'weibpdf' will be removed in a future release. Use 'wblpdf' instead. |
-| [`WEIBPLOT`](rules/compatibility.md#weibplot) | 'weibplot' will be removed in a future release. Use 'wblplot' instead. |
-| [`WEIBRND`](rules/compatibility.md#weibrnd) | 'weibrnd' will be removed in a future release. Use 'wblrnd' instead. |
-| [`WEIBSTAT`](rules/compatibility.md#weibstat) | 'weibstat' will be removed in a future release. Use 'wblstat' instead. |
-| [`OPCSERVER`](rules/compatibility.md#opcserver) | 'opcserverinfo' will be removed in a future release. There is no simple replacement for this. |
-| [`OPCDA`](rules/compatibility.md#opcda) | 'opcda' will be removed in a future release. Use 'opcua' instead. |
-| [`OPCFIND`](rules/compatibility.md#opcfind) | 'opcfind' will be removed in a future release. There is no simple replacement for this. |
-| [`OPCRESET`](rules/compatibility.md#opcreset) | 'opcreset' will be removed in a future release. There is no simple replacement for this. |
-| [`OPCHELP`](rules/compatibility.md#opchelp) | 'opchelp' will be removed in a future release. There is no simple replacement for this. |
-| [`DSPBQF`](rules/compatibility.md#dspbqf) | 'dsp.BiquadFilter' will be removed in a future release. Use 'dsp.SOSFilter' instead. |
-| [`DSPLPC`](rules/compatibility.md#dsplpc) | 'dsp.LPC' will be removed in a future release. Use 'lpc' instead. |
-| [`DSPAVA`](rules/compatibility.md#dspava) | 'dsp.ArrayVectorAdder' will be removed in a future release. Use built-in addition instead. |
-| [`DSPAVS`](rules/compatibility.md#dspavs) | 'dsp.ArrayVectorSubtractor' will be removed in a future release. Use built-in subtraction instead. |
-| [`DSPAVM`](rules/compatibility.md#dspavm) | 'dsp.ArrayVectorMultiplier' will be removed in a future release. Use built-in multiplication instead. |
-| [`DSPAVD`](rules/compatibility.md#dspavd) | 'dsp.ArrayVectorDivider' will be removed in a future release. Use built-in division instead. |
-| [`DSPCTR`](rules/compatibility.md#dspctr) | 'dsp.Counter' will be removed in a future release. There is no simple replacement for this. |
-| [`DSPKFT`](rules/compatibility.md#dspkft) | 'dsp.KalmanFilter' will be removed in a future release. There is no simple replacement for this. |
-| [`DSPNORM`](rules/compatibility.md#dspnorm) | 'dsp.Normalizer' will be removed in a future release. Use 'normalize' instead. |
-| [`DSPAUDIOREC`](rules/compatibility.md#dspaudiorec) | 'dsp.AudioRecorder' will be removed in a future release. Use 'audioDeviceReader' instead. |
-| [`DSPAUDIOPLAY`](rules/compatibility.md#dspaudioplay) | 'dsp.AudioPlayer' will be removed in a future release. Use 'audioDeviceWriter' instead. |
-| [`DSPBUFFER`](rules/compatibility.md#dspbuffer) | 'dsp.Buffer' will be removed in a future release. Use 'dsp.AsyncBuffer' instead. |
-| [`DSPHIST`](rules/compatibility.md#dsphist) | 'dsp.Histogram' will be removed in a future release. Use 'histogram' instead. |
-| [`DSPMAX`](rules/compatibility.md#dspmax) | 'dsp.Maximum' will be removed in a future release. Use 'movmax' or 'max' instead. |
-| [`DSPMIN`](rules/compatibility.md#dspmin) | 'dsp.Minimum' will be removed in a future release. Use 'movmin' or 'min' instead. |
-| [`DSPMEAN`](rules/compatibility.md#dspmean) | 'dsp.Mean' will be removed in a future release. Use 'movmean' or 'mean' instead. |
-| [`DSPMEDIAN`](rules/compatibility.md#dspmedian) | 'dsp.Median' will be removed in a future release. Use 'movmedian' or 'median' instead. |
-| [`DSPRMS`](rules/compatibility.md#dsprms) | 'dsp.RMS' will be removed in a future release. Use 'rms' instead. |
-| [`DSPSTD`](rules/compatibility.md#dspstd) | 'dsp.StandardDeviation' will be removed in a future release. Use 'movstd' or 'std' instead. |
-| [`DSPVAR`](rules/compatibility.md#dspvar) | 'dsp.Variance' will be removed in a future release. Use 'movvar' or 'var' instead. |
-| [`DSPCUMPROD`](rules/compatibility.md#dspcumprod) | 'dsp.CumulativeProduct' will be removed in a future release. Use 'cumprod' instead. |
-| [`DSPCUMSUM`](rules/compatibility.md#dspcumsum) | 'dsp.CumulativeSum' will be removed in a future release. Use 'cumsum' instead. |
-| [`DSPINTERP`](rules/compatibility.md#dspinterp) | 'dsp.Interpolator' will be removed in a future release. Use 'interp1' instead. |
-| [`DSPCONV`](rules/compatibility.md#dspconv) | 'dsp.Convolver' will be removed in a future release. Use 'conv' instead. |
-| [`DSPAUTOCORR`](rules/compatibility.md#dspautocorr) | 'dsp.Autocorrelator' will be removed in a future release. Use 'xcorr' instead. |
-| [`DSPXCORR`](rules/compatibility.md#dspxcorr) | 'dsp.Crosscorrelator' will be removed in a future release. Use 'xcorr' instead. |
-| [`DSPLDL`](rules/compatibility.md#dspldl) | 'dsp.LDLFactor' will be removed in a future release. Use 'ldl' instead. |
-| [`DSPLU`](rules/compatibility.md#dsplu) | 'dsp.LUFactor' will be removed in a future release. Use 'lu' instead. |
-| [`DSPLEVINSON`](rules/compatibility.md#dsplevinson) | 'dsp.LevinsonSolver' will be removed in a future release. Use 'levinson' instead. |
-| [`DSPDELAYLINE`](rules/compatibility.md#dspdelayline) | 'dsp.DelayLine' will be removed in a future release. Use 'dsp.AsyncBuffer' instead. |
-| [`DSPWIN`](rules/compatibility.md#dspwin) | 'dsp.Window' will be removed in a future release. Use 'window functions' directly instead. |
-| [`DSPSA`](rules/compatibility.md#dspsa) | 'dsp.SpectrumAnalyzer' scope syntax will be removed in a future release. Use 'spectrumAnalyzer' instead. |
-| [`CMLLD`](rules/compatibility.md#cmlld) | 'ClassificationModel.logLoss' will be removed in a future release. There is no simple replacement for this. |
-| [`CMLSV`](rules/compatibility.md#cmlsv) | 'ClassificationModel.logSV' will be removed in a future release. There is no simple replacement for this. |
-| [`SESSION`](rules/compatibility.md#session) | 'daq.createSession' will be removed in a future release. Use 'daqlist' and 'daq' interface instead. |
-| [`DRYICE`](rules/compatibility.md#dryice) | 'dryice' will be removed in a future release. There is no simple replacement for this. |
-| [`PERFREF`](rules/compatibility.md#perfref) | 'perfcurve' old syntax will be removed in a future release. Use updated syntax instead. |
-| [`YOLOV`](rules/compatibility.md#yolov) | 'yolov2ObjectDetector' will be removed in a future release. Use 'yoloxObjectDetector' instead. |
-| [`DDTRD`](rules/compatibility.md#ddtrd) | 'dtree' will be removed in a future release. There is no simple replacement for this. |
+| [`ACTXC`](rules/compatibility.md#actxc) | 'actxcontrol' has been removed. There is no simple replacement for this. |
+| [`ACTXL`](rules/compatibility.md#actxl) | 'actxcontrollist' has been removed. There is no simple replacement for this. |
+| [`ACTXS`](rules/compatibility.md#actxs) | 'actxcontrolselect' has been removed. There is no simple replacement for this. |
+| [`SOAPM`](rules/compatibility.md#soapm) | 'createSoapMessage' has been removed. With appropriate code changes, use 'matlab.wsdl.createWSDLClient' instead. |
+| [`SOAPS`](rules/compatibility.md#soaps) | 'callSoapService' has been removed. With appropriate code changes, use 'matlab.wsdl.createWSDLClient' instead. |
+| [`SOAPR`](rules/compatibility.md#soapr) | 'parseSoapResponse' has been removed. With appropriate code changes, use 'matlab.wsdl.createWSDLClient' instead. |
+| [`SOAPC`](rules/compatibility.md#soapc) | 'createClassFromWsdl' has been removed. Use 'matlab.wsdl.createWSDLClient' instead, which is a direct replacement. |
+| [`VREDT`](rules/compatibility.md#vredt) | 3D World Editor has been removed, so 'vredit' does not open the virtual world. With appropriate code changes, use sim3d classes to create and view a 3D environment instead. |
+| [`VRPLY`](rules/compatibility.md#vrply) | Simulink 3D Animation Player has been removed, so 'vrplay' does not open and play virtual world animation files. With appropriate code changes, use sim3d classes to create and view a 3D environment instead. |
+| [`VRCNVS`](rules/compatibility.md#vrcnvs) | Simulink 3D Animation Viewer has been removed, so 'vr.canvas' does not open the virtual world. With appropriate code changes, use sim3d classes to create and view a 3D environment instead. |
+| [`VRFIG`](rules/compatibility.md#vrfig) | Simulink 3D Animation Viewer has been removed, so 'vrfigure' does not open the virtual world. With appropriate code changes, use sim3d classes to create and view a 3D environment instead. |
+| [`VRVIEW`](rules/compatibility.md#vrview) | Simulink 3D Animation Viewer has been removed, so 'vrview' does not open the virtual world. With appropriate code changes, use sim3d classes to create and view a 3D environment instead. |
+| [`VRWRLD`](rules/compatibility.md#vrwrld) | 'vrworld' will be removed in a future release. With appropriate code changes, use sim3d classes to create and view a 3D environment instead. |
+| [`VRNDE`](rules/compatibility.md#vrnde) | 'vrnode' will be removed in a future release. With appropriate code changes, use sim3d classes to create and view a 3D environment instead. |
+| [`VRJOYSTK`](rules/compatibility.md#vrjoystk) | 'vrjoystick' will be removed in a future release. Use 'sim3d.io.Joystick' instead, which is a direct replacement. |
+| [`VRSPCMOUSE`](rules/compatibility.md#vrspcmouse) | 'vrspacemouse' will be removed in a future release. Use 'sim3d.io.SpaceMouse' instead, which is a direct replacement. |
+| [`SLRTBNCH`](rules/compatibility.md#slrtbnch) | 'slrtbench' has been removed. With appropriate code changes, use 'SimulinkRealTime.utils.minimumSampleTime' instead. |
+| [`RCSIIR`](rules/compatibility.md#rcsiir) | 'rcosiir' is unsupported and has been removed. There is no simple replacement for this. |
+| [`RCSFIR`](rules/compatibility.md#rcsfir) | 'rcosfir' is unsupported and has been removed. With appropriate code changes, use 'rcosdesign' instead. |
+| [`G2B`](rules/compatibility.md#g2b) | 'gray2bin' has been removed. Use the appropriate modulation object or function to remap constellation points instead. |
+| [`B2G`](rules/compatibility.md#b2g) | 'bin2gray' has been removed. Use the appropriate modulation object or function to remap constellation points instead. |
+| [`EYESCOPE`](rules/compatibility.md#eyescope) | 'eyescope' has been removed. There is no simple replacement for this. |
+| [`DLDPCENC`](rules/compatibility.md#dldpcenc) | 'fec.ldpcenc' has been removed. With appropriate code changes, use 'comm.LDPCEncoder' instead. |
+| [`DLDPCDEC`](rules/compatibility.md#dldpcdec) | 'fec.ldpcdec' has been removed. With appropriate code changes, use 'comm.LDPCDecoder' instead. |
+| [`WEIBCDF`](rules/compatibility.md#weibcdf) | 'weibcdf' has been removed. With appropriate code changes, use 'wblcdf' instead. |
+| [`WEIBFIT`](rules/compatibility.md#weibfit) | 'weibfit' has been removed. With appropriate code changes, use 'wblfit' instead. |
+| [`WEIBINV`](rules/compatibility.md#weibinv) | 'weibinv' has been removed. With appropriate code changes, use 'wblinv' instead. |
+| [`WEIBLIKE`](rules/compatibility.md#weiblike) | 'weiblike' has been removed. With appropriate code changes, use 'wbllike' instead. |
+| [`WEIBPDF`](rules/compatibility.md#weibpdf) | 'weibpdf' has been removed. With appropriate code changes, use 'wblpdf' instead. |
+| [`WEIBPLOT`](rules/compatibility.md#weibplot) | 'weibplot' has been removed. With appropriate code changes, use 'wblplot' instead. |
+| [`WEIBRND`](rules/compatibility.md#weibrnd) | 'weibrnd' has been removed. With appropriate code changes, use 'wblrnd' instead. |
+| [`WEIBSTAT`](rules/compatibility.md#weibstat) | 'weibstat' has been removed. With appropriate code changes, use 'wblstat' instead. |
+| [`OPCSERVER`](rules/compatibility.md#opcserver) | 'opcserverinfo' has been removed along with the support for OPC DA. To access live OPC data, use the OPC UA standard instead. |
+| [`OPCDA`](rules/compatibility.md#opcda) | 'opcda' has been removed along with the support for OPC DA. To access live OPC data, use the OPC UA standard instead. |
+| [`OPCFIND`](rules/compatibility.md#opcfind) | 'opcfind' has been removed along with the support for OPC DA. To access live OPC data, use the OPC UA standard instead. |
+| [`OPCRESET`](rules/compatibility.md#opcreset) | 'opcreset' has been removed along with the support for OPC DA. To access live OPC data, use the OPC UA standard instead. |
+| [`OPCHELP`](rules/compatibility.md#opchelp) | 'opchelp' has been removed along with the support for OPC DA. To access live OPC data, use the OPC UA standard instead. |
+| [`DSPBQF`](rules/compatibility.md#dspbqf) | 'dsp.BiquadFilter' will be removed in a future release. With appropriate code changes, use 'dsp.SOSFilter' instead. |
+| [`DSPLPC`](rules/compatibility.md#dsplpc) | 'dsp.LPCToLSP' has been removed. With appropriate code changes, use 'cos(poly2lsf)' instead. |
+| [`DSPAVA`](rules/compatibility.md#dspava) | 'dsp.ArrayVectorAdder' has been removed. With appropriate code changes, use '+' operator instead. |
+| [`DSPAVS`](rules/compatibility.md#dspavs) | 'dsp.ArrayVectorSubtractor' has been removed. With appropriate code changes, use '-' operator instead. |
+| [`DSPAVM`](rules/compatibility.md#dspavm) | 'dsp.ArrayVectorMultiplier' has been removed. With appropriate code changes, use '.*' operator instead. |
+| [`DSPAVD`](rules/compatibility.md#dspavd) | 'dsp.ArrayVectorDivider' has been removed. With appropriate code changes, use './' operator instead. |
+| [`DSPCTR`](rules/compatibility.md#dspctr) | 'dsp.Counter' has been removed. Create a variable and increment by one instead. |
+| [`DSPKFT`](rules/compatibility.md#dspkft) | 'dsp.KalmanFilter' has been removed. With appropriate code changes, use the Kalman filter functionality in Sensor Fusion and Tracking Toolbox instead. |
+| [`DSPNORM`](rules/compatibility.md#dspnorm) | 'dsp.Normalizer' has been removed. With appropriate code changes, use 'normalize' or 'vecnorm' instead. |
+| [`DSPAUDIOREC`](rules/compatibility.md#dspaudiorec) | 'dsp.AudioRecorder' has been removed. With appropriate code changes, use 'audioDeviceReader' instead. |
+| [`DSPAUDIOPLAY`](rules/compatibility.md#dspaudioplay) | 'dsp.AudioPlayer' has been removed. With appropriate code changes, use 'audioDeviceWriter' instead. |
+| [`DSPBUFFER`](rules/compatibility.md#dspbuffer) | 'dsp.Buffer' has been removed. With appropriate code changes, use 'dsp.AsyncBuffer' instead. |
+| [`DSPHIST`](rules/compatibility.md#dsphist) | 'dsp.Histogram' has been removed. With appropriate code changes, use 'histogram' or 'histcounts' instead. |
+| [`DSPMAX`](rules/compatibility.md#dspmax) | 'dsp.Maximum' has been removed. With appropriate code changes, use 'max' instead. |
+| [`DSPMIN`](rules/compatibility.md#dspmin) | 'dsp.Minimum' has been removed. With appropriate code changes, use 'min' instead. |
+| [`DSPMEAN`](rules/compatibility.md#dspmean) | 'dsp.Mean' has been removed. With appropriate code changes, use 'mean' instead. |
+| [`DSPMEDIAN`](rules/compatibility.md#dspmedian) | 'dsp.Median' has been removed. With appropriate code changes, use 'median' instead. |
+| [`DSPRMS`](rules/compatibility.md#dsprms) | 'dsp.RMS' has been removed. With appropriate code changes, use 'rms' instead. |
+| [`DSPSTD`](rules/compatibility.md#dspstd) | 'dsp.StandardDeviation' has been removed. With appropriate code changes, use 'std' instead. |
+| [`DSPVAR`](rules/compatibility.md#dspvar) | 'dsp.Variance' has been removed. With appropriate code changes, use 'var' instead. |
+| [`DSPCUMPROD`](rules/compatibility.md#dspcumprod) | 'dsp.CumulativeProduct' has been removed. With appropriate code changes, use 'cumprod' instead. |
+| [`DSPCUMSUM`](rules/compatibility.md#dspcumsum) | 'dsp.CumulativeSum' has been removed. With appropriate code changes, use 'cumsum' instead. |
+| [`DSPINTERP`](rules/compatibility.md#dspinterp) | 'dsp.Interpolator' has been removed. With appropriate code changes, use 'dsp.FIRInterpolator' instead. |
+| [`DSPCONV`](rules/compatibility.md#dspconv) | 'dsp.Convolver' has been removed. With appropriate code changes, use 'conv' instead. |
+| [`DSPAUTOCORR`](rules/compatibility.md#dspautocorr) | 'dsp.Autocorrelator' has been removed. With appropriate code changes, use 'xcorr' instead. |
+| [`DSPXCORR`](rules/compatibility.md#dspxcorr) | 'dsp.Crosscorrelator' has been removed. With appropriate code changes, use 'xcorr' instead. |
+| [`DSPLDL`](rules/compatibility.md#dspldl) | 'dsp.LDLFactor' has been removed. With appropriate code changes, use 'ldl' instead. |
+| [`DSPLU`](rules/compatibility.md#dsplu) | 'dsp.LUFactor' has been removed. With appropriate code changes, use 'lu' instead. |
+| [`DSPLEVINSON`](rules/compatibility.md#dsplevinson) | 'dsp.LevinsonSolver' has been removed. With appropriate code changes, use 'levinson' instead. |
+| [`DSPDELAYLINE`](rules/compatibility.md#dspdelayline) | 'dsp.DelayLine' has been removed. There is no simple replacement for this. |
+| [`DSPWIN`](rules/compatibility.md#dspwin) | 'dsp.Window' has been removed. With appropriate code changes, use 'window' instead. |
+| [`DSPSA`](rules/compatibility.md#dspsa) | 'dsp.SpectrumAnalyzer' will be removed in a future release. Use 'spectrumAnalyzer' instead, which is a direct replacement. |
+| [`CMLLD`](rules/compatibility.md#cmlld) | 'loadCompactModel' has been removed. Use 'loadLearnerForCoder' instead, which is a direct replacement. |
+| [`CMLSV`](rules/compatibility.md#cmlsv) | 'saveCompactModel' has been removed. Use 'saveLearnerForCoder' instead, which is a direct replacement. |
+| [`SESSION`](rules/compatibility.md#session) | 'Session' class will be removed in a future release. Use 'daq' instead, which is a direct replacement. |
+| [`DRYICE`](rules/compatibility.md#dryice) | Input argument 'dry-ice' of function 'earthSurfacePermittivity' will be removed in a future release. Use argument 'pure-ice' instead, which is a direct replacement. |
+| [`PERFREF`](rules/compatibility.md#perfref) | 'perfect-reflector' value will be removed in a future release. Use value 'PEC' instead, which is a direct replacement. |
+| [`YOLOV`](rules/compatibility.md#yolov) | 'yolov2ReorgLayer' has been removed. With appropriate code changes, use 'spaceToDepthLayer' instead. |
+| [`DDTRD`](rules/compatibility.md#ddtrd) | 'dataread' will be removed in a future release. With appropriate code changes, use 'textscan' instead. |
 | [`IMPIVD`](rules/compatibility.md#impivd) | Malformed import argument VAR_NAME will not be supported in a future release. |
 | [`IMPKEY`](rules/compatibility.md#impkey) | Importing VAR_NAME will not be supported in a future release because VAR_NAME is a reserved word. |
 | [`REDEFGI`](rules/compatibility.md#redefgi) | Declaring an input or output variable to be global might not be supported in a future release. |
@@ -268,14 +268,14 @@ to refresh them whenever `data/compatibility.toml` or
 | [`EITYCN`](rules/compatibility.md#eitycn) | feature('EightyColumns') and feature('EightyColumns', VALUE) are unsupported and have been removed. With appropriate code changes, use 'settings' object instead. |
 | [`REPUDD`](rules/compatibility.md#repudd) | Classes defined using schema.m files are no longer supported. Use MATLAB Classes defined using the classdef keyword instead. |
 | [`RTWHWDR`](rules/compatibility.md#rtwhwdr) | 'RTW.HWDeviceRegistry' is unsupported and has been removed. The replacement strategy can be found in MATLAB documentation. |
-| [`INVHCRM`](rules/compatibility.md#invhcrm) | The 'InvertHardCopy' property will be removed in a future release and currently has no effect. |
-| [`DINVHCRM`](rules/compatibility.md#dinvhcrm) | The 'defaultFigureInvertHardCopy' setting will be removed in a future release and currently has no effect. |
+| [`INVHCRM`](rules/compatibility.md#invhcrm) | The 'InvertHardCopy' property will be removed in a future release and currently has no effect. With appropriate code changes, set the 'Color' property of the figure before printing or call the 'exportgraphics' function to control the color for exporting. |
+| [`DINVHCRM`](rules/compatibility.md#dinvhcrm) | The 'defaultFigureInvertHardCopy' setting will be removed in a future release and currently has no effect. With appropriate code changes, set the 'Color' property of the figure before printing or call the 'exportgraphics' function to control the color for exporting. |
 | [`CHKGR`](rules/compatibility.md#chkgr) | The 'CheckGradients' option has been removed from 'optimoptions'. With appropriate code changes, use the 'checkGradients' function instead. |
 | [`LINPROGS`](rules/compatibility.md#linprogs) | 'simplex' algorithm has been removed. With appropriate code changes, set 'Algorithm' value to 'interior-point' or 'dual-simplex' instead. |
 | [`LSRET`](rules/compatibility.md#lsret) | 'LaserReturns' has been removed. Use 'LaserReturn' instead, which is a direct replacement. |
 | [`RAYNR`](rules/compatibility.md#raynr) | Input argument 'NumReflections' has been removed. Use 'MaxNumReflections' property of a ray tracing propagation model object instead. |
 | [`JAPIMATHWORKS`](rules/compatibility.md#japimathworks) | 'com.mathworks' namespace and sub namespaces will be removed in a future release. There is no simple replacement for this. |
-| [`IMCLASS`](rules/compatibility.md#imclass) | In a future release, 'ismethod' will treat a string or character vector in its first input as a 'string' or 'char' class object. |
+| [`IMCLASS`](rules/compatibility.md#imclass) | In a future release, 'ismethod' will treat a string or character vector in its first input as a 'string' or 'char' class object. Pass an object to 'ismethod' or use any(strcmp('methodName', methods('ClassName'))) instead. |
 | [`WEBREMOVE`](rules/compatibility.md#webremove) | The 'web' function does not return a handle or URL for pages that open in the system browser. Use 'stat = web(___, '-browser')' instead. |
 | [`TCPC`](rules/compatibility.md#tcpc) | 'tcpip' with 'client' as a 'NetworkRole' will be removed in a future release. With appropriate code changes, use 'tcpclient' instead. |
 | [`TCPS`](rules/compatibility.md#tcps) | 'tcpip' with 'server' as a 'NetworkRole' will be removed in a future release. With appropriate code changes, use 'tcpserver' instead. |
@@ -283,30 +283,30 @@ to refresh them whenever `data/compatibility.toml` or
 | [`QAMDEPD`](rules/compatibility.md#qamdepd) | 'qamdemod' no longer accepts the initial phase of a signal. |
 | [`GETERR`](rules/compatibility.md#geterr) | The 'ErrorMessage' property has been removed. At the command line, use 'MException.last' instead. |
 | [`SETERR`](rules/compatibility.md#seterr) | The 'ErrorMessage' property has been removed. There is no simple replacement for this. |
-| [`MAPVW`](rules/compatibility.md#mapvw) | 'mapview' will be removed in a future release. Use geographic or map axes instead. |
-| [`MAPTOOL`](rules/compatibility.md#maptool) | 'maptool' will be removed in a future release. There is no simple replacement for this. |
+| [`MAPVW`](rules/compatibility.md#mapvw) | 'mapview' has been removed. With appropriate code changes, use 'mapshow' instead. |
+| [`MAPTOOL`](rules/compatibility.md#maptool) | 'maptool' has been removed. There is no simple replacement for this. |
 | [`DFEATUREPARAM1`](rules/compatibility.md#dfeatureparam1) | 'UseHG2' has been removed. With appropriate code changes, use '~verLessThan('matlab','8.4.0')' instead. |
 | [`DFEATUREPARAM2`](rules/compatibility.md#dfeatureparam2) | 'HGUsingMATLABClasses' has been removed. With appropriate code changes, use '~verLessThan('matlab','8.4.0')' instead. |
-| [`DILEVAL`](rules/compatibility.md#dileval) | 'dicomLookupEval' will be removed in a future release. There is no simple replacement for this. |
-| [`DSPPEAKS`](rules/compatibility.md#dsppeaks) | 'dsp.PeakFinder' will be removed in a future release. Use 'findpeaks' instead. |
-| [`DSPPEAK2PEAK`](rules/compatibility.md#dsppeak2peak) | 'dsp.PeakToPeak' will be removed in a future release. Use 'peak2peak' instead. |
-| [`DSP_LINKS`](rules/compatibility.md#dsplinks) | 'dsp.SignalSource' will be removed in a future release. There is no simple replacement for this. |
-| [`MCASCADE`](rules/compatibility.md#mcascade) | 'mfilt.cascade' will be removed in a future release. Use 'dsp.FilterCascade' instead. |
-| [`FDESPARAMEQ`](rules/compatibility.md#fdesparameq) | 'fdesign.parameq' will be removed in a future release. Use 'designParamEQ' instead. |
-| [`FDESOCTAVE`](rules/compatibility.md#fdesoctave) | 'fdesign.octave' will be removed in a future release. Use 'designOctaveFilter' instead. |
-| [`FDESWEIGHT`](rules/compatibility.md#fdesweight) | 'fdesign.arbmagnphase' will be removed in a future release. Use 'designfilt' instead. |
-| [`AFLMS`](rules/compatibility.md#aflms) | 'adaptfilt.lms' will be removed in a future release. Use 'dsp.LMSFilter' instead. |
-| [`AFNLMS`](rules/compatibility.md#afnlms) | 'adaptfilt.nlms' will be removed in a future release. Use 'dsp.LMSFilter' with NLMS algorithm instead. |
-| [`AFRLS`](rules/compatibility.md#afrls) | 'adaptfilt.rls' will be removed in a future release. Use 'dsp.RLSFilter' instead. |
-| [`AFBLMS`](rules/compatibility.md#afblms) | 'adaptfilt.blms' will be removed in a future release. Use 'dsp.BlockLMSFilter' instead. |
-| [`DNANMEAN`](rules/compatibility.md#dnanmean) | 'nanmean' from Statistics Toolbox is not recommended. Use 'mean' with 'omitnan' option instead. |
-| [`DNANSTD`](rules/compatibility.md#dnanstd) | 'nanstd' from Statistics Toolbox is not recommended. Use 'std' with 'omitnan' option instead. |
-| [`DNANVAR`](rules/compatibility.md#dnanvar) | 'nanvar' from Statistics Toolbox is not recommended. Use 'var' with 'omitnan' option instead. |
-| [`DNANMEDIAN`](rules/compatibility.md#dnanmedian) | 'nanmedian' from Statistics Toolbox is not recommended. Use 'median' with 'omitnan' option instead. |
-| [`DNANMIN`](rules/compatibility.md#dnanmin) | 'nanmin' from Statistics Toolbox is not recommended. Use 'min' with 'omitnan' option instead. |
-| [`DNANMAX`](rules/compatibility.md#dnanmax) | 'nanmax' from Statistics Toolbox is not recommended. Use 'max' with 'omitnan' option instead. |
-| [`DNANSUM`](rules/compatibility.md#dnansum) | 'nansum' from Statistics Toolbox is not recommended. Use 'sum' with 'omitnan' option instead. |
-| [`DNANCOV`](rules/compatibility.md#dnancov) | 'nancov' from Statistics Toolbox is not recommended. Use covariance computation with 'omitrows' option instead. |
+| [`DILEVAL`](rules/compatibility.md#dileval) | 'inlineeval' will be removed in a future release. There is no simple replacement for this. |
+| [`DSPPEAKS`](rules/compatibility.md#dsppeaks) | 'dsp.PeakFinder' has been removed. With appropriate code changes, use 'findpeaks' instead. |
+| [`DSPPEAK2PEAK`](rules/compatibility.md#dsppeak2peak) | 'dsp.PeakToPeak' has been removed. With appropriate code changes, use 'peak2peak' instead. |
+| [`DSP_LINKS`](rules/compatibility.md#dsplinks) | 'dsp_links' will be removed in a future release. There is no simple replacement for this. |
+| [`MCASCADE`](rules/compatibility.md#mcascade) | 'mfilt.cascade' will be removed in a future release. With appropriate code changes, use 'dsp.FilterCascade' instead. |
+| [`FDESPARAMEQ`](rules/compatibility.md#fdesparameq) | 'fdesign.parameq' has been removed. With appropriate code changes, use 'designParamEQ' instead. |
+| [`FDESOCTAVE`](rules/compatibility.md#fdesoctave) | 'fdesign.octave' has been removed. With appropriate code changes, use 'octaveFilter' instead. |
+| [`FDESWEIGHT`](rules/compatibility.md#fdesweight) | 'fdesign.audioweighting' has been removed. With appropriate code changes, use 'weightingFilter' instead. |
+| [`AFLMS`](rules/compatibility.md#aflms) | 'adaptfilt.lms' has been removed. With appropriate code changes, use 'dsp.LMSFilter' instead. |
+| [`AFNLMS`](rules/compatibility.md#afnlms) | 'adaptfilt.nlms' has been removed. With appropriate code changes, use 'dsp.LMSFilter' instead. |
+| [`AFRLS`](rules/compatibility.md#afrls) | 'adaptfilt.rls' has been removed. With appropriate code changes, use 'dsp.RLSFilter' instead. |
+| [`AFBLMS`](rules/compatibility.md#afblms) | 'adaptfilt.blms' has been removed. With appropriate code changes, use 'dsp.BlockLMSFilter' instead. |
+| [`DNANMEAN`](rules/compatibility.md#dnanmean) | 'nanmean' is not recommended. With appropriate code changes, use 'mean' instead. |
+| [`DNANSTD`](rules/compatibility.md#dnanstd) | 'nanstd' is not recommended. With appropriate code changes, use 'std' instead. |
+| [`DNANVAR`](rules/compatibility.md#dnanvar) | 'nanvar' is not recommended. With appropriate code changes, use 'var' instead. |
+| [`DNANMEDIAN`](rules/compatibility.md#dnanmedian) | 'nanmedian' is not recommended. With appropriate code changes, use 'median' instead. |
+| [`DNANMIN`](rules/compatibility.md#dnanmin) | 'nanmin' is not recommended. With appropriate code changes, use 'min' instead. |
+| [`DNANMAX`](rules/compatibility.md#dnanmax) | 'nanmax' is not recommended. With appropriate code changes, use 'max' instead. |
+| [`DNANSUM`](rules/compatibility.md#dnansum) | 'nansum' is not recommended. With appropriate code changes, use 'sum' instead. |
+| [`DNANCOV`](rules/compatibility.md#dnancov) | 'nancov' is not recommended. With appropriate code changes, use 'cov' instead. |
 | [`DWAVREAD`](rules/compatibility.md#dwavread) | 'wavread' has been removed. Use 'audioread' instead. |
 | [`DWAVWRITE`](rules/compatibility.md#dwavwrite) | 'wavwrite' has been removed. Use 'audiowrite' instead. |
 | [`DAUREAD`](rules/compatibility.md#dauread) | 'auread' has been removed. Use 'audioread' instead. |
@@ -317,22 +317,22 @@ to refresh them whenever `data/compatibility.toml` or
 | [`DDBLQD2`](rules/compatibility.md#ddblqd2) | 'dblquad' is not recommended. Use 'integral2' instead. |
 | [`DTRIQD2`](rules/compatibility.md#dtriqd2) | 'triplequad' is not recommended. Use 'integral3' instead. |
 | [`DEZPLOT`](rules/compatibility.md#dezplot) | 'ezplot' is not recommended. Use 'fplot' instead. |
-| [`DEZMESH`](rules/compatibility.md#dezmesh) | 'ezmesh' is not recommended. Use 'fmesh' instead. |
-| [`DEZSURF`](rules/compatibility.md#dezsurf) | 'ezsurf' is not recommended. Use 'fsurf' instead. |
+| [`DEZMESH`](rules/compatibility.md#dezmesh) | 'ezmesh' is not recommended. With appropriate code changes, use 'fmesh' instead. |
+| [`DEZSURF`](rules/compatibility.md#dezsurf) | 'ezsurf' is not recommended. With appropriate code changes, use 'fsurf' instead. |
 | [`DEZCONTOUR`](rules/compatibility.md#dezcontour) | 'ezcontour' is not recommended. Use 'fcontour' instead. |
-| [`DEZPOLAR`](rules/compatibility.md#dezpolar) | 'ezpolar' is not recommended. Use 'polarplot' instead. |
+| [`DEZPOLAR`](rules/compatibility.md#dezpolar) | 'ezpolar' is not recommended. With appropriate code changes, use 'fpolarplot' instead. |
 | [`DEZPLOT3`](rules/compatibility.md#dezplot3) | 'ezplot3' is not recommended. Use 'fplot3' instead. |
 | [`DEZSURFC`](rules/compatibility.md#dezsurfc) | 'ezsurfc' is not recommended. Use 'fsurf' instead. |
 | [`DEZMESHC`](rules/compatibility.md#dezmeshc) | 'ezmeshc' is not recommended. Use 'fmesh' instead. |
 | [`DEZCONTOURF`](rules/compatibility.md#dezcontourf) | 'ezcontourf' is not recommended. Use 'fcontour' instead. |
-| [`DPLOTYY`](rules/compatibility.md#dplotyy) | 'plotyy' is not recommended. Use 'yyaxis' instead. |
-| [`DPOLAR`](rules/compatibility.md#dpolar) | 'polar' is not recommended. Use 'polarplot' instead. |
-| [`DCOMPASS`](rules/compatibility.md#dcompass) | 'compass' is not recommended. Use 'polarplot' instead. |
-| [`DROSE`](rules/compatibility.md#drose) | 'rose' is not recommended. Use 'polarhistogram' instead. |
-| [`DHIST`](rules/compatibility.md#dhist) | 'hist' is not recommended. Use 'histogram' instead. |
-| [`DHISTC`](rules/compatibility.md#dhistc) | 'histc' is not recommended. Use 'histcounts' instead. |
-| [`DCAXIS`](rules/compatibility.md#dcaxis) | 'caxis' is not recommended. Use 'clim' instead. |
-| [`DHOLDALL`](rules/compatibility.md#dholdall) | 'hold all' is not recommended. Use 'hold on' instead. |
+| [`DPLOTYY`](rules/compatibility.md#dplotyy) | 'plotyy' is not recommended. With appropriate code changes, use 'yyaxis' instead. |
+| [`DPOLAR`](rules/compatibility.md#dpolar) | 'polar' (MATLAB) is not recommended. Use 'polarplot' instead. |
+| [`DCOMPASS`](rules/compatibility.md#dcompass) | 'compass' is not recommended. With appropriate code changes, use 'compassplot' instead. |
+| [`DROSE`](rules/compatibility.md#drose) | 'rose' is not recommended. With appropriate code changes, use 'polarhistogram' instead. |
+| [`DHIST`](rules/compatibility.md#dhist) | 'hist' is not recommended. With appropriate code changes, use 'histogram' instead. |
+| [`DHISTC`](rules/compatibility.md#dhistc) | 'histc' is not recommended. With appropriate code changes, use 'histcounts' instead. |
+| [`DCAXIS`](rules/compatibility.md#dcaxis) | 'caxis' is not recommended. Use 'clim' instead, which is a direct replacement. |
+| [`DHOLDALL`](rules/compatibility.md#dholdall) | 'hold('all')' is not recommended. Use 'hold('on')' instead, which is a direct replacement. |
 | [`DCSVREAD`](rules/compatibility.md#dcsvread) | 'csvread' is not recommended. Use 'readmatrix' instead. |
 | [`DCSVWRITE`](rules/compatibility.md#dcsvwrite) | 'csvwrite' is not recommended. Use 'writematrix' instead. |
 | [`DDLMREAD`](rules/compatibility.md#ddlmread) | 'dlmread' is not recommended. Use 'readmatrix' instead. |
@@ -346,22 +346,22 @@ to refresh them whenever `data/compatibility.toml` or
 | [`DH5READ`](rules/compatibility.md#dh5read) | 'hdf5read' has been removed. Use 'h5read' instead. |
 | [`DH5WRITE`](rules/compatibility.md#dh5write) | 'hdf5write' has been removed. Use 'h5write' instead. |
 | [`DH5INFO`](rules/compatibility.md#dh5info) | 'hdf5info' has been removed. Use 'h5info' instead. |
-| [`DIM2BW`](rules/compatibility.md#dim2bw) | 'im2bw' is not recommended. Use 'imbinarize' instead. |
+| [`DIM2BW`](rules/compatibility.md#dim2bw) | 'im2bw' is not recommended. With appropriate code changes, use 'imbinarize' instead. |
 | [`DIMFREEHAND`](rules/compatibility.md#dimfreehand) | 'imfreehand' is not recommended. Use 'drawfreehand' instead. |
-| [`DIMRECT`](rules/compatibility.md#dimrect) | 'imrect' is not recommended. Use 'drawrectangle' instead. |
-| [`DIMLINE`](rules/compatibility.md#dimline) | 'imline' is not recommended. Use 'drawline' instead. |
+| [`DIMRECT`](rules/compatibility.md#dimrect) | 'imrect' is not recommended. With appropriate code changes, use 'drawrectangle' instead. |
+| [`DIMLINE`](rules/compatibility.md#dimline) | 'imline' is not recommended. With appropriate code changes, use 'drawline' instead. |
 | [`DIMPOINT`](rules/compatibility.md#dimpoint) | 'impoint' is not recommended. Use 'drawpoint' instead. |
-| [`DIMPOLY`](rules/compatibility.md#dimpoly) | 'impoly' is not recommended. Use 'drawpolygon' instead. |
+| [`DIMPOLY`](rules/compatibility.md#dimpoly) | 'impoly' is not recommended. With appropriate code changes, use 'drawpolygon' or 'drawpolyline' instead. |
 | [`DIMELLIPSE`](rules/compatibility.md#dimellipse) | 'imellipse' is not recommended. Use 'drawellipse' instead. |
-| [`DROIFILL`](rules/compatibility.md#droifill) | 'roifill' is not recommended. Use 'regionfill' instead. |
+| [`DROIFILL`](rules/compatibility.md#droifill) | 'roifill' is not recommended. With appropriate code changes, use 'regionfill' instead. |
 | [`DDATASET`](rules/compatibility.md#ddataset) | 'dataset' is not recommended. Use 'table' instead. |
 | [`DNOMINAL`](rules/compatibility.md#dnominal) | 'nominal' has been removed. Use 'categorical' instead. |
 | [`DORDINAL`](rules/compatibility.md#dordinal) | 'ordinal' has been removed. Use 'categorical' with 'Ordinal' option instead. |
 | [`DDATENUM`](rules/compatibility.md#ddatenum) | 'datenum' is not recommended. Use 'datetime' instead. |
 | [`DDATESTR`](rules/compatibility.md#ddatestr) | 'datestr' is not recommended. Use 'string' or 'char' on datetime objects instead. |
 | [`DDATEVEC`](rules/compatibility.md#ddatevec) | 'datevec' is not recommended. Use datetime properties (Year, Month, Day, etc.) instead. |
-| [`DCLOCK`](rules/compatibility.md#dclock) | 'clock' is not recommended. Use 'datetime(\ |
-| [`DDATE`](rules/compatibility.md#ddate) | 'date' is not recommended. Use 'datetime(\ |
+| [`DCLOCK`](rules/compatibility.md#dclock) | 'clock' is not recommended. With appropriate code changes, use 'datetime(\ |
+| [`DDATE`](rules/compatibility.md#ddate) | 'date' is not recommended. With appropriate code changes, use 'datetime(\ |
 | [`DNOW`](rules/compatibility.md#dnow) | 'now' is not recommended. Use 'datetime(\ |
 | [`DTODAY`](rules/compatibility.md#dtoday) | 'today' (datenum) is not recommended. Use 'datetime(\ |
 | [`DTIC`](rules/compatibility.md#dtic) | Using 'tic'/'toc' for profiling is not recommended. Use 'timeit' for accurate timing. |
@@ -376,7 +376,7 @@ to refresh them whenever `data/compatibility.toml` or
 | [`DERRORDLG`](rules/compatibility.md#derrordlg) | 'errordlg' is not recommended. Use 'uialert' instead. |
 | [`DMSGBOX`](rules/compatibility.md#dmsgbox) | 'msgbox' is not recommended. Use 'uialert' or 'uiconfirm' instead. |
 | [`DQUESTDLG`](rules/compatibility.md#dquestdlg) | 'questdlg' is not recommended. Use 'uiconfirm' instead. |
-| [`DSERIAL`](rules/compatibility.md#dserial) | 'serial' is not recommended. Use 'serialport' instead. |
+| [`DSERIAL`](rules/compatibility.md#dserial) | 'serial' will be removed in a future release. With appropriate code changes, use 'serialport' instead. |
 | [`DGPIB2`](rules/compatibility.md#dgpib2) | 'gpib' is not recommended. Use 'visadev' instead. |
 | [`DVISA2`](rules/compatibility.md#dvisa2) | 'visa' is not recommended. Use 'visadev' instead. |
 | [`DTCPIP2`](rules/compatibility.md#dtcpip2) | 'tcpip' is not recommended. Use 'tcpclient' or 'tcpserver' instead. |
@@ -391,22 +391,22 @@ to refresh them whenever `data/compatibility.toml` or
 | [`DSYM2POLY`](rules/compatibility.md#dsym2poly) | 'sym2poly' is not recommended. Use 'coeffs' instead. |
 | [`DFLIPUD`](rules/compatibility.md#dflipud) | For vectors, 'flipud' can be replaced by 'flip'. |
 | [`DFLIPLR`](rules/compatibility.md#dfliplr) | For vectors, 'fliplr' can be replaced by 'flip'. |
-| [`DISDIR`](rules/compatibility.md#disdir) | 'isdir' is not recommended. Use 'isfolder' instead. |
-| [`DFILEATTRIB`](rules/compatibility.md#dfileattrib) | 'fileattrib' is not recommended. Use 'dir' with file attributes instead. |
+| [`DISDIR`](rules/compatibility.md#disdir) | 'isdir' is not recommended. Use 'isfolder' instead, which is a direct replacement. |
+| [`DFILEATTRIB`](rules/compatibility.md#dfileattrib) | 'fileattrib' is not recommended. With appropriate code changes, use 'filePermissions' instead. |
 | [`DVERLESSTHAN`](rules/compatibility.md#dverlessthan) | 'verLessThan' is not recommended. Use 'isMATLABReleaseOlderThan' instead. |
 | [`DNARGCHK`](rules/compatibility.md#dnargchk) | 'nargchk' has been removed. Use 'narginchk' instead. |
 | [`DNARGOUTCHK`](rules/compatibility.md#dnargoutchk) | The error-string form of 'nargoutchk' is not recommended. Use the narginchk-style calling form instead. |
-| [`DCOMBNK`](rules/compatibility.md#dcombnk) | 'combnk' is not recommended. Use 'nchoosek' or 'combinations' instead. |
+| [`DCOMBNK`](rules/compatibility.md#dcombnk) | 'combnk' is not recommended. With appropriate code changes, use 'nchoosek' instead. |
 | [`DMATLABPOOL`](rules/compatibility.md#dmatlabpool) | 'matlabpool' has been removed. Use 'parpool' instead. |
 | [`DDISTCOMP`](rules/compatibility.md#ddistcomp) | Older 'distributed' syntax is not recommended. Use newer parallel computing patterns. |
-| [`DLABINDEX`](rules/compatibility.md#dlabindex) | 'labindex' is not recommended. Use 'spmdIndex' instead. |
-| [`DNUMLABS`](rules/compatibility.md#dnumlabs) | 'numlabs' is not recommended. Use 'spmdSize' instead. |
-| [`DLABBARRIER`](rules/compatibility.md#dlabbarrier) | 'labBarrier' is not recommended. Use 'spmdBarrier' instead. |
-| [`DLABSEND`](rules/compatibility.md#dlabsend) | 'labSend' is not recommended. Use 'spmdSend' instead. |
-| [`DLABRECEIVE`](rules/compatibility.md#dlabreceive) | 'labReceive' is not recommended. Use 'spmdReceive' instead. |
-| [`DLABBROADCAST`](rules/compatibility.md#dlabbroadcast) | 'labBroadcast' is not recommended. Use 'spmdBroadcast' instead. |
-| [`DLABSENDRECEIVE`](rules/compatibility.md#dlabsendreceive) | 'labSendReceive' is not recommended. Use 'spmdSendReceive' instead. |
-| [`DLABPROBE`](rules/compatibility.md#dlabprobe) | 'labProbe' is not recommended. Use 'spmdProbe' instead. |
+| [`DLABINDEX`](rules/compatibility.md#dlabindex) | 'labindex' is not recommended. Use 'spmdIndex' instead, which is a direct replacement. |
+| [`DNUMLABS`](rules/compatibility.md#dnumlabs) | 'numlabs' is not recommended. Use 'spmdSize' instead, which is a direct replacement. |
+| [`DLABBARRIER`](rules/compatibility.md#dlabbarrier) | 'labBarrier' is not recommended. Use 'spmdBarrier' instead, which is a direct replacement. |
+| [`DLABSEND`](rules/compatibility.md#dlabsend) | 'labSend' is not recommended. Use 'spmdSend' instead, which is a direct replacement. |
+| [`DLABRECEIVE`](rules/compatibility.md#dlabreceive) | 'labReceive' is not recommended. Use 'spmdReceive' instead, which is a direct replacement. |
+| [`DLABBROADCAST`](rules/compatibility.md#dlabbroadcast) | 'labBroadcast' is not recommended. Use 'spmdBroadcast' instead, which is a direct replacement. |
+| [`DLABSENDRECEIVE`](rules/compatibility.md#dlabsendreceive) | 'labSendReceive' is not recommended. Use 'spmdSendReceive' instead, which is a direct replacement. |
+| [`DLABPROBE`](rules/compatibility.md#dlabprobe) | 'labProbe' is not recommended. Use 'spmdProbe' instead, which is a direct replacement. |
 | [`DBARTLETT`](rules/compatibility.md#dbartlett) | 'bartlett' will be removed. Use 'barthannwin' or window functions from Signal Processing Toolbox. |
 | [`DBLACKMANHARRIS`](rules/compatibility.md#dblackmanharris) | 'blackmanharris' is not recommended. Use 'blackmanharris' from Signal Processing Toolbox with updated syntax. |
 | [`DBOHMANWIN`](rules/compatibility.md#dbohmanwin) | 'bohmanwin' window function syntax has been updated. |
@@ -1076,18 +1076,18 @@ to refresh them whenever `data/compatibility.toml` or
 | [`LENEMP`](rules/compatibility.md#lenemp) | Passing in text with no characters will omit the object from appearing in the legend. To revert to the old behavior, use a whitespace character instead of text with no characters. |
 | [`INTRPC`](rules/compatibility.md#intrpc) | 'interp1(...,'cubic')' changed in R2020b to perform cubic convolution. To continue using shape-preserving piecewise cubic interpolation, use 'interp1(...,'pchip')' instead. |
 | [`IDISVARHIGH`](rules/compatibility.md#idisvarhigh) | Variable must be explicitly defined before first use. In some cases, the definition was not required in previous releases, but it is now required. |
-| [`LEGPVPAIR`](rules/compatibility.md#legpvpair) | 'legend' has changed and might interpret the name of an argument as a legend property instead of a label. |
-| [`CLBGEN`](rules/compatibility.md#clbgen) | Starting in R2020a, interfaces created by 'clibgen.generateLibraryDefinition' return clib.array object instead of the equivalent MATLAB array for primitive types. |
-| [`CLBBLD`](rules/compatibility.md#clbbld) | Starting in R2020a, interfaces created by 'clibgen.buildInterface' return clib.array object instead of the equivalent MATLAB array for primitive types. |
-| [`COLMP`](rules/compatibility.md#colmp) | In R2019a and previous releases, the default colormap size is 64. Starting in R2019b, colormaps have 256 colors by default. |
-| [`FDTAG`](rules/compatibility.md#fdtag) | 'findall' with 'Exploration.Pan', 'Exploration.ZoomIn', etc. might return empty because the data exploration buttons have moved from the figure toolbar to the axes toolbar. |
-| [`NSTIMP`](rules/compatibility.md#nstimp) | Nested functions now inherit import statements from this parent function. |
+| [`LEGPVPAIR`](rules/compatibility.md#legpvpair) | 'legend' has changed and might interpret the name of an argument as a legend property instead of a label. To include a label with the same name as a legend property, specify the labels using a cell array or string array. Refer to the documentation for a list of affected property names. |
+| [`CLBGEN`](rules/compatibility.md#clbgen) | Starting in R2020a, interfaces created by 'clibgen.generateLibraryDefinition' return clib.array object instead of the equivalent MATLAB array for primitive types. Notify your users to update their code to use clib arrays. To revert to the old behavior, call 'clibgen.generateLibraryDefinition' with the 'ReturnCArrays' argument set to false. |
+| [`CLBBLD`](rules/compatibility.md#clbbld) | Starting in R2020a, interfaces created by 'clibgen.buildInterface' return clib.array object instead of the equivalent MATLAB array for primitive types. Notify your users to update their code to use clib arrays. To revert to the old behavior, call 'clibgen.buildInterface' with the 'ReturnCArrays' argument set to false. |
+| [`COLMP`](rules/compatibility.md#colmp) | In R2019a and previous releases, the default colormap size is 64. Starting in R2019b, colormaps have 256 colors by default. If your code depends on a colormap having 64 colors, specify the number of colors when querying the colormap. For example, parula(64) queries the 64-color parula colormap. |
+| [`FDTAG`](rules/compatibility.md#fdtag) | 'findall' with 'Exploration.Pan', 'Exploration.ZoomIn', 'Exploration.ZoomOut', 'Exploration.DataCursor', 'Exploration.Brushing', or 'Exploration.Rotate' might return empty because the data exploration buttons have moved from the figure toolbar to the axes toolbar. To customize the axes interactions, use the 'axtoolbar' and 'axtoolbarbtn' functions. |
+| [`NSTIMP`](rules/compatibility.md#nstimp) | Nested functions now inherit import statements from this parent function. If the nested functions intend to call functions on the path, ensure that the imported namespaces do not contain functions with the same name. |
 | [`IDISVARLOW`](rules/compatibility.md#idisvarlow) | To avoid a potential conflict with functions on the path, explicitly define the variable before indexing into it. |
-| [`WEBBEHAVE`](rules/compatibility.md#webbehave) | The 'web' function now opens external sites in your system browser by default. |
-| [`GLGRI`](rules/compatibility.md#glgri) | Starting R2021a, the second output of 'geoloc2grid' is a geographic raster reference object instead of a referencing vector. |
-| [`V2MTX`](rules/compatibility.md#v2mtx) | Starting R2021a, the second output of 'vec2mtx' is a geographic raster reference object instead of a referencing vector. |
-| [`PTCLO`](rules/compatibility.md#ptclo) | Changing the axes LineStyleOrder or ColorOrder properties of an existing chart now affects the chart immediately. |
-| [`PTDLO`](rules/compatibility.md#ptdlo) | Specifying multiple line styles in the axes LineStyleOrder might result in charts that render differently than in the previous releases. |
+| [`WEBBEHAVE`](rules/compatibility.md#webbehave) | The 'web' function now opens external sites in your system browser by default. In a future release, 'web' will open all pages using the system browser. Consider specifying the '-browser' option to open all pages in your system browser. |
+| [`GLGRI`](rules/compatibility.md#glgri) | Starting R2021a, the second output of 'geoloc2grid' is a geographic raster reference object instead of a referencing vector. Most Mapping Toolbox functions that accept referencing vectors as input also accept geographic raster reference objects, so existing code is unlikely to be affected. |
+| [`V2MTX`](rules/compatibility.md#v2mtx) | Starting R2021a, the second output of 'vec2mtx' is a geographic raster reference object instead of a referencing vector. '[Z,R] = vec2mtx(LAT,LON,Z1,R1,...)' is an exception, where R1 is a referencing vector or matrix. Most Mapping Toolbox functions that accept referencing vectors as input also accept geographic raster reference objects, so existing code is unlikely to be affected. |
+| [`PTCLO`](rules/compatibility.md#ptclo) | Changing the axes LineStyleOrder or ColorOrder properties of an existing chart now affects the chart immediately. To revert to the old behavior, set either the axes LineStyleOrderIndex or ColorOrderIndex to any value (such as its current value) before changing LineStyleOrder or ColorOrder. |
+| [`PTDLO`](rules/compatibility.md#ptdlo) | Specifying multiple line styles in the axes LineStyleOrder might result in charts that render differently than in the previous releases. MATLAB uses a new indexing scheme to select colors and line styles. To revert to the old behavior, set either the axes LineStyleOrderIndex or ColorOrderIndex to any value (such as its current value) and call 'hold on' before creating your chart. |
 | [`JAPIEXT1`](rules/compatibility.md#japiext1) | 'com.teamdev.jxbrowser' Java package and subpackages are not available in MATLAB. To continue using this package, install its JAR file and add the JAR file to the static path in MATLAB. |
 | [`JAPIEXT4`](rules/compatibility.md#japiext4) | 'javax.security.auth' Java package and subpackages are not available in MATLAB. To continue using this package, install its JAR file and add the JAR file to the static path in MATLAB. |
 | [`JAPIEXT5`](rules/compatibility.md#japiext5) | 'javax.transaction.xa' Java package and subpackages are not available in MATLAB. To continue using this package, install its JAR file and add the JAR file to the static path in MATLAB. |
@@ -1102,19 +1102,19 @@ to refresh them whenever `data/compatibility.toml` or
 | [`JAPIEXT17`](rules/compatibility.md#japiext17) | 'org.ros.exception' Java package and subpackages are not available in MATLAB. To continue using this package, install its JAR file and add the JAR file to the static path in MATLAB. |
 | [`JAPIEXT18`](rules/compatibility.md#japiext18) | 'org.ros.gradle_plugins' Java package and subpackages are not available in MATLAB. To continue using this package, install its JAR file and add the JAR file to the static path in MATLAB. |
 | [`JAPIEXT19`](rules/compatibility.md#japiext19) | 'org.ros.internal' Java package and subpackages are not available in MATLAB. To continue using this package, install its JAR file and add the JAR file to the static path in MATLAB. |
-| [`JAPIEXT21`](rules/compatibility.md#japiext21) | 'org.ros.master' Java package and subpackages are not available in MATLAB. To continue using this package, install its JAR file and add the JAR file to the static path in MATLAB. |
+| [`JAPIEXT21`](rules/compatibility.md#japiext21) | 'org.ros.math' Java package and subpackages are not available in MATLAB. To continue using this package, install its JAR file and add the JAR file to the static path in MATLAB. |
 | [`JAPIEXT22`](rules/compatibility.md#japiext22) | 'org.ros.message' Java package and subpackages are not available in MATLAB. To continue using this package, install its JAR file and add the JAR file to the static path in MATLAB. |
 | [`JAPIEXT23`](rules/compatibility.md#japiext23) | 'org.ros.namespace' Java package and subpackages are not available in MATLAB. To continue using this package, install its JAR file and add the JAR file to the static path in MATLAB. |
 | [`JAPIEXT24`](rules/compatibility.md#japiext24) | 'org.ros.node' Java package and subpackages are not available in MATLAB. To continue using this package, install its JAR file and add the JAR file to the static path in MATLAB. |
-| [`JAPIEXT31`](rules/compatibility.md#japiext31) | 'org.apache.commons.codec' Java package and subpackages will be removed in a future release. To continue using this package, install its JAR file and add the JAR file to the static path in MATLAB. |
-| [`JAPIEXT35`](rules/compatibility.md#japiext35) | 'org.apache.commons.io' Java package and subpackages will be removed in a future release. To continue using this package, install its JAR file and add the JAR file to the static path in MATLAB. |
-| [`JAPIEXT36`](rules/compatibility.md#japiext36) | 'org.apache.commons.lang' Java package and subpackages will be removed in a future release. To continue using this package, install its JAR file and add the JAR file to the static path in MATLAB. |
-| [`JAPIEXT38`](rules/compatibility.md#japiext38) | 'org.apache.commons.logging' Java package and subpackages will be removed in a future release. To continue using this package, install its JAR file and add the JAR file to the static path in MATLAB. |
-| [`JAPIEXT39`](rules/compatibility.md#japiext39) | 'org.apache.commons.math3' Java package and subpackages will be removed in a future release. To continue using this package, install its JAR file and add the JAR file to the static path in MATLAB. |
-| [`JAPIEXT40`](rules/compatibility.md#japiext40) | 'org.apache.commons.net' Java package and subpackages will be removed in a future release. To continue using this package, install its JAR file and add the JAR file to the static path in MATLAB. |
-| [`JAPIEXT41`](rules/compatibility.md#japiext41) | 'org.apache.http' Java package and subpackages will be removed in a future release. To continue using this package, install its JAR file and add the JAR file to the static path in MATLAB. |
-| [`JAPIEXT42`](rules/compatibility.md#japiext42) | 'org.apache.log4j' Java package and subpackages will be removed in a future release. To continue using this package, install its JAR file and add the JAR file to the static path in MATLAB. |
-| [`JAPIEXT43`](rules/compatibility.md#japiext43) | 'org.apache.xerces' Java package and subpackages will be removed in a future release. To continue using this package, install its JAR file and add the JAR file to the static path in MATLAB. |
+| [`JAPIEXT31`](rules/compatibility.md#japiext31) | 'com.sun.jini' Java package and subpackages will not be available in MATLAB in a future release. To continue using this package, install its JAR file and add the JAR file to the static path in MATLAB. |
+| [`JAPIEXT35`](rules/compatibility.md#japiext35) | 'javax.xml.namespace' Java package and subpackages will not be available in MATLAB in a future release. To continue using this package, install its JAR file and add the JAR file to the static path in MATLAB. |
+| [`JAPIEXT36`](rules/compatibility.md#japiext36) | 'javax.xml.stream' Java package and subpackages will not be available in MATLAB in a future release. To continue using this package, install its JAR file and add the JAR file to the static path in MATLAB. |
+| [`JAPIEXT38`](rules/compatibility.md#japiext38) | 'org.jdom2.internal' Java package and subpackages will not be available in MATLAB in a future release. To continue using this package, install its JAR file and add the JAR file to the static path in MATLAB. |
+| [`JAPIEXT39`](rules/compatibility.md#japiext39) | 'org.hamcrest.collection' Java package and subpackages will not be available in MATLAB in a future release. To continue using this package, install its JAR file and add the JAR file to the static path in MATLAB. |
+| [`JAPIEXT40`](rules/compatibility.md#japiext40) | 'org.openxml4j.opc' Java package and subpackages will not be available in MATLAB in a future release. To continue using this package, install its JAR file and add the JAR file to the static path in MATLAB. |
+| [`JAPIEXT41`](rules/compatibility.md#japiext41) | 'net.jini.entry' Java package and subpackages will not be available in MATLAB in a future release. To continue using this package, install its JAR file and add the JAR file to the static path in MATLAB. |
+| [`JAPIEXT42`](rules/compatibility.md#japiext42) | 'org.apache.html' Java package and subpackages will not be available in MATLAB in a future release. To continue using this package, install its JAR file and add the JAR file to the static path in MATLAB. |
+| [`JAPIEXT43`](rules/compatibility.md#japiext43) | 'org.eclipse.paho' Java package and subpackages will not be available in MATLAB in a future release. To continue using this package, install its JAR file and add the JAR file to the static path in MATLAB. |
 | [`CLBARY`](rules/compatibility.md#clbary) | Starting in R2020a, clib.array object is the default return value, instead of the equivalent MATLAB array for primitive types. Notify your user to update code to use clib arrays. To revert to the old behavior, call 'clibgen.generateLibraryDefinition' or 'clibgen.buildInterface' with the 'ReturnCArrays' argument set to false. |
 | [`JAPIEXT20`](rules/compatibility.md#japiext20) | 'org.ros.master' Java package and subpackages are not available in MATLAB. To continue using this package, install its JAR file and add the JAR file to the static path in MATLAB. |
 | [`JAPIEXT25`](rules/compatibility.md#japiext25) | 'org.ros.rosjava_geometry' Java package and subpackages are not available in MATLAB. To continue using this package, install its JAR file and add the JAR file to the static path in MATLAB. |
@@ -1986,7 +1986,7 @@ to refresh them whenever `data/compatibility.toml` or
 | [`LERR`](rules/suggested-improvements.md#lerr) | LASTERR and LASTERROR are not recommended. Use an identifier on the CATCH block instead. |
 | [`EVLC`](rules/suggested-improvements.md#evlc) | Using 'evalc' with two arguments is not recommended. Use try/catch statements instead to make code more clear and efficient. |
 | [`RAND`](rules/suggested-improvements.md#rand) | RAND or RANDN with the 'seed', 'state', or 'twister' inputs is not recommended. Use RNG instead. |
-| [`HOUGH`](rules/suggested-improvements.md#hough) | HOUGH(BW,'ThetaResolution',VAL) is not recommended. Use HOUGH(BW,'Theta',-90:VAL:(90-VAL)) instead. |
+| [`HOUGH`](rules/suggested-improvements.md#hough) | HOUGH(BW,'ThetaResolution',VAL) is not recommended. Use HOUGH(BW,'Theta',-90:VAL:(90-VAL) ) instead. |
 | [`THOUR`](rules/suggested-improvements.md#thour) | 'hour' with serial date number or text inputs is not recommended. With appropriate code changes, use 'datetime' as input instead. |
 | [`TMNTH`](rules/suggested-improvements.md#tmnth) | 'month' with serial date number or text inputs is not recommended. With appropriate code changes, use 'datetime' as input instead. |
 | [`TMNUT`](rules/suggested-improvements.md#tmnut) | 'minute' with serial date number or text inputs is not recommended. With appropriate code changes, use 'datetime' as input instead. |
@@ -2039,7 +2039,7 @@ to refresh them whenever `data/compatibility.toml` or
 | [`EZSRFC`](rules/suggested-improvements.md#ezsrfc) | EZSURFC is not recommended. Use FSURF instead, and set the 'ShowContours' value to 'on'. |
 | [`FISADR`](rules/suggested-improvements.md#fisadr) | 'addrule' is not recommended. Use 'addRule' instead. |
 | [`STRQUOT`](rules/suggested-improvements.md#strquot) | string('...') is not recommended. Use \ |
-| [`STRCLQT`](rules/suggested-improvements.md#strclqt) | 'string({''str1'', ''str2''})' is not recommended. Use '[\ |
+| [`STRCLQT`](rules/suggested-improvements.md#strclqt) | 'string({'str1', 'str2'})' is not recommended. Use '[\ |
 | [`SIM`](rules/suggested-improvements.md#sim) | 'sim' in parfor loop is not recommended. Replace the parfor loop with 'parsim'. |
 | [`NUMCH`](rules/suggested-improvements.md#numch) | 'NumberOfChannels' is not recommended. Use 'NumChannels' instead. |
 | [`GTRED`](rules/suggested-improvements.md#gtred) | 'geotiffread' is not recommended, except when reading a GeoTIFF file from a URL. With appropriate code changes, use 'readgeoraster' instead. |

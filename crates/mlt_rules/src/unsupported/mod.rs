@@ -21,20 +21,20 @@
 //! ## Check IDs
 //!
 //! | Check ID | Severity | Fix | Description |
-//! |----------|----------|-----|-------------|
-//! | MCADE    | warning  | no  | ADE (Application Deployment Environment) function is no longer supported |
-//! | AWTIUD   | warning  | no  | Await syntax is not supported in this context |
-//! | AXCHUD   | warning  | no  | ActiveX/COM automation is deprecated; use modern alternatives |
-//! | FEATUD   | warning  | no  | 'feature' is an undocumented internal function; avoid in production code |
-//! | FNDPUD   | warning  | no  | 'findprop' is deprecated; use 'findobj' or property access instead |
-//! | HGCNUD   | warning  | no  | Handle Graphics container object pattern is deprecated |
-//! | IMPKG    | warning  | no  | Import package syntax is not supported in this context |
-//! | ISMBUD   | warning  | no  | 'isMember' (camelCase) is deprecated; use 'ismember' (lowercase) |
-//! | MIPKG    | warning  | no  | 'meta.package' is an internal API; use 'what' or package-qualified names instead |
-//! | SEPTUD   | warning  | no  | 'serial' is deprecated; use 'serialport' instead |
-//! | SYDEUD   | warning  | no  | System.Data .NET interop is platform-specific and may not be available |
-//! | UIRSUD   | warning  | no  | 'uiresume' used outside of a figure callback context |
-//! | UISUUD   | warning  | no  | Deprecated UI setup pattern; use modern App Designer patterns |
+//! | --- | --- | --- | --- |
+//! | MCADE | warning | no | Using Description as an attribute is unsupported and might have been changed without notice or might be removed without notice. There is no simple replacement for this. |
+//! | AWTIUD | warning | no | 'awtinvoke' is unsupported and might have been changed without notice or might be removed without notice. With appropriate code changes, use javaMethodEDT instead. |
+//! | AXCHUD | warning | no | 'axescheck' is unsupported and might have been changed without notice or might be removed without notice. There is no simple replacement for this. |
+//! | FEATUD | warning | no | 'feature' and flags passed to it are unsupported and might have been changed without notice or might be removed without notice. There is no simple replacement for this. |
+//! | FNDPUD | warning | no | 'findpackage' is unsupported and might have been changed without notice or might be removed without notice. There is no simple replacement for this. |
+//! | HGCNUD | warning | no | 'hgconvertunits' is unsupported and might have been changed without notice or might be removed without notice. There is no simple replacement for this. |
+//! | IMPKG | warning | no | Functions in internal.matlab namespace are unsupported and might have been changed without notice or might be removed without notice. There is no simple replacement for this. |
+//! | ISMBUD | warning | no | 'ismembc' is unsupported and might have been changed without notice or might be removed without notice. There is no simple replacement for this. |
+//! | MIPKG | warning | no | Functions in MATLAB's internal namespaces are unsupported and might have been changed without notice or might be removed without notice. There is no simple replacement for this. |
+//! | SEPTUD | warning | no | 'setptr' is unsupported and might have been changed without notice or might be removed without notice. There is no simple replacement for this. |
+//! | SYDEUD | warning | no | 'system_dependent' is unsupported and might have been changed without notice or might be removed without notice. There is no simple replacement for this. |
+//! | UIRSUD | warning | no | 'uirestore' is unsupported and might have been changed without notice or might be removed without notice. There is no simple replacement for this. |
+//! | UISUUD | warning | no | 'uisuspend' is unsupported and might have been changed without notice or might be removed without notice. There is no simple replacement for this. |
 //!
 //! ## Examples
 //!

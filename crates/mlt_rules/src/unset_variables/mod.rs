@@ -21,14 +21,14 @@
 //!
 //! ## Check IDs
 //!
-//! | Check ID | Severity | Fix | Description                                          |
-//! |----------|----------|-----|------------------------------------------------------|
-//! | NODEF    | warning  | no  | Variable might not be defined before use             |
-//! | USENS    | warning  | no  | Variable used but might not be set in all code paths |
-//! | PSET     | warning  | no  | Variable set in one branch but not others            |
-//! | SUSENS   | warning  | no  | Script variable used before set                      |
-//! | SVNODEF  | warning  | no  | Variable in script might not be defined              |
-//! | STOUT    | warning  | no  | Output variable might not be assigned                |
+//! | Check ID | Severity | Fix | Description |
+//! | --- | --- | --- | --- |
+//! | NODEF | warning | no | Variable might be used before it is defined. |
+//! | USENS | warning | no | Explicitly initialize this variable to avoid a potential uninitialized variable, or use a valid syntax for function call on line VAR_NUMBER. |
+//! | PSET | warning | no | Persistent variable is used, but might be unset. |
+//! | SUSENS | warning | no | Variable is used, but might be unset (within a script). |
+//! | SVNODEF | warning | no | Variable might not have a value, because variable definition may not be executed. |
+//! | STOUT | warning | no | Function return value might be unset. |
 //!
 //! ## Examples
 //!

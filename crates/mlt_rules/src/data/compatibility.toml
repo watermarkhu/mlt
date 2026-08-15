@@ -208,7 +208,7 @@ category = "compatibility"
 id = "OPGLI"
 function_name = "opengl"
 severity = "error"
-message = "'opengl' has been removed. There is no simple replacement for this."
+message = "'opengl('info')' has been removed. With appropriate code changes, use 'rendererinfo' instead."
 category = "compatibility"
 
 [[checks]]
@@ -285,56 +285,56 @@ category = "compatibility"
 id = "DBITMAX"
 function_name = "bitmax"
 severity = "error"
-message = "'bitmax' has been removed. Use 'flintmax' instead."
+message = "'bitmax' has been removed. With appropriate code changes, use 'flintmax' instead."
 category = "compatibility"
 
 [[checks]]
 id = "COLORDEF"
 function_name = "colordef"
 severity = "warning"
-message = "'colordef' will be removed in a future release. There is no simple replacement for this."
+message = "'colordef' has been removed. There is no simple replacement for this."
 category = "compatibility"
 
 [[checks]]
 id = "GRAYMON"
 function_name = "graymon"
 severity = "warning"
-message = "'graymon' will be removed in a future release. There is no simple replacement for this."
+message = "'graymon' has been removed. There is no simple replacement for this."
 category = "compatibility"
 
 [[checks]]
 id = "WHITEBG"
 function_name = "whitebg"
 severity = "warning"
-message = "'whitebg' will be removed in a future release. There is no simple replacement for this."
+message = "'whitebg' has been removed. There is no simple replacement for this."
 category = "compatibility"
 
 [[checks]]
 id = "PRINTOPT"
 function_name = "printopt"
 severity = "warning"
-message = "'printopt' will be removed in a future release. There is no simple replacement for this."
+message = "'printopt' has been removed. There is no simple replacement for this."
 category = "compatibility"
 
 [[checks]]
 id = "HGEXPORT"
 function_name = "hgexport"
 severity = "warning"
-message = "'hgexport' will be removed in a future release. Use 'exportgraphics' or 'copygraphics' instead."
+message = "'hgexport' has been removed. With appropriate code changes, use 'print' instead."
 category = "compatibility"
 
 [[checks]]
 id = "HANK2SYS"
 function_name = "hank2sys"
 severity = "warning"
-message = "'hank2sys' will be removed in a future release. There is no simple replacement for this."
+message = "'hank2sys' has been removed. There is no simple replacement for this."
 category = "compatibility"
 
 [[checks]]
 id = "HGSAVE"
 function_name = "hgsave"
 severity = "warning"
-message = "'hgsave' will be removed in a future release. Use 'savefig' instead."
+message = "'hgsave' will be removed in a future release. Use 'savefig' instead, which is a direct replacement."
 category = "compatibility"
 
 [[checks]]
@@ -348,469 +348,469 @@ category = "compatibility"
 id = "HILBIIR"
 function_name = "hilbiir"
 severity = "warning"
-message = "'hilbiir' will be removed in a future release. There is no simple replacement for this."
+message = "'hilbiir' has been removed. With appropriate code changes, use 'fdesign.hilbert' or 'hilbert' instead."
 category = "compatibility"
 
 [[checks]]
 id = "MOVIE2"
 function_name = "movie2avi"
 severity = "warning"
-message = "'movie2avi' will be removed in a future release. Use 'VideoWriter' instead."
+message = "'movie2avi' has been removed. With appropriate code changes, use 'VideoWriter' instead."
 category = "compatibility"
 
 [[checks]]
 id = "SERIAL"
 function_name = "serial"
 severity = "warning"
-message = "'serial' will be removed in a future release. Use 'serialport' instead."
+message = "'serial' will be removed in a future release. With appropriate code changes, use 'serialport' instead."
 category = "compatibility"
 
 [[checks]]
 id = "GPIB"
 function_name = "gpib"
 severity = "warning"
-message = "'gpib' will be removed in a future release. Use 'visadev' instead."
+message = "'gpib' will be removed in a future release. With appropriate code changes, use 'visadev' instead."
 category = "compatibility"
 
 [[checks]]
 id = "VISA"
 function_name = "visa"
 severity = "warning"
-message = "'visa' will be removed in a future release. Use 'visadev' instead."
+message = "'visa' will be removed in a future release. With appropriate code changes, use 'visadev' instead."
 category = "compatibility"
 
 [[checks]]
 id = "UDPP"
 function_name = "udp"
 severity = "warning"
-message = "'udp' will be removed in a future release. Use 'udpport' instead."
+message = "'udp' will be removed in a future release. With appropriate code changes, use 'udpport' instead."
 category = "compatibility"
 
 [[checks]]
 id = "BLUTH"
 function_name = "Bluetooth"
 severity = "warning"
-message = "'Bluetooth' (Instrument Control) will be removed in a future release. Use 'bluetooth' instead."
+message = "'Bluetooth' will be removed in a future release. With appropriate code changes, use 'bluetooth' instead."
 category = "compatibility"
 
 [[checks]]
 id = "IMTOOL"
 function_name = "imtool"
 severity = "warning"
-message = "'imtool' will be removed in a future release. Use 'imageViewer' instead."
+message = "'imtool' will be removed in a future release. With appropriate code changes, use 'imageViewer' instead."
 category = "compatibility"
 
 [[checks]]
 id = "IMJAV"
 function_name = "imjava"
 severity = "warning"
-message = "'imjava' will be removed in a future release. There is no simple replacement for this."
+message = "'im2java2d' has been removed. There is no simple replacement for this."
 category = "compatibility"
 
 [[checks]]
 id = "DPOOL"
 function_name = "parpool"
 severity = "warning"
-message = "'parpool' legacy syntax will be removed in a future release. Use updated syntax instead."
+message = "'matlabpool' has been removed. With appropriate code changes, use 'parpool' instead."
 category = "compatibility"
 
 [[checks]]
 id = "MUPAD"
 function_name = "mupad"
 severity = "warning"
-message = "'mupad' will be removed in a future release. Use MATLAB Live Editor instead."
+message = "'mupad' has been removed. With appropriate code changes, use 'Live Editor' instead."
 category = "compatibility"
 
 [[checks]]
 id = "FBUILDER"
 function_name = "filterBuilder"
 severity = "warning"
-message = "'filterBuilder' will be removed in a future release. Use 'designfilt' instead."
+message = "'filterbuilder' will be removed in a future release. Use 'filterBuilder' instead, which is a direct replacement."
 category = "compatibility"
 
 [[checks]]
 id = "FDATOOL"
 function_name = "fdatool"
 severity = "warning"
-message = "'fdatool' will be removed in a future release. Use 'filterDesigner' instead."
+message = "'fdatool' will be removed in a future release. Use 'filterDesigner' instead, which is a direct replacement."
 category = "compatibility"
 
 [[checks]]
 id = "WINTOOL"
 function_name = "wintool"
 severity = "warning"
-message = "'wintool' will be removed in a future release. Use 'windowDesigner' instead."
+message = "'wintool' will be removed in a future release. Use 'windowDesigner' instead, which is a direct replacement."
 category = "compatibility"
 
 [[checks]]
 id = "FVTOOL"
 function_name = "fvtool"
 severity = "warning"
-message = "'fvtool' will be removed in a future release. Use 'filterAnalyzer' instead."
+message = "'fvtool' will be removed in a future release. With appropriate code changes, use 'filterAnalyzer' instead."
 category = "compatibility"
 
 [[checks]]
 id = "FISNEW"
 function_name = "newfis"
 severity = "warning"
-message = "'newfis' will be removed in a future release. Use 'mamfis' or 'sugfis' instead."
+message = "'newfis' has been removed. With appropriate code changes, use 'mamfis' or 'sugfis' instead."
 category = "compatibility"
 
 [[checks]]
 id = "FISADV"
 function_name = "addvar"
 severity = "warning"
-message = "'addvar' will be removed in a future release. Use 'addInput' or 'addOutput' instead."
+message = "'addvar' has been removed. With appropriate code changes, use 'addInput' or 'addOutput' instead."
 category = "compatibility"
 
 [[checks]]
 id = "FISRMV"
 function_name = "rmvar"
 severity = "warning"
-message = "'rmvar' will be removed in a future release. Use 'removeInput' or 'removeOutput' instead."
+message = "'rmvar' has been removed. With appropriate code changes, use 'removeInput' or 'removeOutput' instead."
 category = "compatibility"
 
 [[checks]]
 id = "FISRMF"
 function_name = "rmmf"
 severity = "warning"
-message = "'rmmf' will be removed in a future release. Use 'removeMF' instead."
+message = "'rmmf' has been removed. With appropriate code changes, use 'removeMF' instead."
 category = "compatibility"
 
 [[checks]]
 id = "FISM2S"
 function_name = "mfedit"
 severity = "warning"
-message = "'mfedit' will be removed in a future release. There is no simple replacement for this."
+message = "'mam2sug' has been removed. Use 'convertToSugeno' instead, which is a direct replacement."
 category = "compatibility"
 
 [[checks]]
 id = "FISPSR"
 function_name = "parsrule"
 severity = "warning"
-message = "'parsrule' will be removed in a future release. Use 'addRule' instead."
+message = "'parsrule' has been removed. With appropriate code changes, use 'addRule' or 'fisrule' instead."
 category = "compatibility"
 
 [[checks]]
 id = "NPI2PI"
 function_name = "npi2pi"
 severity = "warning"
-message = "'npi2pi' will be removed in a future release. Use 'wrapToPi' instead."
+message = "'npi2pi' has been removed. With appropriate code changes, use 'wrapTo180' or 'wrapToPi' instead."
 category = "compatibility"
 
 [[checks]]
 id = "NPI22PI"
 function_name = "zero22pi"
 severity = "warning"
-message = "'zero22pi' will be removed in a future release. Use 'wrapTo2Pi' instead."
+message = "'zero22pi' has been removed. With appropriate code changes, use 'wrapTo360' or 'wrapTo2Pi' instead."
 category = "compatibility"
 
 [[checks]]
 id = "CLASSREGTREE"
 function_name = "classregtree"
 severity = "warning"
-message = "'classregtree' will be removed in a future release. Use 'fitctree' or 'fitrtree' instead."
+message = "'classregtree' has been removed. With appropriate code changes, use 'fitctree' or 'fitrtree' instead."
 category = "compatibility"
 
 [[checks]]
 id = "SVMCLASSIFY"
 function_name = "svmclassify"
 severity = "warning"
-message = "'svmclassify' will be removed in a future release. Use 'predict' on a trained SVM model instead."
+message = "'svmclassify' has been removed. With appropriate code changes, use 'ClassificationSVM' instead."
 category = "compatibility"
 
 [[checks]]
 id = "SVMTRAIN"
 function_name = "svmtrain"
 severity = "warning"
-message = "'svmtrain' will be removed in a future release. Use 'fitcsvm' instead."
+message = "'svmtrain' has been removed. With appropriate code changes, use 'fitcsvm' instead."
 category = "compatibility"
 
 [[checks]]
 id = "PRINCOMP"
 function_name = "princomp"
 severity = "warning"
-message = "'princomp' will be removed in a future release. Use 'pca' instead."
+message = "'princomp' has been removed. With appropriate code changes, use 'pca' instead."
 category = "compatibility"
 
 [[checks]]
 id = "PROBDIST"
 function_name = "ProbDist"
 severity = "warning"
-message = "'ProbDist' will be removed in a future release. Use probability distribution objects instead."
+message = "'ProbDist' has been removed. With appropriate code changes, use 'prob.ProbabilityDistribution' instead."
 category = "compatibility"
 
 [[checks]]
 id = "PROBDISTPARAMETRIC"
 function_name = "ProbDistParametric"
 severity = "warning"
-message = "'ProbDistParametric' will be removed in a future release. Use probability distribution objects instead."
+message = "'ProbDistParametric' has been removed. With appropriate code changes, use 'prob.ProbabilityDistribution' instead."
 category = "compatibility"
 
 [[checks]]
 id = "PROBDISTKERNEL"
 function_name = "ProbDistKernel"
 severity = "warning"
-message = "'ProbDistKernel' will be removed in a future release. Use probability distribution objects instead."
+message = "'ProbDistKernel' has been removed. With appropriate code changes, use 'prob.ProbabilityDistribution' instead."
 category = "compatibility"
 
 [[checks]]
 id = "PROBDISTUNIVKERNEL"
 function_name = "ProbDistUnivKernel"
 severity = "warning"
-message = "'ProbDistUnivKernel' will be removed in a future release. Use probability distribution objects instead."
+message = "'ProbDistUnivKernel' has been removed. With appropriate code changes, use 'makedist' instead."
 category = "compatibility"
 
 [[checks]]
 id = "PROBDISTUNIVPARAM"
 function_name = "ProbDistUnivParam"
 severity = "warning"
-message = "'ProbDistUnivParam' will be removed in a future release. Use probability distribution objects instead."
+message = "'ProbDistUnivParam' has been removed. With appropriate code changes, use 'makedist' instead."
 category = "compatibility"
 
 [[checks]]
 id = "FITNAIVEBAYES"
 function_name = "NaiveBayes.fit"
 severity = "warning"
-message = "'NaiveBayes.fit' will be removed in a future release. Use 'fitcnb' instead."
+message = "'fitNaiveBayes' has been removed. With appropriate code changes, use 'fitcnb' instead."
 category = "compatibility"
 
 [[checks]]
 id = "CAPABLE"
 function_name = "capable"
 severity = "warning"
-message = "'capable' will be removed in a future release. Use 'capability' instead."
+message = "'capable' has been removed. With appropriate code changes, use 'capability' instead."
 category = "compatibility"
 
 [[checks]]
 id = "EWMAPLOT"
 function_name = "ewmaplot"
 severity = "warning"
-message = "'ewmaplot' will be removed in a future release. Use 'controlchart' instead."
+message = "'ewmaplot' has been removed. With appropriate code changes, use 'controlchart' instead."
 category = "compatibility"
 
 [[checks]]
 id = "SCHART"
 function_name = "schart"
 severity = "warning"
-message = "'schart' will be removed in a future release. Use 'controlchart' instead."
+message = "'schart' has been removed. With appropriate code changes, use 'controlchart' instead."
 category = "compatibility"
 
 [[checks]]
 id = "XBARPLOT"
 function_name = "xbarplot"
 severity = "warning"
-message = "'xbarplot' will be removed in a future release. Use 'controlchart' instead."
+message = "'xbarplot' has been removed. With appropriate code changes, use 'controlchart' instead."
 category = "compatibility"
 
 [[checks]]
 id = "RANDSD"
 function_name = "randseed"
 severity = "warning"
-message = "'randseed' will be removed in a future release. Use 'rng' instead."
+message = "'randseed' has been removed. With appropriate code changes, use 'rng' instead."
 category = "compatibility"
 
 [[checks]]
 id = "DRNDINT"
 function_name = "randint"
 severity = "warning"
-message = "'randint' will be removed in a future release. Use 'randi' instead."
+message = "'randint' has been removed. With appropriate code changes, use 'randi' instead."
 category = "compatibility"
 
 [[checks]]
 id = "ISGLOB"
 function_name = "isglobal"
 severity = "warning"
-message = "'isglobal' will be removed in a future release. There is no simple replacement for this."
+message = "'isglobal' has been removed. There is no simple replacement for this."
 category = "compatibility"
 
 [[checks]]
 id = "DGRAPHICSVER"
 function_name = "graphicsversion"
 severity = "warning"
-message = "'graphicsversion' will be removed in a future release. There is no simple replacement for this."
+message = "'graphicsversion' has been removed. With appropriate code changes, use 'verLessThan('matlab','8.4.0')' instead."
 category = "compatibility"
 
 [[checks]]
 id = "DNOANI"
 function_name = "noanimate"
 severity = "warning"
-message = "'noanimate' will be removed in a future release. There is no simple replacement for this."
+message = "'noanimate' has been removed. There is no simple replacement for this."
 category = "compatibility"
 
 [[checks]]
 id = "EPSM"
 function_name = "epsm"
 severity = "warning"
-message = "'epsm' will be removed in a future release. Use 'eps' instead."
+message = "'epsm' has been removed. With appropriate code changes, use '1.0E-6' or 'deg2rad(1.0E-6)' instead."
 category = "compatibility"
 
 [[checks]]
 id = "DEXIFRD"
 function_name = "exifread"
 severity = "warning"
-message = "'exifread' will be removed in a future release. Use 'imfinfo' instead."
+message = "'exifread' has been removed. With appropriate code changes, use 'imfinfo' instead."
 category = "compatibility"
 
 [[checks]]
 id = "HDFGD"
 function_name = "hdfgd"
 severity = "warning"
-message = "'hdfgd' will be removed in a future release. There is no simple replacement for this."
+message = "'hdfgd' has been removed. With appropriate code changes, use 'matlab.io.hdfeos.gd' instead."
 category = "compatibility"
 
 [[checks]]
 id = "HDFSD"
 function_name = "hdfsd"
 severity = "warning"
-message = "'hdfsd' will be removed in a future release. There is no simple replacement for this."
+message = "'hdfsd' has been removed. With appropriate code changes, use 'matlab.io.hdfeos.sd' instead."
 category = "compatibility"
 
 [[checks]]
 id = "HDFSW"
 function_name = "hdfsw"
 severity = "warning"
-message = "'hdfsw' will be removed in a future release. There is no simple replacement for this."
+message = "'hdfsw' has been removed. With appropriate code changes, use 'matlab.io.hdfeos.sw' instead."
 category = "compatibility"
 
 [[checks]]
 id = "HDFTL"
 function_name = "hdftl"
 severity = "warning"
-message = "'hdftl' will be removed in a future release. There is no simple replacement for this."
+message = "'hdftool' has been removed. There is no simple replacement for this."
 category = "compatibility"
 
 [[checks]]
 id = "HYPERCUBE"
 function_name = "hypercube"
 severity = "warning"
-message = "'hypercube' will be removed in a future release. Use 'blockedImage' instead."
+message = "'hypercube' will be removed in a future release. With appropriate code changes, use 'imhypercube', 'geohypercube', 'immulticube' or 'geomulticube' instead."
 category = "compatibility"
 
 [[checks]]
 id = "BIGIMAGE"
 function_name = "bigimage"
 severity = "warning"
-message = "'bigimage' will be removed in a future release. Use 'blockedImage' instead."
+message = "'bigimage' has been removed. With appropriate code changes, use 'blockedImage' instead."
 category = "compatibility"
 
 [[checks]]
 id = "BIGIMAGEDS"
 function_name = "bigimageDatastore"
 severity = "warning"
-message = "'bigimageDatastore' will be removed in a future release. Use 'blockedImageDatastore' instead."
+message = "'bigimageDatastore' has been removed. With appropriate code changes, use 'blockedImageDatastore' instead."
 category = "compatibility"
 
 [[checks]]
 id = "LABELVOL"
 function_name = "labelvolshow"
 severity = "warning"
-message = "'labelvolshow' will be removed in a future release. Use 'labeloverlay3' instead."
+message = "'labelvolshow' has been removed. With appropriate code changes, use 'volshow' instead."
 category = "compatibility"
 
 [[checks]]
 id = "COMPATVOL"
 function_name = "volshow"
 severity = "warning"
-message = "'volshow' will be removed in a future release. Use 'viewer3d' with 'volshow' instead."
+message = "'images.compatibility.volshow.R2022a.volshow' has been removed. With appropriate code changes, use 'volshow' instead."
 category = "compatibility"
 
 [[checks]]
 id = "DEMLC"
 function_name = "emlc"
 severity = "warning"
-message = "'emlc' will be removed in a future release. Use 'codegen' instead."
+message = "'emlc' has been removed. With appropriate code changes, use 'codegen' instead."
 category = "compatibility"
 
 [[checks]]
 id = "DEMLMEX"
 function_name = "emlmex"
 severity = "warning"
-message = "'emlmex' will be removed in a future release. Use 'codegen' instead."
+message = "'emlmex' has been removed. With appropriate code changes, use 'codegen' instead."
 category = "compatibility"
 
 [[checks]]
 id = "COMMBI"
 function_name = "biterr"
 severity = "warning"
-message = "'biterr' (legacy) will be removed in a future release. Use 'comm.ErrorRate' instead."
+message = "'comm.BitToInteger' has been removed. With appropriate code changes, use 'bit2int' instead."
 category = "compatibility"
 
 [[checks]]
 id = "PNZOM"
 function_name = "panzoom"
 severity = "warning"
-message = "'panzoom' will be removed in a future release. Use 'zoom' and 'pan' instead."
+message = "'panzoom' has been removed. With appropriate code changes, use 'zoom' instead."
 category = "compatibility"
 
 [[checks]]
 id = "SPTL"
 function_name = "sptool"
 severity = "warning"
-message = "'sptool' will be removed in a future release. Use 'signalAnalyzer' instead."
+message = "'sptool' has been removed. Use 'signalAnalyzer' or 'filterDesigner' instead."
 category = "compatibility"
 
 [[checks]]
 id = "NDWT"
 function_name = "ndwt"
 severity = "warning"
-message = "'ndwt' will be removed in a future release. Use 'waveletTransform3' instead."
+message = "'ndwt' has been removed. With appropriate code changes, use 'modwt' instead."
 category = "compatibility"
 
 [[checks]]
 id = "INDWT"
 function_name = "indwt"
 severity = "warning"
-message = "'indwt' will be removed in a future release. Use 'waveletTransform3' inverse instead."
+message = "'indwt' has been removed. With appropriate code changes, use 'imodwt' instead."
 category = "compatibility"
 
 [[checks]]
 id = "NDWT2"
 function_name = "ndwt2"
 severity = "warning"
-message = "'ndwt2' will be removed in a future release. There is no simple replacement for this."
+message = "'ndwt2' has been removed. With appropriate code changes, use 'swt2' instead."
 category = "compatibility"
 
 [[checks]]
 id = "INDWT2"
 function_name = "indwt2"
 severity = "warning"
-message = "'indwt2' will be removed in a future release. There is no simple replacement for this."
+message = "'indwt2' has been removed. With appropriate code changes, use 'iswt2' instead."
 category = "compatibility"
 
 [[checks]]
 id = "WEBMP"
 function_name = "webmap"
 severity = "warning"
-message = "'webmap' will be removed in a future release. Use geographic map visualizations instead."
+message = "'webmap' will be removed in a future release. With appropriate code changes, use a geographic axes object instead."
 category = "compatibility"
 
 [[checks]]
 id = "SERLL"
 function_name = "seriallist"
 severity = "warning"
-message = "'seriallist' will be removed in a future release. Use 'serialportlist' instead."
+message = "'seriallist' will be removed in a future release. Use 'serialportlist' instead, which is a direct replacement."
 category = "compatibility"
 
 [[checks]]
 id = "RNG2BW"
 function_name = "range2bw"
 severity = "warning"
-message = "'range2bw' will be removed in a future release. Use 'rangeres2bw' instead."
+message = "'range2bw' will be removed in a future release. Use 'rangeres2bw' instead, which is a direct replacement."
 category = "compatibility"
 
 [[checks]]
 id = "BW2RNG"
 function_name = "bw2range"
 severity = "warning"
-message = "'bw2range' will be removed in a future release. Use 'bw2rangeres' instead."
+message = "'bw2range' will be removed in a future release. Use 'bw2rangeres' instead, which is a direct replacement."
 category = "compatibility"
 
 [[checks]]
 id = "DCSHELP"
 function_name = "docsearch"
 severity = "warning"
-message = "'docsearch' will be removed in a future release. There is no simple replacement for this."
+message = "'cshelp' will be removed in a future release. There is no simple replacement for this."
 category = "compatibility"
 
 [[checks]]
@@ -831,532 +831,532 @@ category = "compatibility"
 id = "ACTXC"
 function_name = "actxcontrol"
 severity = "warning"
-message = "'actxcontrol' will be removed in a future release. There is no simple replacement for this."
+message = "'actxcontrol' has been removed. There is no simple replacement for this."
 category = "compatibility"
 
 [[checks]]
 id = "ACTXL"
 function_name = "actxcontrollist"
 severity = "warning"
-message = "'actxcontrollist' will be removed in a future release. There is no simple replacement for this."
+message = "'actxcontrollist' has been removed. There is no simple replacement for this."
 category = "compatibility"
 
 [[checks]]
 id = "ACTXS"
 function_name = "actxcontrolselect"
 severity = "warning"
-message = "'actxcontrolselect' will be removed in a future release. There is no simple replacement for this."
+message = "'actxcontrolselect' has been removed. There is no simple replacement for this."
 category = "compatibility"
 
 [[checks]]
 id = "SOAPM"
 function_name = "createSoapMessage"
 severity = "warning"
-message = "'createSoapMessage' will be removed in a future release. Use 'matlab.net.http' instead."
+message = "'createSoapMessage' has been removed. With appropriate code changes, use 'matlab.wsdl.createWSDLClient' instead."
 category = "compatibility"
 
 [[checks]]
 id = "SOAPS"
 function_name = "callSoapService"
 severity = "warning"
-message = "'callSoapService' will be removed in a future release. Use 'matlab.net.http' instead."
+message = "'callSoapService' has been removed. With appropriate code changes, use 'matlab.wsdl.createWSDLClient' instead."
 category = "compatibility"
 
 [[checks]]
 id = "SOAPR"
 function_name = "parseSoapResponse"
 severity = "warning"
-message = "'parseSoapResponse' will be removed in a future release. Use 'matlab.net.http' instead."
+message = "'parseSoapResponse' has been removed. With appropriate code changes, use 'matlab.wsdl.createWSDLClient' instead."
 category = "compatibility"
 
 [[checks]]
 id = "SOAPC"
 function_name = "createClassFromWsdl"
 severity = "warning"
-message = "'createClassFromWsdl' will be removed in a future release. Use 'matlab.net.http' instead."
+message = "'createClassFromWsdl' has been removed. Use 'matlab.wsdl.createWSDLClient' instead, which is a direct replacement."
 category = "compatibility"
 
 [[checks]]
 id = "VREDT"
 function_name = "vredit"
 severity = "warning"
-message = "'vredit' will be removed in a future release. There is no simple replacement for this."
+message = "3D World Editor has been removed, so 'vredit' does not open the virtual world. With appropriate code changes, use sim3d classes to create and view a 3D environment instead."
 category = "compatibility"
 
 [[checks]]
 id = "VRPLY"
 function_name = "vrplay"
 severity = "warning"
-message = "'vrplay' will be removed in a future release. There is no simple replacement for this."
+message = "Simulink 3D Animation Player has been removed, so 'vrplay' does not open and play virtual world animation files. With appropriate code changes, use sim3d classes to create and view a 3D environment instead."
 category = "compatibility"
 
 [[checks]]
 id = "VRCNVS"
 function_name = "vrcanvas"
 severity = "warning"
-message = "'vrcanvas' will be removed in a future release. There is no simple replacement for this."
+message = "Simulink 3D Animation Viewer has been removed, so 'vr.canvas' does not open the virtual world. With appropriate code changes, use sim3d classes to create and view a 3D environment instead."
 category = "compatibility"
 
 [[checks]]
 id = "VRFIG"
 function_name = "vrfigure"
 severity = "warning"
-message = "'vrfigure' will be removed in a future release. There is no simple replacement for this."
+message = "Simulink 3D Animation Viewer has been removed, so 'vrfigure' does not open the virtual world. With appropriate code changes, use sim3d classes to create and view a 3D environment instead."
 category = "compatibility"
 
 [[checks]]
 id = "VRVIEW"
 function_name = "vrview"
 severity = "warning"
-message = "'vrview' will be removed in a future release. There is no simple replacement for this."
+message = "Simulink 3D Animation Viewer has been removed, so 'vrview' does not open the virtual world. With appropriate code changes, use sim3d classes to create and view a 3D environment instead."
 category = "compatibility"
 
 [[checks]]
 id = "VRWRLD"
 function_name = "vrworld"
 severity = "warning"
-message = "'vrworld' will be removed in a future release. There is no simple replacement for this."
+message = "'vrworld' will be removed in a future release. With appropriate code changes, use sim3d classes to create and view a 3D environment instead."
 category = "compatibility"
 
 [[checks]]
 id = "VRNDE"
 function_name = "vrnode"
 severity = "warning"
-message = "'vrnode' will be removed in a future release. There is no simple replacement for this."
+message = "'vrnode' will be removed in a future release. With appropriate code changes, use sim3d classes to create and view a 3D environment instead."
 category = "compatibility"
 
 [[checks]]
 id = "VRJOYSTK"
 function_name = "vrjoystick"
 severity = "warning"
-message = "'vrjoystick' will be removed in a future release. There is no simple replacement for this."
+message = "'vrjoystick' will be removed in a future release. Use 'sim3d.io.Joystick' instead, which is a direct replacement."
 category = "compatibility"
 
 [[checks]]
 id = "VRSPCMOUSE"
 function_name = "vrspacemouse"
 severity = "warning"
-message = "'vrspacemouse' will be removed in a future release. There is no simple replacement for this."
+message = "'vrspacemouse' will be removed in a future release. Use 'sim3d.io.SpaceMouse' instead, which is a direct replacement."
 category = "compatibility"
 
 [[checks]]
 id = "SLRTBNCH"
 function_name = "slrtbench"
 severity = "warning"
-message = "'slrtbench' will be removed in a future release. There is no simple replacement for this."
+message = "'slrtbench' has been removed. With appropriate code changes, use 'SimulinkRealTime.utils.minimumSampleTime' instead."
 category = "compatibility"
 
 [[checks]]
 id = "RCSIIR"
 function_name = "rcosine"
 severity = "warning"
-message = "'rcosine' (IIR) will be removed in a future release. Use 'rcosdesign' instead."
+message = "'rcosiir' is unsupported and has been removed. There is no simple replacement for this."
 category = "compatibility"
 
 [[checks]]
 id = "RCSFIR"
 function_name = "rcosdesign"
 severity = "warning"
-message = "'rcosine' (FIR) will be removed in a future release. Use 'rcosdesign' instead."
+message = "'rcosfir' is unsupported and has been removed. With appropriate code changes, use 'rcosdesign' instead."
 category = "compatibility"
 
 [[checks]]
 id = "G2B"
 function_name = "gray2bin"
 severity = "warning"
-message = "'gray2bin' will be removed in a future release. There is no simple replacement for this."
+message = "'gray2bin' has been removed. Use the appropriate modulation object or function to remap constellation points instead."
 category = "compatibility"
 
 [[checks]]
 id = "B2G"
 function_name = "bin2gray"
 severity = "warning"
-message = "'bin2gray' will be removed in a future release. There is no simple replacement for this."
+message = "'bin2gray' has been removed. Use the appropriate modulation object or function to remap constellation points instead."
 category = "compatibility"
 
 [[checks]]
 id = "EYESCOPE"
 function_name = "eyediagram"
 severity = "warning"
-message = "'eyediagram' will be removed in a future release. Use 'comm.EyeDiagram' instead."
+message = "'eyescope' has been removed. There is no simple replacement for this."
 category = "compatibility"
 
 [[checks]]
 id = "DLDPCENC"
 function_name = "fec.ldpcenc"
 severity = "warning"
-message = "'fec.ldpcenc' will be removed in a future release. Use 'comm.LDPCEncoder' instead."
+message = "'fec.ldpcenc' has been removed. With appropriate code changes, use 'comm.LDPCEncoder' instead."
 category = "compatibility"
 
 [[checks]]
 id = "DLDPCDEC"
 function_name = "fec.ldpcdec"
 severity = "warning"
-message = "'fec.ldpcdec' will be removed in a future release. Use 'comm.LDPCDecoder' instead."
+message = "'fec.ldpcdec' has been removed. With appropriate code changes, use 'comm.LDPCDecoder' instead."
 category = "compatibility"
 
 [[checks]]
 id = "WEIBCDF"
 function_name = "weibcdf"
 severity = "warning"
-message = "'weibcdf' will be removed in a future release. Use 'wblcdf' instead."
+message = "'weibcdf' has been removed. With appropriate code changes, use 'wblcdf' instead."
 category = "compatibility"
 
 [[checks]]
 id = "WEIBFIT"
 function_name = "weibfit"
 severity = "warning"
-message = "'weibfit' will be removed in a future release. Use 'wblfit' instead."
+message = "'weibfit' has been removed. With appropriate code changes, use 'wblfit' instead."
 category = "compatibility"
 
 [[checks]]
 id = "WEIBINV"
 function_name = "weibinv"
 severity = "warning"
-message = "'weibinv' will be removed in a future release. Use 'wblinv' instead."
+message = "'weibinv' has been removed. With appropriate code changes, use 'wblinv' instead."
 category = "compatibility"
 
 [[checks]]
 id = "WEIBLIKE"
 function_name = "weiblike"
 severity = "warning"
-message = "'weiblike' will be removed in a future release. Use 'wbllike' instead."
+message = "'weiblike' has been removed. With appropriate code changes, use 'wbllike' instead."
 category = "compatibility"
 
 [[checks]]
 id = "WEIBPDF"
 function_name = "weibpdf"
 severity = "warning"
-message = "'weibpdf' will be removed in a future release. Use 'wblpdf' instead."
+message = "'weibpdf' has been removed. With appropriate code changes, use 'wblpdf' instead."
 category = "compatibility"
 
 [[checks]]
 id = "WEIBPLOT"
 function_name = "weibplot"
 severity = "warning"
-message = "'weibplot' will be removed in a future release. Use 'wblplot' instead."
+message = "'weibplot' has been removed. With appropriate code changes, use 'wblplot' instead."
 category = "compatibility"
 
 [[checks]]
 id = "WEIBRND"
 function_name = "weibrnd"
 severity = "warning"
-message = "'weibrnd' will be removed in a future release. Use 'wblrnd' instead."
+message = "'weibrnd' has been removed. With appropriate code changes, use 'wblrnd' instead."
 category = "compatibility"
 
 [[checks]]
 id = "WEIBSTAT"
 function_name = "weibstat"
 severity = "warning"
-message = "'weibstat' will be removed in a future release. Use 'wblstat' instead."
+message = "'weibstat' has been removed. With appropriate code changes, use 'wblstat' instead."
 category = "compatibility"
 
 [[checks]]
 id = "OPCSERVER"
 function_name = "opcserverinfo"
 severity = "warning"
-message = "'opcserverinfo' will be removed in a future release. There is no simple replacement for this."
+message = "'opcserverinfo' has been removed along with the support for OPC DA. To access live OPC data, use the OPC UA standard instead."
 category = "compatibility"
 
 [[checks]]
 id = "OPCDA"
 function_name = "opcda"
 severity = "warning"
-message = "'opcda' will be removed in a future release. Use 'opcua' instead."
+message = "'opcda' has been removed along with the support for OPC DA. To access live OPC data, use the OPC UA standard instead."
 category = "compatibility"
 
 [[checks]]
 id = "OPCFIND"
 function_name = "opcfind"
 severity = "warning"
-message = "'opcfind' will be removed in a future release. There is no simple replacement for this."
+message = "'opcfind' has been removed along with the support for OPC DA. To access live OPC data, use the OPC UA standard instead."
 category = "compatibility"
 
 [[checks]]
 id = "OPCRESET"
 function_name = "opcreset"
 severity = "warning"
-message = "'opcreset' will be removed in a future release. There is no simple replacement for this."
+message = "'opcreset' has been removed along with the support for OPC DA. To access live OPC data, use the OPC UA standard instead."
 category = "compatibility"
 
 [[checks]]
 id = "OPCHELP"
 function_name = "opchelp"
 severity = "warning"
-message = "'opchelp' will be removed in a future release. There is no simple replacement for this."
+message = "'opchelp' has been removed along with the support for OPC DA. To access live OPC data, use the OPC UA standard instead."
 category = "compatibility"
 
 [[checks]]
 id = "DSPBQF"
 function_name = "dsp.BiquadFilter"
 severity = "warning"
-message = "'dsp.BiquadFilter' will be removed in a future release. Use 'dsp.SOSFilter' instead."
+message = "'dsp.BiquadFilter' will be removed in a future release. With appropriate code changes, use 'dsp.SOSFilter' instead."
 category = "compatibility"
 
 [[checks]]
 id = "DSPLPC"
 function_name = "dsp.LPC"
 severity = "warning"
-message = "'dsp.LPC' will be removed in a future release. Use 'lpc' instead."
+message = "'dsp.LPCToLSP' has been removed. With appropriate code changes, use 'cos(poly2lsf)' instead."
 category = "compatibility"
 
 [[checks]]
 id = "DSPAVA"
 function_name = "dsp.ArrayVectorAdder"
 severity = "warning"
-message = "'dsp.ArrayVectorAdder' will be removed in a future release. Use built-in addition instead."
+message = "'dsp.ArrayVectorAdder' has been removed. With appropriate code changes, use '+' operator instead."
 category = "compatibility"
 
 [[checks]]
 id = "DSPAVS"
 function_name = "dsp.ArrayVectorSubtractor"
 severity = "warning"
-message = "'dsp.ArrayVectorSubtractor' will be removed in a future release. Use built-in subtraction instead."
+message = "'dsp.ArrayVectorSubtractor' has been removed. With appropriate code changes, use '-' operator instead."
 category = "compatibility"
 
 [[checks]]
 id = "DSPAVM"
 function_name = "dsp.ArrayVectorMultiplier"
 severity = "warning"
-message = "'dsp.ArrayVectorMultiplier' will be removed in a future release. Use built-in multiplication instead."
+message = "'dsp.ArrayVectorMultiplier' has been removed. With appropriate code changes, use '.*' operator instead."
 category = "compatibility"
 
 [[checks]]
 id = "DSPAVD"
 function_name = "dsp.ArrayVectorDivider"
 severity = "warning"
-message = "'dsp.ArrayVectorDivider' will be removed in a future release. Use built-in division instead."
+message = "'dsp.ArrayVectorDivider' has been removed. With appropriate code changes, use './' operator instead."
 category = "compatibility"
 
 [[checks]]
 id = "DSPCTR"
 function_name = "dsp.Counter"
 severity = "warning"
-message = "'dsp.Counter' will be removed in a future release. There is no simple replacement for this."
+message = "'dsp.Counter' has been removed. Create a variable and increment by one instead."
 category = "compatibility"
 
 [[checks]]
 id = "DSPKFT"
 function_name = "dsp.KalmanFilter"
 severity = "warning"
-message = "'dsp.KalmanFilter' will be removed in a future release. There is no simple replacement for this."
+message = "'dsp.KalmanFilter' has been removed. With appropriate code changes, use the Kalman filter functionality in Sensor Fusion and Tracking Toolbox instead."
 category = "compatibility"
 
 [[checks]]
 id = "DSPNORM"
 function_name = "dsp.Normalizer"
 severity = "warning"
-message = "'dsp.Normalizer' will be removed in a future release. Use 'normalize' instead."
+message = "'dsp.Normalizer' has been removed. With appropriate code changes, use 'normalize' or 'vecnorm' instead."
 category = "compatibility"
 
 [[checks]]
 id = "DSPAUDIOREC"
 function_name = "dsp.AudioRecorder"
 severity = "warning"
-message = "'dsp.AudioRecorder' will be removed in a future release. Use 'audioDeviceReader' instead."
+message = "'dsp.AudioRecorder' has been removed. With appropriate code changes, use 'audioDeviceReader' instead."
 category = "compatibility"
 
 [[checks]]
 id = "DSPAUDIOPLAY"
 function_name = "dsp.AudioPlayer"
 severity = "warning"
-message = "'dsp.AudioPlayer' will be removed in a future release. Use 'audioDeviceWriter' instead."
+message = "'dsp.AudioPlayer' has been removed. With appropriate code changes, use 'audioDeviceWriter' instead."
 category = "compatibility"
 
 [[checks]]
 id = "DSPBUFFER"
 function_name = "dsp.Buffer"
 severity = "warning"
-message = "'dsp.Buffer' will be removed in a future release. Use 'dsp.AsyncBuffer' instead."
+message = "'dsp.Buffer' has been removed. With appropriate code changes, use 'dsp.AsyncBuffer' instead."
 category = "compatibility"
 
 [[checks]]
 id = "DSPHIST"
 function_name = "dsp.Histogram"
 severity = "warning"
-message = "'dsp.Histogram' will be removed in a future release. Use 'histogram' instead."
+message = "'dsp.Histogram' has been removed. With appropriate code changes, use 'histogram' or 'histcounts' instead."
 category = "compatibility"
 
 [[checks]]
 id = "DSPMAX"
 function_name = "dsp.Maximum"
 severity = "warning"
-message = "'dsp.Maximum' will be removed in a future release. Use 'movmax' or 'max' instead."
+message = "'dsp.Maximum' has been removed. With appropriate code changes, use 'max' instead."
 category = "compatibility"
 
 [[checks]]
 id = "DSPMIN"
 function_name = "dsp.Minimum"
 severity = "warning"
-message = "'dsp.Minimum' will be removed in a future release. Use 'movmin' or 'min' instead."
+message = "'dsp.Minimum' has been removed. With appropriate code changes, use 'min' instead."
 category = "compatibility"
 
 [[checks]]
 id = "DSPMEAN"
 function_name = "dsp.Mean"
 severity = "warning"
-message = "'dsp.Mean' will be removed in a future release. Use 'movmean' or 'mean' instead."
+message = "'dsp.Mean' has been removed. With appropriate code changes, use 'mean' instead."
 category = "compatibility"
 
 [[checks]]
 id = "DSPMEDIAN"
 function_name = "dsp.Median"
 severity = "warning"
-message = "'dsp.Median' will be removed in a future release. Use 'movmedian' or 'median' instead."
+message = "'dsp.Median' has been removed. With appropriate code changes, use 'median' instead."
 category = "compatibility"
 
 [[checks]]
 id = "DSPRMS"
 function_name = "dsp.RMS"
 severity = "warning"
-message = "'dsp.RMS' will be removed in a future release. Use 'rms' instead."
+message = "'dsp.RMS' has been removed. With appropriate code changes, use 'rms' instead."
 category = "compatibility"
 
 [[checks]]
 id = "DSPSTD"
 function_name = "dsp.StandardDeviation"
 severity = "warning"
-message = "'dsp.StandardDeviation' will be removed in a future release. Use 'movstd' or 'std' instead."
+message = "'dsp.StandardDeviation' has been removed. With appropriate code changes, use 'std' instead."
 category = "compatibility"
 
 [[checks]]
 id = "DSPVAR"
 function_name = "dsp.Variance"
 severity = "warning"
-message = "'dsp.Variance' will be removed in a future release. Use 'movvar' or 'var' instead."
+message = "'dsp.Variance' has been removed. With appropriate code changes, use 'var' instead."
 category = "compatibility"
 
 [[checks]]
 id = "DSPCUMPROD"
 function_name = "dsp.CumulativeProduct"
 severity = "warning"
-message = "'dsp.CumulativeProduct' will be removed in a future release. Use 'cumprod' instead."
+message = "'dsp.CumulativeProduct' has been removed. With appropriate code changes, use 'cumprod' instead."
 category = "compatibility"
 
 [[checks]]
 id = "DSPCUMSUM"
 function_name = "dsp.CumulativeSum"
 severity = "warning"
-message = "'dsp.CumulativeSum' will be removed in a future release. Use 'cumsum' instead."
+message = "'dsp.CumulativeSum' has been removed. With appropriate code changes, use 'cumsum' instead."
 category = "compatibility"
 
 [[checks]]
 id = "DSPINTERP"
 function_name = "dsp.Interpolator"
 severity = "warning"
-message = "'dsp.Interpolator' will be removed in a future release. Use 'interp1' instead."
+message = "'dsp.Interpolator' has been removed. With appropriate code changes, use 'dsp.FIRInterpolator' instead."
 category = "compatibility"
 
 [[checks]]
 id = "DSPCONV"
 function_name = "dsp.Convolver"
 severity = "warning"
-message = "'dsp.Convolver' will be removed in a future release. Use 'conv' instead."
+message = "'dsp.Convolver' has been removed. With appropriate code changes, use 'conv' instead."
 category = "compatibility"
 
 [[checks]]
 id = "DSPAUTOCORR"
 function_name = "dsp.Autocorrelator"
 severity = "warning"
-message = "'dsp.Autocorrelator' will be removed in a future release. Use 'xcorr' instead."
+message = "'dsp.Autocorrelator' has been removed. With appropriate code changes, use 'xcorr' instead."
 category = "compatibility"
 
 [[checks]]
 id = "DSPXCORR"
 function_name = "dsp.Crosscorrelator"
 severity = "warning"
-message = "'dsp.Crosscorrelator' will be removed in a future release. Use 'xcorr' instead."
+message = "'dsp.Crosscorrelator' has been removed. With appropriate code changes, use 'xcorr' instead."
 category = "compatibility"
 
 [[checks]]
 id = "DSPLDL"
 function_name = "dsp.LDLFactor"
 severity = "warning"
-message = "'dsp.LDLFactor' will be removed in a future release. Use 'ldl' instead."
+message = "'dsp.LDLFactor' has been removed. With appropriate code changes, use 'ldl' instead."
 category = "compatibility"
 
 [[checks]]
 id = "DSPLU"
 function_name = "dsp.LUFactor"
 severity = "warning"
-message = "'dsp.LUFactor' will be removed in a future release. Use 'lu' instead."
+message = "'dsp.LUFactor' has been removed. With appropriate code changes, use 'lu' instead."
 category = "compatibility"
 
 [[checks]]
 id = "DSPLEVINSON"
 function_name = "dsp.LevinsonSolver"
 severity = "warning"
-message = "'dsp.LevinsonSolver' will be removed in a future release. Use 'levinson' instead."
+message = "'dsp.LevinsonSolver' has been removed. With appropriate code changes, use 'levinson' instead."
 category = "compatibility"
 
 [[checks]]
 id = "DSPDELAYLINE"
 function_name = "dsp.DelayLine"
 severity = "warning"
-message = "'dsp.DelayLine' will be removed in a future release. Use 'dsp.AsyncBuffer' instead."
+message = "'dsp.DelayLine' has been removed. There is no simple replacement for this."
 category = "compatibility"
 
 [[checks]]
 id = "DSPWIN"
 function_name = "dsp.Window"
 severity = "warning"
-message = "'dsp.Window' will be removed in a future release. Use 'window functions' directly instead."
+message = "'dsp.Window' has been removed. With appropriate code changes, use 'window' instead."
 category = "compatibility"
 
 [[checks]]
 id = "DSPSA"
 function_name = "dsp.SpectrumAnalyzer"
 severity = "warning"
-message = "'dsp.SpectrumAnalyzer' scope syntax will be removed in a future release. Use 'spectrumAnalyzer' instead."
+message = "'dsp.SpectrumAnalyzer' will be removed in a future release. Use 'spectrumAnalyzer' instead, which is a direct replacement."
 category = "compatibility"
 
 [[checks]]
 id = "CMLLD"
 function_name = "ClassificationModel.logLoss"
 severity = "warning"
-message = "'ClassificationModel.logLoss' will be removed in a future release. There is no simple replacement for this."
+message = "'loadCompactModel' has been removed. Use 'loadLearnerForCoder' instead, which is a direct replacement."
 category = "compatibility"
 
 [[checks]]
 id = "CMLSV"
 function_name = "ClassificationModel.logSV"
 severity = "warning"
-message = "'ClassificationModel.logSV' will be removed in a future release. There is no simple replacement for this."
+message = "'saveCompactModel' has been removed. Use 'saveLearnerForCoder' instead, which is a direct replacement."
 category = "compatibility"
 
 [[checks]]
 id = "SESSION"
 function_name = "daq.createSession"
 severity = "warning"
-message = "'daq.createSession' will be removed in a future release. Use 'daqlist' and 'daq' interface instead."
+message = "'Session' class will be removed in a future release. Use 'daq' instead, which is a direct replacement."
 category = "compatibility"
 
 [[checks]]
 id = "DRYICE"
 function_name = "dryice"
 severity = "warning"
-message = "'dryice' will be removed in a future release. There is no simple replacement for this."
+message = "Input argument 'dry-ice' of function 'earthSurfacePermittivity' will be removed in a future release. Use argument 'pure-ice' instead, which is a direct replacement."
 category = "compatibility"
 
 [[checks]]
 id = "PERFREF"
 function_name = "perfcurve"
 severity = "warning"
-message = "'perfcurve' old syntax will be removed in a future release. Use updated syntax instead."
+message = "'perfect-reflector' value will be removed in a future release. Use value 'PEC' instead, which is a direct replacement."
 category = "compatibility"
 
 [[checks]]
 id = "YOLOV"
 function_name = "yolov2ObjectDetector"
 severity = "warning"
-message = "'yolov2ObjectDetector' will be removed in a future release. Use 'yoloxObjectDetector' instead."
+message = "'yolov2ReorgLayer' has been removed. With appropriate code changes, use 'spaceToDepthLayer' instead."
 category = "compatibility"
 
 [[checks]]
 id = "DDTRD"
 function_name = "dtree"
 severity = "warning"
-message = "'dtree' will be removed in a future release. There is no simple replacement for this."
+message = "'dataread' will be removed in a future release. With appropriate code changes, use 'textscan' instead."
 category = "compatibility"
 
 # --- Generic/property-based checks (cannot match by function_name alone) ---
@@ -1617,7 +1617,7 @@ category = "compatibility"
 id = "INVHCRM"
 function_name = ""
 severity = "warning"
-message = "The 'InvertHardCopy' property will be removed in a future release and currently has no effect."
+message = "The 'InvertHardCopy' property will be removed in a future release and currently has no effect. With appropriate code changes, set the 'Color' property of the figure before printing or call the 'exportgraphics' function to control the color for exporting."
 category = "compatibility"
 pattern = "generic"
 
@@ -1625,7 +1625,7 @@ pattern = "generic"
 id = "DINVHCRM"
 function_name = ""
 severity = "warning"
-message = "The 'defaultFigureInvertHardCopy' setting will be removed in a future release and currently has no effect."
+message = "The 'defaultFigureInvertHardCopy' setting will be removed in a future release and currently has no effect. With appropriate code changes, set the 'Color' property of the figure before printing or call the 'exportgraphics' function to control the color for exporting."
 category = "compatibility"
 pattern = "generic"
 
@@ -1670,7 +1670,7 @@ category = "compatibility"
 id = "IMCLASS"
 function_name = "ismethod"
 severity = "warning"
-message = "In a future release, 'ismethod' will treat a string or character vector in its first input as a 'string' or 'char' class object."
+message = "In a future release, 'ismethod' will treat a string or character vector in its first input as a 'string' or 'char' class object. Pass an object to 'ismethod' or use any(strcmp('methodName', methods('ClassName'))) instead."
 category = "compatibility"
 
 [[checks]]
@@ -1728,14 +1728,14 @@ pattern = "generic"
 id = "MAPVW"
 function_name = "mapview"
 severity = "warning"
-message = "'mapview' will be removed in a future release. Use geographic or map axes instead."
+message = "'mapview' has been removed. With appropriate code changes, use 'mapshow' instead."
 category = "compatibility"
 
 [[checks]]
 id = "MAPTOOL"
 function_name = "maptool"
 severity = "warning"
-message = "'maptool' will be removed in a future release. There is no simple replacement for this."
+message = "'maptool' has been removed. There is no simple replacement for this."
 category = "compatibility"
 
 [[checks]]
@@ -1758,7 +1758,7 @@ pattern = "generic"
 id = "DILEVAL"
 function_name = "dicomLookupEval"
 severity = "warning"
-message = "'dicomLookupEval' will be removed in a future release. There is no simple replacement for this."
+message = "'inlineeval' will be removed in a future release. There is no simple replacement for this."
 category = "compatibility"
 
 # --- DSP-related batch (frequency-domain and signal processing) ---
@@ -1767,28 +1767,28 @@ category = "compatibility"
 id = "DSPPEAKS"
 function_name = "dsp.PeakFinder"
 severity = "warning"
-message = "'dsp.PeakFinder' will be removed in a future release. Use 'findpeaks' instead."
+message = "'dsp.PeakFinder' has been removed. With appropriate code changes, use 'findpeaks' instead."
 category = "compatibility"
 
 [[checks]]
 id = "DSPPEAK2PEAK"
 function_name = "dsp.PeakToPeak"
 severity = "warning"
-message = "'dsp.PeakToPeak' will be removed in a future release. Use 'peak2peak' instead."
+message = "'dsp.PeakToPeak' has been removed. With appropriate code changes, use 'peak2peak' instead."
 category = "compatibility"
 
 [[checks]]
 id = "DSP_LINKS"
 function_name = "dsp.SignalSource"
 severity = "warning"
-message = "'dsp.SignalSource' will be removed in a future release. There is no simple replacement for this."
+message = "'dsp_links' will be removed in a future release. There is no simple replacement for this."
 category = "compatibility"
 
 [[checks]]
 id = "MCASCADE"
 function_name = "mfilt.cascade"
 severity = "warning"
-message = "'mfilt.cascade' will be removed in a future release. Use 'dsp.FilterCascade' instead."
+message = "'mfilt.cascade' will be removed in a future release. With appropriate code changes, use 'dsp.FilterCascade' instead."
 category = "compatibility"
 
 # --- Filter design deprecated entries ---
@@ -1797,21 +1797,21 @@ category = "compatibility"
 id = "FDESPARAMEQ"
 function_name = "fdesign.parameq"
 severity = "warning"
-message = "'fdesign.parameq' will be removed in a future release. Use 'designParamEQ' instead."
+message = "'fdesign.parameq' has been removed. With appropriate code changes, use 'designParamEQ' instead."
 category = "compatibility"
 
 [[checks]]
 id = "FDESOCTAVE"
 function_name = "fdesign.octave"
 severity = "warning"
-message = "'fdesign.octave' will be removed in a future release. Use 'designOctaveFilter' instead."
+message = "'fdesign.octave' has been removed. With appropriate code changes, use 'octaveFilter' instead."
 category = "compatibility"
 
 [[checks]]
 id = "FDESWEIGHT"
 function_name = "fdesign.arbmagnphase"
 severity = "warning"
-message = "'fdesign.arbmagnphase' will be removed in a future release. Use 'designfilt' instead."
+message = "'fdesign.audioweighting' has been removed. With appropriate code changes, use 'weightingFilter' instead."
 category = "compatibility"
 
 # --- Adaptive filter deprecated entries ---
@@ -1820,28 +1820,28 @@ category = "compatibility"
 id = "AFLMS"
 function_name = "adaptfilt.lms"
 severity = "warning"
-message = "'adaptfilt.lms' will be removed in a future release. Use 'dsp.LMSFilter' instead."
+message = "'adaptfilt.lms' has been removed. With appropriate code changes, use 'dsp.LMSFilter' instead."
 category = "compatibility"
 
 [[checks]]
 id = "AFNLMS"
 function_name = "adaptfilt.nlms"
 severity = "warning"
-message = "'adaptfilt.nlms' will be removed in a future release. Use 'dsp.LMSFilter' with NLMS algorithm instead."
+message = "'adaptfilt.nlms' has been removed. With appropriate code changes, use 'dsp.LMSFilter' instead."
 category = "compatibility"
 
 [[checks]]
 id = "AFRLS"
 function_name = "adaptfilt.rls"
 severity = "warning"
-message = "'adaptfilt.rls' will be removed in a future release. Use 'dsp.RLSFilter' instead."
+message = "'adaptfilt.rls' has been removed. With appropriate code changes, use 'dsp.RLSFilter' instead."
 category = "compatibility"
 
 [[checks]]
 id = "AFBLMS"
 function_name = "adaptfilt.blms"
 severity = "warning"
-message = "'adaptfilt.blms' will be removed in a future release. Use 'dsp.BlockLMSFilter' instead."
+message = "'adaptfilt.blms' has been removed. With appropriate code changes, use 'dsp.BlockLMSFilter' instead."
 category = "compatibility"
 
 # =============================================================================
@@ -1942,7 +1942,7 @@ pattern = "generic"
 id = "LEGPVPAIR"
 function_name = "legend"
 severity = "warning"
-message = "'legend' has changed and might interpret the name of an argument as a legend property instead of a label."
+message = "'legend' has changed and might interpret the name of an argument as a legend property instead of a label. To include a label with the same name as a legend property, specify the labels using a cell array or string array. Refer to the documentation for a list of affected property names."
 category = "behavior-changes"
 
 # =============================================================================
@@ -1953,35 +1953,35 @@ category = "behavior-changes"
 id = "CLBGEN"
 function_name = "clibgen.generateLibraryDefinition"
 severity = "warning"
-message = "Starting in R2020a, interfaces created by 'clibgen.generateLibraryDefinition' return clib.array object instead of the equivalent MATLAB array for primitive types."
+message = "Starting in R2020a, interfaces created by 'clibgen.generateLibraryDefinition' return clib.array object instead of the equivalent MATLAB array for primitive types. Notify your users to update their code to use clib arrays. To revert to the old behavior, call 'clibgen.generateLibraryDefinition' with the 'ReturnCArrays' argument set to false."
 category = "behavior-changes"
 
 [[checks]]
 id = "CLBBLD"
 function_name = "clibgen.buildInterface"
 severity = "warning"
-message = "Starting in R2020a, interfaces created by 'clibgen.buildInterface' return clib.array object instead of the equivalent MATLAB array for primitive types."
+message = "Starting in R2020a, interfaces created by 'clibgen.buildInterface' return clib.array object instead of the equivalent MATLAB array for primitive types. Notify your users to update their code to use clib arrays. To revert to the old behavior, call 'clibgen.buildInterface' with the 'ReturnCArrays' argument set to false."
 category = "behavior-changes"
 
 [[checks]]
 id = "COLMP"
 function_name = "colormap"
 severity = "warning"
-message = "In R2019a and previous releases, the default colormap size is 64. Starting in R2019b, colormaps have 256 colors by default."
+message = "In R2019a and previous releases, the default colormap size is 64. Starting in R2019b, colormaps have 256 colors by default. If your code depends on a colormap having 64 colors, specify the number of colors when querying the colormap. For example, parula(64) queries the 64-color parula colormap."
 category = "behavior-changes"
 
 [[checks]]
 id = "FDTAG"
 function_name = "findall"
 severity = "warning"
-message = "'findall' with 'Exploration.Pan', 'Exploration.ZoomIn', etc. might return empty because the data exploration buttons have moved from the figure toolbar to the axes toolbar."
+message = "'findall' with 'Exploration.Pan', 'Exploration.ZoomIn', 'Exploration.ZoomOut', 'Exploration.DataCursor', 'Exploration.Brushing', or 'Exploration.Rotate' might return empty because the data exploration buttons have moved from the figure toolbar to the axes toolbar. To customize the axes interactions, use the 'axtoolbar' and 'axtoolbarbtn' functions."
 category = "behavior-changes"
 
 [[checks]]
 id = "NSTIMP"
 function_name = ""
 severity = "warning"
-message = "Nested functions now inherit import statements from this parent function."
+message = "Nested functions now inherit import statements from this parent function. If the nested functions intend to call functions on the path, ensure that the imported namespaces do not contain functions with the same name."
 category = "behavior-changes"
 pattern = "generic"
 
@@ -1997,28 +1997,28 @@ pattern = "generic"
 id = "WEBBEHAVE"
 function_name = "web"
 severity = "warning"
-message = "The 'web' function now opens external sites in your system browser by default."
+message = "The 'web' function now opens external sites in your system browser by default. In a future release, 'web' will open all pages using the system browser. Consider specifying the '-browser' option to open all pages in your system browser."
 category = "behavior-changes"
 
 [[checks]]
 id = "GLGRI"
 function_name = "geoloc2grid"
 severity = "warning"
-message = "Starting R2021a, the second output of 'geoloc2grid' is a geographic raster reference object instead of a referencing vector."
+message = "Starting R2021a, the second output of 'geoloc2grid' is a geographic raster reference object instead of a referencing vector. Most Mapping Toolbox functions that accept referencing vectors as input also accept geographic raster reference objects, so existing code is unlikely to be affected."
 category = "behavior-changes"
 
 [[checks]]
 id = "V2MTX"
 function_name = "vec2mtx"
 severity = "warning"
-message = "Starting R2021a, the second output of 'vec2mtx' is a geographic raster reference object instead of a referencing vector."
+message = "Starting R2021a, the second output of 'vec2mtx' is a geographic raster reference object instead of a referencing vector. '[Z,R] = vec2mtx(LAT,LON,Z1,R1,...)' is an exception, where R1 is a referencing vector or matrix. Most Mapping Toolbox functions that accept referencing vectors as input also accept geographic raster reference objects, so existing code is unlikely to be affected."
 category = "behavior-changes"
 
 [[checks]]
 id = "PTCLO"
 function_name = ""
 severity = "warning"
-message = "Changing the axes LineStyleOrder or ColorOrder properties of an existing chart now affects the chart immediately."
+message = "Changing the axes LineStyleOrder or ColorOrder properties of an existing chart now affects the chart immediately. To revert to the old behavior, set either the axes LineStyleOrderIndex or ColorOrderIndex to any value (such as its current value) before changing LineStyleOrder or ColorOrder."
 category = "behavior-changes"
 pattern = "generic"
 
@@ -2026,7 +2026,7 @@ pattern = "generic"
 id = "PTDLO"
 function_name = ""
 severity = "warning"
-message = "Specifying multiple line styles in the axes LineStyleOrder might result in charts that render differently than in the previous releases."
+message = "Specifying multiple line styles in the axes LineStyleOrder might result in charts that render differently than in the previous releases. MATLAB uses a new indexing scheme to select colors and line styles. To revert to the old behavior, set either the axes LineStyleOrderIndex or ColorOrderIndex to any value (such as its current value) and call 'hold on' before creating your chart."
 category = "behavior-changes"
 pattern = "generic"
 
@@ -2134,7 +2134,7 @@ category = "behavior-changes"
 id = "JAPIEXT21"
 function_name = "org.ros.master"
 severity = "warning"
-message = "'org.ros.master' Java package and subpackages are not available in MATLAB. To continue using this package, install its JAR file and add the JAR file to the static path in MATLAB."
+message = "'org.ros.math' Java package and subpackages are not available in MATLAB. To continue using this package, install its JAR file and add the JAR file to the static path in MATLAB."
 category = "behavior-changes"
 
 [[checks]]
@@ -2162,63 +2162,63 @@ category = "behavior-changes"
 id = "JAPIEXT31"
 function_name = "org.apache.commons.codec"
 severity = "warning"
-message = "'org.apache.commons.codec' Java package and subpackages will be removed in a future release. To continue using this package, install its JAR file and add the JAR file to the static path in MATLAB."
+message = "'com.sun.jini' Java package and subpackages will not be available in MATLAB in a future release. To continue using this package, install its JAR file and add the JAR file to the static path in MATLAB."
 category = "behavior-changes"
 
 [[checks]]
 id = "JAPIEXT35"
 function_name = "org.apache.commons.io"
 severity = "warning"
-message = "'org.apache.commons.io' Java package and subpackages will be removed in a future release. To continue using this package, install its JAR file and add the JAR file to the static path in MATLAB."
+message = "'javax.xml.namespace' Java package and subpackages will not be available in MATLAB in a future release. To continue using this package, install its JAR file and add the JAR file to the static path in MATLAB."
 category = "behavior-changes"
 
 [[checks]]
 id = "JAPIEXT36"
 function_name = "org.apache.commons.lang"
 severity = "warning"
-message = "'org.apache.commons.lang' Java package and subpackages will be removed in a future release. To continue using this package, install its JAR file and add the JAR file to the static path in MATLAB."
+message = "'javax.xml.stream' Java package and subpackages will not be available in MATLAB in a future release. To continue using this package, install its JAR file and add the JAR file to the static path in MATLAB."
 category = "behavior-changes"
 
 [[checks]]
 id = "JAPIEXT38"
 function_name = "org.apache.commons.logging"
 severity = "warning"
-message = "'org.apache.commons.logging' Java package and subpackages will be removed in a future release. To continue using this package, install its JAR file and add the JAR file to the static path in MATLAB."
+message = "'org.jdom2.internal' Java package and subpackages will not be available in MATLAB in a future release. To continue using this package, install its JAR file and add the JAR file to the static path in MATLAB."
 category = "behavior-changes"
 
 [[checks]]
 id = "JAPIEXT39"
 function_name = "org.apache.commons.math3"
 severity = "warning"
-message = "'org.apache.commons.math3' Java package and subpackages will be removed in a future release. To continue using this package, install its JAR file and add the JAR file to the static path in MATLAB."
+message = "'org.hamcrest.collection' Java package and subpackages will not be available in MATLAB in a future release. To continue using this package, install its JAR file and add the JAR file to the static path in MATLAB."
 category = "behavior-changes"
 
 [[checks]]
 id = "JAPIEXT40"
 function_name = "org.apache.commons.net"
 severity = "warning"
-message = "'org.apache.commons.net' Java package and subpackages will be removed in a future release. To continue using this package, install its JAR file and add the JAR file to the static path in MATLAB."
+message = "'org.openxml4j.opc' Java package and subpackages will not be available in MATLAB in a future release. To continue using this package, install its JAR file and add the JAR file to the static path in MATLAB."
 category = "behavior-changes"
 
 [[checks]]
 id = "JAPIEXT41"
 function_name = "org.apache.http"
 severity = "warning"
-message = "'org.apache.http' Java package and subpackages will be removed in a future release. To continue using this package, install its JAR file and add the JAR file to the static path in MATLAB."
+message = "'net.jini.entry' Java package and subpackages will not be available in MATLAB in a future release. To continue using this package, install its JAR file and add the JAR file to the static path in MATLAB."
 category = "behavior-changes"
 
 [[checks]]
 id = "JAPIEXT42"
 function_name = "org.apache.log4j"
 severity = "warning"
-message = "'org.apache.log4j' Java package and subpackages will be removed in a future release. To continue using this package, install its JAR file and add the JAR file to the static path in MATLAB."
+message = "'org.apache.html' Java package and subpackages will not be available in MATLAB in a future release. To continue using this package, install its JAR file and add the JAR file to the static path in MATLAB."
 category = "behavior-changes"
 
 [[checks]]
 id = "JAPIEXT43"
 function_name = "org.apache.xerces"
 severity = "warning"
-message = "'org.apache.xerces' Java package and subpackages will be removed in a future release. To continue using this package, install its JAR file and add the JAR file to the static path in MATLAB."
+message = "'org.eclipse.paho' Java package and subpackages will not be available in MATLAB in a future release. To continue using this package, install its JAR file and add the JAR file to the static path in MATLAB."
 category = "behavior-changes"
 
 [[checks]]
@@ -8276,56 +8276,56 @@ category = "behavior-changes"
 id = "DNANMEAN"
 function_name = "nanmean"
 severity = "warning"
-message = "'nanmean' from Statistics Toolbox is not recommended. Use 'mean' with 'omitnan' option instead."
+message = "'nanmean' is not recommended. With appropriate code changes, use 'mean' instead."
 category = "compatibility"
 
 [[checks]]
 id = "DNANSTD"
 function_name = "nanstd"
 severity = "warning"
-message = "'nanstd' from Statistics Toolbox is not recommended. Use 'std' with 'omitnan' option instead."
+message = "'nanstd' is not recommended. With appropriate code changes, use 'std' instead."
 category = "compatibility"
 
 [[checks]]
 id = "DNANVAR"
 function_name = "nanvar"
 severity = "warning"
-message = "'nanvar' from Statistics Toolbox is not recommended. Use 'var' with 'omitnan' option instead."
+message = "'nanvar' is not recommended. With appropriate code changes, use 'var' instead."
 category = "compatibility"
 
 [[checks]]
 id = "DNANMEDIAN"
 function_name = "nanmedian"
 severity = "warning"
-message = "'nanmedian' from Statistics Toolbox is not recommended. Use 'median' with 'omitnan' option instead."
+message = "'nanmedian' is not recommended. With appropriate code changes, use 'median' instead."
 category = "compatibility"
 
 [[checks]]
 id = "DNANMIN"
 function_name = "nanmin"
 severity = "warning"
-message = "'nanmin' from Statistics Toolbox is not recommended. Use 'min' with 'omitnan' option instead."
+message = "'nanmin' is not recommended. With appropriate code changes, use 'min' instead."
 category = "compatibility"
 
 [[checks]]
 id = "DNANMAX"
 function_name = "nanmax"
 severity = "warning"
-message = "'nanmax' from Statistics Toolbox is not recommended. Use 'max' with 'omitnan' option instead."
+message = "'nanmax' is not recommended. With appropriate code changes, use 'max' instead."
 category = "compatibility"
 
 [[checks]]
 id = "DNANSUM"
 function_name = "nansum"
 severity = "warning"
-message = "'nansum' from Statistics Toolbox is not recommended. Use 'sum' with 'omitnan' option instead."
+message = "'nansum' is not recommended. With appropriate code changes, use 'sum' instead."
 category = "compatibility"
 
 [[checks]]
 id = "DNANCOV"
 function_name = "nancov"
 severity = "warning"
-message = "'nancov' from Statistics Toolbox is not recommended. Use covariance computation with 'omitrows' option instead."
+message = "'nancov' is not recommended. With appropriate code changes, use 'cov' instead."
 category = "compatibility"
 
 # --- Audio I/O ---
@@ -8408,14 +8408,14 @@ category = "compatibility"
 id = "DEZMESH"
 function_name = "ezmesh"
 severity = "warning"
-message = "'ezmesh' is not recommended. Use 'fmesh' instead."
+message = "'ezmesh' is not recommended. With appropriate code changes, use 'fmesh' instead."
 category = "compatibility"
 
 [[checks]]
 id = "DEZSURF"
 function_name = "ezsurf"
 severity = "warning"
-message = "'ezsurf' is not recommended. Use 'fsurf' instead."
+message = "'ezsurf' is not recommended. With appropriate code changes, use 'fsurf' instead."
 category = "compatibility"
 
 [[checks]]
@@ -8429,7 +8429,7 @@ category = "compatibility"
 id = "DEZPOLAR"
 function_name = "ezpolar"
 severity = "warning"
-message = "'ezpolar' is not recommended. Use 'polarplot' instead."
+message = "'ezpolar' is not recommended. With appropriate code changes, use 'fpolarplot' instead."
 category = "compatibility"
 
 [[checks]]
@@ -8464,56 +8464,56 @@ category = "compatibility"
 id = "DPLOTYY"
 function_name = "plotyy"
 severity = "warning"
-message = "'plotyy' is not recommended. Use 'yyaxis' instead."
+message = "'plotyy' is not recommended. With appropriate code changes, use 'yyaxis' instead."
 category = "compatibility"
 
 [[checks]]
 id = "DPOLAR"
 function_name = "polar"
 severity = "warning"
-message = "'polar' is not recommended. Use 'polarplot' instead."
+message = "'polar' (MATLAB) is not recommended. Use 'polarplot' instead."
 category = "compatibility"
 
 [[checks]]
 id = "DCOMPASS"
 function_name = "compass"
 severity = "warning"
-message = "'compass' is not recommended. Use 'polarplot' instead."
+message = "'compass' is not recommended. With appropriate code changes, use 'compassplot' instead."
 category = "compatibility"
 
 [[checks]]
 id = "DROSE"
 function_name = "rose"
 severity = "warning"
-message = "'rose' is not recommended. Use 'polarhistogram' instead."
+message = "'rose' is not recommended. With appropriate code changes, use 'polarhistogram' instead."
 category = "compatibility"
 
 [[checks]]
 id = "DHIST"
 function_name = "hist"
 severity = "warning"
-message = "'hist' is not recommended. Use 'histogram' instead."
+message = "'hist' is not recommended. With appropriate code changes, use 'histogram' instead."
 category = "compatibility"
 
 [[checks]]
 id = "DHISTC"
 function_name = "histc"
 severity = "warning"
-message = "'histc' is not recommended. Use 'histcounts' instead."
+message = "'histc' is not recommended. With appropriate code changes, use 'histcounts' instead."
 category = "compatibility"
 
 [[checks]]
 id = "DCAXIS"
 function_name = "caxis"
 severity = "warning"
-message = "'caxis' is not recommended. Use 'clim' instead."
+message = "'caxis' is not recommended. Use 'clim' instead, which is a direct replacement."
 category = "compatibility"
 
 [[checks]]
 id = "DHOLDALL"
 function_name = "hold all"
 severity = "warning"
-message = "'hold all' is not recommended. Use 'hold on' instead."
+message = "'hold('all')' is not recommended. Use 'hold('on')' instead, which is a direct replacement."
 category = "compatibility"
 
 # --- File I/O ---
@@ -8617,7 +8617,7 @@ category = "compatibility"
 id = "DIM2BW"
 function_name = "im2bw"
 severity = "warning"
-message = "'im2bw' is not recommended. Use 'imbinarize' instead."
+message = "'im2bw' is not recommended. With appropriate code changes, use 'imbinarize' instead."
 category = "compatibility"
 
 [[checks]]
@@ -8631,14 +8631,14 @@ category = "compatibility"
 id = "DIMRECT"
 function_name = "imrect"
 severity = "warning"
-message = "'imrect' is not recommended. Use 'drawrectangle' instead."
+message = "'imrect' is not recommended. With appropriate code changes, use 'drawrectangle' instead."
 category = "compatibility"
 
 [[checks]]
 id = "DIMLINE"
 function_name = "imline"
 severity = "warning"
-message = "'imline' is not recommended. Use 'drawline' instead."
+message = "'imline' is not recommended. With appropriate code changes, use 'drawline' instead."
 category = "compatibility"
 
 [[checks]]
@@ -8652,7 +8652,7 @@ category = "compatibility"
 id = "DIMPOLY"
 function_name = "impoly"
 severity = "warning"
-message = "'impoly' is not recommended. Use 'drawpolygon' instead."
+message = "'impoly' is not recommended. With appropriate code changes, use 'drawpolygon' or 'drawpolyline' instead."
 category = "compatibility"
 
 [[checks]]
@@ -8666,7 +8666,7 @@ category = "compatibility"
 id = "DROIFILL"
 function_name = "roifill"
 severity = "warning"
-message = "'roifill' is not recommended. Use 'regionfill' instead."
+message = "'roifill' is not recommended. With appropriate code changes, use 'regionfill' instead."
 category = "compatibility"
 
 # --- Data Types ---
@@ -8719,14 +8719,14 @@ category = "compatibility"
 id = "DCLOCK"
 function_name = "clock"
 severity = "warning"
-message = "'clock' is not recommended. Use 'datetime(\"now\")' instead."
+message = "'clock' is not recommended. With appropriate code changes, use 'datetime(\"now\")' instead."
 category = "compatibility"
 
 [[checks]]
 id = "DDATE"
 function_name = "date"
 severity = "warning"
-message = "'date' is not recommended. Use 'datetime(\"today\")' instead."
+message = "'date' is not recommended. With appropriate code changes, use 'datetime(\"today\")' instead."
 category = "compatibility"
 
 [[checks]]
@@ -8837,7 +8837,7 @@ category = "compatibility"
 id = "DSERIAL"
 function_name = "serial"
 severity = "warning"
-message = "'serial' is not recommended. Use 'serialport' instead."
+message = "'serial' will be removed in a future release. With appropriate code changes, use 'serialport' instead."
 category = "compatibility"
 
 [[checks]]
@@ -8946,14 +8946,14 @@ category = "compatibility"
 id = "DISDIR"
 function_name = "isdir"
 severity = "warning"
-message = "'isdir' is not recommended. Use 'isfolder' instead."
+message = "'isdir' is not recommended. Use 'isfolder' instead, which is a direct replacement."
 category = "compatibility"
 
 [[checks]]
 id = "DFILEATTRIB"
 function_name = "fileattrib"
 severity = "warning"
-message = "'fileattrib' is not recommended. Use 'dir' with file attributes instead."
+message = "'fileattrib' is not recommended. With appropriate code changes, use 'filePermissions' instead."
 category = "compatibility"
 
 [[checks]]
@@ -8981,7 +8981,7 @@ category = "compatibility"
 id = "DCOMBNK"
 function_name = "combnk"
 severity = "warning"
-message = "'combnk' is not recommended. Use 'nchoosek' or 'combinations' instead."
+message = "'combnk' is not recommended. With appropriate code changes, use 'nchoosek' instead."
 category = "compatibility"
 
 [[checks]]
@@ -9002,56 +9002,56 @@ category = "compatibility"
 id = "DLABINDEX"
 function_name = "labindex"
 severity = "warning"
-message = "'labindex' is not recommended. Use 'spmdIndex' instead."
+message = "'labindex' is not recommended. Use 'spmdIndex' instead, which is a direct replacement."
 category = "compatibility"
 
 [[checks]]
 id = "DNUMLABS"
 function_name = "numlabs"
 severity = "warning"
-message = "'numlabs' is not recommended. Use 'spmdSize' instead."
+message = "'numlabs' is not recommended. Use 'spmdSize' instead, which is a direct replacement."
 category = "compatibility"
 
 [[checks]]
 id = "DLABBARRIER"
 function_name = "labBarrier"
 severity = "warning"
-message = "'labBarrier' is not recommended. Use 'spmdBarrier' instead."
+message = "'labBarrier' is not recommended. Use 'spmdBarrier' instead, which is a direct replacement."
 category = "compatibility"
 
 [[checks]]
 id = "DLABSEND"
 function_name = "labSend"
 severity = "warning"
-message = "'labSend' is not recommended. Use 'spmdSend' instead."
+message = "'labSend' is not recommended. Use 'spmdSend' instead, which is a direct replacement."
 category = "compatibility"
 
 [[checks]]
 id = "DLABRECEIVE"
 function_name = "labReceive"
 severity = "warning"
-message = "'labReceive' is not recommended. Use 'spmdReceive' instead."
+message = "'labReceive' is not recommended. Use 'spmdReceive' instead, which is a direct replacement."
 category = "compatibility"
 
 [[checks]]
 id = "DLABBROADCAST"
 function_name = "labBroadcast"
 severity = "warning"
-message = "'labBroadcast' is not recommended. Use 'spmdBroadcast' instead."
+message = "'labBroadcast' is not recommended. Use 'spmdBroadcast' instead, which is a direct replacement."
 category = "compatibility"
 
 [[checks]]
 id = "DLABSENDRECEIVE"
 function_name = "labSendReceive"
 severity = "warning"
-message = "'labSendReceive' is not recommended. Use 'spmdSendReceive' instead."
+message = "'labSendReceive' is not recommended. Use 'spmdSendReceive' instead, which is a direct replacement."
 category = "compatibility"
 
 [[checks]]
 id = "DLABPROBE"
 function_name = "labProbe"
 severity = "warning"
-message = "'labProbe' is not recommended. Use 'spmdProbe' instead."
+message = "'labProbe' is not recommended. Use 'spmdProbe' instead, which is a direct replacement."
 category = "compatibility"
 
 # --- Signal Processing windows ---

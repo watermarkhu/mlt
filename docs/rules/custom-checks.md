@@ -23,151 +23,151 @@ threshold of `0` disables that check.
 
 Severity: **warning** · Auto-fix: **no**
 
-System command used (!)
+Use of bang operator is disallowed by custom code analyzer configuration.
 
 ### FCNIL
 
 Severity: **warning** · Auto-fix: **no**
 
-Function input count exceeds limit
+Function has more than VAR_NUMBER input arguments. This makes the function difficult to understand and maintain.
 
 ### FCNOL
 
 Severity: **warning** · Auto-fix: **no**
 
-Function output count exceeds limit
+Function has more than VAR_NUMBER output arguments. This makes the function difficult to understand and maintain.
 
 ### FCNLL
 
 Severity: **warning** · Auto-fix: **no**
 
-Function line count exceeds limit
+Function has more than VAR_NUMBER lines. This makes the function difficult to understand and maintain.
 
 ### LLMNC
 
 Severity: **warning** · Auto-fix: **no**
 
-Line length exceeds limit
+Line has more than VAR_NUMBER characters (including whitespaces). This makes the line difficult to understand and maintain.
 
 ### MNCSN
 
 Severity: **warning** · Auto-fix: **no**
 
-Statement nesting depth exceeds limit
+This control statement is deeply nested (nesting level = VAR_NUMBER) and might have more deeply nested control statements. This makes the code difficult to understand and maintain.
 
 ### DAFTC
 
 Severity: **warning** · Auto-fix: **no**
 
-Too many children in tree
+Use of try/catch statement is disallowed by custom code analyzer configuration.
 
 ### DAFPV
 
 Severity: **warning** · Auto-fix: **no**
 
-Too many persistent variables
+Use of persistent variable is disallowed by custom code analyzer configuration.
 
 ### DAFCO
 
 Severity: **warning** · Auto-fix: **no**
 
-Too many conditions in expression
+Use of continue statement is disallowed by custom code analyzer configuration.
 
 ### DAFBR
 
 Severity: **warning** · Auto-fix: **no**
 
-Too many branches in switch/if
+Use of break statement is disallowed by custom code analyzer configuration.
 
 ### DAFRT
 
 Severity: **warning** · Auto-fix: **no**
 
-Too many return points
+Use of return statement is disallowed by custom code analyzer configuration.
 
 ### DAFSC
 
 Severity: **warning** · Auto-fix: **no**
 
-Too many semicolons on one line
+Use of a script is disallowed by custom code analyzer configuration.
 
 ### DAFNF
 
 Severity: **warning** · Auto-fix: **no**
 
-Too many nested functions
+Use of a nested function is disallowed by custom code analyzer configuration.
 
 ### DAFCF
 
 Severity: **warning** · Auto-fix: **no**
 
-Too many called functions
+Use of command syntax to call a function is disallowed by custom code analyzer configuration.
 
 ### DAFAF
 
 Severity: **warning** · Auto-fix: **no**
 
-Too many anonymous functions
+Use of an anonymous function is disallowed by custom code analyzer configuration.
 
 ### DAFCV
 
 Severity: **warning** · Auto-fix: **no**
 
-Too many local variables
+Use of character vector is disallowed by custom code analyzer configuration.
 
 ### DAFCVC
 
 Severity: **warning** · Auto-fix: **no**
 
-Too many local constants
+Use of cell array of character vectors is disallowed by custom code analyzer configuration.
 
 ### DAFVI
 
 Severity: **warning** · Auto-fix: **no**
 
-Too many input arguments used
+Use of varargin is disallowed by custom code analyzer configuration.
 
 ### DAFVO
 
 Severity: **warning** · Auto-fix: **no**
 
-Too many output arguments used
+Use of varargout is disallowed by custom code analyzer configuration.
 
 ### CYCCOM
 
 Severity: **warning** · Auto-fix: **no**
 
-Cyclomatic complexity of function exceeds limit
+Function has a McCabe cyclomatic complexity of more than VAR_NUMBER. This makes the function difficult to understand and maintain.
 
 ### SCYCCOM
 
 Severity: **warning** · Auto-fix: **no**
 
-Strict cyclomatic complexity exceeds limit
+Script has a McCabe cyclomatic complexity of more than VAR_NUMBER. This makes the script difficult to understand and maintain.
 
 ### ACYCCOM
 
 Severity: **warning** · Auto-fix: **no**
 
-Average cyclomatic complexity exceeds limit
+Anonymous function has a McCabe cyclomatic complexity of more than VAR_NUMBER. This makes the anonymous function difficult to understand and maintain.
 
 ### MCYCCOM
 
 Severity: **warning** · Auto-fix: **no**
 
-Method cyclomatic complexity exceeds limit
+Function has a modified cyclomatic complexity of more than VAR_NUMBER. This makes the function difficult to understand and maintain.
 
 ### MSCYCCOM
 
 Severity: **warning** · Auto-fix: **no**
 
-Method strict cyclomatic complexity exceeds limit
+Script has a modified cyclomatic complexity of more than VAR_NUMBER. This makes the script difficult to understand and maintain.
 
 ### MACYCCOM
 
 Severity: **warning** · Auto-fix: **no**
 
-Method average cyclomatic complexity exceeds limit
+Anonymous function has a modified cyclomatic complexity of more than VAR_NUMBER. This makes the anonymous function difficult to understand and maintain.
 
 ## Examples
 

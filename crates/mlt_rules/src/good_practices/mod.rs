@@ -28,114 +28,114 @@
 //!
 //! ## Check IDs
 //!
-//! | Check ID    | Severity | Fix | Description                                                                |
-//! |-------------|----------|-----|----------------------------------------------------------------------------|
-//! | TRYNC       | warning  | no  | `try` without `catch`                                                      |
-//! | CTCH        | warning  | no  | `catch` block is empty                                                     |
-//! | WLAST       | warning  | no  | `warning` called as last statement in function                             |
-//! | WNTAG       | warning  | no  | `warning` without message ID                                               |
-//! | ERTAG       | warning  | no  | `error` without message ID                                                 |
-//! | MEXCEP      | warning  | no  | `catch` without exception variable                                         |
-//! | STCMP       | warning  | no  | Use `strcmp`/`strcmpi` instead of `==` for strings                         |
-//! | STCI        | warning  | no  | Use `strcmpi` for case-insensitive comparison                              |
-//! | STISA       | warning  | no  | Use `isa` instead of `class` + `strcmp`                                    |
-//! | STRNU       | warning  | no  | Use `str2double` instead of `str2num`                                      |
-//! | EVLCS       | warning  | no  | Avoid `eval`                                                               |
-//! | EVLDOT      | warning  | no  | Avoid `eval` for dynamic field access                                      |
-//! | EVLEQ       | warning  | no  | Avoid `eval` for dynamic variable creation                                 |
-//! | EVLSYS      | warning  | no  | Avoid `eval` for system commands                                           |
-//! | EVLDUAL     | warning  | no  | Avoid `evalin`                                                             |
-//! | EVLSEQVAR   | warning  | no  | Avoid `eval` to create sequential variables                                |
-//! | NOANS       | warning  | no  | Statement result assigned to `ans`                                         |
-//! | LOAD        | warning  | no  | `load` without output variable                                             |
-//! | SEPEX       | info     | no  | Multiple statements on one line                                            |
-//! | NBRAK1      | info     | yes | Unnecessary brackets around scalar                                         |
-//! | LNGNM       | warning  | no  | Variable name exceeds length                                               |
-//! | CHAIN       | info     | no  | Method chaining on one line                                                |
-//! | DISPLAY     | warning  | no  | Override `display` is discouraged                                          |
-//! | FNDEF       | warning  | no  | Function not defined at expected location                                  |
-//! | NOIN        | info     | no  | Function has no input validation                                           |
-//! | VALST       | info     | no  | Validate function arguments                                                |
-//! | PROP        | info     | no  | Property validation missing                                                |
-//! | CPROP       | info     | no  | Constant property could be method                                          |
-//! | FVAL        | warning  | no  | Function value not used                                                    |
-//! | FNCOLND     | warning  | no  | `end` used as column index without dimension                               |
-//! | COMNC       | info     | yes | Comment lacks space after `%`                                              |
-//! | ITERS       | warning  | no  | Loop variable shadows outer variable                                       |
-//! | LOGPROD     | warning  | no  | Use `all` instead of `prod` on logical                                     |
-//! | LOGMIN      | warning  | no  | Use `all` instead of `min` on logical                                      |
-//! | LOGMAX      | warning  | no  | Use `any` instead of `max` on logical                                      |
-//! | ELARLOG     | warning  | no  | Element-wise `&`/`\|` on logicals in if/while                              |
-//! | SHOCIRAA    | warning  | no  | Short-circuit in array context                                             |
-//! | UNRPWR      | warning  | no  | Power of negative base may be complex                                      |
-//! | ADAPPREF    | warning  | no  | Avoid `addpref` (use settings)                                             |
-//! | KEYBOARDFUN | warning  | no  | `keyboard` left in code                                                    |
-//! | GVMIS       | warning  | no  | Global variable used but never declared                                    |
-//! | PFEVB       | warning  | no  | EVALIN('base')/ASSIGNIN('base') inside a PARFOR loop refers to worker base workspace |
-//! | PFGP        | warning  | no  | Assigning to GLOBAL/PERSISTENT variable inside a PARFOR loop               |
-//! | PFGV        | warning  | no  | Using a GLOBAL variable in a PARFOR loop                                   |
-//! | PFIIN       | warning  | no  | The input variable should be initialized before the PARFOR loop            |
-//! | PFOUS       | warning  | no  | The output variable might not be used after the PARFOR loop                |
-//! | PFRNI       | warning  | yes | Explicit increment in a PARFOR loop; parfor only supports an increment of one |
-//! | PFRIN       | warning  | no  | The reduction variable might not be set before the PARFOR loop             |
-//! | PFRUS       | warning  | no  | The reduction variable might not be used after the PARFOR loop             |
-//! | PFTUSW      | warning  | no  | The temporary variable might be used after the PARFOR loop                 |
-//! | PFUIXW      | warning  | no  | The index variable might be used after the PARFOR loop                     |
-//! | SPEVB       | warning  | no  | EVALIN('base')/ASSIGNIN('base') inside an SPMD block refers to worker base workspace |
-//! | SPGV        | warning  | no  | GLOBAL/PERSISTENT variable in an SPMD block might fail on a worker         |
-//! | DSPMDA      | warning  | no  | Distributed array must be created outside of an SPMD block                 |
-//! | COMFS       | warning  | no  | Comma makes the file a script, so functions are local                      |
-//! | DUALC       | warning  | no  | Command might be prematurely ended by comma                                |
-//! | RMFLD       | warning  | no  | `rmfield` output must be assigned back to the structure                    |
-//! | RMWRN       | warning  | no  | Warning tag has been removed from MATLAB                                   |
-//! | SEMFS       | warning  | no  | Semicolon makes the file a script, so functions are local                  |
-//! | STFLD       | warning  | no  | `setfield` output must be assigned back to the structure                   |
-//! | STRSZ       | warning  | no  | Use `strcmp` to compare character vectors of different sizes               |
-//! | ATTF        | warning  | no  | Unable to determine if the `Abstract` attribute expression is true or false |
-//! | ATTOF       | info     | no  | Setting the class attribute `Abstract` to false is not recommended         |
-//! | MCPO        | warning  | no  | `SetObservable`/`GetObservable`/`AbortSet` property has no effect in a value class |
-//! | MCSAC       | warning  | no  | `SetAccess` cannot be set on Constant properties                           |
-//! | MOBSRV      | info     | no  | `SetObservable`/`GetObservable` on a Constant property has no effect       |
-//! | MDEPIN      | warning  | no  | Default values should not be assigned to dependent properties              |
-//! | MCCPI       | warning  | no  | Initialize the Constant property or make it an Abstract Constant property  |
-//! | MGMD        | warning  | no  | `get` method should be implemented for each dependent property without private `GetAccess` |
-//! | MCCPE       | warning  | no  | Attempting to call a property or event as a function                       |
-//! | MTHANS      | info     | no  | Using `ANS` as a method name is not recommended                            |
-//! | MHERM       | info     | no  | Parenthesize the multiplication of a variable and its transpose            |
-//! | MNUML       | warning  | no  | Use `VAR_NAME(numel(...), numel(...))` to create a square matrix           |
-//! | COMPNOP     | warning  | yes | Comparison with `true` simplifies to the function call itself              |
-//! | COMPNOT     | warning  | yes | Comparison with `~= true` or `== false` simplifies to `~call(...)`         |
-//! | M3COL       | warning  | no  | Three colons (`a:b:c:d`) in an expression is probably unintended           |
-//! | BDLGI       | warning  | no  | Variable might be set by a nonlogical operator                             |
-//! | BDLOG1      | warning  | no  | Non-scalar logical value used in a conditional expression                  |
-//! | BDLOG2      | warning  | no  | Scalar non-logical value used in a conditional expression                  |
-//! | BDSCA       | warning  | no  | `&&`/`\|\|` used in a scalar context with a non-scalar operand             |
-//! | BDSCI       | warning  | no  | Variable might be set by a nonscalar operator                              |
-//! | MCHDP       | warning  | no  | Property default that directly constructs a handle is shared by all instances |
-//! | MCHDT       | warning  | no  | Property default that resolves to a handle is shared by all instances      |
-//! | SHVAU       | warning  | no  | Ambiguous shared-variable usage between a nested function and its parent   |
-//! | GTARG       | warning  | no  | Function might be called with too many arguments                           |
-//! | LTARG       | warning  | no  | Function might be called with too few arguments                            |
-//! | CTPCT       | warning  | no  | `sprintf`/`fprintf` format might not agree with the argument count         |
-//! | FXSET       | warning  | no  | Loop index variable is changed inside of a `for` loop                      |
-//! | SIMPT       | warning  | no  | `import` statement does not run first in a function                        |
-//! | TLEV        | warning  | no  | Dynamic-code function used as a sub-expression, not a top-level statement  |
-//! | UNONC       | warning  | no  | `onCleanup` output must be assigned to a variable, not `~`                 |
-//! | MIPC1       | warning  | no  | `computer('arch')` is platform-specific                                    |
-//! | SUBSINDEX   | warning  | no  | Do not overload `subsindex` for fundamental data types                     |
-//! | VTFIN       | warning  | no  | Validated value should be the first input to a `validate*` function        |
-//! | CTOINW      | warning  | no  | Constructed object passed to its own constructor                           |
-//! | FXUP        | warning  | no  | Outer loop index set inside a nested function                              |
-//! | ADMTHDINV   | warning  | no  | Class method called without `app` as the first argument                    |
-//! | ADPROP      | warning  | no  | Property assigned through a bare identifier instead of `app.PROP`          |
-//! | ADPROPLC    | warning  | no  | Property read through a bare identifier instead of `app.PROP`              |
-//! | MCNPN       | warning  | no  | Member access on the object that is not declared in the class              |
-//! | MCNPR       | warning  | no  | Assignment target on the object that is not a property                     |
-//! | MCSNOV      | warning  | no  | Value-class setter does not return the modified object                     |
-//! | MCSOH       | warning  | no  | Handle-class setter unnecessarily returns the modified object              |
-//! | MCVM        | warning  | no  | Value-class method modifying the object has no output                      |
-//! | MCCSPS      | warning  | no  | Constant property name used as a struct in a dot-access chain              |
-//! | MCSUP       | warning  | no  | Setter accesses a property other than the one it sets                      |
+//! | Check ID | Severity | Fix | Description |
+//! | --- | --- | --- | --- |
+//! | TRYNC | warning | no | TRY statement should have a CATCH statement to check for unexpected errors. |
+//! | CTCH | warning | no | Best practice is for CATCH to be followed by an identifier that gets the error information. |
+//! | WLAST | warning | no | WARNING('') does not reset the warning state. Use LASTWARN('') instead. |
+//! | WNTAG | warning | no | The first argument of WARNING should be a message identifier. Using a message identifier allows users better control over the message. |
+//! | ERTAG | warning | no | The first argument of ERROR should be a message identifier. |
+//! | MEXCEP | warning | no | To report an MException as a warning, use a format specifier to ensure the message is printed correctly. For example, 'warning(E.identifier, "%s", E.message)'. |
+//! | STCMP | warning | no | Use STRCMP instead of == or ~= to compare character vectors, or convert character vectors to string scalars for direct comparison. |
+//! | STCI | warning | no | Use STRCMPI(str1,str2) instead of using UPPER/LOWER in a call to STRCMP. |
+//! | STISA | warning | no | Consider using ISA instead of comparing the class name. |
+//! | STRNU | warning | no | This variable, apparently a structure, is changed but the value might be unused. |
+//! | EVLCS | warning | no | 'eval' is inefficient and makes code less clear. Call the statement directly. |
+//! | EVLDOT | warning | no | 'eval' is inefficient and makes code less clear. Use dynamic field names to access structure fields or object properties instead. |
+//! | EVLEQ | warning | no | 'eval' is inefficient and makes code less clear. Assign to the variable directly. |
+//! | EVLSYS | warning | no | 'eval' is inefficient and makes code less clear. To make calls to the operating system use the system function instead. |
+//! | EVLDUAL | warning | no | This use of 'eval' is unnecessary and can be removed. Call the evaluated function directly using parentheses. For example, use 'load(filename)' instead of 'eval(['load ' filename])'. |
+//! | EVLSEQVAR | warning | no | Using 'eval' to dynamically assign variables is not recommended. |
+//! | NOANS | warning | no | Using ANS as a variable is not recommended as ANS is frequently overwritten by MATLAB. |
+//! | LOAD | warning | no | To avoid conflicts with functions on the path, specify variables to load from file. |
+//! | SEPEX | info | no | Consider using newline, semicolon, or comma before this statement for readability. |
+//! | NBRAK1 | info | yes | If you intend to specify expression precedence, use parentheses () instead of brackets []. |
+//! | LNGNM | warning | no | Names longer than VAR_NUMBER characters are not supported. This name has been truncated to VAR_NUMBER characters. |
+//! | CHAIN | info | no | Expressions like a VAR_NAME b VAR_NAME c are interpreted as (a VAR_NAME b) VAR_NAME c. Typically, to test a VAR_NAME b VAR_NAME c mathematically, if all arguments are numeric scalars, use (a VAR_NAME b) && (b VAR_NAME c), otherwise use (a VAR_NAME b) & (b VAR_NAME c). |
+//! | DISPLAY | warning | no | Overloading DISPLAY is not recommended. |
+//! | FNDEF | warning | no | Function name VAR_NAME is known to MATLAB by its file name: VAR_FILE. |
+//! | NOIN | info | no | Method VAR_NAME should either be a static method or have at least one input argument. |
+//! | VALST | info | no | VAR_NAME must be the last argument in the argument list. |
+//! | PROP | info | no | VAR_NAME is also the name of a property, which may be confusing. Use obj.PropertyName syntax to reference the property, or rename this variable to improve readability. |
+//! | CPROP | info | no | VAR_NAME is also the name of a property, which may be confusing. Use obj.PropertyName syntax to reference the property, or rename the property to improve readability. |
+//! | FVAL | warning | no | Calling functions using 'feval' is usually not necessary. Call the function directly instead. |
+//! | FNCOLND | warning | no | Consider explicitly defining the array, and then using the END operator to index into it. |
+//! | COMNC | info | yes | Comment with percent (%) following comma acts as a row separator. Replace the comma with a semicolon to make the row separation clearer. Alternatively, replace the percent (%) with an ellipsis (...) to add a comment inside a row. |
+//! | ITERS | warning | no | The Code Analyzer type analysis may be incorrect here. |
+//! | LOGPROD | warning | no | Using 'prod' on a logical expression is hard to understand and might be incorrect. Consider using 'all' instead. |
+//! | LOGMIN | warning | no | Using 'min' on a logical expression is hard to understand and might be incorrect. Consider using 'all' instead. |
+//! | LOGMAX | warning | no | Using 'max' on a logical expression is hard to understand and might be incorrect. Consider using 'any' instead. |
+//! | ELARLOG | warning | no | The VAR_NAME operator in the expression VAR_NAME(A VAR_NAME B) is unexpected. Should this be VAR_NAME(A) VAR_NAME B? |
+//! | SHOCIRAA | warning | no | Using the VAR_NAME operator in the expression VAR_NAME(A VAR_NAME B) is probably unintended. |
+//! | UNRPWR | warning | no | Consider using parentheses to explicitly specify operator precedence. |
+//! | ADAPPREF | warning | no | Use app as the first argument for VAR_NAME. |
+//! | KEYBOARDFUN | warning | no | Consider removing 'keyboard' function once you have finished debugging. This function may have security implications. |
+//! | GVMIS | warning | no | Global variables are inefficient and make errors difficult to diagnose. Use a function with input variables instead. |
+//! | PFEVB | warning | no | Using EVALIN('base') or ASSIGNIN('base') inside a PARFOR loop refers to the worker machines' base workspaces. |
+//! | PFGP | warning | no | Avoid assigning to GLOBAL or PERSISTENT variable VAR_NAME inside a PARFOR loop. |
+//! | PFGV | warning | no | Avoid using GLOBAL variable VAR_NAME in a PARFOR loop. |
+//! | PFIIN | warning | no | The input variable VAR_NAME should be initialized before the PARFOR loop. |
+//! | PFOUS | warning | no | The output variable VAR_NAME might not be used after the PARFOR loop. |
+//! | PFRNI | warning | yes | The parfor loop can only use a step size of 1 or -1. |
+//! | PFRIN | warning | no | The reduction variable VAR_NAME might not be set before the PARFOR loop. |
+//! | PFRUS | warning | no | The reduction variable VAR_NAME might not be used after the PARFOR loop. |
+//! | PFTUSW | warning | no | The temporary variable VAR_NAME might be used after the PARFOR loop on line VAR_NUMBER. The value set on this line is not available after the loop. |
+//! | PFUIXW | warning | no | The index variable VAR_NAME might be used after the PARFOR loop on line VAR_NUMBER. The value set on this line is not available after the loop. |
+//! | SPEVB | warning | no | Using EVALIN('base') or ASSIGNIN('base') inside an SPMD block refers to the worker machines' base workspaces. |
+//! | SPGV | warning | no | Using the GLOBAL or PERSISTENT variable VAR_NAME in an SPMD block might fail because it is accessed on a worker machine. |
+//! | DSPMDA | warning | no | Distributed array must be created outside of an SPMD block. |
+//! | COMFS | warning | no | Comma makes the file a script, so functions are local |
+//! | DUALC | warning | no | Command might be prematurely ended by comma. |
+//! | RMFLD | warning | no | RMFIELD output must be assigned back to the structure. |
+//! | RMWRN | warning | no | The warning with tag VAR_NAME has been removed from MATLAB, so this statement has no effect. |
+//! | SEMFS | warning | no | Semicolon makes the file a script, so functions are local |
+//! | STFLD | warning | no | SETFIELD output must be assigned back to the structure. |
+//! | STRSZ | warning | no | Use STRCMP to compare character vectors that can have different sizes. |
+//! | ATTF | warning | no | The Code Analyzer is unable to determine if the expression assigned to the VAR_NAME attribute evaluates to true or false. |
+//! | ATTOF | info | no | Setting the class attribute Abstract to false is not recommended. |
+//! | MCPO | warning | no | VAR_NAME property has no effect in a value class. |
+//! | MCSAC | warning | no | SetAccess cannot be set on Constant properties. |
+//! | MOBSRV | info | no | Using SetObservable or GetObservable on a Constant property has no effect. |
+//! | MDEPIN | warning | no | Default values should not be assigned to dependent properties because dependent properties do not store the values. |
+//! | MCCPI | warning | no | Initialize the Constant property or make it an Abstract Constant property. |
+//! | MGMD | warning | no | 'get' method should be implemented for each dependent property that does not also have private 'GetAccess' attribute. |
+//! | MCCPE | warning | no | Attempting to call a property or event VAR_NAME as a function. |
+//! | MTHANS | info | no | Using ANS as a method name is not recommended as ANS is frequently overwritten by MATLAB. |
+//! | MHERM | info | no | Parenthesize the multiplication of VAR_NAME and its transpose to ensure the result is Hermitian. |
+//! | MNUML | warning | no | To create a square matrix, use VAR_NAME(numel(...), numel(...)). Alternatively, use VAR_NAME(size(...)) to create an array with same size as input array. |
+//! | COMPNOP | warning | yes | This logical comparison simplifies to VAR_NAME(...). Did you mean to use VAR_NAME to evaluate function argument: VAR_NAME(...VAR_NAME...)? |
+//! | COMPNOT | warning | yes | This logical comparison simplifies to ~VAR_NAME(...). Did you mean to use VAR_NAME to evaluate function argument: VAR_NAME(...VAR_NAME...)? |
+//! | M3COL | warning | no | Using three colons (a:b:c:d) in an expression is probably unintended. |
+//! | BDLGI | warning | no | Variable might be set by a nonlogical operator. |
+//! | BDLOG1 | warning | no | A scalar logical value is expected in the conditional expression. Use 'any' or 'all' to reduce the array to a logical scalar. |
+//! | BDLOG2 | warning | no | A scalar logical value is expected in the conditional expression. Use 'any' or 'all' to reduce the array to a logical scalar, or compare the scalar value to 0. |
+//! | BDSCA | warning | no | `&&`/` |
+//! | BDSCI | warning | no | Variable might be set by a nonscalar operator. |
+//! | MCHDP | warning | no | A property default value that is a handle will cause all instances to share the same object data. To avoid sharing, create the property value in the constructor. For intentional sharing, consider using a Constant property. |
+//! | MCHDT | warning | no | Declaring the value of a property as a handle might cause all instances to share the same default handle. To avoid sharing, create the handle for this property in the constructor. To express that sharing is intentional, use the Constant property attribute. |
+//! | SHVAU | warning | no | Confusing usage of name VAR_NAME on lines VAR_NUMBER and VAR_NUMBER. Initialize VAR_NAME before line VAR_NUMBER to make it a shared variable or rename VAR_NAME on line VAR_NUMBER to disambiguate. |
+//! | GTARG | warning | no | Function might be called with too many arguments. |
+//! | LTARG | warning | no | Function might be called with too few arguments. |
+//! | CTPCT | warning | no | The format might not agree with the argument count. |
+//! | FXSET | warning | no | Loop index variable is changed inside of a `for` loop |
+//! | SIMPT | warning | no | This import statement runs before any other code in function VAR_NAME. Consider placing it at the top of the function body. |
+//! | TLEV | warning | no | VAR_NAME could be very inefficient unless it is a top-level statement in its function. |
+//! | UNONC | warning | no | Assign the onCleanup output argument to a variable. Do not use the tilde operator (~) in place of a variable. |
+//! | MIPC1 | warning | no | Calling the computer function with 'arch' returns 'win64', 'glnxa64', or 'maca64'. |
+//! | SUBSINDEX | warning | no | Do not overload 'subsindex' for fundamental data types. |
+//! | VTFIN | warning | no | VAR_NAME should be the first input argument to the VAR_NAME function. |
+//! | CTOINW | warning | no | Use of constructed object as input to constructor is not necessary. |
+//! | FXUP | warning | no | Outer loop variable VAR_NAME is set inside a nested function. |
+//! | ADMTHDINV | warning | no | Use VAR_NAME(app, ...) to call this function. |
+//! | ADPROP | warning | no | VAR_NAME is also the name of a property, which may be confusing. Use app.PropertyName syntax to reference the property, or change one of the names to improve readability. |
+//! | ADPROPLC | warning | no | Property read through a bare identifier instead of `app.PROP` |
+//! | MCNPN | warning | no | VAR_NAME is referenced but is not a property, method, or event name defined in this class. |
+//! | MCNPR | warning | no | VAR_NAME is not a property, but is the target of an assignment. |
+//! | MCSNOV | warning | no | Set function in value class must return the modified object. |
+//! | MCSOH | warning | no | Set function in handle class does not need to return the modified object. |
+//! | MCVM | warning | no | Value class method that modifies the object must return the modified object. |
+//! | MCCSPS | warning | no | Constant property VAR_NAME is not modified. 'VAR_NAME.VAR_NAME' creates a struct named VAR_NAME with a field named VAR_NAME. |
+//! | MCSUP | warning | no | The set method for the property VAR_NAME should not access another property (VAR_NAME). |
 //!
 //! ## Fix
 //!

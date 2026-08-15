@@ -33,85 +33,85 @@ the CLI.
 
 Severity: **error** · Auto-fix: **no**
 
-More than 10,000 diagnostics generated
+More than 10,000 Code Analyzer messages were generated, leading to some being deleted.
 
 ### TMSMS
 
 Severity: **error** · Auto-fix: **no**
 
-More than 1,000 parse errors generated
+More than 1,000 parse error messages were generated, leading to some being deleted.
 
 ### MXASET
 
 Severity: **error** · Auto-fix: **no**
 
-File too complex to analyze
+The file is too complex to analyze. Simplify the code to improve code maintainability. For example, reduce the number of operations in expressions.
 
 ### NOSPC
 
 Severity: **error** · Auto-fix: **no**
 
-File too complex (nesting)
+The file is too complex to analyze. Refactor the code to improve code maintainability. For example, reduce the nesting level of conditions or functions.
 
 ### MBIG
 
 Severity: **error** · Auto-fix: **no**
 
-File too large
+Code analysis did not complete. File VAR_FILE is too large.
 
 ### MDOTM
 
 Severity: **error** · Auto-fix: **no**
 
-Invalid file extension (not `.m`)
+Unable to run code analysis. VAR_FILE has an invalid file extension.
 
 ### MDMCR
 
 Severity: **error** · Auto-fix: **no**
 
-Deployed MATLAB file (`.ctf` or `.p`)
+Unable to run code analysis. VAR_FILE is a deployed MATLAB file.
 
 ### EOFER
 
 Severity: **error** · Auto-fix: **no**
 
-Too many syntax errors
+Code analysis did not complete. File contains too many syntax errors.
 
 ### EOFMI
 
 Severity: **error** · Auto-fix: **no**
 
-Incomplete file (ends in ERROR/MISSING)
+Invalid syntax at end of file. File is incomplete.
 
 ### MDEEP
 
 Severity: **error** · Auto-fix: **no**
 
-Parentheses/brackets nested too deeply
+Parentheses, brackets, and braces are nested too deeply.
 
 ### DEEPC
 
 Severity: **error** · Auto-fix: **no**
 
-Block comments nested too deeply
+Block comments are nested too deeply.
 
 ### DEEPN
 
 Severity: **error** · Auto-fix: **no**
 
-Functions nested too deeply
+Functions are nested too deeply.
 
 ### DEEPS
 
 Severity: **error** · Auto-fix: **no**
 
-Statements nested too deeply
+Statements are nested too deeply.
 
 ### TEXTL
 
 Severity: **error** · Auto-fix: **no**
 
-Text too long (line length)
+Text is too long for MATLAB to parse.
 
 ## Examples
 

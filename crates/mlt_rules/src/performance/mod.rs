@@ -29,49 +29,49 @@
 //!
 //! ## Check IDs
 //!
-//! | Check ID     | Severity | Fix | Description |
-//! |--------------|----------|-----|-------------|
-//! | AGROW        | info     | no  | Variable appears to grow inside a loop; consider preallocating |
-//! | SAGROW       | info     | no  | Struct field appears to grow inside a loop; consider preallocating |
-//! | AND2         | info     | yes | Use `&&` (short-circuit) instead of `&` for scalar logical operations |
-//! | OR2          | info     | yes | Use `\|\|` (short-circuit) instead of `\|` for scalar logical operations |
-//! | MINV         | info     | no  | Use `A\b` instead of `inv(A)*b` for better numerical stability and performance |
-//! | GFLD         | info     | no  | Use dynamic field names `s.(name)` instead of `getfield` |
-//! | SFLD         | info     | no  | Use dynamic field names `s.(name) = val` instead of `setfield` |
-//! | EXIST        | info     | no  | Use `isfile` or `isfolder` instead of `exist(..., 'file')` |
-//! | PFBNS        | info     | no  | Array initialized as empty then grown; preallocate for known size |
-//! | CCAT         | info     | no  | Use string concatenation or `join` instead of repeated `strcat` |
-//! | CCAT1        | info     | no  | Consider using `join` for cell array of character vector concatenation |
-//! | ISMT         | info     | no  | Use `isempty(x)` instead of `length(x)==0` |
-//! | ISCL         | info     | no  | Use `isscalar(x)` instead of `length(x)==1` |
-//! | ST2NM        | info     | yes | Use `str2double` instead of `str2num` for performance and security |
-//! | FLPST        | info     | yes | Use `flip` instead of `flipud`/`fliplr` on vectors |
-//! | MXFND        | info     | no  | Use `max(x,[],'all')` instead of nested `max(max(x))` |
-//! | EFIND        | info     | no  | Use logical indexing instead of `find` when used as a subscript |
-//! | UDIM         | info     | no  | Specify the dimension argument in `sum`/`max`/`min`/`prod`/`mean` |
-//! | FREAD        | info     | no  | Specify the precision argument in `fread` for performance |
-//! | N2UNI        | info     | no  | Consider using `unique` instead of `setdiff`+`union` patterns |
-//! | TNMLP        | info     | no  | Move `tic`/`toc` outside the loop body for accurate timing |
-//! | LAXES        | info     | no  | Cache the axes handle returned by `gca`/`gcf` instead of repeated calls |
-//! | MMTC         | info     | no  | Use `.^2` instead of `.*` with the same operand |
-//! | MRPBW        | info     | yes | Use `imbinarize` instead of deprecated `im2bw` |
-//! | SPRIX        | info     | no  | Avoid indexing sparse matrices with full logical arrays |
-//! | TRSRT        | info     | no  | Use `mink`/`maxk` instead of sorting then indexing |
-//! | GRIDD        | info     | no  | Consider using `meshgrid` or `ndgrid` for grid generation |
-//! | CLALL        | info     | no  | `clear all` also clears breakpoints; use `clearvars` instead |
-//! | CLCLS        | info     | no  | `clear classes` is a slow operation; avoid in production code |
-//! | CLFUNC       | info     | no  | `clear functions` is a slow operation; avoid in production code |
-//! | CLJAVA       | info     | no  | `clear java` is a slow operation; avoid in production code |
-//! | CLMEX        | info     | no  | `clear mex` clears all MEX files from memory; use specific names |
-//! | CLEAR0ARGS   | info     | no  | `clear` with no arguments clears all variables; use `clearvars` instead |
-//! | RGXP1        | info     | no  | Regex pattern can be simplified for performance |
-//! | RGXPI        | info     | no  | Use `regexpi` instead of `regexp` with the `ignorecase` option |
-//! | TRIM1        | info     | yes | Use `strtrim` instead of `deblank` for more thorough whitespace removal |
-//! | TRIM2        | info     | yes | Use `strip` instead of `strtrim` for more flexible whitespace removal |
-//! | STTOK        | info     | no  | Use `split` instead of `strtok` in a loop for better performance |
-//! | STNCI        | info     | no  | Use `strcmpi` instead of wrapping `strcmp` with `lower` |
-//! | STCCS        | info     | no  | Use `contains` instead of `~isempty(strfind(...))` |
-//! | FNDSB        | info     | yes | Use `contains` or `matches` instead of `findstr` |
+//! | Check ID | Severity | Fix | Description |
+//! | --- | --- | --- | --- |
+//! | AGROW | info | no | Variable appears to change size on every loop iteration. Consider preallocating for speed. |
+//! | SAGROW | info | no | Variable appears to change size on every loop iteration (within a script). Consider preallocating for speed. |
+//! | AND2 | info | yes | When both arguments are numeric scalars, consider replacing & with && for performance. |
+//! | OR2 | info | yes | When both arguments are numeric scalars, consider replacing \| with \|\| for performance. |
+//! | MINV | info | no | INV(A)*b can be slower and less accurate than A\b. Consider using A\b for INV(A)*b or b/A for b*INV(A). |
+//! | GFLD | info | no | Use dynamic fieldnames with structures instead of GETFIELD. |
+//! | SFLD | info | no | Use dynamic fieldnames with structures instead of SETFIELD. |
+//! | EXIST | info | no | EXIST with two input arguments is generally faster and clearer than with one input argument. |
+//! | PFBNS | info | no | The entire array or structure VAR_NAME is a broadcast variable. This might result in unnecessary communication overhead. |
+//! | CCAT | info | no | For improved performance, concatenate cell arrays using [] instead of extracting cell arrays and reconstructing them. |
+//! | CCAT1 | info | no | { A{I} } can usually be replaced by A(I) or A(I)', which can be much faster. |
+//! | ISMT | info | no | Using ISEMPTY is usually faster than comparing LENGTH to 0. |
+//! | ISCL | info | no | To improve performance, use 'isscalar' instead of length comparison. |
+//! | ST2NM | info | yes | If you are operating on scalar values, consider using 'str2double' for faster performance. |
+//! | FLPST | info | yes | For better performance in some cases, use SORT with the 'descend' option. |
+//! | MXFND | info | no | Use FIND with the 'first' or 'last' option. |
+//! | EFIND | info | no | To improve performance, replace ISEMPTY(FIND(X)) with ISEMPTY(FIND( X, 1 )). |
+//! | UDIM | info | no | Instead of using transpose (' or .'), consider using a different DIMENSION input argument to VAR_NAME. |
+//! | FREAD | info | no | FREAD(FID,...,'*char') is more efficient than CHAR(FREAD(...)). |
+//! | N2UNI | info | no | Instead of using 'native2unicode' with 'fread', specify the character encoding scheme in the call to 'fopen'. |
+//! | TNMLP | info | no | Move the toolbox function out of the loop for better performance. |
+//! | LAXES | info | no | Calling AXES(h) in a loop can be slow. Consider moving the call to AXES outside the loop. |
+//! | MMTC | info | no | This use of MAT2CELL should probably be replaced by a simpler, faster call to NUM2CELL. |
+//! | MRPBW | info | yes | To use less memory, replace BWLABEL(bw) by LOGICAL(bw) in a call of REGIONPROPS. |
+//! | SPRIX | info | no | This sparse indexing expression is likely to be slow. |
+//! | TRSRT | info | no | Transposing the input to 'sort' is often unnecessary. |
+//! | GRIDD | info | no | Consider replacing GRIDDATA with SCATTEREDINTERPOLANT for better performance. |
+//! | CLALL | info | no | Using 'clear' with the 'all' option usually decreases code performance and is often unnecessary. |
+//! | CLCLS | info | no | Using 'clear' with the 'classes' option will decrease code performance and is often unnecessary. |
+//! | CLFUNC | info | no | Using 'clear' with the 'functions' option usually decreases code performance and is often unnecessary. |
+//! | CLJAVA | info | no | Using 'clear' with the 'java' option usually decreases code performance and is often unnecessary. |
+//! | CLMEX | info | no | Using 'clear' with the 'mex' option usually decreases code performance and is often unnecessary. |
+//! | CLEAR0ARGS | info | no | Avoid using 'clear' to clear more than necessary, this decreases code performance and is usually unnecessary. |
+//! | RGXP1 | info | no | Using REGEXP(str, pattern, 'ONCE') is faster in this case. |
+//! | RGXPI | info | no | Using REGEXPI(str, pattern, 'ONCE') is faster in this case. |
+//! | TRIM1 | info | yes | Use STRTRIM(str) instead of nesting FLIPLR and DEBLANK calls. |
+//! | TRIM2 | info | yes | Use STRTRIM(str) instead of DEBLANK(STRJUST(str,'left')). |
+//! | STTOK | info | no | Use one call to 'split' instead of calling 'strtok' in a loop. |
+//! | STNCI | info | no | Use STRNCMPI(str1,str2) instead of using UPPER/LOWER in a call to STRNCMP. |
+//! | STCCS | info | no | It appears that STRCMPI/STRNCMPI can be replaced by a faster, case sensitive compare. |
+//! | FNDSB | info | yes | For array or cell array, performance can be improved using logical indexing instead of 'find'. |
 //!
 //! ## Fix
 //!

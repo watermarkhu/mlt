@@ -24,43 +24,43 @@ can be enabled, disabled, or reconfigured through their own
 
 Severity: **info** · Auto-fix: **yes**
 
-Use commas to separate elements in a row
+Extra comma is unnecessary.
 
 ### NO4LP
 
 Severity: **info** · Auto-fix: **yes**
 
-Use 4-space indentation in loop/conditional bodies
+Parentheses are not needed in a FOR statement.
 
 ### ALIGN
 
 Severity: **info** · Auto-fix: **yes**
 
-Align 'elseif'/'else' clauses with their 'if'
+This keyword might not be aligned with its matching END on line VAR_NUMBER.
 
 ### NOPTS
 
 Severity: **info** · Auto-fix: **yes**
 
-Remove unnecessary parentheses around if/while conditions
+Add a semicolon after the statement to hide the output (in a script).
 
 ### NOPRT
 
 Severity: **info** · Auto-fix: **yes**
 
-Remove unnecessary parentheses
+Add a semicolon after the statement to hide the output (in a function).
 
 ### PRTCAL
 
 Severity: **info** · Auto-fix: **yes**
 
-Consider using command syntax instead of function syntax
+Add a semicolon after the function call to hide the output.
 
 ### NCOMMA
 
 Severity: **info** · Auto-fix: **yes**
 
-Use a comma to separate input arguments
+Best practice is to separate output variables with commas.
 
 ## Automatic fixes
 

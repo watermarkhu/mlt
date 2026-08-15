@@ -42,223 +42,223 @@ The checks are grouped into families:
 
 Severity: **error** · Auto-fix: **no**
 
-Nested parfor inside parfor
+parfor loops cannot be used inside other parfor loops.
 
 ### PFSPMD
 
 Severity: **error** · Auto-fix: **no**
 
-SPMD inside parfor
+spmd statements cannot be used inside parfor loops.
 
 ### PFBRK
 
 Severity: **error** · Auto-fix: **no**
 
-break inside parfor
+break statements cannot be used inside a parfor loop.
 
 ### PFRTN
 
 Severity: **error** · Auto-fix: **no**
 
-return inside parfor
+return statements cannot be used inside a parfor loop.
 
 ### PFGLOB
 
 Severity: **error** · Auto-fix: **no**
 
-global declaration inside parfor
+Global variable declarations are not supported in parfor loops.
 
 ### PFPERS
 
 Severity: **error** · Auto-fix: **no**
 
-persistent declaration inside parfor
+Persistent variable declarations are not supported in parfor loops.
 
 ### PFFORA
 
 Severity: **error** · Auto-fix: **no**
 
-Assignment to for-loop variable inside parfor
+Assigning to for loop variables is not supported in parfor loops.
 
 ### PFXST
 
 Severity: **error** · Auto-fix: **no**
 
-Assignment to parfor loop variable
+Assigning to the parfor loop index variable is not supported in parfor loops.
 
 ### PFNF
 
 Severity: **error** · Auto-fix: **no**
 
-Nested function call inside parfor
+Nested functions cannot be called from within parfor loops.
 
 ### FPFORP
 
 Severity: **error** · Auto-fix: **no**
 
-fprintf writing to a file opened read-only
+'fprintf' is writing to a file that is opened with read permission only. Open a file using 'fopen(...,'W',...)' instead.
 
 ### FWFORP
 
 Severity: **error** · Auto-fix: **no**
 
-fwrite writing to a file opened read-only
+'fwrite' is writing to a file that is opened with read permission only. Open a file using 'fopen(...,'W',...)' instead.
 
 ### PFANON
 
 Severity: **error** · Auto-fix: **no**
 
-Sliced output variable used in an anonymous function
+Using a sliced output variable in an anonymous function is not supported in parfor loops.
 
 ### PFANSLP
 
 Severity: **error** · Auto-fix: **no**
 
-'ans' as parfor loop variable
+'ans' is not supported as a parfor loop variable.
 
 ### PFANSNS
 
 Severity: **error** · Auto-fix: **no**
 
-'ans' as for loop variable inside parfor
+'ans' is not supported as a for loop variable in parfor loops.
 
 ### PFCEL
 
 Severity: **error** · Auto-fix: **no**
 
-Function does not support cell arrays
+The function VAR_NAME does not support cell arrays (argument VAR_NUMBER).
 
 ### PFCTXT
 
 Severity: **error** · Auto-fix: **no**
 
-Sliced variable indexed outside its defining for loop
+When indexing a sliced variable with a nested for loop variable, the sliced variable must be inside the for loop that defines the range of the for loop variable.
 
 ### PFEVC
 
 Severity: **error** · Auto-fix: **no**
 
-EVALIN/ASSIGNIN('caller') invalid inside parfor
+EVALIN('caller') and ASSIGNIN('caller') are invalid inside of a PARFOR loop.
 
 ### PFFRNG
 
 Severity: **error** · Auto-fix: **no**
 
-Nested for range must be positive constants
+When indexing a sliced variable with a nested for loop variable, the range of the for loop variable must be a row vector of positive constant numbers or variables.
 
 ### PFFSUB
 
 Severity: **error** · Auto-fix: **no**
 
-Indexing a nested for loop variable
+Indexing a nested for loop variable is not supported in parfor loops.
 
 ### PFINCR
 
 Severity: **error** · Auto-fix: **no**
 
-Different reduction functions on the same variable
+Using different reduction functions with the same reduction variable is not supported in parfor loops.
 
 ### PFINPT
 
 Severity: **error** · Auto-fix: **no**
 
-'inputname' not supported in parfor
+'inputname' is not supported in parfor loops.
 
 ### PFLD
 
 Severity: **error** · Auto-fix: **no**
 
-'load' must assign to an output in parfor
+'load' must assign to an output variable in parfor loops.
 
 ### PFMLTI
 
 Severity: **error** · Auto-fix: **no**
 
-Nested for loop variable assigned in the body
+When indexing a sliced variable with a nested for loop variable, the for loop variable must not be assigned other than by its for statement.
 
 ### PFNACK
 
 Severity: **error** · Auto-fix: **no**
 
-narginchk/nargoutchk cannot be used in parfor
+'narginchk' and 'nargoutchk' cannot be used in parfor loops.
 
 ### PFNAIO
 
 Severity: **error** · Auto-fix: **no**
 
-nargin/nargout require a function argument
+'nargin' and 'nargout' require a function argument in parfor loops.
 
 ### PFNAR
 
 Severity: **error** · Auto-fix: **no**
 
-Subtracting a reduction variable from expressions
+Subtracting reduction variable VAR_NAME from expressions is not supported in parfor loops.
 
 ### PFRFH
 
 Severity: **error** · Auto-fix: **no**
 
-Reduction function must be a name or broadcast variable
+The parfor reduction function VAR_NAME must either be a function name or a broadcast variable.
 
 ### PFRNG
 
 Severity: **error** · Auto-fix: **no**
 
-Parfor range must be increasing consecutive integers
+The range of a PARFOR statement must be consecutive integers.
 
 ### PFSLO
 
 Severity: **error** · Auto-fix: **no**
 
-Variable indexed with parfor var is not a sliced output
+Variable VAR_NAME is indexed using the parfor loop variable, but it is not a valid sliced output variable.
 
 ### PFSLRD
 
 Severity: **error** · Auto-fix: **no**
 
-Sliced indexing combined with non-indexed reads
+Parfor loop variable VAR_NAME is accessed with an invalid combination of sliced indexing expressions and non-indexed reads. It is not valid to access the whole value of a sliced output variable.
 
 ### PFSLW
 
 Severity: **error** · Auto-fix: **no**
 
-Sliced accesses must all use the same subscripts
+Parfor loop variable VAR_NAME has multiple sliced accesses, but they do not all have the same list of subscripts. Each access to a sliced variable must use precisely the same list of subscripts.
 
 ### PFSV
 
 Severity: **error** · Auto-fix: **no**
 
-SAVE requires '-fromstruct' in parfor
+SAVE cannot be called in a PARFOR loop without the '-fromstruct' option.
 
 ### PFUNK
 
 Severity: **error** · Auto-fix: **no**
 
-Parfor cannot run due to the way a variable is used
+Unable to classify variable VAR_NAME in the body of the parfor loop.
 
 ### PFUTMP
 
 Severity: **error** · Auto-fix: **no**
 
-Temporary variable must be set before it is used
+Temporary variable VAR_NAME must be set inside the parfor loop before it is used.
 
 ### PFUTVR
 
 Severity: **error** · Auto-fix: **no**
 
-Variable intended as reduction but uninitialized
+Variable VAR_NAME may have been intended as a reduction variable, but is an uninitialized temporary.
 
 ### PFVARS
 
 Severity: **error** · Auto-fix: **no**
 
-Parfor loop contains too many variables
+Parfor loop contains too many variables.
 
 ### PFVSUB
 
 Severity: **error** · Auto-fix: **no**
 
-Indexing the parfor loop variable
+Indexing parfor loop variables is not supported in parfor loops.
 
 ### PFANSRE
 
@@ -300,733 +300,733 @@ Temporary variable must be set before it is used
 
 Severity: **error** · Auto-fix: **no**
 
-Unknown attribute name
+Unknown attribute name.
 
 ### ATLAB
 
 Severity: **error** · Auto-fix: **no**
 
-'Input'/'Output' attribute must not be valued or negated
+Attribute 'Input' and 'Output' must not be assigned a value or negated.
 
 ### ATNAS
 
 Severity: **error** · Auto-fix: **no**
 
-Meta-class attribute must be a meta-class or cell array
+Set attribute to a single meta-class object or a cell array of meta-class objects.
 
 ### ATNPI
 
 Severity: **error** · Auto-fix: **no**
 
-Class access attribute has an unexpected value
+Set attribute to 'public', 'private', 'protected', 'immutable', or a cell array of meta-classes instead.
 
 ### ATNPP
 
 Severity: **error** · Auto-fix: **no**
 
-Events access attribute has an unexpected value
+Set attribute to 'public', 'private', 'protected', or a cell array of meta-classes instead.
 
 ### ATPPI
 
 Severity: **error** · Auto-fix: **no**
 
-Property access attribute has an unexpected value
+The attribute value is unexpected. Use 'public', 'private', 'protected', 'immutable', or a cell array of meta-classes instead.
 
 ### ATPPP
 
 Severity: **error** · Auto-fix: **no**
 
-Method access attribute has an unexpected value
+The attribute value is unexpected. Use 'public', 'private', 'protected', or a cell array of meta-classes instead.
 
 ### ATAS
 
 Severity: **error** · Auto-fix: **no**
 
-Meta-class attribute value is unexpected
+The attribute value is unexpected. Use a single meta-class object or a cell array of meta-class objects.
 
 ### ATVIZE
 
 Severity: **error** · Auto-fix: **no**
 
-'Visible' attribute is invalid for classes/events
+The 'Visible' attribute is invalid for classes and events. Use the '~Hidden' attribute instead or omit the attribute since 'Hidden' is false by default.
 
 ### CLSAT
 
 Severity: **error** · Auto-fix: **no**
 
-Specify class attributes before the class name
+Specify class attributes before the name of the class.
 
 ### CLSUNK
 
 Severity: **error** · Auto-fix: **no**
 
-Class or superclass could not be found on the path
+This class, or one of its superclasses, could not be found on MATLAB's path.
 
 ### NOPRV
 
 Severity: **error** · Auto-fix: **no**
 
-Class definition cannot be inside a private directory
+A class definition cannot be inside a private directory.
 
 ### VTPCON
 
 Severity: **error** · Auto-fix: **no**
 
-Validation functions must only use the property or literals
+For properties, validation functions must only use the property being validated or literals.
 
 ### VTPEAL
 
 Severity: **error** · Auto-fix: **no**
 
-Specify at least one input argument for validator
+Specify at least one input argument for validator.
 
 ### VTPIN
 
 Severity: **error** · Auto-fix: **no**
 
-Validation function must use the property as an input
+Validation function must use the property as an input.
 
 ### SPNST
 
 Severity: **error** · Auto-fix: **no**
 
-parfor or spmd inside spmd
+PARFOR or SPMD cannot be used inside an SPMD block.
 
 ### SPRET
 
 Severity: **error** · Auto-fix: **no**
 
-return/break/continue inside spmd
+VAR_RESERVED_WORD statement cannot be used inside an SPMD block.
 
 ### SPGP
 
 Severity: **error** · Auto-fix: **no**
 
-global/persistent inside spmd
+Setting the GLOBAL or PERSISTENT variable VAR_NAME in an SPMD block might fail because the set happens on a worker machine.
 
 ### MCFIL
 
 Severity: **error** · Auto-fix: **no**
 
-Class name and file name don't match
+Class name VAR_NAME and file name do not agree: VAR_FILE. Update the class name and constructor, if defined, or change the file name to match the class name.
 
 ### MCDIR
 
 Severity: **error** · Auto-fix: **no**
 
-Class name and @directory name don't match
+Class name VAR_NAME and @directory name do not agree: VAR_FILE.
 
 ### MCRED
 
 Severity: **error** · Auto-fix: **no**
 
-Property/event/enum name same as class name
+Property, event, or enumeration names must be different from the name of the class VAR_NAME.
 
 ### MCCBD
 
 Severity: **error** · Auto-fix: **no**
 
-Constructor not in class definition file
+Constructor must be fully defined in the class definition file.
 
 ### MCS2I
 
 Severity: **error** · Auto-fix: **no**
 
-Setter must have exactly 2 inputs
+Set Methods must have exactly two inputs.
 
 ### MCS1O
 
 Severity: **error** · Auto-fix: **no**
 
-Setter must have at most 1 output
+Set Methods must have at most one output.
 
 ### MCG1I
 
 Severity: **error** · Auto-fix: **no**
 
-Getter must have exactly 1 input
+Get methods must have exactly one input.
 
 ### MCG1O
 
 Severity: **error** · Auto-fix: **no**
 
-Getter must have exactly 1 output
+Get methods must have exactly one output.
 
 ### MCEB
 
 Severity: **error** · Auto-fix: **no**
 
-Events defined in non-handle class
+Events can be defined only in a handle class.
 
 ### MCANI
 
 Severity: **error** · Auto-fix: **no**
 
-Abstract property initialized
+Abstract property VAR_NAME cannot be initialized.
 
 ### MCASC
 
 Severity: **error** · Auto-fix: **no**
 
-Abstract property in Sealed class
+Abstract property VAR_NAME cannot be used in a Sealed class.
 
 ### MCSGA
 
 Severity: **error** · Auto-fix: **no**
 
-Set/get method in methods block with attributes
+Set or get method must be defined in a METHODS block with no attributes.
 
 ### MCSGP
 
 Severity: **error** · Auto-fix: **no**
 
-Set/get method refers to invalid property
+The method VAR_NAME does not refer to a valid property name.
 
 ### MABSEAC
 
 Severity: **error** · Auto-fix: **no**
 
-Instance properties/methods illegal in Sealed+Abstract classes
+Instance properties and methods are illegal in classes that are both Sealed and Abstract.
 
 ### MABSEAM
 
 Severity: **error** · Auto-fix: **no**
 
-A method cannot be both Abstract and Sealed
+A method cannot be both Abstract and Sealed.
 
 ### MCAPP
 
 Severity: **error** · Auto-fix: **no**
 
-Private property cannot be Abstract
+Private property cannot be Abstract.
 
 ### MCCBS
 
 Severity: **error** · Auto-fix: **no**
 
-Superclass constructor is not a declared superclass name
+A superclass constructor is being called, but VAR_NAME is not a declared superclass name.
 
 ### MCCBU
 
 Severity: **error** · Auto-fix: **no**
 
-Superclass constructor called after object use
+This superclass constructor is called after a use of the constructed object.
 
 ### MCCMC
 
 Severity: **error** · Auto-fix: **no**
 
-Constructor for superclass can only be called once
+Constructor for superclass can only be called once.
 
 ### MCCSOP
 
 Severity: **error** · Auto-fix: **no**
 
-Unable to modify Constant property
+Unable to modify Constant property VAR_NAME.
 
 ### MCGSA
 
 Severity: **error** · Auto-fix: **no**
 
-Set/get method tries to access an abstract property
+Method VAR_NAME tries to set or get an abstract property.
 
 ### MCMIO
 
 Severity: **error** · Auto-fix: **no**
 
-Method has too many inputs or outputs
+Method has too many inputs or outputs.
 
 ### MCMSP
 
 Severity: **error** · Auto-fix: **no**
 
-Private method cannot be Abstract
+Private method cannot be Abstract.
 
 ### MCMTP
 
 Severity: **error** · Auto-fix: **no**
 
-TestParameterDefinition methods must be Static
+TestParameterDefinition methods must be Static, so that they can be called at test suite creation time to set test parameter values.
 
 ### MCPIN
 
 Severity: **error** · Auto-fix: **no**
 
-Property initialized to instance of the class itself
+Unable to initialize class property to an instance of the class itself.
 
 ### MCPSG
 
 Severity: **error** · Auto-fix: **no**
 
-Set or get method must be fully defined in the class file
+Set or get method must be fully defined in the class definition file.
 
 ### MCSCC
 
 Severity: **error** · Auto-fix: **no**
 
-Superclass constructor call needs a matching subclass constructor name
+To call the superclass constructor, the name of the subclass constructor VAR_NAME must match the name of the subclass VAR_NAME.
 
 ### MCSCF
 
 Severity: **error** · Auto-fix: **no**
 
-Superclass constructor must be assigned to the first output
+A superclass constructor must be assigned to the first constructor output argument.
 
 ### MCSCM
 
 Severity: **error** · Auto-fix: **no**
 
-Superclass method call needs a matching method name
+To call a superclass method, the method name VAR_NAME must match the name of the subclass method VAR_NAME.
 
 ### MCSCN
 
 Severity: **error** · Auto-fix: **no**
 
-Method tries to set a constant property
+Method VAR_NAME tries to set a constant property.
 
 ### MCSCO
 
 Severity: **error** · Auto-fix: **no**
 
-Superclass constructor must use the first output argument
+A superclass constructor must be called using the first constructor output argument.
 
 ### MCSCT
 
 Severity: **error** · Auto-fix: **no**
 
-Superclass constructor call must not be conditionalized
+Superclass constructor call must not be conditionalized or be part of another expression.
 
 ### MCSMO
 
 Severity: **error** · Auto-fix: **no**
 
-Multiple outputs from superclass initialization unsupported
+Returning multiple outputs from a superclass object initialization is not supported.
 
 ### MCSWA
 
 Severity: **error** · Auto-fix: **no**
 
-Sealed class cannot specify allowed subclasses
+A sealed class cannot specify allowed subclasses.
 
 ### MTAGS3
 
 Severity: **error** · Auto-fix: **no**
 
-Access attribute conflicts with SetAccess/GetAccess
+Cannot use the Access attribute when using the SetAccess or GetAccess attribute.
 
 ### MTMAT
 
 Severity: **error** · Auto-fix: **no**
 
-Attribute can only be set once
+Attribute can only be set once.
 
 ### MWKCL
 
 Severity: **error** · Auto-fix: **no**
 
-WeakHandle property must have a class validation
+A WeakHandle property must restrict its type using a class validation.
 
 ### MWKCT
 
 Severity: **error** · Auto-fix: **no**
 
-WeakHandle and Constant attributes conflict
+Specifying both WeakHandle and Constant attributes on the same property is not supported.
 
 ### MWKREF
 
 Severity: **error** · Auto-fix: **no**
 
-WeakHandle and Dependent attributes conflict
+Specifying both WeakHandle and Dependent attributes is invalid. A dependent property does not store a value.
 
 ### FVNST
 
 Severity: **error** · Auto-fix: **no**
 
-Arguments blocks in nested functions
+Arguments blocks in nested function declarations are not supported.
 
 ### FVAPN
 
 Severity: **error** · Auto-fix: **no**
 
-Move name=value name-value arguments to the end
+Move name-value arguments that use the name=value syntax to the end of the argument list.
 
 ### FVATF
 
 Severity: **error** · Auto-fix: **no**
 
-Attribute values in arguments blocks must be logical constants
+Attribute values in arguments blocks must be logical constants.
 
 ### FVBTN
 
 Severity: **error** · Auto-fix: **no**
 
-Use of this function is not supported in arguments blocks
+Use of this function is not supported in arguments blocks.
 
 ### FVDAN
 
 Severity: **error** · Auto-fix: **no**
 
-Same name as name-value structure and positional
+Using the same name as both a name-value argument structure and as a positional argument is not supported.
 
 ### FVDAP
 
 Severity: **error** · Auto-fix: **no**
 
-Positional argument can only be declared once
+Positional argument can only be declared once.
 
 ### FVDNF
 
 Severity: **error** · Auto-fix: **no**
 
-Name-value argument can only be declared once
+Name-value argument can only be declared once.
 
 ### FVDREP
 
 Severity: **error** · Auto-fix: **no**
 
-Multiple Repeating arguments blocks not supported
+Multiple Repeating arguments blocks are not supported.
 
 ### FVIDV
 
 Severity: **error** · Auto-fix: **no**
 
-Validation/default on ignored arguments unsupported
+Specifying validation or default value for ignored arguments is not supported.
 
 ### FVIOA
 
 Severity: **error** · Auto-fix: **no**
 
-Both 'Input' and 'Output' attributes on one block
+Specifying both 'Input' and 'Output' attributes on the same arguments block is not supported.
 
 ### FVMCL
 
 Severity: **error** · Auto-fix: **no**
 
-Multiple name-value structures using .? syntax
+Specifying multiple name-value structures using .? syntax and a class name is not supported.
 
 ### FVNDE
 
 Severity: **error** · Auto-fix: **no**
 
-Default values illegal for class-name name-value
+When specifying name-value arguments using a class name, it is illegal to specify default values for the arguments.
 
 ### FVNIV
 
 Severity: **error** · Auto-fix: **no**
 
-Variable is not an input to the function
+This variable is not an input to the function and cannot be used in an arguments block.
 
 ### FVNREP
 
 Severity: **error** · Auto-fix: **no**
 
-Name-value arguments in Repeating block unsupported
+Name-value arguments are not supported in a Repeating arguments block.
 
 ### FVNSC
 
 Severity: **error** · Auto-fix: **no**
 
-Calling nested functions in arguments blocks
+Use of nested functions is not supported in arguments blocks.
 
 ### FVNVL
 
 Severity: **error** · Auto-fix: **no**
 
-Validation illegal for class-name name-value
+When specifying name-value arguments using a class name, it is illegal to specify validation for the arguments.
 
 ### FVOBI
 
 Severity: **error** · Auto-fix: **no**
 
-Declare input blocks before output blocks
+Declare all input argument blocks before all output arguments blocks.
 
 ### FVOCON
 
 Severity: **error** · Auto-fix: **no**
 
-Output validation only uses arg or literals
+For output arguments, validation functions must only use the argument being validated or literals.
 
 ### FVOND
 
 Severity: **error** · Auto-fix: **no**
 
-Name-value arguments in default values unsupported
+Use of name-value arguments in default values is not supported.
 
 ### FVONV
 
 Severity: **error** · Auto-fix: **no**
 
-Name-value arguments without dotted name in validation
+Use of name-value arguments without dotted name in the validation is not supported.
 
 ### FVOOD
 
 Severity: **error** · Auto-fix: **no**
 
-Default value for output argument unsupported
+Specifying a default value for an output argument is not supported.
 
 ### FVOOI
 
 Severity: **error** · Auto-fix: **no**
 
-Ignored arguments in output block unsupported
+Use of ignored arguments in output arguments block is not supported.
 
 ### FVOON
 
 Severity: **error** · Auto-fix: **no**
 
-Name-value argument as output unsupported
+Using name-value argument as output argument is not supported.
 
 ### FVORDI
 
 Severity: **error** · Auto-fix: **no**
 
-Ignored inputs after Repeating or name-value
+Ignored input arguments are not allowed after a Repeating arguments block or name-value arguments.
 
 ### FVORDN
 
 Severity: **error** · Auto-fix: **no**
 
-Positional arguments before name-value arguments
+Positional arguments must be defined before name-value arguments.
 
 ### FVORDO
 
 Severity: **error** · Auto-fix: **no**
 
-Repeating outputs after required outputs
+Repeating output arguments must be defined after required output arguments.
 
 ### FVORDP
 
 Severity: **error** · Auto-fix: **no**
 
-Positional order: required, optional, repeating
+Positional arguments must be defined in the following order: required, optional, and repeating.
 
 ### FVORM
 
 Severity: **error** · Auto-fix: **no**
 
-Multiple repeating output arguments unsupported
+Declaring multiple repeating output arguments is not supported.
 
 ### FVOVREP
 
 Severity: **error** · Auto-fix: **no**
 
-varargout only in Repeating output block
+Output argument varargout can only be used inside a Repeating output arguments block.
 
 ### FVREPD
 
 Severity: **error** · Auto-fix: **no**
 
-Defaults in Repeating block unsupported
+Default values are not supported in a Repeating arguments block.
 
 ### FVREPO
 
 Severity: **error** · Auto-fix: **no**
 
-Repeating input block with varargin has no other args
+Repeating input arguments block containing varargin must not have other arguments.
 
 ### FVSOR
 
 Severity: **error** · Auto-fix: **no**
 
-Input block matches function line order
+Input arguments block declarations and the function line must contain the same input arguments in the same order, including ignored arguments.
 
 ### FVSORO
 
 Severity: **error** · Auto-fix: **no**
 
-Output block matches function line order
+Output arguments block declarations and the function line must contain the same output arguments in the same order.
 
 ### FVUBD
 
 Severity: **error** · Auto-fix: **no**
 
-Argument referenced before declared
+Argument is referenced before it is declared in the arguments block.
 
 ### FVVCON
 
 Severity: **error** · Auto-fix: **no**
 
-Input validation only uses prior positionals
+For input arguments, validation functions must only use previously declared positional arguments, the argument being validated, or literals.
 
 ### FVVIN
 
 Severity: **error** · Auto-fix: **no**
 
-Validation function must use the argument
+Validation function must use the argument as an input.
 
 ### FVVREP
 
 Severity: **error** · Auto-fix: **no**
 
-varargin only inside repeating input block
+varargin can only be used inside repeating input arguments block.
 
 ### TINVALDIM
 
 Severity: **error** · Auto-fix: **no**
 
-Each dimension must be nonnegative integer or colon
+Each dimension must be a nonnegative integer number or a colon.
 
 ### TTOOFEWDIMS
 
 Severity: **error** · Auto-fix: **no**
 
-Specify at least two dimensions for size
+Specify at least two dimensions for size.
 
 ### FCONV
 
 Severity: **error** · Auto-fix: **no**
 
-Variable name same as script name
+Unable to define variable VAR_NAME because it has the same name as the script.
 
 ### FCONF
 
 Severity: **error** · Auto-fix: **no**
 
-Local function name same as file name
+Unable to define local function VAR_NAME because it has the same name as the file.
 
 ### GPFST
 
 Severity: **error** · Auto-fix: **no**
 
-Global/persistent must precede first use
+A GLOBAL or PERSISTENT declaration must precede first use.
 
 ### GPNES
 
 Severity: **error** · Auto-fix: **no**
 
-Global/persistent must be in outermost function
+A GLOBAL or PERSISTENT declaration must be in the outermost function where it is used.
 
 ### NPERS
 
 Severity: **error** · Auto-fix: **no**
 
-Persistent in script
+A PERSISTENT declaration is not valid in scripts.
 
 ### ROWLN
 
 Severity: **error** · Auto-fix: **no**
 
-Matrix rows must be same length
+All matrix rows must be the same length.
 
 ### FCNANS
 
 Severity: **error** · Auto-fix: **no**
 
-Function named 'ans'
+Using ANS as a function name is not supported.
 
 ### CLANS
 
 Severity: **error** · Auto-fix: **no**
 
-Class named 'ans'
+Using ANS as a class name is not supported.
 
 ### BRKFOR
 
 Severity: **error** · Auto-fix: **no**
 
-break outside loop
+BREAK statement can only be used in a FOR or WHILE loop.
 
 ### CONTFOR
 
 Severity: **error** · Auto-fix: **no**
 
-continue outside loop
+CONTINUE statement can only be used in a FOR or WHILE loop.
 
 ### IDXCOLND
 
 Severity: **error** · Auto-fix: **no**
 
-END operator outside index expression
+The END operator must be used within an array index expression.
 
 ### CTOINE
 
 Severity: **error** · Auto-fix: **no**
 
-Use of constructed object as input to constructor is not supported
+Use of constructed object as input to constructor is not supported.
 
 ### CTORO
 
 Severity: **error** · Auto-fix: **no**
 
-Class constructors must be declared with at least one output argument
+Class constructors must be declared with at least one output argument.
 
 ### ERTXT
 
 Severity: **error** · Auto-fix: **no**
 
-Specify an error message with the message identifier
+Specify an error message with the message identifier.
 
 ### MHERIT
 
 Severity: **error** · Auto-fix: **no**
 
-Deriving from a built-in MATLAB class is not supported
+Deriving from the built-in MATLAB VAR_NAME class is not supported.
 
 ### NCHKOS
 
 Severity: **error** · Auto-fix: **no**
 
-NARGINCHK does not return any values
+NARGINCHK does not return any values.
 
 ### SPBFN
 
 Severity: **error** · Auto-fix: **no**
 
-Non-transparent workspace access inside spmd
+Use of this function is invalid inside an SPMD block because it accesses or modifies the workspace in a non-transparent way.
 
 ### SPDEC
 
 Severity: **error** · Auto-fix: **no**
 
-SPMD worker bounds must be nonnegative integers
+The bounds on the number of workers an SPMD block can use must be a nonnegative integer.
 
 ### SPDEC3
 
 Severity: **error** · Auto-fix: **no**
 
-SPMD can only specify lower and upper worker bounds
+An SPMD block can only specify a lower and upper bound for the number of workers to use.
 
 ### SPEVC
 
 Severity: **error** · Auto-fix: **no**
 
-EVALIN/ASSIGNIN('caller') invalid inside spmd
+EVALIN('caller') and ASSIGNIN('caller') are invalid inside of an SPMD block.
 
 ### SPLD
 
 Severity: **error** · Auto-fix: **no**
 
-Assign the output of LOAD in spmd blocks
+To avoid a transparency violation, assign the output of LOAD to a variable in SPMD blocks.
 
 ### SPNF
 
 Severity: **error** · Auto-fix: **no**
 
-Nested function call inside spmd
+The nested function VAR_NAME cannot be called from within an SPMD block.
 
 ### SPSV
 
 Severity: **error** · Auto-fix: **no**
 
-SAVE requires '-fromstruct' inside spmd
+SAVE cannot be called in an SPMD block without the '-fromstruct' option.
 
 ### SPWHOS
 
 Severity: **error** · Auto-fix: **no**
 
-who/whos without '-file' invalid inside spmd
+Using "who" or "whos" without "-file" is invalid inside an SPMD block because it accesses the workspace in a non-transparent way.
 
 ### USESWNS
 
 Severity: **error** · Auto-fix: **no**
 
-Variable must be explicitly defined before first use
+Variable must be explicitly defined before first use.
 
 ### WTXT
 
 Severity: **error** · Auto-fix: **no**
 
-Specify a warning message with the message identifier
+Specify a warning message with the message identifier.
 
 ## Examples
 

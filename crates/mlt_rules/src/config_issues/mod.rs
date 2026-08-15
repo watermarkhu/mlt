@@ -20,12 +20,12 @@
 //!
 //! ## Check IDs
 //!
-//! | Check ID | Severity | Fix | Description                     |
-//! |----------|----------|-----|---------------------------------|
-//! | BDCFG    | error    | no  | Invalid configuration parameter |
-//! | CFERR    | error    | no  | Configuration function error    |
-//! | BDOPT    | error    | no  | Invalid option value            |
-//! | CFIG     | error    | no  | Configuration file issue        |
+//! | Check ID | Severity | Fix | Description |
+//! | --- | --- | --- | --- |
+//! | BDCFG | error | no | Code Analyzer configuration file is invalid. Factory configuration is used instead. Run matlab.codeanalysis.validateConfiguration(VAR_NAME) to identify specific issues. |
+//! | CFERR | error | no | Cannot open or read the Code Analyzer settings from file VAR_FILE. Using default settings instead. |
+//! | BDOPT | error | no | Option VAR_NAME is ignored because it is invalid. |
+//! | CFIG | error | no | The Code Analyzer settings file, VAR_FILE, has an error on line VAR_NUMBER. |
 //!
 //! ## Examples
 //!

@@ -24,103 +24,103 @@ specific check ID (e.g. `NASGU`, `UNRCH`, `MSNU`).
 
 Severity: **warning** · Auto-fix: **no**
 
-Variable is assigned but never used
+Value assigned to variable might be unused.
 
 ### NUSED
 
 Severity: **warning** · Auto-fix: **no**
 
-Variable is defined (input arg) but never used
+Global or persistent variable might be unused or unset in this function or script.
 
 ### NOEFF
 
 Severity: **warning** · Auto-fix: **no**
 
-Statement has no effect (expression result discarded)
+The operation or expression VAR_OPERATOR has no evident effect.
 
 ### EQEFF
 
 Severity: **warning** · Auto-fix: **no**
 
-Comparison has no effect (result not used)
+To assign values to variables, use =. The == operator compares equality of values.
 
 ### ASGLU
 
 Severity: **warning** · Auto-fix: **no**
 
-Assignment to a variable that is immediately overwritten
+Value assigned to variable might be unused. Consider replacing the variable with ~ instead.
 
 ### SETNU
 
 Severity: **warning** · Auto-fix: **no**
 
-Output of function assigned but never used
+Variable is set, but might be unused.
 
 ### PUSE
 
 Severity: **warning** · Auto-fix: **no**
 
-Persistent/global variable set but not used
+Persistent variable might be unused.
 
 ### PREALL
 
 Severity: **warning** · Auto-fix: **no**
 
-Variable preallocated but unused
+The preallocated value assigned to variable might be unused.
 
 ### INUSA
 
 Severity: **warning** · Auto-fix: **no**
 
-Input argument not used in function
+Input argument might be unused after the function arguments block(s).
 
 ### INUSD
 
 Severity: **warning** · Auto-fix: **no**
 
-Input argument defined but could be removed
+Input argument might be unused. Consider replacing the argument with ~ instead.
 
 ### VANUS
 
 Severity: **info** · Auto-fix: **no**
 
-Value assigned to `ans` is unused
+Input argument 'varargin' might be unused.
 
 ### DEFNU
 
 Severity: **warning** · Auto-fix: **no**
 
-Local function defined but never called
+Function might be unused.
 
 ### UNRCH
 
 Severity: **warning** · Auto-fix: **no**
 
-Unreachable code after return/break/continue
+This statement (and possibly following ones) cannot be reached.
 
 ### MANU
 
 Severity: **warning** · Auto-fix: **no**
 
-Method defined but never called
+Input argument might be unused. Consider replacing the argument with ~, or make this method Static instead.
 
 ### VUNUS
 
 Severity: **warning** · Auto-fix: **no**
 
-Variable assigned in all branches but unused after
+VAR_OPERATOR produces a value that might be unused.
 
 ### MSNU
 
 Severity: **warning** · Auto-fix: **no**
 
-Struct field set but never read
+A Code Analyzer message was once suppressed here, but the message is no longer generated.
 
 ### MSNE
 
 Severity: **info** · Auto-fix: **no**
 
-Struct field doesn't exist (assigned but possibly a typo)
+No Code Analyzer check is found for this check ID.
 
 ## Examples
 

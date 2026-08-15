@@ -28,289 +28,289 @@ comments and strings. Each diagnostic carries the specific check ID
 
 Severity: **error** · Auto-fix: **no**
 
-ERROR node detected in parse tree
+Parse error at VAR_RESERVED_WORD: usage might be invalid MATLAB syntax.
 
 ### BDFIL
 
 Severity: **error** · Auto-fix: **no**
 
-File name doesn't follow MATLAB naming rules
+Invalid MATLAB file name. MATLAB file names must start with a letter, contain only letters, numbers, or underscores, and have no more than VAR_NUMBER characters.
 
 ### BADNE
 
 Severity: **error** · Auto-fix: **yes**
 
-Source contains `!=` (MATLAB uses `~=`)
+'Not Equals' is spelled ~= in MATLAB, not !=.
 
 ### BADOT
 
 Severity: **error** · Auto-fix: **no**
 
-Source contains `..` not part of `...`
+Use of two dots (..) is an invalid MATLAB construction.
 
 ### TWOCM
 
 Severity: **error** · Auto-fix: **no**
 
-Source contains `,,`
+A comma cannot immediately follow another comma.
 
 ### CLIS
 
 Severity: **error** · Auto-fix: **no**
 
-`classdef` in a script file
+Defining a class in script is not allowed.
 
 ### CLTWO
 
 Severity: **error** · Auto-fix: **no**
 
-Multiple `classdef` blocks in one file
+Only one class definition is allowed per file, and it must come at the head of the file.
 
 ### SOFOC
 
 Severity: **error** · Auto-fix: **no**
 
-Statements outside a class definition in a class file
+Statement outside a class definition is not allowed.
 
 ### SEMFU
 
 Severity: **error** · Auto-fix: **no**
 
-File has only empty statements (only `;` and whitespace)
+Script file must contain executable code. Remove empty statements to make this file a function file.
 
 ### FNDOT
 
 Severity: **error** · Auto-fix: **no**
 
-Function name contains dots outside a class methods block
+Function name can only contain dots if it is a class method.
 
 ### FNSWA
 
 Severity: **error** · Auto-fix: **no**
 
-Function name doesn't start with an alphabetic character
+Function name must start with alphabetic character.
 
 ### NOPAR2
 
 Severity: **error** · Auto-fix: **no**
 
-Missing closing bracket mid-file
+A VAR_NAME might be missing a closing VAR_NAME, causing invalid syntax at VAR_NAME on line VAR_NUMBER.
 
 ### EOLPAR
 
 Severity: **error** · Auto-fix: **no**
 
-Missing closing bracket at end of line
+A VAR_NAME might be missing a closing VAR_NAME, causing invalid syntax at end of line.
 
 ### ENDPAR
 
 Severity: **error** · Auto-fix: **no**
 
-Missing closing bracket at end of file
+A VAR_NAME might be missing a closing VAR_NAME, causing invalid syntax at end of file.
 
 ### ENDCT
 
 Severity: **error** · Auto-fix: **no**
 
-ERROR node suggesting a missing `end`
+An END might be missing, possibly matching VAR_RESERVED_WORD.
 
 ### ENDCT2
 
 Severity: **error** · Auto-fix: **no**
 
-An `end` might be missing after a block-opening keyword
+An END might be missing (after line VAR_RESERVED_WORD), possibly matching VAR_NUMBER.
 
 ### ENDCT3
 
 Severity: **error** · Auto-fix: **no**
 
-An `end` might be missing before a block-opening keyword
+An END might be missing (before VAR_RESERVED_WORD on line VAR_NUMBER), possibly matching VAR_RESERVED_WORD.
 
 ### ENDCT4
 
 Severity: **error** · Auto-fix: **no**
 
-A METHODS block or `end` might be missing before a function definition
+A METHODS block or END might be missing before the function definition. This might be causing additional error messages.
 
 ### EOFMI
 
 Severity: **error** · Auto-fix: **no**
 
-File ends with an ERROR node (incomplete)
+Invalid syntax at end of file. File is incomplete.
 
 ### NOLHS
 
 Severity: **error** · Auto-fix: **no**
 
-Assignment with empty left side
+Left side of an assignment is empty.
 
 ### BADCH
 
 Severity: **error** · Auto-fix: **no**
 
-Invalid control characters in source
+Invalid text character(s).
 
 ### BADSP
 
 Severity: **error** · Auto-fix: **no**
 
-Non-ASCII whitespace characters in source
+Invalid text character(s). The text contains an unsupported non-ASCII whitespace character.
 
 ### BADCT
 
 Severity: **error** · Auto-fix: **no**
 
-Unicode explicit directional formatting characters
+Unicode explicit directional formatting characters are not supported.
 
 ### REDEF
 
 Severity: **error** · Auto-fix: **no**
 
-Same identifier used as both function name and variable
+The current use of VAR_NAME is inconsistent with its previous use or definition (line VAR_NUMBER).
 
 ### SEPEXR
 
 Severity: **error** · Auto-fix: **yes**
 
-Missing newline/semicolon between statements
+Use a newline, semicolon, or comma before this statement.
 
 ### SBTMP
 
 Severity: **error** · Auto-fix: **no**
 
-Chaining outputs after a parenthesis is not supported
+Invalid array indexing or function call. Chaining outputs after parenthesis is not supported.
 
 ### FVSYN
 
 Severity: **error** · Auto-fix: **no**
 
-Invalid function argument syntax
+Invalid function argument syntax at VAR_RESERVED_WORD.
 
 ### FVACI
 
 Severity: **error** · Auto-fix: **no**
 
-Name-value arguments in cell indexing not supported
+Use of name-value arguments in cell indexing is not supported.
 
 ### FVACS
 
 Severity: **error** · Auto-fix: **no**
 
-Quoted string used as name in `name=value` syntax
+Using a character vector or string as a name in name=value syntax is not supported. Remove the quotes around the name.
 
 ### FVAMI
 
 Severity: **error** · Auto-fix: **no**
 
-Name in `name=value` syntax is not a valid identifier
+Name in name-value argument syntax must be a valid MATLAB identifier.
 
 ### UNSET
 
 Severity: **error** · Auto-fix: **no**
 
-Invalid use of an operator on the left side of an assignment
+Invalid use of VAR_OPERATOR on the left side of an assignment.
 
 ### LHROW
 
 Severity: **error** · Auto-fix: **no**
 
-Assignment left side cannot have multiple rows (`;`)
+The left side of an assignment cannot have multiple rows (';').
 
 ### RESWD
 
 Severity: **error** · Auto-fix: **no**
 
-Invalid use of a reserved word
+Invalid use of a reserved word.
 
 ### SYNEND
 
 Severity: **error** · Auto-fix: **no**
 
-Invalid use of the END operator
+Invalid use for END operator.
 
 ### MCPLD
 
 Severity: **error** · Auto-fix: **no**
 
-Invalid property syntax
+Invalid property syntax at VAR_RESERVED_WORD.
 
 ### BADNOT
 
 Severity: **error** · Auto-fix: **no**
 
-Using `~` to ignore a value is not permitted
+Using ~ to ignore a value is not permitted in this context.
 
 ### BADNOTLHS
 
 Severity: **error** · Auto-fix: **no**
 
-Invalid use of logical not (`~`) on the left side
+Invalid use of logical not operator (~) on left side of an assignment. To use ~ to ignore function outputs, separate output variables with commas.
 
 ### STRIN
 
 Severity: **error** · Auto-fix: **no**
 
-A quoted character vector is unterminated
+A quoted character vector is unterminated.
 
 ### DOUQT
 
 Severity: **error** · Auto-fix: **no**
 
-A double-quoted string is unterminated
+A double quoted string is unterminated.
 
 ### INBLK
 
 Severity: **error** · Auto-fix: **no**
 
-A block comment is unterminated at end of file
+A block comment is unterminated at the end of the file.
 
 ### BADFP
 
 Severity: **error** · Auto-fix: **no**
 
-Invalid floating-point constant (e.g. truncated `1.2.3`)
+Invalid floating-point constant.
 
 ### BADHBH
 
 Severity: **error** · Auto-fix: **no**
 
-Invalid digit in a hexadecimal literal
+Invalid digit in hexadecimal literal. Supported hexadecimal digits are 0-9 and A-F. Supported type suffixes are u8, u16, u32, u64, and s8, s16, s32, s64.
 
 ### BADHBB
 
 Severity: **error** · Auto-fix: **no**
 
-Invalid digit in a binary literal
+Invalid digit in binary literal. Supported binary digits are 0 and 1. Supported type suffixes are u8, u16, u32, u64, and s8, s16, s32, s64.
 
 ### BADHBHT
 
 Severity: **error** · Auto-fix: **no**
 
-Hex literal has too many digits for its type suffix
+Hexadecimal literal has too many digits for specified type suffix.
 
 ### BADHBBT
 
 Severity: **error** · Auto-fix: **no**
 
-Binary literal has too many digits for its type suffix
+Binary literal has too many digits for specified type suffix.
 
 ### HEXTOOLONG
 
 Severity: **error** · Auto-fix: **no**
 
-Hex literal has too many digits (max 16 without suffix)
+Hexadecimal literal has too many digits.
 
 ### BINARYTOOLONG
 
 Severity: **error** · Auto-fix: **no**
 
-Binary literal has too many digits (max 64 without suffix)
+Binary literal has too many digits.
 
 ### VTPOD
 
 Severity: **error** · Auto-fix: **no**
 
-Specify validation in order: size, then class, then functions
+Specify validation in the following order: size, then class, then functions.
 
 ## Automatic fixes
 

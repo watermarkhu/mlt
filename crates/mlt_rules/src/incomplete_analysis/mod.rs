@@ -30,22 +30,22 @@
 //!
 //! ## Check IDs
 //!
-//! | Check ID | Severity | Fix | Description                               |
-//! |----------|----------|-----|-------------------------------------------|
-//! | TMMSG    | error    | no  | More than 10,000 diagnostics generated     |
-//! | TMSMS    | error    | no  | More than 1,000 parse errors generated     |
-//! | MXASET   | error    | no  | File too complex to analyze                |
-//! | NOSPC    | error    | no  | File too complex (nesting)                 |
-//! | MBIG     | error    | no  | File too large                             |
-//! | MDOTM    | error    | no  | Invalid file extension (not `.m`)          |
-//! | MDMCR    | error    | no  | Deployed MATLAB file (`.ctf` or `.p`)      |
-//! | EOFER    | error    | no  | Too many syntax errors                     |
-//! | EOFMI    | error    | no  | Incomplete file (ends in ERROR/MISSING)    |
-//! | MDEEP    | error    | no  | Parentheses/brackets nested too deeply     |
-//! | DEEPC    | error    | no  | Block comments nested too deeply           |
-//! | DEEPN    | error    | no  | Functions nested too deeply                |
-//! | DEEPS    | error    | no  | Statements nested too deeply               |
-//! | TEXTL    | error    | no  | Text too long (line length)                |
+//! | Check ID | Severity | Fix | Description |
+//! | --- | --- | --- | --- |
+//! | TMMSG | error | no | More than 10,000 Code Analyzer messages were generated, leading to some being deleted. |
+//! | TMSMS | error | no | More than 1,000 parse error messages were generated, leading to some being deleted. |
+//! | MXASET | error | no | The file is too complex to analyze. Simplify the code to improve code maintainability. For example, reduce the number of operations in expressions. |
+//! | NOSPC | error | no | The file is too complex to analyze. Refactor the code to improve code maintainability. For example, reduce the nesting level of conditions or functions. |
+//! | MBIG | error | no | Code analysis did not complete. File VAR_FILE is too large. |
+//! | MDOTM | error | no | Unable to run code analysis. VAR_FILE has an invalid file extension. |
+//! | MDMCR | error | no | Unable to run code analysis. VAR_FILE is a deployed MATLAB file. |
+//! | EOFER | error | no | Code analysis did not complete. File contains too many syntax errors. |
+//! | EOFMI | error | no | Invalid syntax at end of file. File is incomplete. |
+//! | MDEEP | error | no | Parentheses, brackets, and braces are nested too deeply. |
+//! | DEEPC | error | no | Block comments are nested too deeply. |
+//! | DEEPN | error | no | Functions are nested too deeply. |
+//! | DEEPS | error | no | Statements are nested too deeply. |
+//! | TEXTL | error | no | Text is too long for MATLAB to parse. |
 //!
 //! ## Examples
 //!

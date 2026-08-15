@@ -25,61 +25,61 @@ own severity.
 
 Severity: **error** · Auto-fix: **no**
 
-'cd' should not be used in deployed applications
+MCC use of the CD function is problematic.
 
 ### MCPRD
 
 Severity: **error** · Auto-fix: **no**
 
-Path modification functions should not be used in deployed applications
+MCC allows only one argument in the PRINTDLG function.
 
 ### MCHLP
 
 Severity: **warning** · Auto-fix: **no**
 
-'help'/'doc' are not available in deployed applications
+MCC does not permit the HELP function.
 
 ### MCKBD
 
 Severity: **warning** · Auto-fix: **no**
 
-'keyboard' is not available in deployed applications
+MCC does not permit the KEYBOARD function.
 
 ### MCSVP
 
 Severity: **warning** · Auto-fix: **no**
 
-'savepath' is not available in deployed applications
+MCC does not permit the SAVEPATH function.
 
 ### MCMLR
 
 Severity: **warning** · Auto-fix: **no**
 
-'matlabroot' returns the MCR root, not the MATLAB root
+MCC use of the MATLABROOT function is problematic.
 
 ### MCABF
 
 Severity: **error** · Auto-fix: **no**
 
-'addpath' with an absolute path will fail in deployed applications
+MCC use of absolute file names is likely to fail.
 
 ### MCMFL
 
 Severity: **warning** · Auto-fix: **no**
 
-'mfilename' behaves differently in deployed applications
+MCC allows writing .m files, but they cannot be executed by the deployed application.
 
 ### MCTBX
 
 Severity: **warning** · Auto-fix: **no**
 
-Toolbox function may not be available without proper toolbox compilation
+MCC use of toolbox folder file names is likely to fail.
 
 ### MCLL
 
 Severity: **error** · Auto-fix: **no**
 
-License checking is not available in deployed applications
+MCC does not allow C++ files to be read directly using LOADLIBRARY.
 
 ## Examples
 

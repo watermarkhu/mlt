@@ -23,25 +23,25 @@ the specific check ID (`BDCFG`, `CFERR`, `BDOPT`, `CFIG`).
 
 Severity: **error** · Auto-fix: **no**
 
-Invalid configuration parameter
+Code Analyzer configuration file is invalid. Factory configuration is used instead. Run matlab.codeanalysis.validateConfiguration(VAR_NAME) to identify specific issues.
 
 ### CFERR
 
 Severity: **error** · Auto-fix: **no**
 
-Configuration function error
+Cannot open or read the Code Analyzer settings from file VAR_FILE. Using default settings instead.
 
 ### BDOPT
 
 Severity: **error** · Auto-fix: **no**
 
-Invalid option value
+Option VAR_NAME is ignored because it is invalid.
 
 ### CFIG
 
 Severity: **error** · Auto-fix: **no**
 
-Configuration file issue
+The Code Analyzer settings file, VAR_FILE, has an error on line VAR_NUMBER.
 
 ## Examples
 

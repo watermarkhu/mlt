@@ -41,7 +41,7 @@ replacement = "rng"
 [[checks]]
 id = "HOUGH"
 function_name = "hough"
-message = "HOUGH(BW,'ThetaResolution',VAL) is not recommended. Use HOUGH(BW,'Theta',-90:VAL:(90-VAL)) instead."
+message = "HOUGH(BW,'ThetaResolution',VAL) is not recommended. Use HOUGH(BW,'Theta',-90:VAL:(90-VAL) ) instead."
 replacement = ""
 
 [[checks]]
@@ -359,7 +359,7 @@ replacement = ""
 [[checks]]
 id = "STRCLQT"
 function_name = "string"
-message = "'string({''str1'', ''str2''})' is not recommended. Use '[\"str1\", \"str2\"]' instead."
+message = "'string({'str1', 'str2'})' is not recommended. Use '[\"str1\", \"str2\"]' instead."
 replacement = ""
 
 [[checks]]

@@ -31,211 +31,211 @@ ambiguous identifiers.
 
 Severity: **info** · Auto-fix: **no**
 
-Assignment inside a conditional expression
+Assignment to variable might be unnecessary.
 
 ### COMNL
 
 Severity: **info** · Auto-fix: **yes**
 
-Newline following comma acts as a row separator in a matrix
+Newline following comma acts as a row separator. Replace the comma with a semicolon to make the row separation clearer. Alternatively, use an ellipsis (...) to continue the current row on the next line.
 
 ### SPERR
 
 Severity: **info** · Auto-fix: **no**
 
-Prefer a message identifier for `error`
+ERROR takes SPRINTF-like arguments directly.
 
 ### SPWRN
 
 Severity: **info** · Auto-fix: **no**
 
-Prefer a message identifier for `warning`
+WARNING takes SPRINTF-like arguments directly.
 
 ### NCHKE
 
 Severity: **info** · Auto-fix: **no**
 
-Use `narginchk`/`nargoutchk` for argument validation
+Use NARGOUTCHK without ERROR.
 
 ### DSPSP
 
 Severity: **info** · Auto-fix: **yes**
 
-Prefer `fprintf` over `disp(sprintf(...))`
+'disp(sprintf(...))' can usually be replaced by 'fprintf(...\n)'.
 
 ### DSPSY
 
 Severity: **info** · Auto-fix: **no**
 
-Prefer `disp` over `display`
+'display(sprintf(...))' can usually be replaced by 'fprintf(...\n)'.
 
 ### STLOW
 
 Severity: **info** · Auto-fix: **yes**
 
-Unnecessary UPPER/LOWER call in a comparison
+In this comparison the call to UPPER/LOWER is unnecessary.
 
 ### FLUDLR
 
 Severity: **info** · Auto-fix: **yes**
 
-Use `rot90(x, 2)` instead of `flipud(fliplr(x))`/`fliplr(flipud(x))`
+For readability, consider using rot90(x,2) instead of flipud(fliplr(x)) or fliplr(flipud(x)).
 
 ### RPMT1
 
 Severity: **info** · Auto-fix: **yes**
 
-Trivial multiplication by 1
+For readability, consider using 'ones(x,y)' instead of 'repmat(1,x,y)'.
 
 ### RPMT0
 
 Severity: **info** · Auto-fix: **yes**
 
-Multiplication by 0
+For readability, consider using 'zeros(x,y)' instead of 'repmat(0,x,y)'.
 
 ### RPMTT
 
 Severity: **info** · Auto-fix: **yes**
 
-Boolean tautology (`x \|\| true`)
+For readability, consider using 'true(x,y)' instead of 'repmat(true,x,y)'.
 
 ### RPMTF
 
 Severity: **info** · Auto-fix: **yes**
 
-Boolean contradiction (`x && false`)
+For readability, consider using 'false(x,y)' instead of 'repmat(false,x,y)'.
 
 ### RPMTI
 
 Severity: **info** · Auto-fix: **yes**
 
-Trivial addition of 0
+For readability, consider using 'Inf(x,y)' instead of 'repmat(Inf,x,y)'.
 
 ### RPMTN
 
 Severity: **info** · Auto-fix: **yes**
 
-Trivial subtraction of 0
+For readability, consider using 'NaN(x,y)' instead of 'repmat(NaN,x,y)'.
 
 ### PSIZE
 
 Severity: **info** · Auto-fix: **yes**
 
-Use `numel(x)` instead of `prod(size(x))`
+NUMEL(x) is usually faster than PROD(SIZE(x)).
 
 ### LOGSUM
 
 Severity: **info** · Auto-fix: **no**
 
-Use `any` instead of `sum(logical) > 0`
+Consider using 'nnz' instead of 'sum' for logical vectors to improve readability.
 
 ### LOGL
 
 Severity: **info** · Auto-fix: **no**
 
-Use logical indexing instead of `x(find(condition))`
+Use 'true' or 'false' instead of 'logical(1)' or 'logical(0)'.
 
 ### ISCHR
 
 Severity: **info** · Auto-fix: **yes**
 
-Use `ischar(x)` instead of `isa(x, 'char')`
+Use ISCHAR instead of comparing the class to 'char'.
 
 ### ISSTR
 
 Severity: **info** · Auto-fix: **yes**
 
-Use `isstring(x)` instead of `isa(x, 'string')`
+Use ISSTRUCT instead of comparing the class to 'struct'.
 
 ### ISLOG
 
 Severity: **info** · Auto-fix: **yes**
 
-Use `islogical(x)` instead of `isa(x, 'logical')`
+Use ISLOGICAL instead of comparing the class to 'logical'.
 
 ### ISCEL
 
 Severity: **info** · Auto-fix: **yes**
 
-Use `iscell(x)` instead of `isa(x, 'cell')`
+Use ISCELL instead of comparing the class to 'cell'.
 
 ### IJCL
 
 Severity: **info** · Auto-fix: **no**
 
-`i`/`j` used as a variable (shadows the complex unit)
+For improved robustness, consider replacing i and j by 1i.
 
 ### ISMAT
 
 Severity: **info** · Auto-fix: **yes**
 
-Use `isnumeric(x)` instead of `isa(x, 'double')`
+When checking if a variable is a matrix consider using ISMATRIX.
 
 ### ISROW
 
 Severity: **info** · Auto-fix: **yes**
 
-Use `isrow(x)` instead of `size(x, 1) == 1`
+When checking if a variable is a row vector consider using ISROW.
 
 ### ISCOL
 
 Severity: **info** · Auto-fix: **yes**
 
-Use `iscolumn(x)` instead of `size(x, 2) == 1`
+When checking if a variable is a column vector consider using ISCOLUMN.
 
 ### NBRAK2
 
 Severity: **info** · Auto-fix: **yes**
 
-Unnecessary brackets around a scalar expression
+Use of brackets [] is unnecessary.
 
 ### MFAMB
 
 Severity: **info** · Auto-fix: **no**
 
-Cannot determine whether a name is a variable or function
+Code Analyzer cannot determine whether VAR_NAME is a variable or a function, and assumes it is a function.
 
 ### FVINR
 
 Severity: **info** · Auto-fix: **yes**
 
-Add an `(Input)` attribute to `arguments` blocks for readability
+For readability, add Input attribute to the input arguments block.
 
 ### STREMP
 
 Severity: **info** · Auto-fix: **yes**
 
-Use `strlength(s)==0` instead of `strcmp(s, '')`
+For readability, use '~contains(str1, str2)' instead of 'isempty(strfind(str1, str2))'.
 
 ### STRCL1
 
 Severity: **info** · Auto-fix: **no**
 
-Use `startsWith`/`endsWith` instead of `strncmp`/`strncmpi`
+For readability, use '~contains(str1, str2)' instead of 'cellfun('isempty', strfind(str1, str2))'.
 
 ### STRCLFH
 
 Severity: **info** · Auto-fix: **no**
 
-Use `contains` instead of `strfind` for presence checks
+For readability, use '~contains(str1, str2)' instead of 'cellfun(@isempty, strfind(str1, str2))'.
 
 ### STRIFCND
 
 Severity: **info** · Auto-fix: **no**
 
-Simplify if-conditions involving string comparisons
+For readability, use 'contains(str1, str2)' instead of 'strfind(str1, str2)'.
 
 ### CHARTEN
 
 Severity: **info** · Auto-fix: **yes**
 
-Use `newline` instead of `char(10)`
+For readability, consider using 'newline' instead of 'char(10)'.
 
 ### SPRINTFN
 
 Severity: **info** · Auto-fix: **yes**
 
-Use `num2str` over simple `sprintf` for number formatting
+For readability, consider using the 'newline' function instead of 'sprintf('\n')'.
 
 ## Automatic fixes
 

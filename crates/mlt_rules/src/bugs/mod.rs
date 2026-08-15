@@ -20,43 +20,43 @@
 //!
 //! ## Check IDs
 //!
-//! | Check ID   | Severity | Fix | Description                                                    |
-//! |------------|----------|-----|----------------------------------------------------------------|
-//! | IFBDUP     | error    | no  | Duplicate if-branch bodies                                     |
-//! | IFCDUP     | error    | no  | Duplicate if-branch conditions                                 |
-//! | CTRUE      | error    | no  | Condition is always true (`if true`, `while 1`)                |
-//! | CFALSE     | error    | no  | Condition is always false (`if false`, `while 0`)              |
-//! | SHOCIRT    | error    | no  | Short-circuit `&&` with non-scalar LHS                         |
-//! | SHOCIRF    | error    | no  | Short-circuit `\|\|` with non-scalar LHS                      |
-//! | DEBUGFUN   | error    | no  | Debug function in code (keyboard, dbstop, etc.)                |
-//! | INCR       | error    | no  | Suspicious self-increment `x = x + 1`                         |
-//! | DECR       | error    | no  | Suspicious self-decrement `x = x - 1`                         |
-//! | CMDAND     | error    | yes | `&` used where `&&` intended (boolean context)                 |
-//! | CMDOR      | error    | yes | `\|` used where `\|\|` intended (boolean context)              |
-//! | RHSFN      | error    | yes | Function name used on RHS without `@`                          |
-//! | FNAN       | error    | yes | Comparison with NaN (use `isnan` instead)                      |
-//! | LOGEMP     | error    | yes | `length(x) == 0` instead of `isempty(x)`                      |
-//! | STCUL      | error    | no  | `strcmpi` with same-case arguments                             |
-//! | LBODUP     | error    | no  | Duplicate case values in switch                                |
-//! | FUNFUN     | error    | no  | Passing function name as string instead of handle              |
-//! | DEFSIZE    | error    | yes | `size(x) == [m n]` instead of `isequal(size(x), [m n])`       |
-//! | VARARG     | error    | no  | Misuse of varargin/varargout                                   |
-//! | STRCMPCSTR | error    | no  | `strcmp` with single-char comparison                            |
-//! | ASSRT      | error    | no  | `assert` with constant true condition                          |
-//! | BDSCA2     | error    | no  | Suspicious scalar/array operation                              |
-//! | NOPRC      | error    | no  | No `otherwise` in switch                                       |
-//! | MOCUP      | error    | no  | Operator precedence issue                                      |
-//! | MDUPC      | error    | no  | Duplicate case in switch                                       |
-//! | MNANC      | error    | yes | Comparison with NaN (alternate form)                           |
-//! | MULCC      | error    | yes | Multiple conditions could be simplified                        |
-//! | MEXCEP     | error    | no  | Catch without identifier                                       |
-//! | PFUIXE     | error    | no  | Parfor index used in eval                                      |
-//! | PFBFN      | error    | no  | Builtin function in parfor                                     |
-//! | PFWHOS     | error    | no  | who/whos in parfor                                             |
-//! | PFTUSE     | error    | no  | Temporary variable misuse in parfor                            |
-//! | PFRNC      | error    | no  | Reduction not consistent in parfor                             |
-//! | FWPARF     | error    | no  | For loop could be parfor                                       |
-//! | PFTRIV     | error    | no  | Parfor could be for                                            |
+//! | Check ID | Severity | Fix | Description |
+//! | --- | --- | --- | --- |
+//! | IFBDUP | error | no | This condition has no effect because all blocks in this if statement are identical. This indicates a bug in the code. Remove the condition or change the code blocks. |
+//! | IFCDUP | error | no | The statements under this VAR_RESERVED_WORD condition cannot be reached because it is a duplicate of the VAR_RESERVED_WORD condition on line VAR_NUMBER. This indicates a bug in the code. Remove or change the condition. |
+//! | CTRUE | error | no | This logical comparison always returns true. Did you mean to use VAR_NAME to evaluate function argument: VAR_NAME(...VAR_NAME...)? |
+//! | CFALSE | error | no | This logical comparison always returns false. Did you mean to use VAR_NAME to evaluate function argument: VAR_NAME(...VAR_NAME...)? |
+//! | SHOCIRT | error | no | The VAR_NAME operator is unexpected because VAR_NAME(A VAR_NAME B) always returns true. |
+//! | SHOCIRF | error | no | The VAR_NAME operator is unexpected because VAR_NAME(A VAR_NAME B) always returns false. |
+//! | DEBUGFUN | error | no | Debug functions are intended to be used at the command line. At runtime, they will generate an error. Remove the debug function. |
+//! | INCR | error | no | ++x operation does not increment the value of x. To increase the value by 1, use x = x + 1. |
+//! | DECR | error | no | --x operation does not decrement the value of x. To decrease the value by 1, use x = x - 1. |
+//! | CMDAND | error | yes | Use 'A && B' or 'A & B' to test whether A and B are both true in MATLAB. |
+//! | CMDOR | error | yes | Use 'A \|\| B' or 'A \| B' to test whether either A or B is true in MATLAB. |
+//! | RHSFN | error | yes | The expression cannot be assigned to multiple values. |
+//! | FNAN | error | yes | Use ISNAN when comparing values to NaN. |
+//! | LOGEMP | error | yes | Using 'isempty' on a logical expression creates incorrect results. To determine if all the conditions are false, use '~any(..., "all")' instead. |
+//! | STCUL | error | no | The comparison will likely fail due to case mismatch. |
+//! | LBODUP | error | no | Since both operands are identical, the second operand has no effect on the VAR_RESERVED_WORD operation. This indicates a bug in the code. Change one of the operands or remove the VAR_RESERVED_WORD operation. |
+//! | FUNFUN | error | no | The first input argument must be a function handle. Did you mean '@VAR_NAME'? |
+//! | DEFSIZE | error | yes | Do not overload 'size' for fundamental data types. |
+//! | VARARG | error | no | Initialize VARARGOUT with a CELL. |
+//! | STRCMPCSTR | error | no | 'strcmp' always returns false for string elements of a cell array. Use ["str1", "str2"] instead of {"str1", "str2"}. |
+//! | ASSRT | error | no | The first input argument to 'assert' must be a condition. To always throw an error, use 'error(msg)' instead. |
+//! | BDSCA2 | error | no | Operands to '\|\|' and '&&' must be scalar values. Use 'all' or 'any' to convert this value into a scalar value or use the element-wise operators '\|' or '&' instead. |
+//! | NOPRC | error | no | A line break terminates the statement so it may be incomplete. Use ellipsis (...) to continue the statement. Or add a semicolon to hide the output. |
+//! | MOCUP | error | no | Variable VAR_NAME may be cleared before the cleanup function that references VAR_NAME executes, resulting in an undefined variable error. |
+//! | MDUPC | error | no | The case value VAR_NAME is a duplicate of one on line VAR_NUMBER. |
+//! | MNANC | error | yes | NaN never compares equal to any value, so this case will never be matched. |
+//! | MULCC | error | yes | This case cannot be matched due to a call to UPPER or LOWER on the SWITCH value. |
+//! | MEXCEP | error | no | To report an MException as a warning, use a format specifier to ensure the message is printed correctly. For example, 'warning(E.identifier, "%s", E.message)'. |
+//! | PFUIXE | error | no | The index variable VAR_NAME might be used after the PARFOR loop on line VAR_NUMBER, but it is unavailable after the loop. |
+//! | PFBFN | error | no | Use of this function is invalid inside a PARFOR loop because it accesses or modifies the workspace in a non-transparent way. |
+//! | PFWHOS | error | no | Using "who" or "whos" without "-file" is invalid inside a PARFOR loop because it accesses the workspace in a non-transparent way. |
+//! | PFTUSE | error | no | The temporary variable VAR_NAME is used after the PARFOR loop on line VAR_NUMBER, but its value is not available after the loop. |
+//! | PFRNC | error | no | Parfor reduction variable VAR_NAME must be used in the same position in each assignment statement when using non-commutative reduction operations '*', '[,]', or '[;]'. |
+//! | FWPARF | error | no | For loop could be parfor |
+//! | PFTRIV | error | no | Parfor could be for |
 //!
 //! ## Fix
 //!

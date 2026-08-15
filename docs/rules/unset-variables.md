@@ -24,37 +24,37 @@ Variables" category; each diagnostic carries the specific check ID (e.g.
 
 Severity: **warning** · Auto-fix: **no**
 
-Variable might not be defined before use
+Variable might be used before it is defined.
 
 ### USENS
 
 Severity: **warning** · Auto-fix: **no**
 
-Variable used but might not be set in all code paths
+Explicitly initialize this variable to avoid a potential uninitialized variable, or use a valid syntax for function call on line VAR_NUMBER.
 
 ### PSET
 
 Severity: **warning** · Auto-fix: **no**
 
-Variable set in one branch but not others
+Persistent variable is used, but might be unset.
 
 ### SUSENS
 
 Severity: **warning** · Auto-fix: **no**
 
-Script variable used before set
+Variable is used, but might be unset (within a script).
 
 ### SVNODEF
 
 Severity: **warning** · Auto-fix: **no**
 
-Variable in script might not be defined
+Variable might not have a value, because variable definition may not be executed.
 
 ### STOUT
 
 Severity: **warning** · Auto-fix: **no**
 
-Output variable might not be assigned
+Function return value might be unset.
 
 ## Examples
 

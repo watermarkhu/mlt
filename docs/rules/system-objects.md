@@ -27,55 +27,55 @@ diagnostic carries the specific check ID (e.g. `SONUMIN`, `SOTUNPROP3`).
 
 Severity: **error** · Auto-fix: **no**
 
-System object method called with wrong number of inputs
+If 'stepImpl' accepts variable number of inputs, then you must define a 'getNumInputsImpl' method.
 
 ### SONUMOUT
 
 Severity: **error** · Auto-fix: **no**
 
-System object method called with wrong number of outputs
+If 'stepImpl' returns variable number of outputs, then you must define a 'getNumOutputsImpl' method.
 
 ### SODEPPROP
 
 Severity: **warning** · Auto-fix: **no**
 
-Deprecated system object property; use the recommended replacement
+Dependent properties are not supported for MATLAB System blocks. VAR_NAME property is not included on System block.
 
 ### SOINITPROP
 
 Severity: **warning** · Auto-fix: **no**
 
-DiscreteState properties must be initialized within a 'resetImpl' method
+Initialize DiscreteState property VAR_NAME within a 'resetImpl' method.
 
 ### SODFLTVAL
 
 Severity: **error** · Auto-fix: **no**
 
-Property default value uses a function call, which may not be valid
+Invalid initialization of DiscreteState property VAR_NAME. Initialize property within a 'resetImpl' method.
 
 ### SORSRVDNM
 
 Severity: **warning** · Auto-fix: **no**
 
-Reserved name used for system object member; choose a different name
+VAR_NAME property is a reserved name.
 
 ### SOTUNPROP1
 
 Severity: **warning** · Auto-fix: **no**
 
-Logical attribute not supported for tunable properties on MATLAB System blocks
+Logical attribute not supported for tunable properties on MATLAB System blocks. VAR_NAME property is made Nontunable on System block.
 
 ### SOTUNPROP3
 
 Severity: **warning** · Auto-fix: **no**
 
-Tunable properties on System blocks must be numeric; char property is made Nontunable
+Tunable properties on MATLAB System blocks must be numeric. VAR_NAME property is made Nontunable on System block because it is a char.
 
 ### SOTUNPROP4
 
 Severity: **warning** · Auto-fix: **no**
 
-Tunable properties on System blocks must be numeric; string property is made Nontunable
+Tunable properties on MATLAB System blocks must be numeric. VAR_NAME property is made Nontunable on System block because it is a string.
 
 ## Examples
 

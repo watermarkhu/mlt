@@ -38,7 +38,7 @@ lookup-based check.
 | <a id="lerr"></a>`LERR` | warning | LASTERR and LASTERROR are not recommended. Use an identifier on the CATCH block instead. |
 | <a id="evlc"></a>`EVLC` | warning | Using 'evalc' with two arguments is not recommended. Use try/catch statements instead to make code more clear and efficient. |
 | <a id="rand"></a>`RAND` | warning | RAND or RANDN with the 'seed', 'state', or 'twister' inputs is not recommended. Use RNG instead. |
-| <a id="hough"></a>`HOUGH` | warning | HOUGH(BW,'ThetaResolution',VAL) is not recommended. Use HOUGH(BW,'Theta',-90:VAL:(90-VAL)) instead. |
+| <a id="hough"></a>`HOUGH` | warning | HOUGH(BW,'ThetaResolution',VAL) is not recommended. Use HOUGH(BW,'Theta',-90:VAL:(90-VAL) ) instead. |
 | <a id="thour"></a>`THOUR` | warning | 'hour' with serial date number or text inputs is not recommended. With appropriate code changes, use 'datetime' as input instead. |
 | <a id="tmnth"></a>`TMNTH` | warning | 'month' with serial date number or text inputs is not recommended. With appropriate code changes, use 'datetime' as input instead. |
 | <a id="tmnut"></a>`TMNUT` | warning | 'minute' with serial date number or text inputs is not recommended. With appropriate code changes, use 'datetime' as input instead. |
@@ -91,7 +91,7 @@ lookup-based check.
 | <a id="ezsrfc"></a>`EZSRFC` | warning | EZSURFC is not recommended. Use FSURF instead, and set the 'ShowContours' value to 'on'. |
 | <a id="fisadr"></a>`FISADR` | warning | 'addrule' is not recommended. Use 'addRule' instead. |
 | <a id="strquot"></a>`STRQUOT` | warning | string('...') is not recommended. Use \ |
-| <a id="strclqt"></a>`STRCLQT` | warning | 'string({''str1'', ''str2''})' is not recommended. Use '[\ |
+| <a id="strclqt"></a>`STRCLQT` | warning | 'string({'str1', 'str2'})' is not recommended. Use '[\ |
 | <a id="sim"></a>`SIM` | warning | 'sim' in parfor loop is not recommended. Replace the parfor loop with 'parsim'. |
 | <a id="numch"></a>`NUMCH` | warning | 'NumberOfChannels' is not recommended. Use 'NumChannels' instead. |
 | <a id="gtred"></a>`GTRED` | warning | 'geotiffread' is not recommended, except when reading a GeoTIFF file from a URL. With appropriate code changes, use 'readgeoraster' instead. |
