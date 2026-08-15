@@ -35,8 +35,7 @@ impl BugsEngine {
             let pos = node.start_position();
             vec![Diagnostic {
                 rule_id: "MOCUP",
-                message: "Operator precedence may not be as intended; use parentheses to clarify"
-                    .to_string(),
+                message: "Variable VAR_NAME may be cleared before the cleanup function that references VAR_NAME executes, resulting in an undefined variable error.".to_string(),
                 severity: Severity::Error,
                 byte_range: node.start_byte()..node.end_byte(),
                 line: pos.row + 1,

@@ -23,7 +23,7 @@ impl GoodPracticesEngine {
                     diagnostics.push(Diagnostic {
                         rule_id: "VALST",
                         message: format!(
-                            "Function '{}' uses nargin/nargout for validation; consider an 'arguments' block",
+                            "{} must be the last argument in the argument list.",
                             func.name
                         ),
                         severity: Severity::Info,

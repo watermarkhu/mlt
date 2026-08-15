@@ -33,7 +33,7 @@ impl ReadabilityEngine {
                 if self.is_check_enabled("RPMT1") && rhs_text == "1" {
                     results.push(self.diag(
                         "RPMT1",
-                        "Redundant multiplication by 1; simplify to 'x'",
+                        "For readability, consider using 'ones(x,y)' instead of 'repmat(1,x,y)'.",
                         node,
                         Some(Fix::new(
                             node.start_byte()..node.end_byte(),
@@ -45,7 +45,7 @@ impl ReadabilityEngine {
                 if self.is_check_enabled("RPMT1") && lhs_text == "1" {
                     results.push(self.diag(
                         "RPMT1",
-                        "Redundant multiplication by 1; simplify to 'x'",
+                        "For readability, consider using 'ones(x,y)' instead of 'repmat(1,x,y)'.",
                         node,
                         Some(Fix::new(
                             node.start_byte()..node.end_byte(),
@@ -59,7 +59,7 @@ impl ReadabilityEngine {
                 if self.is_check_enabled("RPMT0") && rhs_text == "0" {
                     results.push(self.diag(
                         "RPMT0",
-                        "Multiplication by 0; consider 'zeros(size(x))' for clarity",
+                        "For readability, consider using 'zeros(x,y)' instead of 'repmat(0,x,y)'.",
                         node,
                         Some(Fix::new(
                             node.start_byte()..node.end_byte(),
@@ -69,7 +69,7 @@ impl ReadabilityEngine {
                 } else if self.is_check_enabled("RPMT0") && lhs_text == "0" {
                     results.push(self.diag(
                         "RPMT0",
-                        "Multiplication by 0; consider 'zeros(size(x))' for clarity",
+                        "For readability, consider using 'zeros(x,y)' instead of 'repmat(0,x,y)'.",
                         node,
                         Some(Fix::new(
                             node.start_byte()..node.end_byte(),
@@ -83,7 +83,7 @@ impl ReadabilityEngine {
                 if self.is_check_enabled("RPMTI") && rhs_text == "0" {
                     results.push(self.diag(
                         "RPMTI",
-                        "Redundant addition of 0; simplify to 'x'",
+                        "For readability, consider using 'Inf(x,y)' instead of 'repmat(Inf,x,y)'.",
                         node,
                         Some(Fix::new(
                             node.start_byte()..node.end_byte(),
@@ -93,7 +93,7 @@ impl ReadabilityEngine {
                 } else if self.is_check_enabled("RPMTI") && lhs_text == "0" {
                     results.push(self.diag(
                         "RPMTI",
-                        "Redundant addition of 0; simplify to 'x'",
+                        "For readability, consider using 'Inf(x,y)' instead of 'repmat(Inf,x,y)'.",
                         node,
                         Some(Fix::new(
                             node.start_byte()..node.end_byte(),
@@ -106,7 +106,7 @@ impl ReadabilityEngine {
                 // RPMTN: x - 0 → x
                 results.push(self.diag(
                     "RPMTN",
-                    "Redundant subtraction of 0; simplify to 'x'",
+                    "For readability, consider using 'NaN(x,y)' instead of 'repmat(NaN,x,y)'.",
                     node,
                     Some(Fix::new(
                         node.start_byte()..node.end_byte(),

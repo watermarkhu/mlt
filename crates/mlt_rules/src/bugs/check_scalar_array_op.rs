@@ -34,10 +34,7 @@ impl BugsEngine {
             let pos = node.start_position();
             vec![Diagnostic {
                 rule_id: "BDSCA2",
-                message: format!(
-                    "Suspicious scalar/array operation with '{op}'; \
-                     did you mean element-wise '.{op}'?"
-                ),
+                message: "Operands to '||' and '&&' must be scalar values. Use 'all' or 'any' to convert this value into a scalar value or use the element-wise operators '|' or '&' instead.".to_string(),
                 severity: Severity::Error,
                 byte_range: node.start_byte()..node.end_byte(),
                 line: pos.row + 1,

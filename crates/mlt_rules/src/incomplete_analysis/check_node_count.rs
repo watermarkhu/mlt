@@ -13,11 +13,7 @@ impl IncompleteAnalysisEngine {
         if metrics.node_count > self.config.max_node_count {
             diagnostics.push(Diagnostic {
                 rule_id: "MXASET",
-                message: format!(
-                    "File too complex to fully analyze ({count} AST nodes; limit is {max})",
-                    count = metrics.node_count,
-                    max = self.config.max_node_count
-                ),
+                message: "The file is too complex to analyze. Simplify the code to improve code maintainability. For example, reduce the number of operations in expressions.".to_string(),
                 severity: Severity::Error,
                 byte_range: 0..source.len().min(1),
                 line: 1,

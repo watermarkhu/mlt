@@ -19,18 +19,9 @@ impl SyntaxErrorsEngine {
                 && name.chars().all(|c| c.is_ascii_alphanumeric() || c == '_');
 
             if !valid {
-                let reason = if name.is_empty() {
-                    "file name is empty".to_string()
-                } else if name.len() > 63 {
-                    format!("file name exceeds 63 characters ({} chars)", name.len())
-                } else if !name.starts_with(|c: char| c.is_ascii_alphabetic()) {
-                    "file name must start with a letter".to_string()
-                } else {
-                    "file name contains invalid characters (only alphanumeric and underscore allowed)".to_string()
-                };
                 diagnostics.push(Diagnostic {
                     rule_id: "BDFIL",
-                    message: format!("Invalid MATLAB file name '{}': {}", name, reason),
+                    message: "Invalid MATLAB file name. MATLAB file names must start with a letter, contain only letters, numbers, or underscores, and have no more than 63 characters.".to_string(),
                     severity: Severity::Error,
                     byte_range: 0..ctx.source.len().min(1),
                     line: 1,

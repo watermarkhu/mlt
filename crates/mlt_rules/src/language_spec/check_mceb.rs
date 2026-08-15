@@ -10,8 +10,7 @@ impl LanguageSpecEngine {
                 if !eb.events.is_empty() {
                     diagnostics.push(Diagnostic {
                         rule_id: "MCEB",
-                        message: "Events can only be defined in classes that inherit from handle"
-                            .to_string(),
+                        message: "Events can be defined only in a handle class.".to_string(),
                         severity: Severity::Error,
                         byte_range: class.byte_range.clone(),
                         line: class.line,

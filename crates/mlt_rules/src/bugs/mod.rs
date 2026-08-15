@@ -260,8 +260,7 @@ impl BugsEngine {
                         let _ = first_node;
                         diagnostics.push(Diagnostic {
                             rule_id: "IFBDUP",
-                            message: "Duplicate if-branch body; branches have identical code"
-                                .to_string(),
+                            message: "This condition has no effect because all blocks in this if statement are identical. This indicates a bug in the code. Remove the condition or change the code blocks.".to_string(),
                             severity: Severity::Error,
                             byte_range: child.start_byte()..child.end_byte(),
                             line: pos.row + 1,
@@ -310,13 +309,16 @@ impl BugsEngine {
                         .or_else(|| find_condition_child(child))
                     {
                         let cond_text = normalize_whitespace(node_text(cond, source));
-                        if conditions.iter().any(|(t, _)| *t == cond_text) {
+                        if let Some((_, first_cond)) =
+                            conditions.iter().find(|(t, _)| *t == cond_text)
+                        {
                             let pos = cond.start_position();
+                            let first_line = first_cond.start_position().row + 1;
                             diagnostics.push(Diagnostic {
                                 rule_id: "IFCDUP",
                                 message: format!(
-                                    "Duplicate if-branch condition '{}'",
-                                    node_text(cond, source).trim()
+                                    "The statements under this elseif condition cannot be reached because it is a duplicate of the elseif condition on line {}. This indicates a bug in the code. Remove or change the condition.",
+                                    first_line
                                 ),
                                 severity: Severity::Error,
                                 byte_range: cond.start_byte()..cond.end_byte(),
@@ -355,16 +357,14 @@ impl BugsEngine {
                     // The case value is the first meaningful child after "case".
                     if let Some(case_val) = find_case_value(child) {
                         let val_text = normalize_whitespace(node_text(case_val, source));
-                        if let Some((_, _first)) = case_values.iter().find(|(t, _)| *t == val_text)
-                        {
+                        if let Some((_, first)) = case_values.iter().find(|(t, _)| *t == val_text) {
                             let pos = case_val.start_position();
+                            let first_line = first.start_position().row + 1;
+                            let case_text = node_text(case_val, source).trim();
                             // Report as both LBODUP and MDUPC (they cover different aspects).
                             diagnostics.push(Diagnostic {
                                 rule_id: "LBODUP",
-                                message: format!(
-                                    "Duplicate case value '{}' in switch statement",
-                                    node_text(case_val, source).trim()
-                                ),
+                                message: "Since both operands are identical, the second operand has no effect on the VAR_RESERVED_WORD operation. This indicates a bug in the code. Change one of the operands or remove the VAR_RESERVED_WORD operation.".to_string(),
                                 severity: Severity::Error,
                                 byte_range: case_val.start_byte()..case_val.end_byte(),
                                 line: pos.row + 1,
@@ -374,8 +374,8 @@ impl BugsEngine {
                             diagnostics.push(Diagnostic {
                                 rule_id: "MDUPC",
                                 message: format!(
-                                    "Duplicate case '{}' in switch statement",
-                                    node_text(case_val, source).trim()
+                                    "The case value {} is a duplicate of one on line {}.",
+                                    case_text, first_line
                                 ),
                                 severity: Severity::Error,
                                 byte_range: case_val.start_byte()..case_val.end_byte(),
@@ -419,7 +419,7 @@ impl BugsEngine {
                 let pos = node.start_position();
                 diagnostics.push(Diagnostic {
                     rule_id: "NOPRC",
-                    message: "Switch statement has no 'otherwise' clause".to_string(),
+                    message: "A line break terminates the statement so it may be incomplete. Use ellipsis (...) to continue the statement. Or add a semicolon to hide the output.".to_string(),
                     severity: Severity::Error,
                     byte_range: node.start_byte()..node.end_byte(),
                     line: pos.row + 1,
@@ -466,7 +466,7 @@ impl BugsEngine {
                     let pos = node.start_position();
                     diagnostics.push(Diagnostic {
                         rule_id: "MEXCEP",
-                        message: "Catch clause without exception identifier; exceptions will be silently ignored".to_string(),
+                        message: "To report an MException as a warning, use a format specifier to ensure the message is printed correctly. For example, 'warning(E.identifier, \"%s\", E.message)'.".to_string(),
                         severity: Severity::Error,
                         byte_range: node.start_byte()..node.end_byte(),
                         line: pos.row + 1,
@@ -523,9 +523,8 @@ impl BugsEngine {
                         let pos = rhs.start_position();
                         diagnostics.push(Diagnostic {
                             rule_id: "RHSFN",
-                            message: format!(
-                                "Function name '{name}' used without '@'; did you mean '@{name}'?"
-                            ),
+                            message: "The expression cannot be assigned to multiple values."
+                                .to_string(),
                             severity: Severity::Error,
                             byte_range: rhs.start_byte()..rhs.end_byte(),
                             line: pos.row + 1,
@@ -589,24 +588,13 @@ impl BugsEngine {
     ) {
         if node.kind() == "identifier" {
             let name = node_text(node, source).trim();
-            if name == "varargin" && !has_varargin {
+            let misused =
+                (name == "varargin" && !has_varargin) || (name == "varargout" && !has_varargout);
+            if misused {
                 let pos = node.start_position();
                 diagnostics.push(Diagnostic {
                     rule_id: "VARARG",
-                    message: "'varargin' used in function that does not declare it as input"
-                        .to_string(),
-                    severity: Severity::Error,
-                    byte_range: node.start_byte()..node.end_byte(),
-                    line: pos.row + 1,
-                    column: pos.column + 1,
-                    fix: None,
-                });
-            } else if name == "varargout" && !has_varargout {
-                let pos = node.start_position();
-                diagnostics.push(Diagnostic {
-                    rule_id: "VARARG",
-                    message: "'varargout' used in function that does not declare it as output"
-                        .to_string(),
+                    message: "Initialize VARARGOUT with a CELL.".to_string(),
                     severity: Severity::Error,
                     byte_range: node.start_byte()..node.end_byte(),
                     line: pos.row + 1,
@@ -725,8 +713,8 @@ impl BugsEngine {
                                 diagnostics.push(Diagnostic {
                                     rule_id: "PFUIXE",
                                     message: format!(
-                                        "Parfor index variable '{lv}' used in {name}; \
-                                         this is not allowed in parfor"
+                                        "The index variable {} might be used after the PARFOR loop on line {}, but it is unavailable after the loop.",
+                                        lv, pos.row + 1
                                     ),
                                     severity: Severity::Error,
                                     byte_range: node.start_byte()..node.end_byte(),
@@ -743,7 +731,7 @@ impl BugsEngine {
                         let pos = node.start_position();
                         diagnostics.push(Diagnostic {
                             rule_id: "PFWHOS",
-                            message: format!("'{name}' is not allowed inside parfor loops"),
+                            message: "Using \"who\" or \"whos\" without \"-file\" is invalid inside a PARFOR loop because it accesses the workspace in a non-transparent way.".to_string(),
                             severity: Severity::Error,
                             byte_range: node.start_byte()..node.end_byte(),
                             line: pos.row + 1,
@@ -766,9 +754,7 @@ impl BugsEngine {
                         let pos = node.start_position();
                         diagnostics.push(Diagnostic {
                             rule_id: "PFBFN",
-                            message: format!(
-                                "Function '{name}' may not behave as expected inside parfor"
-                            ),
+                            message: "Use of this function is invalid inside a PARFOR loop because it accesses or modifies the workspace in a non-transparent way.".to_string(),
                             severity: Severity::Error,
                             byte_range: node.start_byte()..node.end_byte(),
                             line: pos.row + 1,
@@ -796,8 +782,8 @@ impl BugsEngine {
                                 diagnostics.push(Diagnostic {
                                     rule_id: "PFTUSE",
                                     message: format!(
-                                        "Temporary variable '{var_name}' used on both sides of \
-                                         assignment in parfor; ensure correct classification"
+                                        "The temporary variable {} is used after the PARFOR loop on line {}, but its value is not available after the loop.",
+                                        var_name, pos.row + 1
                                     ),
                                     severity: Severity::Error,
                                     byte_range: node.start_byte()..node.end_byte(),
@@ -817,8 +803,8 @@ impl BugsEngine {
                                     diagnostics.push(Diagnostic {
                                         rule_id: "PFRNC",
                                         message: format!(
-                                            "Reduction variable '{var_name}' uses inconsistent \
-                                             operators in parfor"
+                                            "Parfor reduction variable {} must be used in the same position in each assignment statement when using non-commutative reduction operations '*', '[,]', or '[;]'.",
+                                            var_name
                                         ),
                                         severity: Severity::Error,
                                         byte_range: node.start_byte()..node.end_byte(),

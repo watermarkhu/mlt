@@ -44,19 +44,22 @@ impl BugsEngine {
             return Vec::new();
         }
 
-        let (rule_id, desc) = match rhs_op.as_str() {
-            "+" if rhs_left_text == lhs_name && rhs_right_text == "1" => ("INCR", "self-increment"),
-            "-" if rhs_left_text == lhs_name && rhs_right_text == "1" => ("DECR", "self-decrement"),
+        let (rule_id, message) = match rhs_op.as_str() {
+            "+" if rhs_left_text == lhs_name && rhs_right_text == "1" => (
+                "INCR",
+                "++x operation does not increment the value of x. To increase the value by 1, use x = x + 1.".to_string(),
+            ),
+            "-" if rhs_left_text == lhs_name && rhs_right_text == "1" => (
+                "DECR",
+                "--x operation does not decrement the value of x. To decrease the value by 1, use x = x - 1.".to_string(),
+            ),
             _ => return Vec::new(),
         };
 
         let pos = node.start_position();
         vec![Diagnostic {
             rule_id,
-            message: format!(
-                "Suspicious {desc} '{lhs_name} = {lhs_name} {rhs_op} 1' in loop; \
-                 consider vectorized operations"
-            ),
+            message,
             severity: Severity::Error,
             byte_range: node.start_byte()..node.end_byte(),
             line: pos.row + 1,

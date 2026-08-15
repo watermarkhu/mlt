@@ -42,7 +42,7 @@ impl SyntaxErrorsEngine {
                     let pos = node.start_position();
                     diagnostics.push(Diagnostic {
                         rule_id: "NOLHS",
-                        message: "Assignment with empty left-hand side".to_string(),
+                        message: "Left side of an assignment is empty.".to_string(),
                         severity: Severity::Error,
                         byte_range: node.byte_range(),
                         line: pos.row + 1,
@@ -65,8 +65,9 @@ impl SyntaxErrorsEngine {
                     diagnostics.push(Diagnostic {
                         rule_id: "REDEF",
                         message: format!(
-                            "Identifier '{}' is used as both a function name and a variable",
-                            name
+                            "The current use of {} is inconsistent with its previous use or definition (line {}).",
+                            name,
+                            pos.row + 1
                         ),
                         severity: Severity::Error,
                         byte_range: name_node.byte_range(),
@@ -93,8 +94,9 @@ impl SyntaxErrorsEngine {
                         diagnostics.push(Diagnostic {
                             rule_id: "REDEF",
                             message: format!(
-                                "Identifier '{}' is used as both a function name and a variable",
-                                name
+                                "The current use of {} is inconsistent with its previous use or definition (line {}).",
+                                name,
+                                pos.row + 1
                             ),
                             severity: Severity::Error,
                             byte_range: lhs.byte_range(),
@@ -143,8 +145,9 @@ impl SyntaxErrorsEngine {
                             let pos = curr.start_position();
                             diagnostics.push(Diagnostic {
                                 rule_id: "SEPEXR",
-                                message: "Missing semicolon or newline between statements"
-                                    .to_string(),
+                                message:
+                                    "Use a newline, semicolon, or comma before this statement."
+                                        .to_string(),
                                 severity: Severity::Error,
                                 byte_range: curr.byte_range(),
                                 line: pos.row + 1,

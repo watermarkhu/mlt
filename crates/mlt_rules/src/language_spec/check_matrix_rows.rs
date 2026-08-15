@@ -66,7 +66,7 @@ impl LanguageSpecEngine {
                 let pos = matrix_node.start_position();
                 diagnostics.push(Diagnostic {
                     rule_id: "ROWLN",
-                    message: "Matrix rows have inconsistent lengths".to_string(),
+                    message: "All matrix rows must be the same length.".to_string(),
                     severity: Severity::Error,
                     byte_range: matrix_node.start_byte()..matrix_node.end_byte(),
                     line: pos.row + 1,

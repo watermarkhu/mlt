@@ -11,20 +11,19 @@ impl ReadabilityEngine {
         &self,
         node: tree_sitter::Node,
         _source: &str,
-        func_name: &str,
+        _func_name: &str,
         results: &mut Vec<Diagnostic>,
     ) {
         if !self.is_check_enabled("STRCL1") {
             return;
         }
 
-        let message = if func_name == "strncmpi" {
-            "Consider using 'startsWith' or 'endsWith' instead of 'strncmpi'"
-        } else {
-            "Consider using 'startsWith' or 'endsWith' instead of 'strncmp'"
-        };
-
-        results.push(self.diag("STRCL1", message, node, None));
+        results.push(self.diag(
+            "STRCL1",
+            "For readability, use '~contains(str1, str2)' instead of 'cellfun('isempty', strfind(str1, str2))'.",
+            node,
+            None,
+        ));
     }
 }
 

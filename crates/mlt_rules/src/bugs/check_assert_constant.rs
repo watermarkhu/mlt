@@ -26,7 +26,7 @@ impl BugsEngine {
             let pos = node.start_position();
             vec![Diagnostic {
                 rule_id: "ASSRT",
-                message: "assert with constant true condition has no effect".to_string(),
+                message: "The first input argument to 'assert' must be a condition. To always throw an error, use 'error(msg)' instead.".to_string(),
                 severity: Severity::Error,
                 byte_range: node.start_byte()..node.end_byte(),
                 line: pos.row + 1,

@@ -25,10 +25,8 @@ impl GoodPracticesEngine {
         vec![Diagnostic {
             rule_id: "LNGNM",
             message: format!(
-                "Variable name '{}' is {} characters long; maximum is {}",
-                name,
-                name.len(),
-                self.config.max_variable_name_length
+                "Names longer than {} characters are not supported. This name has been truncated to {} characters.",
+                self.config.max_variable_name_length, self.config.max_variable_name_length
             ),
             severity: Severity::Warning,
             byte_range: lhs.start_byte()..lhs.end_byte(),

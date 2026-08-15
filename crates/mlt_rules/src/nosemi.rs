@@ -160,7 +160,7 @@ impl Rule for Nosemi {
 
         vec![Diagnostic {
             rule_id: self.id(),
-            message: self.description().to_string(),
+            message: "Extra semicolon is unnecessary.".to_string(),
             severity: self.severity(),
             byte_range: node.start_byte()..end_byte,
             line: start.row + 1, // tree-sitter is 0-indexed

@@ -37,7 +37,7 @@ impl ReadabilityEngine {
         {
             results.push(self.diag(
                 "RPMTT",
-                "Redundant boolean: 'x | true' is always 'true'",
+                "For readability, consider using 'true(x,y)' instead of 'repmat(true,x,y)'.",
                 node,
                 Some(Fix::new(node.start_byte()..node.end_byte(), "true")),
             ));
@@ -51,7 +51,7 @@ impl ReadabilityEngine {
         {
             results.push(self.diag(
                 "RPMTF",
-                "Redundant boolean: 'x & false' is always 'false'",
+                "For readability, consider using 'false(x,y)' instead of 'repmat(false,x,y)'.",
                 node,
                 Some(Fix::new(node.start_byte()..node.end_byte(), "false")),
             ));

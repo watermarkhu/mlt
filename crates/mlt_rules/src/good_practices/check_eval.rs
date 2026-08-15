@@ -24,7 +24,7 @@ impl GoodPracticesEngine {
         if func_name == "evalin" && self.is_check_enabled("EVLDUAL") {
             return vec![Diagnostic {
                 rule_id: "EVLDUAL",
-                message: "Avoid evalin(); it is slow and hard to debug".to_string(),
+                message: "This use of 'eval' is unnecessary and can be removed. Call the evaluated function directly using parentheses. For example, use 'load(filename)' instead of 'eval(['load ' filename])'.".to_string(),
                 severity: Severity::Warning,
                 byte_range: node.start_byte()..node.end_byte(),
                 line: pos.row + 1,

@@ -21,7 +21,7 @@ impl LanguageSpecEngine {
                 for method in &mb.methods {
                     diagnostics.push(Diagnostic {
                         rule_id: "MCMSP",
-                        message: "Private method cannot be Abstract".to_string(),
+                        message: "Private method cannot be Abstract.".to_string(),
                         severity: Severity::Error,
                         byte_range: method.byte_range.clone(),
                         line: method.line,

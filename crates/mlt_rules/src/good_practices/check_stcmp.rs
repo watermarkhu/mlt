@@ -24,7 +24,7 @@ impl GoodPracticesEngine {
         let pos = node.start_position();
         vec![Diagnostic {
             rule_id: "STCMP",
-            message: "Use strcmp() or strcmpi() for string comparison instead of ==".to_string(),
+            message: "Use STRCMP instead of == or ~= to compare character vectors, or convert character vectors to string scalars for direct comparison.".to_string(),
             severity: Severity::Warning,
             byte_range: node.start_byte()..node.end_byte(),
             line: pos.row + 1,

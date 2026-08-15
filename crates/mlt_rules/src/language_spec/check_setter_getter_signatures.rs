@@ -16,11 +16,7 @@ impl LanguageSpecEngine {
                 if func.inputs.len() != 2 {
                     diagnostics.push(Diagnostic {
                         rule_id: "MCS2I",
-                        message: format!(
-                            "Setter '{}' must have exactly 2 input arguments (obj, value), found {}",
-                            func.name,
-                            func.inputs.len()
-                        ),
+                        message: "Set Methods must have exactly two inputs.".to_string(),
                         severity: Severity::Error,
                         byte_range: func.byte_range.clone(),
                         line: func.line,
@@ -33,11 +29,7 @@ impl LanguageSpecEngine {
                 if func.outputs.len() > 1 {
                     diagnostics.push(Diagnostic {
                         rule_id: "MCS1O",
-                        message: format!(
-                            "Setter '{}' must have at most 1 output argument, found {}",
-                            func.name,
-                            func.outputs.len()
-                        ),
+                        message: "Set Methods must have at most one output.".to_string(),
                         severity: Severity::Error,
                         byte_range: func.byte_range.clone(),
                         line: func.line,
@@ -52,11 +44,7 @@ impl LanguageSpecEngine {
                 if func.inputs.len() != 1 {
                     diagnostics.push(Diagnostic {
                         rule_id: "MCG1I",
-                        message: format!(
-                            "Getter '{}' must have exactly 1 input argument (obj), found {}",
-                            func.name,
-                            func.inputs.len()
-                        ),
+                        message: "Get methods must have exactly one input.".to_string(),
                         severity: Severity::Error,
                         byte_range: func.byte_range.clone(),
                         line: func.line,
@@ -69,11 +57,7 @@ impl LanguageSpecEngine {
                 if func.outputs.len() != 1 {
                     diagnostics.push(Diagnostic {
                         rule_id: "MCG1O",
-                        message: format!(
-                            "Getter '{}' must have exactly 1 output argument, found {}",
-                            func.name,
-                            func.outputs.len()
-                        ),
+                        message: "Get methods must have exactly one output.".to_string(),
                         severity: Severity::Error,
                         byte_range: func.byte_range.clone(),
                         line: func.line,

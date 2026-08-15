@@ -34,10 +34,8 @@ impl LanguageSpecEngine {
                     reported.insert(use_.name.clone());
                     diagnostics.push(Diagnostic {
                         rule_id: "USESWNS",
-                        message: format!(
-                            "Variable '{}' must be explicitly defined before first use",
-                            use_.name
-                        ),
+                        message: "Variable must be explicitly defined before first use."
+                            .to_string(),
                         severity: Severity::Error,
                         byte_range: use_.byte_range.clone(),
                         line: use_.line,

@@ -34,7 +34,7 @@ impl ReadabilityEngine {
         if arg_text.trim() == "10" {
             results.push(self.diag(
                 "CHARTEN",
-                "Use 'newline' instead of 'char(10)'",
+                "For readability, consider using 'newline' instead of 'char(10)'.",
                 node,
                 Some(Fix::new(node.start_byte()..node.end_byte(), "newline")),
             ));

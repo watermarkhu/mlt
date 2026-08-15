@@ -26,10 +26,8 @@ impl GoodPracticesEngine {
                     if !assigned && !scope.is_used(output_name) {
                         diagnostics.push(Diagnostic {
                             rule_id: "FVAL",
-                            message: format!(
-                                "Output variable '{}' is declared but never assigned in function '{}'",
-                                output_name, func.name
-                            ),
+                            message: "Calling functions using 'feval' is usually not necessary. Call the function directly instead."
+                                .to_string(),
                             severity: Severity::Warning,
                             byte_range: func.byte_range.clone(),
                             line: func.line,

@@ -21,7 +21,7 @@ impl LanguageSpecEngine {
                 for method in &mb.methods {
                     diagnostics.push(Diagnostic {
                         rule_id: "MABSEAM",
-                        message: "A method cannot be both Abstract and Sealed".to_string(),
+                        message: "A method cannot be both Abstract and Sealed.".to_string(),
                         severity: Severity::Error,
                         byte_range: method.byte_range.clone(),
                         line: method.line,

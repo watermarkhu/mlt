@@ -27,7 +27,11 @@ impl SystemObjectsEngine {
             // the attribute form: `properties (DiscreteState)`.
             if let Some(block) = property.parent() {
                 if block.kind() == "properties" && block_text_has(block, "DiscreteState", source) {
-                    diags.push(make_diag("SOINITPROP", property));
+                    diags.push(make_diag_named(
+                        "SOINITPROP",
+                        property,
+                        property_name(property, source),
+                    ));
                 }
             }
             let _ = text;

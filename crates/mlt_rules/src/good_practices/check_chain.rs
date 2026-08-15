@@ -25,9 +25,8 @@ impl GoodPracticesEngine {
         let pos = node.start_position();
         vec![Diagnostic {
             rule_id: "CHAIN",
-            message: format!(
-                "Method chain depth is {depth}; consider breaking into intermediate variables"
-            ),
+            message: "Expressions like a VAR_NAME b VAR_NAME c are interpreted as (a VAR_NAME b) VAR_NAME c. Typically, to test a VAR_NAME b VAR_NAME c mathematically, if all arguments are numeric scalars, use (a VAR_NAME b) && (b VAR_NAME c), otherwise use (a VAR_NAME b) & (b VAR_NAME c)."
+                .to_string(),
             severity: Severity::Info,
             byte_range: node.start_byte()..node.end_byte(),
             line: pos.row + 1,

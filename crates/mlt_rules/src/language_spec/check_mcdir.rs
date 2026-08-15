@@ -17,7 +17,7 @@ impl LanguageSpecEngine {
                         diagnostics.push(Diagnostic {
                             rule_id: "MCDIR",
                             message: format!(
-                                "Class name '{}' does not match @directory name '@{}'",
+                                "Class name {} and @directory name do not agree: {}.",
                                 class.name, stripped
                             ),
                             severity: Severity::Error,

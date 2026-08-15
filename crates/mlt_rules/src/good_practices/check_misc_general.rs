@@ -164,7 +164,7 @@ fn collect_fxup(tree: &tree_sitter::Tree, source: &str, diagnostics: &mut Vec<Di
             let pos = lhs.start_position();
             diagnostics.push(Diagnostic {
                 rule_id: "FXUP",
-                message: format!("Outer loop index {name} is set inside a nested function."),
+                message: format!("Outer loop variable {name} is set inside a nested function."),
                 severity: Severity::Warning,
                 byte_range: lhs.start_byte()..lhs.end_byte(),
                 line: pos.row + 1,

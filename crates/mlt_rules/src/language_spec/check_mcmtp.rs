@@ -20,7 +20,7 @@ impl LanguageSpecEngine {
                 if method.name == "TestParameterDefinition" {
                     diagnostics.push(Diagnostic {
                         rule_id: "MCMTP",
-                        message: "TestParameterDefinition methods must be Static".to_string(),
+                        message: "TestParameterDefinition methods must be Static, so that they can be called at test suite creation time to set test parameter values.".to_string(),
                         severity: Severity::Error,
                         byte_range: method.byte_range.clone(),
                         line: method.line,

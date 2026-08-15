@@ -45,9 +45,8 @@ impl UnusedEngine {
                     {
                         diagnostics.push(Diagnostic {
                             rule_id: "VUNUS",
-                            message: format!(
-                                "Variable '{name}' is assigned in multiple branches but never used after"
-                            ),
+                            message: "VAR_OPERATOR produces a value that might be unused."
+                                .to_string(),
                             severity: Severity::Warning,
                             byte_range: last_def.byte_range.clone(),
                             line: last_def.line,

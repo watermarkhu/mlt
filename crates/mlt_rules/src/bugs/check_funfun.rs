@@ -33,7 +33,8 @@ impl BugsEngine {
             vec![Diagnostic {
                 rule_id: "FUNFUN",
                 message: format!(
-                    "Pass function handle @{fn_name} instead of string '{first_arg}' to {func_name}"
+                    "The first input argument must be a function handle. Did you mean '@{}'?",
+                    fn_name
                 ),
                 severity: Severity::Error,
                 byte_range: node.start_byte()..node.end_byte(),

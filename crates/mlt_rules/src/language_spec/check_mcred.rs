@@ -11,7 +11,7 @@ impl LanguageSpecEngine {
                 if prop.name == class.name {
                     diagnostics.push(Diagnostic {
                         rule_id: "MCRED",
-                        message: format!("Property '{}' has the same name as the class", prop.name),
+                        message: format!("Property, event, or enumeration names must be different from the name of the class {}.", class.name),
                         severity: Severity::Error,
                         byte_range: prop.byte_range.clone(),
                         line: prop.line,
@@ -28,7 +28,7 @@ impl LanguageSpecEngine {
                 if *event == class.name {
                     diagnostics.push(Diagnostic {
                         rule_id: "MCRED",
-                        message: format!("Event '{}' has the same name as the class", event),
+                        message: format!("Property, event, or enumeration names must be different from the name of the class {}.", class.name),
                         severity: Severity::Error,
                         byte_range: class.byte_range.clone(),
                         line: class.line,
@@ -45,10 +45,7 @@ impl LanguageSpecEngine {
                 if *member == class.name {
                     diagnostics.push(Diagnostic {
                         rule_id: "MCRED",
-                        message: format!(
-                            "Enumeration member '{}' has the same name as the class",
-                            member
-                        ),
+                        message: format!("Property, event, or enumeration names must be different from the name of the class {}.", class.name),
                         severity: Severity::Error,
                         byte_range: class.byte_range.clone(),
                         line: class.line,

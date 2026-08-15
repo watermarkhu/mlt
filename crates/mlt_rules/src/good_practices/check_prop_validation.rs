@@ -22,7 +22,7 @@ impl GoodPracticesEngine {
                 diagnostics.push(Diagnostic {
                     rule_id: "PROP",
                     message: format!(
-                        "Property '{}' has no type, size, or validation constraints",
+                        "{} is also the name of a property, which may be confusing. Use obj.PropertyName syntax to reference the property, or rename this variable to improve readability.",
                         prop.name
                     ),
                     severity: Severity::Info,

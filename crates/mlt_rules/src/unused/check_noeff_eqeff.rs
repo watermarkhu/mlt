@@ -47,7 +47,7 @@ pub(crate) fn walk_for_no_effect(
             let pos = node.start_position();
             diagnostics.push(Diagnostic {
                 rule_id: "EQEFF",
-                message: "Comparison has no effect (result is not used)".to_string(),
+                message: "To assign values to variables, use =. The == operator compares equality of values.".to_string(),
                 severity: Severity::Warning,
                 byte_range: node.start_byte()..node.end_byte(),
                 line: pos.row + 1,
@@ -61,7 +61,8 @@ pub(crate) fn walk_for_no_effect(
             let pos = node.start_position();
             diagnostics.push(Diagnostic {
                 rule_id: "NOEFF",
-                message: "Statement has no effect (expression result is discarded)".to_string(),
+                message: "The operation or expression VAR_OPERATOR has no evident effect."
+                    .to_string(),
                 severity: Severity::Warning,
                 byte_range: node.start_byte()..node.end_byte(),
                 line: pos.row + 1,

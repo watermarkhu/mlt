@@ -41,7 +41,7 @@ impl ReadabilityEngine {
                             &source[inner_args.start_byte()..inner_args.end_byte()];
                         results.push(self.diag(
                             "DSPSP",
-                            "Use 'fprintf(...)' instead of 'disp(sprintf(...))'",
+                            "'disp(sprintf(...))' can usually be replaced by 'fprintf(...\\n)'.",
                             node,
                             Some(Fix::new(
                                 node.start_byte()..node.end_byte(),

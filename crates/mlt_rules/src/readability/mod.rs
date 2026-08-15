@@ -172,31 +172,31 @@ pub(crate) const ISA_REPLACEMENTS: &[(&str, &str, &str, &str)] = &[
         "char",
         "ISCHR",
         "ischar",
-        "Use 'ischar(x)' instead of 'isa(x, ''char'')'",
+        "Use ISCHAR instead of comparing the class to 'char'.",
     ),
     (
         "string",
         "ISSTR",
         "isstring",
-        "Use 'isstring(x)' instead of 'isa(x, ''string'')'",
+        "Use ISSTRUCT instead of comparing the class to 'struct'.",
     ),
     (
         "logical",
         "ISLOG",
         "islogical",
-        "Use 'islogical(x)' instead of 'isa(x, ''logical'')'",
+        "Use ISLOGICAL instead of comparing the class to 'logical'.",
     ),
     (
         "cell",
         "ISCEL",
         "iscell",
-        "Use 'iscell(x)' instead of 'isa(x, ''cell'')'",
+        "Use ISCELL instead of comparing the class to 'cell'.",
     ),
     (
         "double",
         "ISMAT",
         "isnumeric",
-        "Use 'isnumeric(x)' instead of 'isa(x, ''double'')'",
+        "When checking if a variable is a matrix consider using ISMATRIX.",
     ),
 ];
 
@@ -402,7 +402,7 @@ impl ReadabilityEngine {
             };
             results.push(self.diag(
                 "STREMP",
-                "Use 'strlength(s)==0' or 's==\"\"' instead of 'strcmp(s, '')'",
+                "For readability, use '~contains(str1, str2)' instead of 'isempty(strfind(str1, str2))'.",
                 node,
                 Some(Fix::new(
                     node.start_byte()..node.end_byte(),
@@ -416,7 +416,7 @@ impl ReadabilityEngine {
         if self.is_check_enabled("STRIFCND") && is_inside_if_condition(ctx.node) {
             results.push(self.diag(
                 "STRIFCND",
-                "Consider using 'matches' instead of 'strcmp' in if-condition",
+                "For readability, use 'contains(str1, str2)' instead of 'strfind(str1, str2)'.",
                 node,
                 None,
             ));

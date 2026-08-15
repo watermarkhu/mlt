@@ -38,7 +38,7 @@ impl ReadabilityEngine {
                     let inner_text = &source[inner.start_byte()..inner.end_byte()];
                     results.push(self.diag(
                         "NBRAK2",
-                        "Unnecessary brackets around scalar expression",
+                        "Use of brackets [] is unnecessary.",
                         node,
                         Some(Fix::new(
                             node.start_byte()..node.end_byte(),

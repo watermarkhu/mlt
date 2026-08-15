@@ -13,10 +13,7 @@ impl IncompleteAnalysisEngine {
             if char_len > self.config.max_line_length {
                 diagnostics.push(Diagnostic {
                     rule_id: "TEXTL",
-                    message: format!(
-                        "Line length ({char_len}) exceeds internal limit ({max})",
-                        max = self.config.max_line_length
-                    ),
+                    message: "Text is too long for MATLAB to parse.".to_string(),
                     severity: Severity::Error,
                     byte_range: byte_offset..byte_offset + line.len(),
                     line: line_idx + 1,

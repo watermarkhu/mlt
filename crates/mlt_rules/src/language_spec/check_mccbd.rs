@@ -33,10 +33,8 @@ impl LanguageSpecEngine {
             if func.name == class.name {
                 diagnostics.push(Diagnostic {
                     rule_id: "MCCBD",
-                    message: format!(
-                        "Constructor '{}' should be defined inside a methods block, not as a local function",
-                        class.name
-                    ),
+                    message: "Constructor must be fully defined in the class definition file."
+                        .to_string(),
                     severity: Severity::Error,
                     byte_range: func.byte_range.clone(),
                     line: func.line,

@@ -31,7 +31,7 @@ impl LanguageSpecEngine {
                                     let pos = arg.start_position();
                                     diagnostics.push(Diagnostic {
                                         rule_id: "CTOINE",
-                                        message: "Use of constructed object as input to constructor is not supported"
+                                        message: "Use of constructed object as input to constructor is not supported."
                                             .to_string(),
                                         severity: Severity::Error,
                                         byte_range: arg.start_byte()..arg.end_byte(),

@@ -21,7 +21,7 @@ impl LanguageSpecEngine {
                 diagnostics.push(Diagnostic {
                     rule_id: "MWKCT",
                     message:
-                        "Specifying both WeakHandle and Constant attributes on the same property is not supported"
+                        "Specifying both WeakHandle and Constant attributes on the same property is not supported."
                             .to_string(),
                     severity: Severity::Error,
                     byte_range: class.byte_range.clone(),

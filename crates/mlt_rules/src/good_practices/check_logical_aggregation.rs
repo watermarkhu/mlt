@@ -52,7 +52,10 @@ impl GoodPracticesEngine {
         let pos = node.start_position();
         vec![Diagnostic {
             rule_id: check_id,
-            message: format!("Use {replacement}() instead of {func_name}() for logical arrays"),
+            message: format!(
+                "Using '{}' on a logical expression is hard to understand and might be incorrect. Consider using '{}' instead.",
+                func_name, replacement
+            ),
             severity: Severity::Warning,
             byte_range: node.start_byte()..node.end_byte(),
             line: pos.row + 1,

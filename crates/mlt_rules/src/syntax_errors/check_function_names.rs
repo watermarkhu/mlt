@@ -31,10 +31,7 @@ impl SyntaxErrorsEngine {
                 {
                     diagnostics.push(Diagnostic {
                         rule_id: "FNSWA",
-                        message: format!(
-                            "Function name '{}' must start with an alphabetic character",
-                            name
-                        ),
+                        message: "Function name must start with alphabetic character.".to_string(),
                         severity: Severity::Error,
                         byte_range: name_node.byte_range(),
                         line: pos.row + 1,
@@ -47,10 +44,8 @@ impl SyntaxErrorsEngine {
                 if self.is_check_enabled("FNDOT") && name.contains('.') && !in_methods_block {
                     diagnostics.push(Diagnostic {
                         rule_id: "FNDOT",
-                        message: format!(
-                            "Function name '{}' contains dots but is not in a class methods block",
-                            name
-                        ),
+                        message: "Function name can only contain dots if it is a class method."
+                            .to_string(),
                         severity: Severity::Error,
                         byte_range: name_node.byte_range(),
                         line: pos.row + 1,

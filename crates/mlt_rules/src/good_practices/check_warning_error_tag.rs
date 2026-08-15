@@ -14,9 +14,15 @@ impl GoodPracticesEngine {
             None => return Vec::new(),
         };
 
-        let (check_id, label) = match func_name {
-            "warning" if self.is_check_enabled("WNTAG") => ("WNTAG", "warning"),
-            "error" if self.is_check_enabled("ERTAG") => ("ERTAG", "error"),
+        let (check_id, message) = match func_name {
+            "warning" if self.is_check_enabled("WNTAG") => (
+                "WNTAG",
+                "The first argument of WARNING should be a message identifier. Using a message identifier allows users better control over the message.",
+            ),
+            "error" if self.is_check_enabled("ERTAG") => (
+                "ERTAG",
+                "The first argument of ERROR should be a message identifier.",
+            ),
             _ => return Vec::new(),
         };
 
@@ -38,9 +44,7 @@ impl GoodPracticesEngine {
         let pos = node.start_position();
         vec![Diagnostic {
             rule_id: check_id,
-            message: format!(
-                "{label}() called without a message identifier; use {label}('component:id', ...)"
-            ),
+            message: message.to_string(),
             severity: Severity::Warning,
             byte_range: node.start_byte()..node.end_byte(),
             line: pos.row + 1,

@@ -79,7 +79,7 @@ impl ReadabilityEngine {
             "1" if self.is_check_enabled("ISROW") => {
                 results.push(self.diag(
                     "ISROW",
-                    "Use 'isrow(x)' instead of 'size(x, 1) == 1'",
+                    "When checking if a variable is a row vector consider using ISROW.",
                     node,
                     Some(Fix::new(
                         node.start_byte()..node.end_byte(),
@@ -90,7 +90,7 @@ impl ReadabilityEngine {
             "2" if self.is_check_enabled("ISCOL") => {
                 results.push(self.diag(
                     "ISCOL",
-                    "Use 'iscolumn(x)' instead of 'size(x, 2) == 1'",
+                    "When checking if a variable is a column vector consider using ISCOLUMN.",
                     node,
                     Some(Fix::new(
                         node.start_byte()..node.end_byte(),

@@ -11,7 +11,12 @@ impl ReadabilityEngine {
             return;
         }
 
-        results.push(self.diag("DSPSY", "Use 'disp' instead of 'display'", node, None));
+        results.push(self.diag(
+            "DSPSY",
+            "'display(sprintf(...))' can usually be replaced by 'fprintf(...\\n)'.",
+            node,
+            None,
+        ));
     }
 }
 

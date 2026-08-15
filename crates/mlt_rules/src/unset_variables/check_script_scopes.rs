@@ -37,10 +37,7 @@ impl UnsetVariablesEngine {
                         reported.insert(var_use.name.clone());
                         diagnostics.push(Diagnostic {
                             rule_id: "SVNODEF",
-                            message: format!(
-                                "Variable '{}' in script might not be defined",
-                                var_use.name
-                            ),
+                            message: "Variable might not have a value, because variable definition may not be executed.".to_string(),
                             severity: Severity::Warning,
                             byte_range: var_use.byte_range.clone(),
                             line: var_use.line,
@@ -53,10 +50,8 @@ impl UnsetVariablesEngine {
                         reported.insert(var_use.name.clone());
                         diagnostics.push(Diagnostic {
                             rule_id: "SUSENS",
-                            message: format!(
-                                "Script variable '{}' is used before it is set",
-                                var_use.name
-                            ),
+                            message: "Variable is used, but might be unset (within a script)."
+                                .to_string(),
                             severity: Severity::Warning,
                             byte_range: var_use.byte_range.clone(),
                             line: var_use.line,
@@ -92,9 +87,7 @@ mod tests {
         let source = "y = x + 1;\n";
         let diags = lint_file(&*engine(), source);
         assert!(
-            diags
-                .iter()
-                .any(|d| d.rule_id == "SVNODEF" && d.message.contains("'x'")),
+            diags.iter().any(|d| d.rule_id == "SVNODEF"),
             "expected SVNODEF for 'x' in script, got: {diags:?}"
         );
     }
@@ -104,9 +97,7 @@ mod tests {
         let source = "y = x + 1;\nx = 5;\n";
         let diags = lint_file(&*engine(), source);
         assert!(
-            diags
-                .iter()
-                .any(|d| d.rule_id == "SUSENS" && d.message.contains("'x'")),
+            diags.iter().any(|d| d.rule_id == "SUSENS"),
             "expected SUSENS for 'x' used before set, got: {diags:?}"
         );
     }
@@ -118,8 +109,7 @@ mod tests {
         assert!(
             !diags
                 .iter()
-                .any(|d| (d.rule_id == "SVNODEF" || d.rule_id == "SUSENS")
-                    && d.message.contains("'x'")),
+                .any(|d| d.rule_id == "SVNODEF" || d.rule_id == "SUSENS"),
             "should not warn for 'x' in script when defined first"
         );
     }

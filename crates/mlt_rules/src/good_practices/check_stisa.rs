@@ -30,8 +30,7 @@ impl GoodPracticesEngine {
         let pos = node.start_position();
         vec![Diagnostic {
             rule_id: "STISA",
-            message: "Use isa(obj, 'ClassName') instead of strcmp(class(obj), 'ClassName')"
-                .to_string(),
+            message: "Consider using ISA instead of comparing the class name.".to_string(),
             severity: Severity::Warning,
             byte_range: node.start_byte()..node.end_byte(),
             line: pos.row + 1,

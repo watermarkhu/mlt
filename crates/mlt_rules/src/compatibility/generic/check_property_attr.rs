@@ -23,7 +23,7 @@ const REMOVED_NAMES: &[(&str, &str, &str)] = &[
     ("InitialHessMatrix", "HESSM", "'InitialHessMatrix' has been removed. There is no simple replacement for this."),
     ("SamplingRate", "TTSMP", "'SamplingRate' has been removed. Use 'SampleRate' instead."),
     ("LaserReturns", "LSRET", "'LaserReturns' has been removed. Use 'LaserReturn' instead, which is a direct replacement."),
-    ("NumReflections", "RAYNR", "Input argument 'NumReflections' has been removed. Use 'MaxNumReflections' property of a ray tracing propagation model instead."),
+    ("NumReflections", "RAYNR", "Input argument 'NumReflections' has been removed. Use 'MaxNumReflections' property of a ray tracing propagation model object instead."),
     ("UseHG2", "DFEATUREPARAM1", "'UseHG2' has been removed. With appropriate code changes, use '~verLessThan('matlab','8.4.0')' instead."),
     ("HGUsingMATLABClasses", "DFEATUREPARAM2", "'HGUsingMATLABClasses' has been removed. With appropriate code changes, use '~verLessThan('matlab','8.4.0')' instead."),
     ("DirectFeedthrough", "DSPIDF", "'DirectFeedthrough' property of 'dsp.VariableIntegerDelay' class has been removed."),
@@ -59,7 +59,7 @@ const MCPDC_MSG: &str = "Specifying both the 'Constant' and 'Dependent' attribut
 const PSTAT_MSG: &str =
     "The 'Static' attribute on properties has been removed. Use the 'Constant' attribute instead.";
 /// ATVIZW message.
-const ATVIZW_MSG: &str = "The 'Visible' attribute has been removed. Use the '~Hidden' attribute instead or omit the attribute entirely.";
+const ATVIZW_MSG: &str = "The 'Visible' attribute has been removed. Use the '~Hidden' attribute instead or omit the attribute since 'Hidden' is false by default.";
 
 /// Dispatch a node to the relevant check.
 pub(crate) fn collect_checks(

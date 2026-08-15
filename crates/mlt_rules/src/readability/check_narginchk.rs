@@ -29,12 +29,7 @@ impl ReadabilityEngine {
             return;
         }
 
-        results.push(self.diag(
-            "NCHKE",
-            "Use 'narginchk' or 'nargoutchk' instead of 'nargchk'/'nargoutchk' with error",
-            node,
-            None,
-        ));
+        results.push(self.diag("NCHKE", "Use NARGOUTCHK without ERROR.", node, None));
     }
 }
 

@@ -73,7 +73,7 @@ impl LanguageSpecEngine {
                 if !is_block_end {
                     diagnostics.push(Diagnostic {
                         rule_id: "IDXCOLND",
-                        message: "END operator is only valid inside an index expression"
+                        message: "The END operator must be used within an array index expression."
                             .to_string(),
                         severity: Severity::Error,
                         byte_range: node.start_byte()..node.end_byte(),

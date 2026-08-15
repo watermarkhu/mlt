@@ -21,7 +21,7 @@ impl LanguageSpecEngine {
                 for prop in &pb.properties {
                     diagnostics.push(Diagnostic {
                         rule_id: "MCAPP",
-                        message: "Private property cannot be Abstract".to_string(),
+                        message: "Private property cannot be Abstract.".to_string(),
                         severity: Severity::Error,
                         byte_range: prop.byte_range.clone(),
                         line: prop.line,

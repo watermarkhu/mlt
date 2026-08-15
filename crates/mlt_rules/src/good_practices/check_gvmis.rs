@@ -37,10 +37,8 @@ impl GoodPracticesEngine {
                 {
                     diagnostics.push(Diagnostic {
                         rule_id: "GVMIS",
-                        message: format!(
-                            "Variable '{}' is used as a global in another scope but not declared global here",
-                            usage.name
-                        ),
+                        message: "Global variables are inefficient and make errors difficult to diagnose. Use a function with input variables instead."
+                            .to_string(),
                         severity: Severity::Warning,
                         byte_range: usage.byte_range.clone(),
                         line: usage.line,

@@ -79,7 +79,7 @@ impl PerformanceEngine {
             && matches!(func_name, "sum" | "max" | "min" | "prod" | "mean")
             && count_args(node) == 1
         {
-            diags.push(make_diag("UDIM", node));
+            diags.push(make_diag_named("UDIM", node, func_name));
         }
 
         // FREAD: fread without precision

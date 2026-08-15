@@ -42,7 +42,7 @@ impl GoodPracticesEngine {
         vec![Diagnostic {
             rule_id: "MNUML",
             message: format!(
-                "To create a square matrix, use {func_name}(numel(...), numel(...)). Alternatively, use {func_name}(size(...))."
+                "To create a square matrix, use {func_name}(numel(...), numel(...)). Alternatively, use {func_name}(size(...)) to create an array with same size as input array."
             ),
             severity: Severity::Warning,
             byte_range: node.start_byte()..node.end_byte(),

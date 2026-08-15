@@ -26,7 +26,7 @@ impl FormattingEngine {
             let inner_text = inner_paren_text(cond, source);
             diagnostics.push(Diagnostic {
                 rule_id: "NOPTS",
-                message: "Unnecessary parentheses around condition in if/while statement"
+                message: "Add a semicolon after the statement to hide the output (in a script)."
                     .to_string(),
                 severity: Severity::Info,
                 byte_range: cond.start_byte()..cond.end_byte(),

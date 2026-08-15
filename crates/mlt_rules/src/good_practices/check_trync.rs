@@ -16,7 +16,8 @@ impl GoodPracticesEngine {
         let keyword_end = node.start_byte() + "try".len();
         vec![Diagnostic {
             rule_id: "TRYNC",
-            message: "Try block has no catch clause; errors will be silently ignored".to_string(),
+            message: "TRY statement should have a CATCH statement to check for unexpected errors."
+                .to_string(),
             severity: Severity::Warning,
             byte_range: node.start_byte()..keyword_end,
             line: pos.row + 1,

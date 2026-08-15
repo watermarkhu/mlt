@@ -44,7 +44,7 @@ impl UnusedEngine {
                     if !nused_disabled {
                         diagnostics.push(Diagnostic {
                             rule_id: "NUSED",
-                            message: format!("Input argument '{name}' is defined but never used"),
+                            message: "Global or persistent variable might be unused or unset in this function or script.".to_string(),
                             severity: Severity::Warning,
                             byte_range: def.byte_range.clone(),
                             line: def.line,
@@ -58,10 +58,7 @@ impl UnusedEngine {
                     if !inusa_disabled {
                         diagnostics.push(Diagnostic {
                             rule_id: "INUSA",
-                            message: format!(
-                                "Input argument '{name}' is not used in function '{}'",
-                                scope.name
-                            ),
+                            message: "Input argument might be unused after the function arguments block(s).".to_string(),
                             severity: Severity::Warning,
                             byte_range: def.byte_range.clone(),
                             line: def.line,
@@ -74,9 +71,7 @@ impl UnusedEngine {
                     if !inusd_disabled {
                         diagnostics.push(Diagnostic {
                             rule_id: "INUSD",
-                            message: format!(
-                                "Input argument '{name}' is defined but could be removed"
-                            ),
+                            message: "Input argument might be unused. Consider replacing the argument with ~ instead.".to_string(),
                             severity: Severity::Warning,
                             byte_range: def.byte_range.clone(),
                             line: def.line,

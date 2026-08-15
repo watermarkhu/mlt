@@ -20,7 +20,7 @@ impl LanguageSpecEngine {
                 diagnostics.push(Diagnostic {
                     rule_id: "MABSEAC",
                     message:
-                        "Instance properties and methods are illegal in classes that are both Sealed and Abstract"
+                        "Instance properties and methods are illegal in classes that are both Sealed and Abstract."
                             .to_string(),
                     severity: Severity::Error,
                     byte_range: prop.byte_range.clone(),
@@ -42,7 +42,7 @@ impl LanguageSpecEngine {
                 diagnostics.push(Diagnostic {
                     rule_id: "MABSEAC",
                     message:
-                        "Instance properties and methods are illegal in classes that are both Sealed and Abstract"
+                        "Instance properties and methods are illegal in classes that are both Sealed and Abstract."
                             .to_string(),
                     severity: Severity::Error,
                     byte_range: method.byte_range.clone(),

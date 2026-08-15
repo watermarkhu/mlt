@@ -14,11 +14,7 @@ impl IncompleteAnalysisEngine {
         if metrics.error_count > self.config.max_parse_errors {
             diagnostics.push(Diagnostic {
                 rule_id: "TMSMS",
-                message: format!(
-                    "File has {count} parse errors; limit is {max}",
-                    count = metrics.error_count,
-                    max = self.config.max_parse_errors
-                ),
+                message: "More than 1,000 parse error messages were generated, leading to some being deleted.".to_string(),
                 severity: Severity::Error,
                 byte_range: 0..source.len().min(1),
                 line: 1,
@@ -33,10 +29,8 @@ impl IncompleteAnalysisEngine {
         if metrics.error_count > 0 && metrics.error_count > self.config.max_parse_errors {
             diagnostics.push(Diagnostic {
                 rule_id: "EOFER",
-                message: format!(
-                    "Too many syntax errors ({count}); further analysis may be unreliable",
-                    count = metrics.error_count,
-                ),
+                message: "Code analysis did not complete. File contains too many syntax errors."
+                    .to_string(),
                 severity: Severity::Error,
                 byte_range: 0..source.len().min(1),
                 line: 1,

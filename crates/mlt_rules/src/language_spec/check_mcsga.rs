@@ -22,10 +22,7 @@ impl LanguageSpecEngine {
                 if has_non_trivial_attrs {
                     diagnostics.push(Diagnostic {
                         rule_id: "MCSGA",
-                        message: format!(
-                            "Set/get method '{}' should not be in a methods block with attributes",
-                            func.name
-                        ),
+                        message: "Set or get method must be defined in a METHODS block with no attributes.".to_string(),
                         severity: Severity::Error,
                         byte_range: func.byte_range.clone(),
                         line: func.line,

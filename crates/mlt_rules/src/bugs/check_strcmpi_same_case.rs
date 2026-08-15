@@ -33,8 +33,7 @@ impl BugsEngine {
             let pos = node.start_position();
             return vec![Diagnostic {
                 rule_id: "STCUL",
-                message: "strcmpi called with identical arguments; comparison is always true"
-                    .to_string(),
+                message: "The comparison will likely fail due to case mismatch.".to_string(),
                 severity: Severity::Error,
                 byte_range: node.start_byte()..node.end_byte(),
                 line: pos.row + 1,

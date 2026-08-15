@@ -18,8 +18,7 @@ impl GoodPracticesEngine {
             if func.is_method && func.name == "display" {
                 diagnostics.push(Diagnostic {
                     rule_id: "DISPLAY",
-                    message: "Overriding display() is discouraged; override disp() instead"
-                        .to_string(),
+                    message: "Overloading DISPLAY is not recommended.".to_string(),
                     severity: Severity::Warning,
                     byte_range: func.byte_range.clone(),
                     line: func.line,

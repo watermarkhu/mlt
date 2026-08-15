@@ -40,7 +40,7 @@ impl UnusedEngine {
                 if !scope.is_used(name) {
                     diagnostics.push(Diagnostic {
                         rule_id: "SETNU",
-                        message: format!("Output assigned to '{name}' is never used"),
+                        message: "Variable is set, but might be unused.".to_string(),
                         severity: Severity::Warning,
                         byte_range: def.byte_range.clone(),
                         line: def.line,

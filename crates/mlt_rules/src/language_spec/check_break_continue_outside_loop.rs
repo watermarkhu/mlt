@@ -40,7 +40,7 @@ impl LanguageSpecEngine {
                 let pos = node.start_position();
                 diagnostics.push(Diagnostic {
                     rule_id: "BRKFOR",
-                    message: "break is not inside a for or while loop".to_string(),
+                    message: "BREAK statement can only be used in a FOR or WHILE loop.".to_string(),
                     severity: Severity::Error,
                     byte_range: node.start_byte()..node.end_byte(),
                     line: pos.row + 1,
@@ -52,7 +52,8 @@ impl LanguageSpecEngine {
                 let pos = node.start_position();
                 diagnostics.push(Diagnostic {
                     rule_id: "CONTFOR",
-                    message: "continue is not inside a for or while loop".to_string(),
+                    message: "CONTINUE statement can only be used in a FOR or WHILE loop."
+                        .to_string(),
                     severity: Severity::Error,
                     byte_range: node.start_byte()..node.end_byte(),
                     line: pos.row + 1,

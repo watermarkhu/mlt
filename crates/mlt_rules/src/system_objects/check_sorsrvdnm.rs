@@ -19,7 +19,7 @@ impl SystemObjectsEngine {
                         // Only flag if the method name is reserved but not an expected
                         // override (setupImpl, stepImpl, etc. are expected)
                         if RESERVED_NAMES.contains(&method_name) && !method_name.ends_with("Impl") {
-                            diags.push(make_diag("SORSRVDNM", name_node));
+                            diags.push(make_diag_named("SORSRVDNM", name_node, method_name));
                         }
                     }
                 }

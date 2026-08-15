@@ -33,17 +33,12 @@ impl ReadabilityEngine {
             let arg_text = &source[named_children[0].start_byte()..named_children[0].end_byte()];
             // Only flag if argument looks like a string literal
             if arg_text.starts_with('\'') || arg_text.starts_with('"') {
-                let func = if check_id == "SPERR" {
-                    "error"
+                let message = if check_id == "SPERR" {
+                    "ERROR takes SPRINTF-like arguments directly."
                 } else {
-                    "warning"
+                    "WARNING takes SPRINTF-like arguments directly."
                 };
-                results.push(self.diag(
-                    check_id,
-                    &format!("Use '{func}' with a message ID: {func}('myComponent:myID', ...)"),
-                    node,
-                    None,
-                ));
+                results.push(self.diag(check_id, message, node, None));
             }
         }
     }

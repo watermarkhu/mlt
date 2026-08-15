@@ -29,10 +29,8 @@ impl FormattingEngine {
                 diagnostics.push(Diagnostic {
                     rule_id: "ALIGN",
                     message: format!(
-                        "{} should be aligned with 'if' at column {} (found column {})",
-                        keyword_for_clause(kind),
-                        if_col + 1,
-                        clause_col + 1
+                        "This keyword might not be aligned with its matching END on line {}.",
+                        pos.row + 1
                     ),
                     severity: Severity::Info,
                     byte_range: line_start..child.start_byte(),

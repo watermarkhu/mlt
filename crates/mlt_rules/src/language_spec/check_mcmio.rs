@@ -15,10 +15,7 @@ impl LanguageSpecEngine {
                 if n_inputs > 64 || n_outputs > 64 {
                     diagnostics.push(Diagnostic {
                         rule_id: "MCMIO",
-                        message: format!(
-                            "Method '{}' has too many inputs or outputs ({} inputs, {} outputs)",
-                            method.name, n_inputs, n_outputs
-                        ),
+                        message: "Method has too many inputs or outputs.".to_string(),
                         severity: Severity::Error,
                         byte_range: method.byte_range.clone(),
                         line: method.line,

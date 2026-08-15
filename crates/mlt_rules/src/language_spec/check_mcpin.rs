@@ -14,10 +14,7 @@ impl LanguageSpecEngine {
                     if contains_self_constructor_call(default_value, &class.name) {
                         diagnostics.push(Diagnostic {
                             rule_id: "MCPIN",
-                            message: format!(
-                                "Unable to initialize class property '{}' to an instance of the class itself",
-                                prop.name
-                            ),
+                            message: "Unable to initialize class property to an instance of the class itself.".to_string(),
                             severity: Severity::Error,
                             byte_range: prop.byte_range.clone(),
                             line: prop.line,

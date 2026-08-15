@@ -43,10 +43,8 @@ impl GoodPracticesEngine {
                 if !method_names.contains(&getter) {
                     diagnostics.push(Diagnostic {
                         rule_id: "MGMD",
-                        message: format!(
-                            "'get' method should be implemented for each dependent property that does not also have private 'GetAccess' attribute. Add a method named '{}'.",
-                            getter
-                        ),
+                        message: "'get' method should be implemented for each dependent property that does not also have private 'GetAccess' attribute."
+                            .to_string(),
                         severity: Severity::Warning,
                         byte_range: prop.byte_range.clone(),
                         line: prop.line,

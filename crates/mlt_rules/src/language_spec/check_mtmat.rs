@@ -44,7 +44,7 @@ impl LanguageSpecEngine {
             if seen.contains(&attr.name.as_str()) {
                 diagnostics.push(Diagnostic {
                     rule_id: "MTMAT",
-                    message: format!("Attribute '{}' can only be set once", attr.name),
+                    message: "Attribute can only be set once.".to_string(),
                     severity: Severity::Error,
                     byte_range: byte_range.clone(),
                     line,

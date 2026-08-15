@@ -43,7 +43,7 @@ impl ReadabilityEngine {
         if matches!(fmt_stripped, "%d" | "%i" | "%f" | "%g" | "%e") {
             results.push(self.diag(
                 "SPRINTFN",
-                "Use 'num2str(x)' instead of 'sprintf' with simple numeric format",
+                "For readability, consider using the 'newline' function instead of 'sprintf('\\n')'.",
                 node,
                 Some(Fix::new(
                     node.start_byte()..node.end_byte(),

@@ -11,7 +11,7 @@ impl LanguageSpecEngine {
                     diagnostics.push(Diagnostic {
                         rule_id: "CTORO",
                         message:
-                            "Class constructors must be declared with at least one output argument"
+                            "Class constructors must be declared with at least one output argument."
                                 .to_string(),
                         severity: Severity::Error,
                         byte_range: func.byte_range.clone(),

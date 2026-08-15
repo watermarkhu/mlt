@@ -33,7 +33,7 @@ impl GoodPracticesEngine {
         vec![Diagnostic {
             rule_id: "MIPC1",
             message:
-                "Calling the computer function with 'arch' returns 'win64', 'glnxa64', or 'maci64'."
+                "Calling the computer function with 'arch' returns 'win64', 'glnxa64', or 'maca64'."
                     .to_string(),
             severity: Severity::Warning,
             byte_range: node.start_byte()..node.end_byte(),

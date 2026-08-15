@@ -4,15 +4,16 @@ use super::*;
 
 impl IncompleteAnalysisEngine {
     /// MBIG: File too large.
-    pub(crate) fn check_file_size(&self, source: &str, diagnostics: &mut Vec<Diagnostic>) {
+    pub(crate) fn check_file_size(
+        &self,
+        source: &str,
+        file_name: &str,
+        diagnostics: &mut Vec<Diagnostic>,
+    ) {
         if source.len() > self.config.max_file_size {
             diagnostics.push(Diagnostic {
                 rule_id: "MBIG",
-                message: format!(
-                    "File size ({size} bytes) exceeds internal limit ({max} bytes)",
-                    size = source.len(),
-                    max = self.config.max_file_size
-                ),
+                message: format!("Code analysis did not complete. File {file_name} is too large."),
                 severity: Severity::Error,
                 byte_range: 0..source.len().min(1),
                 line: 1,

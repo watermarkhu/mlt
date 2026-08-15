@@ -18,8 +18,8 @@ impl IncompleteAnalysisEngine {
                     diagnostics.push(Diagnostic {
                         rule_id: "MDMCR",
                         message: format!(
-                            "File has deployed MATLAB extension '.{ext_str}'; \
-                             analysis of deployed files is not supported"
+                            "Unable to run code analysis. {} is a deployed MATLAB file.",
+                            ctx.file_path.display()
                         ),
                         severity: Severity::Error,
                         byte_range: 0..source.len().min(1),
@@ -30,7 +30,10 @@ impl IncompleteAnalysisEngine {
                 } else {
                     diagnostics.push(Diagnostic {
                         rule_id: "MDOTM",
-                        message: format!("File has extension '.{ext_str}'; expected '.m'"),
+                        message: format!(
+                            "Unable to run code analysis. {} has an invalid file extension.",
+                            ctx.file_path.display()
+                        ),
                         severity: Severity::Error,
                         byte_range: 0..source.len().min(1),
                         line: 1,
@@ -43,7 +46,10 @@ impl IncompleteAnalysisEngine {
             // No extension at all — also flag as MDOTM.
             diagnostics.push(Diagnostic {
                 rule_id: "MDOTM",
-                message: "File has no extension; expected '.m'".to_string(),
+                message: format!(
+                    "Unable to run code analysis. {} has an invalid file extension.",
+                    ctx.file_path.display()
+                ),
                 severity: Severity::Error,
                 byte_range: 0..source.len().min(1),
                 line: 1,

@@ -16,7 +16,7 @@ impl LanguageSpecEngine {
                 self.push_diag(
                     node,
                     "PFANSLP",
-                    "'ans' is not supported as a parfor loop variable",
+                    "'ans' is not supported as a parfor loop variable.",
                     diagnostics,
                 );
             }
@@ -39,7 +39,7 @@ impl LanguageSpecEngine {
                 self.push_diag(
                     range_node,
                     "PFRNG",
-                    "The range of a PARFOR statement must be increasing consecutive integers",
+                    "The range of a PARFOR statement must be consecutive integers.",
                     diagnostics,
                 );
             }

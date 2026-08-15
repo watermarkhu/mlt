@@ -14,10 +14,7 @@ impl LanguageSpecEngine {
             if def.kind == DefKind::Persistent {
                 diagnostics.push(Diagnostic {
                     rule_id: "NPERS",
-                    message: format!(
-                        "persistent declaration of '{}' is not allowed in a script",
-                        def.name
-                    ),
+                    message: "A PERSISTENT declaration is not valid in scripts.".to_string(),
                     severity: Severity::Error,
                     byte_range: def.byte_range.clone(),
                     line: def.line,

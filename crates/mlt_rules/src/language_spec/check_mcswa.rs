@@ -15,7 +15,7 @@ impl LanguageSpecEngine {
         {
             diagnostics.push(Diagnostic {
                 rule_id: "MCSWA",
-                message: "A sealed class cannot specify allowed subclasses".to_string(),
+                message: "A sealed class cannot specify allowed subclasses.".to_string(),
                 severity: Severity::Error,
                 byte_range: class.byte_range.clone(),
                 line: class.line,

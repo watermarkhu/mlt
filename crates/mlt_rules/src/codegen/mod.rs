@@ -114,84 +114,83 @@ struct CheckMeta {
 const CHECKS: &[CheckMeta] = &[
     CheckMeta {
         id: "EMVDF",
-        description: "Variable-size data is not supported for code generation",
+        description: "Code generation requires that all elements of a variable are defined before indexing into the variable.",
     },
     CheckMeta {
         id: "EMGRO",
-        description: "Growing arrays inside loops is not supported for code generation",
+        description: "For code generation, grow an array by using 'end + 1' indexing.",
     },
     CheckMeta {
         id: "EMNODEF",
-        description: "Variable must be defined before use in code generation",
+        description: "Code generation requires that variables are defined before use.",
     },
     CheckMeta {
         id: "EMFCN",
-        description: "Function is not supported for code generation",
+        description: "This function is not supported in code generation.",
     },
     CheckMeta {
         id: "EMCEL",
-        description: "Cell arrays are not supported for code generation",
+        description: "Fixed-point conversion does not support cell arrays.",
     },
     CheckMeta {
         id: "EMTC",
-        description: "Try-catch statements are not supported for code generation",
+        description: "TRY/CATCH is unsupported for code generation.",
     },
     CheckMeta {
         id: "EMIMP",
-        description: "Import statements are not supported for code generation",
+        description: "Code generation does not support import statements.",
     },
     CheckMeta {
         id: "EMNST",
-        description: "Nested functions are not supported for code generation",
+        description: "Fixed-point conversion does not support nested functions.",
     },
     CheckMeta {
         id: "EMSCR",
-        description: "Scripts are not supported for code generation; use functions instead",
+        description: "Code generation does not support scripts.",
     },
     CheckMeta {
         id: "EMBRK",
-        description: "Break statement in unsupported context for code generation",
+        description: "HDL code generation does not support break statements.",
     },
     CheckMeta {
         id: "EMCNT",
-        description: "Continue statement in unsupported context for code generation",
+        description: "HDL code generation does not support continue statements.",
     },
     CheckMeta {
         id: "EMPFR",
-        description: "Parfor is not supported for code generation",
+        description: "HDL code generation does not support parfor statements.",
     },
     CheckMeta {
         id: "EMRTN",
-        description: "Return statement in unsupported context for code generation",
+        description: "HDL code generation does not support return statements inside of loops.",
     },
     CheckMeta {
         id: "EMWHL",
-        description:
-            "While loops with non-constant bounds may not be supported for code generation",
+        description: "HDL code generation does not support while statements.",
     },
     CheckMeta {
         id: "EMRIFAV",
-        description: "Arguments validation block is not fully supported for code generation",
+        description: "Code generation does not support repeating arguments with validation.",
     },
     CheckMeta {
         id: "EMLOAD",
-        description: "'load' is not supported for code generation",
+        description: "The output of a call to LOAD is not assigned to a variable. For code generation, assign the output of LOAD to a variable without subscripting.",
     },
     CheckMeta {
         id: "EMS2N",
-        description: "'str2num' is not supported for code generation; use 'str2double'",
+        description: "Code generation does not support 'str2num'. Use 'str2double' instead.",
     },
     CheckMeta {
         id: "PRMNOIN",
-        description: "No input validation available in generated code",
+        description: "For code generation, specify a binaryOccupancyMap object in the constructor of the mobileRobotPRM object.",
     },
     CheckMeta {
         id: "LOOPPRAGMAWITHOUTFOR",
-        description: "coder.loop pragma must be immediately followed by a for-loop",
+        description: "A coder.loop.Control transform must be immediately followed by a for loop.",
     },
     CheckMeta {
         id: "FPASE",
-        description: "Assignment to a scaled fixed-point expression may lose precision",
+        description: "Direct assignment to a possible fixed-point type is not recommended. Use the subscripted assignment syntax 'var(:) =' instead.",
     },
 ];
 

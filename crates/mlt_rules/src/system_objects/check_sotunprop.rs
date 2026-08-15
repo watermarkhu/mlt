@@ -40,11 +40,23 @@ impl SystemObjectsEngine {
                     continue;
                 }
                 if text.contains("logical") {
-                    diags.push(make_diag("SOTUNPROP1", child));
+                    diags.push(make_diag_named(
+                        "SOTUNPROP1",
+                        child,
+                        property_name(child, source),
+                    ));
                 } else if text.contains("char") && !text.contains("string") {
-                    diags.push(make_diag("SOTUNPROP3", child));
+                    diags.push(make_diag_named(
+                        "SOTUNPROP3",
+                        child,
+                        property_name(child, source),
+                    ));
                 } else if text.contains("string") {
-                    diags.push(make_diag("SOTUNPROP4", child));
+                    diags.push(make_diag_named(
+                        "SOTUNPROP4",
+                        child,
+                        property_name(child, source),
+                    ));
                 }
             }
         }

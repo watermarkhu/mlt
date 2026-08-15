@@ -219,10 +219,7 @@ impl UnusedEngine {
             if !field_reads.contains(&key) {
                 diagnostics.push(Diagnostic {
                     rule_id: "MSNU",
-                    message: format!(
-                        "Struct field '{}.{}' is set but never read",
-                        write.object, write.field
-                    ),
+                    message: "A Code Analyzer message was once suppressed here, but the message is no longer generated.".to_string(),
                     severity: Severity::Warning,
                     byte_range: write.byte_range.clone(),
                     line: write.line,
@@ -279,10 +276,7 @@ impl UnusedEngine {
                 {
                     diagnostics.push(Diagnostic {
                         rule_id: "MSNE",
-                        message: format!(
-                            "Struct field '{}.{}' is assigned once and never read (possible typo)",
-                            object, w.field
-                        ),
+                        message: "No Code Analyzer check is found for this check ID.".to_string(),
                         severity: Severity::Info,
                         byte_range: w.byte_range.clone(),
                         line: w.line,

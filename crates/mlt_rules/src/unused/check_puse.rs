@@ -21,14 +21,9 @@ impl UnusedEngine {
                 }
 
                 if !scope.is_used(name) {
-                    let kind_str = match def.kind {
-                        DefKind::Global => "Global",
-                        DefKind::Persistent => "Persistent",
-                        _ => unreachable!(),
-                    };
                     diagnostics.push(Diagnostic {
                         rule_id: "PUSE",
-                        message: format!("{kind_str} variable '{name}' is declared but never used"),
+                        message: "Persistent variable might be unused.".to_string(),
                         severity: Severity::Warning,
                         byte_range: def.byte_range.clone(),
                         line: def.line,

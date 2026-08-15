@@ -13,7 +13,8 @@ impl UnusedEngine {
         for span in spans {
             diagnostics.push(Diagnostic {
                 rule_id: "UNRCH",
-                message: format!("Unreachable code after '{}'", span.cause),
+                message: "This statement (and possibly following ones) cannot be reached."
+                    .to_string(),
                 severity: Severity::Warning,
                 byte_range: span.byte_range,
                 line: span.line,

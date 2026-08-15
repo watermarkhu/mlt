@@ -37,7 +37,7 @@ impl UnusedEngine {
                 if !scope.is_used(name) {
                     diagnostics.push(Diagnostic {
                         rule_id: "NASGU",
-                        message: format!("Variable '{name}' is assigned but never used"),
+                        message: "Value assigned to variable might be unused.".to_string(),
                         severity: Severity::Warning,
                         byte_range: def.byte_range.clone(),
                         line: def.line,

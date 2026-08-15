@@ -36,7 +36,7 @@ impl GoodPracticesEngine {
         let pos = node.start_position();
         vec![Diagnostic {
             rule_id: "NOANS",
-            message: "Function result is not assigned to a variable; it will be stored in 'ans'"
+            message: "Using ANS as a variable is not recommended as ANS is frequently overwritten by MATLAB."
                 .to_string(),
             severity: Severity::Warning,
             byte_range: node.start_byte()..node.end_byte(),

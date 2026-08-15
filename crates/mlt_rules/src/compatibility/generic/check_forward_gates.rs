@@ -24,7 +24,7 @@ const FCLEN_MAX: usize = 63;
 /// Messages for the version-gate checks.
 const FCLEN_MSG: &str = "Identifiers longer than 63 characters are not supported before R2025a.";
 const FCCPV_MSG: &str = "Class property validation is not available before R2017a.";
-const FCDQS_MSG: &str = "Double-quoted strings are not available before R2017a. Use character vectors for scalar strings or cell arrays for string collections.";
+const FCDQS_MSG: &str = "Double-quoted strings are not available before R2017a. Use character vectors for scalar strings or cell arrays of character vectors for string arrays.";
 const FCFAV_MSG: &str = "Function argument validation is not available before R2019b.";
 const FCHBL_MSG: &str = "Hexadecimal and binary literals are not available before R2019b. Use 'hex2dec' and 'bin2dec' instead.";
 const FCLFS_MSG: &str = "Local functions in a script are not available before R2016b.";
@@ -37,7 +37,7 @@ const REDEFGI_MSG: &str = "Declaring an input or output variable to be global mi
 const REDEFGG_MSG: &str =
     "Declaring a variable to be global more than once might not be supported in a future release.";
 const NSTIMP_MSG: &str =
-    "Nested functions now inherit import statements from this parent function.";
+    "Nested functions now inherit import statements from this parent function. If the nested functions intend to call functions on the path, ensure that the imported namespaces do not contain functions with the same name.";
 
 /// MATLAB reserved words (subset — for IMPKEY).
 const RESERVED: &[&str] = &[

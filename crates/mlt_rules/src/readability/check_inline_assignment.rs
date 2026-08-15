@@ -26,8 +26,7 @@ impl ReadabilityEngine {
                     // (first child of if/while, second child of for)
                     results.push(self.diag(
                         "ASGSL",
-                        "Avoid assignment inside control-flow condition; \
-                         assign on a separate line for clarity",
+                        "Assignment to variable might be unnecessary.",
                         node,
                         None,
                     ));

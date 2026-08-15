@@ -25,7 +25,7 @@ impl BugsEngine {
             let pos = node.start_position();
             vec![Diagnostic {
                 rule_id: "MULCC",
-                message: format!("Duplicate condition '{lhs_text}' could be simplified"),
+                message: "This case cannot be matched due to a call to UPPER or LOWER on the SWITCH value.".to_string(),
                 severity: Severity::Error,
                 byte_range: node.start_byte()..node.end_byte(),
                 line: pos.row + 1,

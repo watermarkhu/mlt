@@ -296,8 +296,6 @@ impl Default for CustomChecksConfig {
 /// Metrics gathered for a single function definition.
 #[derive(Debug, Default)]
 struct FunctionMetrics {
-    /// Function name (for diagnostics).
-    name: String,
     /// Byte offset of the function definition node start.
     start_byte: usize,
     /// Line number (1-indexed) of the function definition.
@@ -379,8 +377,8 @@ impl CustomChecksEngine {
                 diagnostics.push(Diagnostic {
                     rule_id: "LLMNC",
                     message: format!(
-                        "Line length ({line_len}) exceeds maximum ({max})",
-                        max = self.config.max_line_length
+                        "Line has more than {} characters (including whitespaces). This makes the line difficult to understand and maintain.",
+                        self.config.max_line_length
                     ),
                     severity: Severity::Warning,
                     byte_range: byte_offset..byte_offset + line.len(),
@@ -395,10 +393,8 @@ impl CustomChecksEngine {
             if semicolons > self.config.max_semicolons_per_line {
                 diagnostics.push(Diagnostic {
                     rule_id: "DAFSC",
-                    message: format!(
-                        "Too many semicolons on one line ({semicolons}); maximum is {max}",
-                        max = self.config.max_semicolons_per_line
-                    ),
+                    message: "Use of a script is disallowed by custom code analyzer configuration."
+                        .to_string(),
                     severity: Severity::Warning,
                     byte_range: byte_offset..byte_offset + line.len(),
                     line: line_num,
@@ -430,8 +426,9 @@ impl CustomChecksEngine {
                 let pos = node.start_position();
                 diagnostics.push(Diagnostic {
                     rule_id: "SYSBANG",
-                    message: "System command used (!); consider using system() or unix() instead"
-                        .to_string(),
+                    message:
+                        "Use of bang operator is disallowed by custom code analyzer configuration."
+                            .to_string(),
                     severity: Severity::Warning,
                     byte_range: node.start_byte()..node.end_byte(),
                     line: pos.row + 1,
@@ -495,8 +492,8 @@ impl CustomChecksEngine {
                     diagnostics.push(Diagnostic {
                         rule_id: "ACYCCOM",
                         message: format!(
-                            "Average cyclomatic complexity ({avg}) exceeds maximum ({max})",
-                            max = self.config.max_avg_cyclomatic_complexity
+                            "Anonymous function has a McCabe cyclomatic complexity of more than {}. This makes the anonymous function difficult to understand and maintain.",
+                            self.config.max_avg_cyclomatic_complexity
                         ),
                         severity: Severity::Warning,
                         byte_range: first.start_byte..first.end_byte,
@@ -516,8 +513,8 @@ impl CustomChecksEngine {
                     diagnostics.push(Diagnostic {
                         rule_id: "MACYCCOM",
                         message: format!(
-                            "Method average cyclomatic complexity ({avg}) exceeds maximum ({max})",
-                            max = self.config.max_avg_cyclomatic_complexity
+                            "Anonymous function has a modified cyclomatic complexity of more than {}. This makes the anonymous function difficult to understand and maintain.",
+                            self.config.max_avg_cyclomatic_complexity
                         ),
                         severity: Severity::Warning,
                         byte_range: first.start_byte..first.end_byte,
@@ -579,7 +576,6 @@ impl CustomChecksEngine {
     ) -> FunctionMetrics {
         let pos = func_node.start_position();
         let mut metrics = FunctionMetrics {
-            name: self.extract_function_name(func_node, source),
             start_byte: func_node.start_byte(),
             end_byte: func_node.end_byte(),
             line: pos.row + 1,
@@ -623,24 +619,6 @@ impl CustomChecksEngine {
         self.count_args_used(func_node, source, &mut metrics);
 
         metrics
-    }
-
-    /// Extract the function name from a function_definition node.
-    fn extract_function_name(&self, func_node: Node, source: &str) -> String {
-        // Try the "name" field first
-        if let Some(name_node) = func_node.child_by_field_name("name") {
-            return source[name_node.start_byte()..name_node.end_byte()].to_string();
-        }
-
-        // Fallback: look for an identifier child
-        let mut cursor = func_node.walk();
-        for child in func_node.children(&mut cursor) {
-            if child.kind() == "identifier" {
-                return source[child.start_byte()..child.end_byte()].to_string();
-            }
-        }
-
-        "<anonymous>".to_string()
     }
 
     /// Count the number of input arguments in a function definition.
@@ -1039,8 +1017,8 @@ impl CustomChecksEngine {
             diagnostics.push(make_diag(
                 "FCNIL",
                 format!(
-                    "Function '{}' has {} input arguments; maximum is {}",
-                    metrics.name, metrics.input_count, self.config.max_function_inputs
+                    "Function has more than {} input arguments. This makes the function difficult to understand and maintain.",
+                    self.config.max_function_inputs
                 ),
             ));
         }
@@ -1050,8 +1028,8 @@ impl CustomChecksEngine {
             diagnostics.push(make_diag(
                 "FCNOL",
                 format!(
-                    "Function '{}' has {} output arguments; maximum is {}",
-                    metrics.name, metrics.output_count, self.config.max_function_outputs
+                    "Function has more than {} output arguments. This makes the function difficult to understand and maintain.",
+                    self.config.max_function_outputs
                 ),
             ));
         }
@@ -1061,8 +1039,8 @@ impl CustomChecksEngine {
             diagnostics.push(make_diag(
                 "FCNLL",
                 format!(
-                    "Function '{}' is {} lines long; maximum is {}",
-                    metrics.name, metrics.line_count, self.config.max_function_lines
+                    "Function has more than {} lines. This makes the function difficult to understand and maintain.",
+                    self.config.max_function_lines
                 ),
             ));
         }
@@ -1072,8 +1050,8 @@ impl CustomChecksEngine {
             diagnostics.push(make_diag(
                 "MNCSN",
                 format!(
-                    "Function '{}' has nesting depth {}; maximum is {}",
-                    metrics.name, metrics.max_nesting_depth, self.config.max_nesting_depth
+                    "This control statement is deeply nested (nesting level = {}) and might have more deeply nested control statements. This makes the code difficult to understand and maintain.",
+                    metrics.max_nesting_depth
                 ),
             ));
         }
@@ -1082,10 +1060,8 @@ impl CustomChecksEngine {
         if metrics.max_tree_children > self.config.max_tree_children {
             diagnostics.push(make_diag(
                 "DAFTC",
-                format!(
-                    "Function '{}' has a node with {} children; maximum is {}",
-                    metrics.name, metrics.max_tree_children, self.config.max_tree_children
-                ),
+                "Use of try/catch statement is disallowed by custom code analyzer configuration."
+                    .to_string(),
             ));
         }
 
@@ -1093,12 +1069,8 @@ impl CustomChecksEngine {
         if metrics.persistent_variable_count > self.config.max_persistent_variables {
             diagnostics.push(make_diag(
                 "DAFPV",
-                format!(
-                    "Function '{}' has {} persistent variables; maximum is {}",
-                    metrics.name,
-                    metrics.persistent_variable_count,
-                    self.config.max_persistent_variables
-                ),
+                "Use of persistent variable is disallowed by custom code analyzer configuration."
+                    .to_string(),
             ));
         }
 
@@ -1106,10 +1078,8 @@ impl CustomChecksEngine {
         if metrics.max_conditions > self.config.max_conditions {
             diagnostics.push(make_diag(
                 "DAFCO",
-                format!(
-                    "Function '{}' has an expression with {} conditions; maximum is {}",
-                    metrics.name, metrics.max_conditions, self.config.max_conditions
-                ),
+                "Use of continue statement is disallowed by custom code analyzer configuration."
+                    .to_string(),
             ));
         }
 
@@ -1117,10 +1087,8 @@ impl CustomChecksEngine {
         if metrics.branch_count > self.config.max_branches {
             diagnostics.push(make_diag(
                 "DAFBR",
-                format!(
-                    "Function '{}' has {} branches; maximum is {}",
-                    metrics.name, metrics.branch_count, self.config.max_branches
-                ),
+                "Use of break statement is disallowed by custom code analyzer configuration."
+                    .to_string(),
             ));
         }
 
@@ -1128,10 +1096,8 @@ impl CustomChecksEngine {
         if metrics.return_count > self.config.max_return_points {
             diagnostics.push(make_diag(
                 "DAFRT",
-                format!(
-                    "Function '{}' has {} return points; maximum is {}",
-                    metrics.name, metrics.return_count, self.config.max_return_points
-                ),
+                "Use of return statement is disallowed by custom code analyzer configuration."
+                    .to_string(),
             ));
         }
 
@@ -1139,10 +1105,8 @@ impl CustomChecksEngine {
         if metrics.nested_function_count > self.config.max_nested_functions {
             diagnostics.push(make_diag(
                 "DAFNF",
-                format!(
-                    "Function '{}' has {} nested functions; maximum is {}",
-                    metrics.name, metrics.nested_function_count, self.config.max_nested_functions
-                ),
+                "Use of a nested function is disallowed by custom code analyzer configuration."
+                    .to_string(),
             ));
         }
 
@@ -1150,10 +1114,8 @@ impl CustomChecksEngine {
         if metrics.called_function_count > self.config.max_called_functions {
             diagnostics.push(make_diag(
                 "DAFCF",
-                format!(
-                    "Function '{}' calls {} unique functions; maximum is {}",
-                    metrics.name, metrics.called_function_count, self.config.max_called_functions
-                ),
+                "Use of command syntax to call a function is disallowed by custom code analyzer configuration."
+                    .to_string(),
             ));
         }
 
@@ -1161,12 +1123,8 @@ impl CustomChecksEngine {
         if metrics.anonymous_function_count > self.config.max_anonymous_functions {
             diagnostics.push(make_diag(
                 "DAFAF",
-                format!(
-                    "Function '{}' has {} anonymous functions; maximum is {}",
-                    metrics.name,
-                    metrics.anonymous_function_count,
-                    self.config.max_anonymous_functions
-                ),
+                "Use of an anonymous function is disallowed by custom code analyzer configuration."
+                    .to_string(),
             ));
         }
 
@@ -1174,10 +1132,8 @@ impl CustomChecksEngine {
         if metrics.local_variable_count > self.config.max_local_variables {
             diagnostics.push(make_diag(
                 "DAFCV",
-                format!(
-                    "Function '{}' has {} local variables; maximum is {}",
-                    metrics.name, metrics.local_variable_count, self.config.max_local_variables
-                ),
+                "Use of character vector is disallowed by custom code analyzer configuration."
+                    .to_string(),
             ));
         }
 
@@ -1185,10 +1141,8 @@ impl CustomChecksEngine {
         if metrics.local_constant_count > self.config.max_local_constants {
             diagnostics.push(make_diag(
                 "DAFCVC",
-                format!(
-                    "Function '{}' has {} local constants; maximum is {}",
-                    metrics.name, metrics.local_constant_count, self.config.max_local_constants
-                ),
+                "Use of cell array of character vectors is disallowed by custom code analyzer configuration."
+                    .to_string(),
             ));
         }
 
@@ -1196,10 +1150,7 @@ impl CustomChecksEngine {
         if metrics.input_args_used > self.config.max_input_args_used {
             diagnostics.push(make_diag(
                 "DAFVI",
-                format!(
-                    "Function '{}' uses {} input arguments; maximum is {}",
-                    metrics.name, metrics.input_args_used, self.config.max_input_args_used
-                ),
+                "Use of varargin is disallowed by custom code analyzer configuration.".to_string(),
             ));
         }
 
@@ -1207,47 +1158,52 @@ impl CustomChecksEngine {
         if metrics.output_args_used > self.config.max_output_args_used {
             diagnostics.push(make_diag(
                 "DAFVO",
-                format!(
-                    "Function '{}' uses {} output arguments; maximum is {}",
-                    metrics.name, metrics.output_args_used, self.config.max_output_args_used
-                ),
+                "Use of varargout is disallowed by custom code analyzer configuration.".to_string(),
             ));
         }
 
         // CYCCOM / MCYCCOM: Cyclomatic complexity exceeds limit
         if metrics.cyclomatic_complexity > self.config.max_cyclomatic_complexity {
-            let rule_id = if metrics.is_method {
-                "MCYCCOM"
+            let (rule_id, message) = if metrics.is_method {
+                (
+                    "MCYCCOM",
+                    format!(
+                        "Function has a modified cyclomatic complexity of more than {}. This makes the function difficult to understand and maintain.",
+                        self.config.max_cyclomatic_complexity
+                    ),
+                )
             } else {
-                "CYCCOM"
+                (
+                    "CYCCOM",
+                    format!(
+                        "Function has a McCabe cyclomatic complexity of more than {}. This makes the function difficult to understand and maintain.",
+                        self.config.max_cyclomatic_complexity
+                    ),
+                )
             };
-            diagnostics.push(make_diag(
-                rule_id,
-                format!(
-                    "Function '{}' has cyclomatic complexity {}; maximum is {}",
-                    metrics.name,
-                    metrics.cyclomatic_complexity,
-                    self.config.max_cyclomatic_complexity
-                ),
-            ));
+            diagnostics.push(make_diag(rule_id, message));
         }
 
         // SCYCCOM / MSCYCCOM: Strict cyclomatic complexity exceeds limit
         if metrics.strict_cyclomatic_complexity > self.config.max_strict_cyclomatic_complexity {
-            let rule_id = if metrics.is_method {
-                "MSCYCCOM"
+            let (rule_id, message) = if metrics.is_method {
+                (
+                    "MSCYCCOM",
+                    format!(
+                        "Script has a modified cyclomatic complexity of more than {}. This makes the script difficult to understand and maintain.",
+                        self.config.max_strict_cyclomatic_complexity
+                    ),
+                )
             } else {
-                "SCYCCOM"
+                (
+                    "SCYCCOM",
+                    format!(
+                        "Script has a McCabe cyclomatic complexity of more than {}. This makes the script difficult to understand and maintain.",
+                        self.config.max_strict_cyclomatic_complexity
+                    ),
+                )
             };
-            diagnostics.push(make_diag(
-                rule_id,
-                format!(
-                    "Function '{}' has strict cyclomatic complexity {}; maximum is {}",
-                    metrics.name,
-                    metrics.strict_cyclomatic_complexity,
-                    self.config.max_strict_cyclomatic_complexity
-                ),
-            ));
+            diagnostics.push(make_diag(rule_id, message));
         }
     }
 }

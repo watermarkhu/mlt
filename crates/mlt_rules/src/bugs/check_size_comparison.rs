@@ -51,9 +51,7 @@ impl BugsEngine {
 
         vec![Diagnostic {
             rule_id: "DEFSIZE",
-            message: format!(
-                "Comparing size() output with '{op}' may fail for arrays; use isequal() instead"
-            ),
+            message: "Do not overload 'size' for fundamental data types.".to_string(),
             severity: Severity::Error,
             byte_range: node.start_byte()..node.end_byte(),
             line: pos.row + 1,

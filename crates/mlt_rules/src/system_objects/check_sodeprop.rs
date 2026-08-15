@@ -16,7 +16,7 @@ impl SystemObjectsEngine {
         if self.is_enabled("SODEPPROP") && func_name.contains('.') {
             if let Some(prop_name) = func_name.rsplit('.').next() {
                 if DEPRECATED_PROPERTIES.iter().any(|(p, _)| *p == prop_name) {
-                    diags.push(make_diag("SODEPPROP", node));
+                    diags.push(make_diag_named("SODEPPROP", node, prop_name));
                 }
             }
         }

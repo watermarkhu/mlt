@@ -28,8 +28,8 @@ const REMOVED_ARGS: &[(&str, &str, &str)] = &[
     ("powersys", "PSRENAME", "Input argument 'powersys' will be removed in a future release. Use 'sps' instead."),
     ("distcomp", "DCRENAME", "Input argument 'distcomp' will be removed in a future release. Use 'parallel' instead."),
     ("simevents", "SERENAME", "Input argument 'simevents' will be removed in a future release. Use 'slde' instead."),
-    ("North America", "HHCNA", "Input argument 'North America' has been removed. Use 'hrn:here:data::olp-here-had:here-hdlm-protobuf:mapservices:northamerica' instead."),
-    ("Western Europe", "HHCWE", "Input argument 'Western Europe' has been removed. Use 'hrn:here:data::olp-here-had:here-hdlm-protobuf:mapservices:westeurope' instead."),
+    ("North America", "HHCNA", "Input argument 'North America' has been removed. Use 'hrn:here:data::olp-here-had:here-hdlm-protobuf-na-2' instead."),
+    ("Western Europe", "HHCWE", "Input argument 'Western Europe' has been removed. Use 'hrn:here:data::olp-here-had:here-hdlm-protobuf-weu-2' instead."),
     ("v6", "NOV6", "'v6' will be removed in a future release. There is no simple replacement for this."),
     ("-dill", "FROPT", "'-dill' has been removed. Use Encapsulated PostScript instead."),
     ("-adobecset", "FROPTX", "'-adobecset' has been removed. There is no simple replacement for this."),
@@ -40,7 +40,7 @@ const RESOU_MSG: &str = "'resources' is a reserved folder. Running MATLAB files 
 /// REPUDD message.
 const REPUDD_MSG: &str = "Classes defined using schema.m files are no longer supported. Use MATLAB Classes defined using the classdef keyword instead.";
 /// MCATP message.
-const MCATP_MSG: &str = "Using an @ sign to specify a class property restriction is unsupported and has been removed. Use property validation functions instead.";
+const MCATP_MSG: &str = "Using an @ sign to specify a class property restriction is unsupported and has been removed. Use property validation syntax instead.";
 /// FGREN message.
 const FGREN_MSG: &str = "'Renderer' will be removed in a future release and currently has no effect. There is no simple replacement for this.";
 /// FGREM message.

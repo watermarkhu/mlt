@@ -34,7 +34,8 @@ impl ConfigIssuesEngine {
             return vec![Diagnostic {
                 rule_id: "CFIG",
                 message: format!(
-                    "Configuration command '{cmd_name}' called without required arguments"
+                    "The Code Analyzer settings file, VAR_FILE, has an error on line {}.",
+                    start.row + 1
                 ),
                 severity: Severity::Error,
                 byte_range: node.start_byte()..node.end_byte(),

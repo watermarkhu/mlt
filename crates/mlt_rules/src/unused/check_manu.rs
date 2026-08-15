@@ -30,7 +30,7 @@ impl UnusedEngine {
             if !all_uses.contains(name.as_str()) {
                 diagnostics.push(Diagnostic {
                     rule_id: "MANU",
-                    message: format!("Method '{name}' is defined but never called"),
+                    message: "Input argument might be unused. Consider replacing the argument with ~, or make this method Static instead.".to_string(),
                     severity: Severity::Warning,
                     byte_range: scope.byte_range.clone(),
                     line: scope.line,

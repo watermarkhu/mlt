@@ -430,7 +430,7 @@ impl SyntaxErrorsEngine {
                 return Some((
                     "ENDCT2",
                     format!(
-                        "An END might be missing (after line {end_line}), possibly matching line {opener_line}."
+                        "An END might be missing (after line {end_line}), possibly matching {opener_line}."
                     ),
                 ));
             }
@@ -711,7 +711,7 @@ impl SyntaxErrorsEngine {
     pub(crate) fn push_name_value_diagnostic(
         &self,
         name: Node,
-        source: &str,
+        _source: &str,
         diagnostics: &mut Vec<Diagnostic>,
     ) {
         // A valid MATLAB identifier is a legitimate name=value name.
@@ -723,7 +723,6 @@ impl SyntaxErrorsEngine {
         if !self.is_check_enabled(check_id) {
             return;
         }
-        let name_text = &source[name.start_byte()..name.end_byte()];
         let pos = name.start_position();
         let message = if is_string {
             "Using a character vector or string as a name in name=value syntax is not supported. Remove the quotes around the name."
@@ -732,7 +731,7 @@ impl SyntaxErrorsEngine {
         };
         diagnostics.push(Diagnostic {
             rule_id: check_id,
-            message: format!("{message} (near '{name_text}')"),
+            message: message.to_string(),
             severity: Severity::Error,
             byte_range: name.byte_range(),
             line: pos.row + 1,

@@ -17,11 +17,11 @@ impl LanguageSpecEngine {
         let (rule_id, message) = match name.as_str() {
             "error" => (
                 "ERTXT",
-                "Specify an error message with the message identifier",
+                "Specify an error message with the message identifier.",
             ),
             "warning" => (
                 "WTXT",
-                "Specify a warning message with the message identifier",
+                "Specify a warning message with the message identifier.",
             ),
             _ => return,
         };

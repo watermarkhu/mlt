@@ -32,7 +32,7 @@ impl BugsEngine {
             let pos = node.start_position();
             vec![Diagnostic {
                 rule_id: "STRCMPCSTR",
-                message: "strcmp used with single-character string; consider using '==' for char comparison".to_string(),
+                message: "'strcmp' always returns false for string elements of a cell array. Use [\"str1\", \"str2\"] instead of {\"str1\", \"str2\"}.".to_string(),
                 severity: Severity::Error,
                 byte_range: node.start_byte()..node.end_byte(),
                 line: pos.row + 1,

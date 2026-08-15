@@ -24,7 +24,7 @@ impl LanguageSpecEngine {
                 diagnostics.push(Diagnostic {
                     rule_id: "FCONF",
                     message: format!(
-                        "Local function '{}' has the same name as the file",
+                        "Unable to define local function {} because it has the same name as the file.",
                         func.name
                     ),
                     severity: Severity::Error,

@@ -24,8 +24,8 @@ impl LanguageSpecEngine {
                         diagnostics.push(Diagnostic {
                             rule_id: "MCSGP",
                             message: format!(
-                                "Set/get method '{}' refers to non-existent property '{}'",
-                                func.name, prop_name
+                                "The method {} does not refer to a valid property name.",
+                                func.name
                             ),
                             severity: Severity::Error,
                             byte_range: func.byte_range.clone(),

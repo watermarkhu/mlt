@@ -40,16 +40,9 @@ impl LanguageSpecEngine {
             match child.kind() {
                 "global_operator" | "persistent_operator" => {
                     let pos = child.start_position();
-                    let keyword = if child.kind() == "global_operator" {
-                        "global"
-                    } else {
-                        "persistent"
-                    };
                     diagnostics.push(Diagnostic {
                         rule_id: "GPNES",
-                        message: format!(
-                            "{keyword} declaration is not allowed in a nested function"
-                        ),
+                        message: "A GLOBAL or PERSISTENT declaration must be in the outermost function where it is used.".to_string(),
                         severity: Severity::Error,
                         byte_range: child.start_byte()..child.end_byte(),
                         line: pos.row + 1,

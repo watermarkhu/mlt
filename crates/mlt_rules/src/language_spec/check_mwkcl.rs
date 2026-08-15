@@ -20,10 +20,9 @@ impl LanguageSpecEngine {
                 if prop.type_constraint.is_none() {
                     diagnostics.push(Diagnostic {
                         rule_id: "MWKCL",
-                        message: format!(
-                            "A WeakHandle property must restrict its type using a class validation: '{}'",
-                            prop.name
-                        ),
+                        message:
+                            "A WeakHandle property must restrict its type using a class validation."
+                                .to_string(),
                         severity: Severity::Error,
                         byte_range: prop.byte_range.clone(),
                         line: prop.line,

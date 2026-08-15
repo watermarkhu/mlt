@@ -30,7 +30,7 @@ impl SyntaxErrorsEngine {
                     .unwrap_or("(unknown)");
                 diagnostics.push(Diagnostic {
                     rule_id: "MCPLD",
-                    message: format!("Invalid property syntax at {name}"),
+                    message: format!("Invalid property syntax at {name}."),
                     severity: Severity::Error,
                     byte_range: start..end,
                     line: pos.row + 1,
@@ -43,7 +43,7 @@ impl SyntaxErrorsEngine {
             if self.is_check_enabled("SYNEND") && Self::has_descendant_kind(node, "end_keyword") {
                 diagnostics.push(Diagnostic {
                     rule_id: "SYNEND",
-                    message: "Invalid use for END operator".to_string(),
+                    message: "Invalid use for END operator.".to_string(),
                     severity: Severity::Error,
                     byte_range: start..end,
                     line: pos.row + 1,

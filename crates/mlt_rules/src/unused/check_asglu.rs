@@ -57,9 +57,7 @@ impl UnusedEngine {
 
                         diagnostics.push(Diagnostic {
                             rule_id: "ASGLU",
-                            message: format!(
-                                "Value assigned to '{name}' is immediately overwritten"
-                            ),
+                            message: "Value assigned to variable might be unused. Consider replacing the variable with ~ instead.".to_string(),
                             severity: Severity::Warning,
                             byte_range: first_def.byte_range.clone(),
                             line: first_def.line,

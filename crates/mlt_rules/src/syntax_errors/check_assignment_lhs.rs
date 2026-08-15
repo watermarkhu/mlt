@@ -34,7 +34,7 @@ impl SyntaxErrorsEngine {
                 if self.is_check_enabled("UNSET") && OPERATOR_LHS_KINDS.contains(&lhs.kind()) {
                     diagnostics.push(Diagnostic {
                         rule_id: "UNSET",
-                        message: "Invalid use of operator on the left side of an assignment"
+                        message: "Invalid use of VAR_OPERATOR on the left side of an assignment."
                             .to_string(),
                         severity: Severity::Error,
                         byte_range: lhs.byte_range(),
@@ -51,7 +51,7 @@ impl SyntaxErrorsEngine {
                         diagnostics.push(Diagnostic {
                             rule_id: "LHROW",
                             message:
-                                "The left side of an assignment cannot have multiple rows (';')"
+                                "The left side of an assignment cannot have multiple rows (';')."
                                     .to_string(),
                             severity: Severity::Error,
                             byte_range: lhs.byte_range(),
@@ -75,8 +75,9 @@ impl SyntaxErrorsEngine {
                         let pos = prev.start_position();
                         diagnostics.push(Diagnostic {
                             rule_id: "UNSET",
-                            message: "Invalid use of operator on the left side of an assignment"
-                                .to_string(),
+                            message:
+                                "Invalid use of VAR_OPERATOR on the left side of an assignment."
+                                    .to_string(),
                             severity: Severity::Error,
                             byte_range: prev.byte_range(),
                             line: pos.row + 1,

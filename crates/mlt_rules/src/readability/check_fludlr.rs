@@ -72,7 +72,7 @@ impl ReadabilityEngine {
 
         results.push(self.diag(
             "FLUDLR",
-            "Use 'rot90(x, 2)' instead of 'flipud(fliplr(x))' or 'fliplr(flipud(x))'",
+            "For readability, consider using rot90(x,2) instead of flipud(fliplr(x)) or fliplr(flipud(x)).",
             node,
             Some(Fix::new(
                 node.start_byte()..node.end_byte(),

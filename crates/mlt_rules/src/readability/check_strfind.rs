@@ -19,7 +19,7 @@ impl ReadabilityEngine {
 
         results.push(self.diag(
             "STRCLFH",
-            "Consider using 'contains' instead of 'strfind' for presence checks",
+            "For readability, use '~contains(str1, str2)' instead of 'cellfun(@isempty, strfind(str1, str2))'.",
             node,
             None,
         ));

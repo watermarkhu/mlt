@@ -24,9 +24,8 @@ impl UnusedEngine {
                 if !scope.is_used(name) {
                     diagnostics.push(Diagnostic {
                         rule_id: "PREALL",
-                        message: format!(
-                            "Loop variable '{name}' is preallocated but never used in the loop body"
-                        ),
+                        message: "The preallocated value assigned to variable might be unused."
+                            .to_string(),
                         severity: Severity::Warning,
                         byte_range: def.byte_range.clone(),
                         line: def.line,

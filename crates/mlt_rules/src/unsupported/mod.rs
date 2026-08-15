@@ -96,56 +96,56 @@ struct CheckMeta {
 const CHECKS: &[CheckMeta] = &[
     CheckMeta {
         id: "MCADE",
-        description: "ADE (Application Deployment Environment) function is no longer supported",
+        description: "Using Description as an attribute is unsupported and might have been changed without notice or might be removed without notice. There is no simple replacement for this.",
     },
     CheckMeta {
         id: "AWTIUD",
-        description: "Await syntax is not supported in this context",
+        description: "'awtinvoke' is unsupported and might have been changed without notice or might be removed without notice. With appropriate code changes, use javaMethodEDT instead.",
     },
     CheckMeta {
         id: "AXCHUD",
-        description: "ActiveX/COM automation is deprecated; use modern alternatives",
+        description: "'axescheck' is unsupported and might have been changed without notice or might be removed without notice. There is no simple replacement for this.",
     },
     CheckMeta {
         id: "FEATUD",
-        description: "'feature' is an undocumented internal function; avoid in production code",
+        description: "'feature' and flags passed to it are unsupported and might have been changed without notice or might be removed without notice. There is no simple replacement for this.",
     },
     CheckMeta {
         id: "FNDPUD",
-        description: "'findprop' is deprecated; use 'findobj' or property access instead",
+        description: "'findpackage' is unsupported and might have been changed without notice or might be removed without notice. There is no simple replacement for this.",
     },
     CheckMeta {
         id: "HGCNUD",
-        description: "Handle Graphics container object pattern is deprecated",
+        description: "'hgconvertunits' is unsupported and might have been changed without notice or might be removed without notice. There is no simple replacement for this.",
     },
     CheckMeta {
         id: "IMPKG",
-        description: "Import package syntax is not supported in this context",
+        description: "Functions in internal.matlab namespace are unsupported and might have been changed without notice or might be removed without notice. There is no simple replacement for this.",
     },
     CheckMeta {
         id: "ISMBUD",
-        description: "'isMember' (camelCase) is deprecated; use 'ismember' (lowercase)",
+        description: "'ismembc' is unsupported and might have been changed without notice or might be removed without notice. There is no simple replacement for this.",
     },
     CheckMeta {
         id: "MIPKG",
         description:
-            "'meta.package' is an internal API; use 'what' or package-qualified names instead",
+            "Functions in MATLAB's internal namespaces are unsupported and might have been changed without notice or might be removed without notice. There is no simple replacement for this.",
     },
     CheckMeta {
         id: "SEPTUD",
-        description: "'serial' is deprecated; use 'serialport' instead",
+        description: "'setptr' is unsupported and might have been changed without notice or might be removed without notice. There is no simple replacement for this.",
     },
     CheckMeta {
         id: "SYDEUD",
-        description: "System.Data .NET interop is platform-specific and may not be available",
+        description: "'system_dependent' is unsupported and might have been changed without notice or might be removed without notice. There is no simple replacement for this.",
     },
     CheckMeta {
         id: "UIRSUD",
-        description: "'uiresume' used outside of a figure callback context",
+        description: "'uirestore' is unsupported and might have been changed without notice or might be removed without notice. There is no simple replacement for this.",
     },
     CheckMeta {
         id: "UISUUD",
-        description: "Deprecated UI setup pattern; use modern App Designer patterns",
+        description: "'uisuspend' is unsupported and might have been changed without notice or might be removed without notice. There is no simple replacement for this.",
     },
 ];
 

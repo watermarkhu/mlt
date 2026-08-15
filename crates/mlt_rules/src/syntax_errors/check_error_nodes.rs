@@ -47,7 +47,7 @@ impl SyntaxErrorsEngine {
                     let pos = last.start_position();
                     diagnostics.push(Diagnostic {
                         rule_id: "EOFMI",
-                        message: "File ends with an incomplete or erroneous construct".to_string(),
+                        message: "Invalid syntax at end of file. File is incomplete.".to_string(),
                         severity: Severity::Error,
                         byte_range: start..end,
                         line: pos.row + 1,
@@ -118,7 +118,8 @@ impl SyntaxErrorsEngine {
                 } else {
                     diagnostics.push(Diagnostic {
                         rule_id: "ENDCT",
-                        message: "Possible missing 'end' keyword".to_string(),
+                        message: "An END might be missing, possibly matching VAR_RESERVED_WORD."
+                            .to_string(),
                         severity: Severity::Error,
                         byte_range: start..end,
                         line: pos.row + 1,
@@ -129,7 +130,8 @@ impl SyntaxErrorsEngine {
             } else if self.is_check_enabled("ENDCT") && Self::looks_like_missing_end(text, &node) {
                 diagnostics.push(Diagnostic {
                     rule_id: "ENDCT",
-                    message: "Possible missing 'end' keyword".to_string(),
+                    message: "An END might be missing, possibly matching VAR_RESERVED_WORD."
+                        .to_string(),
                     severity: Severity::Error,
                     byte_range: start..end,
                     line: pos.row + 1,
@@ -146,7 +148,7 @@ impl SyntaxErrorsEngine {
             {
                 diagnostics.push(Diagnostic {
                     rule_id: "FVSYN",
-                    message: "Invalid function argument syntax".to_string(),
+                    message: "Invalid function argument syntax at VAR_RESERVED_WORD.".to_string(),
                     severity: Severity::Error,
                     byte_range: start..end,
                     line: pos.row + 1,
@@ -160,9 +162,10 @@ impl SyntaxErrorsEngine {
             {
                 let snippet: String = text.chars().take(40).collect();
                 let msg = if snippet.is_empty() {
-                    "Syntax error".to_string()
+                    "Parse error at VAR_RESERVED_WORD: usage might be invalid MATLAB syntax."
+                        .to_string()
                 } else {
-                    format!("Syntax error near '{snippet}'")
+                    format!("Parse error at {snippet}: usage might be invalid MATLAB syntax.")
                 };
                 diagnostics.push(Diagnostic {
                     rule_id: "SYNER",
@@ -230,7 +233,10 @@ impl SyntaxErrorsEngine {
                 let pos = node.start_position();
                 diagnostics.push(Diagnostic {
                     rule_id: "SYNER",
-                    message: format!("Missing expected '{}'", node.kind()),
+                    message: format!(
+                        "Parse error at {}: usage might be invalid MATLAB syntax.",
+                        node.kind()
+                    ),
                     severity: Severity::Error,
                     byte_range: start..end,
                     line: pos.row + 1,

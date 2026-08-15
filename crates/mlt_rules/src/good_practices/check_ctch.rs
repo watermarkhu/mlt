@@ -30,7 +30,8 @@ impl GoodPracticesEngine {
         let keyword_len = text.find(|c: char| c.is_whitespace()).unwrap_or(5);
         vec![Diagnostic {
             rule_id: "CTCH",
-            message: "Catch block is empty; errors will be silently swallowed".to_string(),
+            message: "Best practice is for CATCH to be followed by an identifier that gets the error information."
+                .to_string(),
             severity: Severity::Warning,
             byte_range: node.start_byte()..node.start_byte() + keyword_len,
             line: pos.row + 1,

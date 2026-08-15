@@ -31,7 +31,8 @@ impl FormattingEngine {
                     let pos = child.start_position();
                     diagnostics.push(Diagnostic {
                         rule_id: "NCOMMA",
-                        message: "Use comma to separate input arguments".to_string(),
+                        message: "Best practice is to separate output variables with commas."
+                            .to_string(),
                         severity: Severity::Info,
                         byte_range: child.start_byte()..child.start_byte(),
                         line: pos.row + 1,
@@ -55,7 +56,8 @@ impl FormattingEngine {
                     let insert_pos = prev.end_byte();
                     diagnostics.push(Diagnostic {
                         rule_id: "NCOMMA",
-                        message: "Use comma to separate input arguments".to_string(),
+                        message: "Best practice is to separate output variables with commas."
+                            .to_string(),
                         severity: Severity::Info,
                         byte_range: prev.end_byte()..child.start_byte(),
                         line: pos.row + 1,

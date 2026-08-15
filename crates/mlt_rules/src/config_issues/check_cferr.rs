@@ -32,9 +32,7 @@ impl ConfigIssuesEngine {
                 let start = node.start_position();
                 return vec![Diagnostic {
                     rule_id: "CFERR",
-                    message: format!(
-                        "Configuration function '{func_name}' called without required arguments"
-                    ),
+                    message: "Cannot open or read the Code Analyzer settings from file VAR_FILE. Using default settings instead.".to_string(),
                     severity: Severity::Error,
                     byte_range: node.start_byte()..node.end_byte(),
                     line: start.row + 1,
@@ -49,9 +47,7 @@ impl ConfigIssuesEngine {
             let start = node.start_position();
             return vec![Diagnostic {
                 rule_id: "CFERR",
-                message: format!(
-                    "Configuration function '{func_name}' requires at least one argument"
-                ),
+                message: "Cannot open or read the Code Analyzer settings from file VAR_FILE. Using default settings instead.".to_string(),
                 severity: Severity::Error,
                 byte_range: node.start_byte()..node.end_byte(),
                 line: start.row + 1,

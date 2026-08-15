@@ -44,9 +44,7 @@ impl SyntaxErrorsEngine {
         if self.is_check_enabled("CLTWO") && class_count > 1 {
             diagnostics.push(Diagnostic {
                 rule_id: "CLTWO",
-                message: format!(
-                    "File contains {class_count} class definitions; only one is allowed per file"
-                ),
+                message: "Only one class definition is allowed per file, and it must come at the head of the file.".to_string(),
                 severity: Severity::Error,
                 byte_range: 0..source.len().min(1),
                 line: 1,
@@ -63,8 +61,7 @@ impl SyntaxErrorsEngine {
         {
             diagnostics.push(Diagnostic {
                 rule_id: "CLIS",
-                message: "Class definition in a script file; statements exist outside the class"
-                    .to_string(),
+                message: "Defining a class in script is not allowed.".to_string(),
                 severity: Severity::Error,
                 byte_range: 0..source.len().min(1),
                 line: 1,
@@ -81,8 +78,7 @@ impl SyntaxErrorsEngine {
         {
             diagnostics.push(Diagnostic {
                 rule_id: "SOFOC",
-                message: "Statements outside class definition in a class file are not allowed"
-                    .to_string(),
+                message: "Statement outside a class definition is not allowed.".to_string(),
                 severity: Severity::Error,
                 byte_range: 0..source.len().min(1),
                 line: 1,
@@ -105,8 +101,7 @@ impl SyntaxErrorsEngine {
             if only_empty {
                 diagnostics.push(Diagnostic {
                     rule_id: "SEMFU",
-                    message: "File contains only empty statements (semicolons and whitespace)"
-                        .to_string(),
+                    message: "Script file must contain executable code. Remove empty statements to make this file a function file.".to_string(),
                     severity: Severity::Error,
                     byte_range: 0..source.len().min(1),
                     line: 1,

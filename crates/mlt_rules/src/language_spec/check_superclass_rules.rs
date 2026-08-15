@@ -35,7 +35,7 @@ impl LanguageSpecEngine {
                         let pos = call_node.start_position();
                         diagnostics.push(Diagnostic {
                             rule_id: "MCCMC",
-                            message: "Constructor for superclass can only be called once"
+                            message: "Constructor for superclass can only be called once."
                                 .to_string(),
                             severity: Severity::Error,
                             byte_range: call_node.start_byte()..call_node.end_byte(),
@@ -51,7 +51,7 @@ impl LanguageSpecEngine {
                         diagnostics.push(Diagnostic {
                             rule_id: "MCCBS",
                             message: format!(
-                                "A superclass constructor is being called, but '{super_name}' is not a declared superclass name"
+                                "A superclass constructor is being called, but {super_name} is not a declared superclass name."
                             ),
                             severity: Severity::Error,
                             byte_range: call_node.start_byte()..call_node.end_byte(),
@@ -67,7 +67,7 @@ impl LanguageSpecEngine {
                         diagnostics.push(Diagnostic {
                             rule_id: "MCSCT",
                             message:
-                                "Superclass constructor call must not be conditionalized or be part of another expression"
+                                "Superclass constructor call must not be conditionalized or be part of another expression."
                                     .to_string(),
                             severity: Severity::Error,
                             byte_range: call_node.start_byte()..call_node.end_byte(),
@@ -86,7 +86,7 @@ impl LanguageSpecEngine {
                                 let pos = call_node.start_position();
                                 diagnostics.push(Diagnostic {
                                     rule_id: "MCSMO",
-                                    message: "Returning multiple outputs from a superclass object initialization is not supported"
+                                    message: "Returning multiple outputs from a superclass object initialization is not supported."
                                         .to_string(),
                                     severity: Severity::Error,
                                     byte_range: call_node.start_byte()..call_node.end_byte(),
@@ -105,7 +105,7 @@ impl LanguageSpecEngine {
                                 diagnostics.push(Diagnostic {
                                     rule_id: "MCSCF",
                                     message:
-                                        "A superclass constructor must be assigned to the first constructor output argument"
+                                        "A superclass constructor must be assigned to the first constructor output argument."
                                             .to_string(),
                                     severity: Severity::Error,
                                     byte_range: call_node.start_byte()..call_node.end_byte(),
@@ -121,7 +121,7 @@ impl LanguageSpecEngine {
                                 diagnostics.push(Diagnostic {
                                     rule_id: "MCSCF",
                                     message:
-                                        "A superclass constructor must be assigned to the first constructor output argument"
+                                        "A superclass constructor must be assigned to the first constructor output argument."
                                             .to_string(),
                                     severity: Severity::Error,
                                     byte_range: call_node.start_byte()..call_node.end_byte(),
@@ -139,7 +139,7 @@ impl LanguageSpecEngine {
                             let pos = call_node.start_position();
                             diagnostics.push(Diagnostic {
                                 rule_id: "MCSCO",
-                                message: "A superclass constructor must be called using the first constructor output argument"
+                                message: "A superclass constructor must be called using the first constructor output argument."
                                     .to_string(),
                                 severity: Severity::Error,
                                 byte_range: call_node.start_byte()..call_node.end_byte(),
@@ -152,9 +152,7 @@ impl LanguageSpecEngine {
                         let pos = call_node.start_position();
                         diagnostics.push(Diagnostic {
                             rule_id: "MCSCM",
-                            message:
-                                "To call a superclass method, the method name must match the subclass method name"
-                                    .to_string(),
+                            message: format!("To call a superclass method, the method name {} must match the name of the subclass method {}.", caller, mname),
                             severity: Severity::Error,
                             byte_range: call_node.start_byte()..call_node.end_byte(),
                             line: pos.row + 1,
@@ -168,8 +166,7 @@ impl LanguageSpecEngine {
                         let pos = call_node.start_position();
                         diagnostics.push(Diagnostic {
                             rule_id: "MCSCC",
-                            message: "To call the superclass constructor, the subclass constructor name must match the subclass name"
-                                .to_string(),
+                            message: format!("To call the superclass constructor, the name of the subclass constructor {} must match the name of the subclass {}.", caller, class.name),
                             severity: Severity::Error,
                             byte_range: call_node.start_byte()..call_node.end_byte(),
                             line: pos.row + 1,
@@ -181,9 +178,7 @@ impl LanguageSpecEngine {
                     let pos = call_node.start_position();
                     diagnostics.push(Diagnostic {
                         rule_id: "MCSCM",
-                        message:
-                            "To call a superclass method, the method name must match the subclass method name"
-                                .to_string(),
+                        message: format!("To call a superclass method, the method name {} must match the name of the subclass method {}.", caller, mname),
                         severity: Severity::Error,
                         byte_range: call_node.start_byte()..call_node.end_byte(),
                         line: pos.row + 1,
@@ -233,7 +228,7 @@ impl LanguageSpecEngine {
             diagnostics.push(Diagnostic {
                 rule_id: "MCCBU",
                 message:
-                    "This superclass constructor is called after a use of the constructed object"
+                    "This superclass constructor is called after a use of the constructed object."
                         .to_string(),
                 severity: Severity::Error,
                 byte_range: call_node.start_byte()..call_node.end_byte(),

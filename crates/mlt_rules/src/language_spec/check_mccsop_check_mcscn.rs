@@ -80,12 +80,12 @@ impl LanguageSpecEngine {
                     let (rule_id, message) = if is_constructor {
                         (
                             "MCCSOP",
-                            format!("Unable to modify Constant property '{prop_name}'"),
+                            format!("Unable to modify Constant property {prop_name}."),
                         )
                     } else {
                         (
                             "MCSCN",
-                            format!("Method '{method_name}' tries to set a constant property"),
+                            format!("Method {method_name} tries to set a constant property."),
                         )
                     };
                     diagnostics.push(Diagnostic {

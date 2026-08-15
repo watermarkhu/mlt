@@ -40,7 +40,7 @@ impl LanguageSpecEngine {
             let pos = node.start_position();
             diagnostics.push(Diagnostic {
                 rule_id: "SPDEC3",
-                message: "An SPMD block can only specify a lower and upper bound for the number of workers"
+                message: "An SPMD block can only specify a lower and upper bound for the number of workers to use."
                     .to_string(),
                 severity: Severity::Error,
                 byte_range: node.start_byte()..node.end_byte(),
@@ -57,7 +57,7 @@ impl LanguageSpecEngine {
                 let pos = node.start_position();
                 diagnostics.push(Diagnostic {
                     rule_id: "SPDEC",
-                    message: "The bounds on the number of workers an SPMD block can use must be a nonnegative integer"
+                    message: "The bounds on the number of workers an SPMD block can use must be a nonnegative integer."
                         .to_string(),
                     severity: Severity::Error,
                     byte_range: node.start_byte()..node.end_byte(),

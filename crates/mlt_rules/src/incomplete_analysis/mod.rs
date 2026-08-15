@@ -347,7 +347,8 @@ impl Rule for IncompleteAnalysisEngine {
         // -- Checks that don't need tree traversal --
 
         // MBIG: File too large.
-        self.check_file_size(source, &mut diagnostics);
+        let file_name = ctx.file_path.display().to_string();
+        self.check_file_size(source, &file_name, &mut diagnostics);
 
         // MDOTM: Invalid file extension (not .m).
         self.check_extension(ctx, source, &mut diagnostics);

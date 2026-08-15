@@ -42,7 +42,7 @@ impl FormattingEngine {
                     let pos = child.start_position();
                     diagnostics.push(Diagnostic {
                         rule_id: "NOCOMMA",
-                        message: "Use commas to separate elements in a row".to_string(),
+                        message: "Extra comma is unnecessary.".to_string(),
                         severity: Severity::Info,
                         byte_range: child.start_byte()..child.start_byte(),
                         line: pos.row + 1,
@@ -72,7 +72,7 @@ impl FormattingEngine {
                     let insert_pos = prev.end_byte();
                     diagnostics.push(Diagnostic {
                         rule_id: "NOCOMMA",
-                        message: "Use commas to separate elements in a row".to_string(),
+                        message: "Extra comma is unnecessary.".to_string(),
                         severity: Severity::Info,
                         byte_range: prev.end_byte()..child.start_byte(),
                         line: pos.row + 1,

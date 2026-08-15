@@ -19,8 +19,9 @@ impl GoodPracticesEngine {
         let pos = node.start_position();
         vec![Diagnostic {
             rule_id: "STRNU",
-            message: "Use str2double() instead of str2num(); str2num uses eval internally"
-                .to_string(),
+            message:
+                "This variable, apparently a structure, is changed but the value might be unused."
+                    .to_string(),
             severity: Severity::Warning,
             byte_range: node.start_byte()..node.end_byte(),
             line: pos.row + 1,

@@ -35,10 +35,7 @@ impl UnsetVariablesEngine {
             if !has_assignment && !self.has_non_output_def(scope, &def.name) {
                 diagnostics.push(Diagnostic {
                     rule_id: "STOUT",
-                    message: format!(
-                        "Output variable '{}' might not be assigned in function '{}'",
-                        def.name, scope.name
-                    ),
+                    message: "Function return value might be unset.".to_string(),
                     severity: Severity::Warning,
                     byte_range: def.byte_range.clone(),
                     line: def.line,
@@ -79,9 +76,7 @@ end
 ";
         let diags = lint_file(&*engine(), source);
         assert!(
-            diags
-                .iter()
-                .any(|d| d.rule_id == "STOUT" && d.message.contains("'y'")),
+            diags.iter().any(|d| d.rule_id == "STOUT"),
             "expected STOUT for 'y', got: {diags:?}"
         );
     }
@@ -95,9 +90,7 @@ end
 ";
         let diags = lint_file(&*engine(), source);
         assert!(
-            !diags
-                .iter()
-                .any(|d| d.rule_id == "STOUT" && d.message.contains("'y'")),
+            !diags.iter().any(|d| d.rule_id == "STOUT"),
             "should not fire STOUT when output is assigned"
         );
     }

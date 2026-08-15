@@ -19,7 +19,7 @@ impl GoodPracticesEngine {
                     diagnostics.push(Diagnostic {
                         rule_id: "FNDEF",
                         message: format!(
-                            "Local function '{}' defined before the main function",
+                            "Function name {} is known to MATLAB by its file name: VAR_FILE.",
                             local.name
                         ),
                         severity: Severity::Warning,

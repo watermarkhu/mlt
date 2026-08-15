@@ -38,7 +38,7 @@ impl SyntaxErrorsEngine {
             {
                 diagnostics.push(Diagnostic {
                     rule_id: "BADCH",
-                    message: format!("Invalid control character (0x{:02X}) in source", b),
+                    message: "Invalid text character(s).".to_string(),
                     severity: Severity::Error,
                     byte_range: i..i + 1,
                     line,
@@ -58,10 +58,7 @@ impl SyntaxErrorsEngine {
                         let ch_len = ch.len_utf8();
                         diagnostics.push(Diagnostic {
                             rule_id: "BADSP",
-                            message: format!(
-                                "Non-ASCII whitespace character (U+{:04X}) in source",
-                                ch as u32
-                            ),
+                            message: "Invalid text character(s). The text contains an unsupported non-ASCII whitespace character.".to_string(),
                             severity: Severity::Error,
                             byte_range: i..i + ch_len,
                             line,
@@ -83,7 +80,7 @@ impl SyntaxErrorsEngine {
             {
                 diagnostics.push(Diagnostic {
                     rule_id: "BADNE",
-                    message: "Use '~=' instead of '!=' for not-equal in MATLAB".to_string(),
+                    message: "'Not Equals' is spelled ~= in MATLAB, not !=.".to_string(),
                     severity: Severity::Error,
                     byte_range: i..i + 2,
                     line,
@@ -106,7 +103,7 @@ impl SyntaxErrorsEngine {
                 if !is_ellipsis {
                     diagnostics.push(Diagnostic {
                         rule_id: "BADOT",
-                        message: "Invalid '..' operator; did you mean '...' (line continuation)?"
+                        message: "Use of two dots (..) is an invalid MATLAB construction."
                             .to_string(),
                         severity: Severity::Error,
                         byte_range: i..i + 2,
@@ -132,7 +129,7 @@ impl SyntaxErrorsEngine {
             {
                 diagnostics.push(Diagnostic {
                     rule_id: "TWOCM",
-                    message: "Double comma ',,'; possible typo".to_string(),
+                    message: "A comma cannot immediately follow another comma.".to_string(),
                     severity: Severity::Error,
                     byte_range: i..i + 2,
                     line,

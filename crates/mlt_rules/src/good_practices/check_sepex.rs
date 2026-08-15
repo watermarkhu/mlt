@@ -20,7 +20,7 @@ impl GoodPracticesEngine {
                 for &(start, end) in &stmts[1..] {
                     diagnostics.push(Diagnostic {
                         rule_id: "SEPEX",
-                        message: "Multiple statements on one line; separate for clarity"
+                        message: "Consider using newline, semicolon, or comma before this statement for readability."
                             .to_string(),
                         severity: Severity::Info,
                         byte_range: start..end,

@@ -100,7 +100,10 @@ impl GoodPracticesEngine {
                         {
                             diagnostics.push(Diagnostic {
                                 rule_id: "ADPROP",
-                                message: format!("Use app.{} to refer to this property.", d.name),
+                                message: format!(
+                                    "{} is also the name of a property, which may be confusing. Use app.PropertyName syntax to reference the property, or change one of the names to improve readability.",
+                                    d.name
+                                ),
                                 severity: Severity::Warning,
                                 byte_range: d.byte_range.clone(),
                                 line: d.line,

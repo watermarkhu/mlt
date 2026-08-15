@@ -29,21 +29,21 @@ impl LanguageSpecEngine {
         };
         match name.as_str() {
             "load" => {
-                self.push_diag(node, "SPLD", "To avoid a transparency violation, assign the output of LOAD to a variable in SPMD blocks", diagnostics);
+                self.push_diag(node, "SPLD", "To avoid a transparency violation, assign the output of LOAD to a variable in SPMD blocks.", diagnostics);
             }
             "save" => {
                 if !arguments.iter().any(|a| a == "-fromstruct") {
                     self.push_diag(
                         node,
                         "SPSV",
-                        "SAVE cannot be called in an SPMD block without the '-fromstruct' option",
+                        "SAVE cannot be called in an SPMD block without the '-fromstruct' option.",
                         diagnostics,
                     );
                 }
             }
             "who" | "whos" => {
                 if !arguments.iter().any(|a| a == "-file") {
-                    self.push_diag(node, "SPWHOS", "Using \"who\" or \"whos\" without \"-file\" is invalid inside an SPMD block", diagnostics);
+                    self.push_diag(node, "SPWHOS", "Using \"who\" or \"whos\" without \"-file\" is invalid inside an SPMD block because it accesses the workspace in a non-transparent way.", diagnostics);
                 }
             }
             _ => {}

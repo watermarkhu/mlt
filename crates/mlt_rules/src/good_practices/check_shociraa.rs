@@ -19,13 +19,12 @@ impl GoodPracticesEngine {
         }
 
         let op_str = if text.contains("&&") { "&&" } else { "||" };
-        let replacement = if op_str == "&&" { "&" } else { "|" };
 
         let pos = node.start_position();
         vec![Diagnostic {
             rule_id: "SHOCIRAA",
             message: format!(
-                "Short-circuit operator '{op_str}' used in array context; use '{replacement}' instead"
+                "Using the {op_str} operator in the expression {op_str}(A {op_str} B) is probably unintended."
             ),
             severity: Severity::Warning,
             byte_range: node.start_byte()..node.end_byte(),

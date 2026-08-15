@@ -24,7 +24,7 @@ impl GoodPracticesEngine {
                 diagnostics.push(Diagnostic {
                     rule_id: "NOIN",
                     message: format!(
-                        "Function '{}' has input arguments but no 'arguments' validation block",
+                        "Method {} should either be a static method or have at least one input argument.",
                         func.name
                     ),
                     severity: Severity::Info,

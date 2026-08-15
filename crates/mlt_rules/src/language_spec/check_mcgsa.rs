@@ -33,7 +33,7 @@ impl LanguageSpecEngine {
                             diagnostics.push(Diagnostic {
                                 rule_id: "MCGSA",
                                 message: format!(
-                                    "Method '{}' tries to set or get an abstract property",
+                                    "Method {} tries to set or get an abstract property.",
                                     method.name
                                 ),
                                 severity: Severity::Error,

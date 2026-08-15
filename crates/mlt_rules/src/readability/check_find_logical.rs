@@ -30,7 +30,7 @@ impl ReadabilityEngine {
                 if grandparent.kind() == "function_call" {
                     results.push(self.diag(
                         "LOGL",
-                        "Use logical indexing 'x(condition)' instead of 'x(find(condition))'",
+                        "Use 'true' or 'false' instead of 'logical(1)' or 'logical(0)'.",
                         node,
                         None,
                     ));

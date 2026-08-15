@@ -38,7 +38,7 @@ impl GoodPracticesEngine {
         let pos = node.start_position();
         vec![Diagnostic {
             rule_id: "M3COL",
-            message: "Using three colons (a:b:c:d) in an expression is probably unintended"
+            message: "Using three colons (a:b:c:d) in an expression is probably unintended."
                 .to_string(),
             severity: Severity::Warning,
             byte_range: node.start_byte()..end_byte,

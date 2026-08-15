@@ -12,7 +12,7 @@ impl LanguageSpecEngine {
             if Self::block_has_access_conflict(&pb.attributes) {
                 diagnostics.push(Diagnostic {
                     rule_id: "MTAGS3",
-                    message: "Cannot use the Access attribute when using the SetAccess or GetAccess attribute"
+                    message: "Cannot use the Access attribute when using the SetAccess or GetAccess attribute."
                         .to_string(),
                     severity: Severity::Error,
                     byte_range: class.byte_range.clone(),
@@ -26,7 +26,7 @@ impl LanguageSpecEngine {
             if Self::block_has_access_conflict(&mb.attributes) {
                 diagnostics.push(Diagnostic {
                     rule_id: "MTAGS3",
-                    message: "Cannot use the Access attribute when using the SetAccess or GetAccess attribute"
+                    message: "Cannot use the Access attribute when using the SetAccess or GetAccess attribute."
                         .to_string(),
                     severity: Severity::Error,
                     byte_range: class.byte_range.clone(),

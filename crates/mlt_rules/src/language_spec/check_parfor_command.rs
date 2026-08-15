@@ -21,7 +21,7 @@ impl LanguageSpecEngine {
                     self.push_diag(
                         node,
                         "PFLD",
-                        "'load' must assign to an output variable in parfor loops",
+                        "'load' must assign to an output variable in parfor loops.",
                         diagnostics,
                     );
                 }
@@ -30,7 +30,7 @@ impl LanguageSpecEngine {
                         node,
                         "PFSV",
                         "SAVE cannot be called in a PARFOR loop without the '-fromstruct' \
-                         option",
+                         option.",
                         diagnostics,
                     );
                 }
@@ -38,7 +38,7 @@ impl LanguageSpecEngine {
                     self.push_diag(
                         node,
                         "PFNAIO",
-                        &format!("'{name}' requires a function argument in parfor loops"),
+                        "'nargin' and 'nargout' require a function argument in parfor loops.",
                         diagnostics,
                     );
                 }

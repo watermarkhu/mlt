@@ -442,7 +442,7 @@ impl GoodPracticesEngine {
         let pos = last_stmt.start_position();
         diagnostics.push(Diagnostic {
             rule_id: "WLAST",
-            message: "warning() is the last statement in this function; did you mean error()?"
+            message: "WARNING('') does not reset the warning state. Use LASTWARN('') instead."
                 .to_string(),
             severity: Severity::Warning,
             byte_range: last_stmt.start_byte()..last_stmt.end_byte(),
@@ -485,7 +485,7 @@ impl GoodPracticesEngine {
         vec![Diagnostic {
             rule_id: check_id,
             message: format!(
-                "{} output must be assigned back to the structure",
+                "{} output must be assigned back to the structure.",
                 func_name.to_uppercase()
             ),
             severity: Severity::Warning,
@@ -580,7 +580,7 @@ impl GoodPracticesEngine {
                                 diagnostics.push(Diagnostic {
                                     rule_id: "PFTUSW",
                                     message: format!(
-                                        "The temporary variable {name} might be used after the PARFOR loop on line {line}."
+                                        "The temporary variable {name} might be used after the PARFOR loop on line {line}. The value set on this line is not available after the loop."
                                     ),
                                     severity: Severity::Warning,
                                     byte_range: lhs_node.start_byte()..lhs_node.end_byte(),
@@ -605,7 +605,7 @@ impl GoodPracticesEngine {
                         diagnostics.push(Diagnostic {
                             rule_id: "PFUIXW",
                             message: format!(
-                                "The index variable {idx} might be used after the PARFOR loop on line {line}."
+                                "The index variable {idx} might be used after the PARFOR loop on line {line}. The value set on this line is not available after the loop."
                             ),
                             severity: Severity::Warning,
                             byte_range: target.start_byte()..target.end_byte(),
@@ -948,7 +948,7 @@ pub(crate) fn classify_eval_usage(
     {
         return (
             "EVLDOT",
-            "Avoid eval() for dynamic field access; use s.(fieldname) instead",
+            "'eval' is inefficient and makes code less clear. Use dynamic field names to access structure fields or object properties instead.",
         );
     }
 
@@ -958,7 +958,7 @@ pub(crate) fn classify_eval_usage(
     {
         return (
             "EVLSYS",
-            "Avoid eval() for system commands; use system() directly",
+            "'eval' is inefficient and makes code less clear. To make calls to the operating system use the system function instead.",
         );
     }
 
@@ -966,7 +966,7 @@ pub(crate) fn classify_eval_usage(
     if args_text.contains(" = ") && config.disabled_checks.iter().all(|c| c != "EVLEQ") {
         return (
             "EVLEQ",
-            "Avoid eval() for dynamic variable creation; use containers.Map or struct fields",
+            "'eval' is inefficient and makes code less clear. Assign to the variable directly.",
         );
     }
 
@@ -976,14 +976,14 @@ pub(crate) fn classify_eval_usage(
     {
         return (
             "EVLSEQVAR",
-            "Avoid eval() to create sequential variables; use cell arrays or struct fields",
+            "Using 'eval' to dynamically assign variables is not recommended.",
         );
     }
 
     // EVLCS: general eval usage (fallback)
     (
         "EVLCS",
-        "Avoid eval(); it is slow, hard to debug, and a security risk",
+        "'eval' is inefficient and makes code less clear. Call the statement directly.",
     )
 }
 
@@ -1062,9 +1062,12 @@ pub(crate) fn find_element_wise_boolean_in_condition(
                 || (text.contains('|') && !text.contains("||"));
             if has_element_wise {
                 let pos = child.start_position();
+                let op = if text.contains('&') { "&" } else { "|" };
                 diagnostics.push(Diagnostic {
                     rule_id: "ELARLOG",
-                    message: "Use short-circuit operators (&&, ||) instead of element-wise (&, |) in if/while conditions".to_string(),
+                    message: format!(
+                        "The {op} operator in the expression {op}(A {op} B) is unexpected. Should this be {op}(A) {op} B?"
+                    ),
                     severity: Severity::Warning,
                     byte_range: child.start_byte()..child.end_byte(),
                     line: pos.row + 1,
@@ -1173,7 +1176,7 @@ pub(crate) fn find_end_as_index(node: Node, diagnostics: &mut Vec<Diagnostic>) {
                             let pos = node.start_position();
                             diagnostics.push(Diagnostic {
                                 rule_id: "FNCOLND",
-                                message: "'end' used in multi-dimensional indexing; specify the dimension explicitly".to_string(),
+                                message: "Consider explicitly defining the array, and then using the END operator to index into it.".to_string(),
                                 severity: Severity::Warning,
                                 byte_range: node.start_byte()..node.end_byte(),
                                 line: pos.row + 1,

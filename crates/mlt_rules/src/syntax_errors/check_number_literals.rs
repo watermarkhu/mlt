@@ -28,7 +28,7 @@ impl SyntaxErrorsEngine {
                         {
                             diagnostics.push(Self::number_diagnostic(
                                     "BADHBH",
-                                    "Invalid digit in hexadecimal literal. Supported hex digits are 0-9 and A-F. Supported type suffixes are u8,u16,u32,u64 and s8,s16,s32,s64.",
+                                    "Invalid digit in hexadecimal literal. Supported hexadecimal digits are 0-9 and A-F. Supported type suffixes are u8, u16, u32, u64, and s8, s16, s32, s64.",
                                     number,
                                 ));
                         } else if (text.starts_with("0b") || text.starts_with("0B"))
@@ -37,7 +37,7 @@ impl SyntaxErrorsEngine {
                         {
                             diagnostics.push(Self::number_diagnostic(
                                     "BADHBB",
-                                    "Invalid digit in binary literal. Supported binary digits are 0 and 1. Supported type suffixes are u8,u16,u32,u64 and s8,s16,s32,s64.",
+                                    "Invalid digit in binary literal. Supported binary digits are 0 and 1. Supported type suffixes are u8, u16, u32, u64, and s8, s16, s32, s64.",
                                     number,
                                 ));
                         } else if self.is_check_enabled("BADFP")
@@ -45,7 +45,7 @@ impl SyntaxErrorsEngine {
                         {
                             diagnostics.push(Self::number_diagnostic(
                                 "BADFP",
-                                "Invalid floating-point constant",
+                                "Invalid floating-point constant.",
                                 number,
                             ));
                         }
@@ -62,12 +62,12 @@ impl SyntaxErrorsEngine {
                                 let (rule_id, message) = if is_hex {
                                     (
                                             "BADHBHT",
-                                            "Hexadecimal literal has too many digits for specified type suffix",
+                                            "Hexadecimal literal has too many digits for specified type suffix.",
                                         )
                                 } else {
                                     (
                                             "BADHBBT",
-                                            "Binary literal has too many digits for specified type suffix",
+                                            "Binary literal has too many digits for specified type suffix.",
                                         )
                                 };
                                 if self.is_check_enabled(rule_id) {
@@ -81,7 +81,7 @@ impl SyntaxErrorsEngine {
                         if is_hex && digit_count > 16 && self.is_check_enabled("HEXTOOLONG") {
                             diagnostics.push(Self::number_diagnostic(
                                 "HEXTOOLONG",
-                                "Hexadecimal literal has too many digits",
+                                "Hexadecimal literal has too many digits.",
                                 number,
                             ));
                         } else if !is_hex
@@ -90,7 +90,7 @@ impl SyntaxErrorsEngine {
                         {
                             diagnostics.push(Self::number_diagnostic(
                                 "BINARYTOOLONG",
-                                "Binary literal has too many digits",
+                                "Binary literal has too many digits.",
                                 number,
                             ));
                         }

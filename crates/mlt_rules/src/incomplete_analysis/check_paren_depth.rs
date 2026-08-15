@@ -13,11 +13,7 @@ impl IncompleteAnalysisEngine {
         if metrics.max_paren_depth > self.config.max_paren_depth {
             diagnostics.push(Diagnostic {
                 rule_id: "MDEEP",
-                message: format!(
-                    "Parentheses/brackets nested too deeply (depth {depth}; limit is {max})",
-                    depth = metrics.max_paren_depth,
-                    max = self.config.max_paren_depth
-                ),
+                message: "Parentheses, brackets, and braces are nested too deeply.".to_string(),
                 severity: Severity::Error,
                 byte_range: 0..source.len().min(1),
                 line: 1,

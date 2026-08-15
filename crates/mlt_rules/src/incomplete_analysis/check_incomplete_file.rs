@@ -13,9 +13,7 @@ impl IncompleteAnalysisEngine {
         if metrics.last_node_is_error {
             diagnostics.push(Diagnostic {
                 rule_id: "EOFMI",
-                message: "File appears incomplete; the parser found an error or \
-                          missing node at the end of the file"
-                    .to_string(),
+                message: "Invalid syntax at end of file. File is incomplete.".to_string(),
                 severity: Severity::Error,
                 byte_range: source.len().saturating_sub(1)..source.len(),
                 line: source.lines().count().max(1),

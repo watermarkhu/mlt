@@ -17,9 +17,7 @@ impl BugsEngine {
             let pos = node.start_position();
             vec![Diagnostic {
                 rule_id: "DEBUGFUN",
-                message: format!(
-                    "Debug function '{func_name}' found in code; remove before deployment"
-                ),
+                message: "Debug functions are intended to be used at the command line. At runtime, they will generate an error. Remove the debug function.".to_string(),
                 severity: Severity::Error,
                 byte_range: node.start_byte()..node.end_byte(),
                 line: pos.row + 1,

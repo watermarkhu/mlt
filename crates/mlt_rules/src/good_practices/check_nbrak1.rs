@@ -31,7 +31,7 @@ impl GoodPracticesEngine {
         let pos = node.start_position();
         vec![Diagnostic {
             rule_id: "NBRAK1",
-            message: "Unnecessary parentheses around scalar expression".to_string(),
+            message: "If you intend to specify expression precedence, use parentheses () instead of brackets [].".to_string(),
             severity: Severity::Info,
             byte_range: node.start_byte()..node.end_byte(),
             line: pos.row + 1,

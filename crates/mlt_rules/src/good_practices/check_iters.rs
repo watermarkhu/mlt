@@ -28,10 +28,8 @@ impl GoodPracticesEngine {
                     if parent_scope.is_defined(&def.name) {
                         diagnostics.push(Diagnostic {
                             rule_id: "ITERS",
-                            message: format!(
-                                "Loop variable '{}' shadows a variable in an outer scope",
-                                def.name
-                            ),
+                            message: "The Code Analyzer type analysis may be incorrect here."
+                                .to_string(),
                             severity: Severity::Warning,
                             byte_range: def.byte_range.clone(),
                             line: def.line,

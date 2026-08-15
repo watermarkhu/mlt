@@ -69,10 +69,7 @@ impl UnsetVariablesEngine {
                 if let Some(loc) = self.find_assignment_location(node, source, var_name) {
                     diagnostics.push(Diagnostic {
                         rule_id: "PSET",
-                        message: format!(
-                            "Variable '{}' is set in some branches but not all",
-                            var_name
-                        ),
+                        message: "Persistent variable is used, but might be unset.".to_string(),
                         severity: Severity::Warning,
                         byte_range: loc.0,
                         line: loc.1,
@@ -110,9 +107,7 @@ end
 ";
         let diags = lint_file(&*engine(), source);
         assert!(
-            diags
-                .iter()
-                .any(|d| d.rule_id == "PSET" && d.message.contains("'z'")),
+            diags.iter().any(|d| d.rule_id == "PSET"),
             "expected PSET for 'z' (set in if but not else), got: {diags:?}"
         );
     }
@@ -130,9 +125,7 @@ end
 ";
         let diags = lint_file(&*engine(), source);
         assert!(
-            !diags
-                .iter()
-                .any(|d| d.rule_id == "PSET" && d.message.contains("'z'")),
+            !diags.iter().any(|d| d.rule_id == "PSET"),
             "should not fire PSET when 'z' is set in all branches"
         );
     }

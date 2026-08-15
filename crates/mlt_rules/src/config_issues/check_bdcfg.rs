@@ -41,7 +41,8 @@ impl ConfigIssuesEngine {
                         diagnostics.push(Diagnostic {
                             rule_id: "BDCFG",
                             message: format!(
-                                "Invalid configuration parameter '{unquoted}' in {func_name} call"
+                                "Code Analyzer configuration file is invalid. Factory configuration is used instead. Run matlab.codeanalysis.validateConfiguration({}) to identify specific issues.",
+                                unquoted
                             ),
                             severity: Severity::Error,
                             byte_range: arg.start_byte()..arg.end_byte(),

@@ -330,15 +330,6 @@ pub(crate) fn line_start_byte(source: &str, byte_offset: usize) -> usize {
         .unwrap_or(0)
 }
 
-/// Get the human-readable keyword for an if-related clause kind.
-pub(crate) fn keyword_for_clause(kind: &str) -> &str {
-    match kind {
-        "elseif_clause" => "'elseif'",
-        "else_clause" => "'else'",
-        _ => kind,
-    }
-}
-
 /// Extract the text inside parentheses, stripping the outer `(` and `)`.
 pub(crate) fn inner_paren_text(paren_node: Node, source: &str) -> String {
     // Find the first and last non-paren children.

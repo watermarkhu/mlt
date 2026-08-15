@@ -44,7 +44,8 @@ impl FormattingEngine {
         let inner_text = &source[inner_node.start_byte()..inner_node.end_byte()];
         diagnostics.push(Diagnostic {
             rule_id: "NOPRT",
-            message: format!("Unnecessary parentheses around '{}'", inner_text),
+            message: "Add a semicolon after the statement to hide the output (in a function)."
+                .to_string(),
             severity: Severity::Info,
             byte_range: node.start_byte()..node.end_byte(),
             line: pos.row + 1,

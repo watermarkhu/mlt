@@ -164,168 +164,168 @@ struct CheckMeta {
 const CHECKS: &[CheckMeta] = &[
     CheckMeta {
         id: "AGROW",
-        description: "Variable appears to grow inside a loop; consider preallocating",
+        description: "Variable appears to change size on every loop iteration. Consider preallocating for speed.",
     },
     CheckMeta {
         id: "SAGROW",
-        description: "Struct field appears to grow inside a loop; consider preallocating",
+        description: "Variable appears to change size on every loop iteration (within a script). Consider preallocating for speed.",
     },
     CheckMeta {
         id: "AND2",
-        description: "Use '&&' (short-circuit) instead of '&' for scalar logical operations",
+        description: "When both arguments are numeric scalars, consider replacing & with && for performance.",
     },
     CheckMeta {
         id: "OR2",
-        description: "Use '||' (short-circuit) instead of '|' for scalar logical operations",
+        description: "When both arguments are numeric scalars, consider replacing | with || for performance.",
     },
     CheckMeta {
         id: "MINV",
         description:
-            "Use 'A\\b' instead of 'inv(A)*b' for better numerical stability and performance",
+            "INV(A)*b can be slower and less accurate than A\\b. Consider using A\\b for INV(A)*b or b/A for b*INV(A).",
     },
     CheckMeta {
         id: "GFLD",
-        description: "Use dynamic field names 's.(name)' instead of 'getfield'",
+        description: "Use dynamic fieldnames with structures instead of GETFIELD.",
     },
     CheckMeta {
         id: "SFLD",
-        description: "Use dynamic field names 's.(name) = val' instead of 'setfield'",
+        description: "Use dynamic fieldnames with structures instead of SETFIELD.",
     },
     CheckMeta {
         id: "EXIST",
-        description: "Use 'isfile' or 'isfolder' instead of 'exist(..., ''file'')'",
+        description: "EXIST with two input arguments is generally faster and clearer than with one input argument.",
     },
     CheckMeta {
         id: "PFBNS",
-        description: "Array initialized as empty then grown; preallocate for known size",
+        description: "The entire array or structure VAR_NAME is a broadcast variable. This might result in unnecessary communication overhead.",
     },
     CheckMeta {
         id: "CCAT",
-        description: "Use string concatenation or 'join' instead of repeated 'strcat'",
+        description: "For improved performance, concatenate cell arrays using [] instead of extracting cell arrays and reconstructing them.",
     },
     CheckMeta {
         id: "CCAT1",
-        description: "Consider using 'join' for cell array of character vector concatenation",
+        description: "{ A{I} } can usually be replaced by A(I) or A(I)', which can be much faster.",
     },
     CheckMeta {
         id: "ISMT",
-        description: "Use 'isempty(x)' instead of 'length(x)==0'",
+        description: "Using ISEMPTY is usually faster than comparing LENGTH to 0.",
     },
     CheckMeta {
         id: "ISCL",
-        description: "Use 'isscalar(x)' instead of 'length(x)==1'",
+        description: "To improve performance, use 'isscalar' instead of length comparison.",
     },
     CheckMeta {
         id: "ST2NM",
-        description: "Use 'str2double' instead of 'str2num' for performance and security",
+        description: "If you are operating on scalar values, consider using 'str2double' for faster performance.",
     },
     CheckMeta {
         id: "FLPST",
-        description: "Use 'flip' instead of 'flipud'/'fliplr' on vectors",
+        description: "For better performance in some cases, use SORT with the 'descend' option.",
     },
     CheckMeta {
         id: "MXFND",
-        description: "Use 'max(x,[],''all'')' instead of nested 'max(max(x))'",
+        description: "Use FIND with the 'first' or 'last' option.",
     },
     CheckMeta {
         id: "EFIND",
-        description: "Use logical indexing instead of 'find' when used as a subscript",
+        description: "To improve performance, replace ISEMPTY(FIND(X)) with ISEMPTY(FIND( X, 1 )).",
     },
     CheckMeta {
         id: "UDIM",
-        description: "Specify dimension argument in 'sum'/'max'/'min'/'prod'/'mean'",
+        description: "Instead of using transpose (' or .'), consider using a different DIMENSION input argument to VAR_NAME.",
     },
     CheckMeta {
         id: "FREAD",
-        description: "Specify precision argument in 'fread' for performance",
+        description: "FREAD(FID,...,'*char') is more efficient than CHAR(FREAD(...)).",
     },
     CheckMeta {
         id: "N2UNI",
-        description: "Consider using 'unique' instead of 'setdiff'+'union' pattern",
+        description: "Instead of using 'native2unicode' with 'fread', specify the character encoding scheme in the call to 'fopen'.",
     },
     CheckMeta {
         id: "TNMLP",
-        description: "Move 'tic'/'toc' outside loop body for accurate timing",
+        description: "Move the toolbox function out of the loop for better performance.",
     },
     CheckMeta {
         id: "LAXES",
-        description: "Cache axes handle returned by 'gca'/'gcf' instead of repeated calls",
+        description: "Calling AXES(h) in a loop can be slow. Consider moving the call to AXES outside the loop.",
     },
     CheckMeta {
         id: "MMTC",
-        description: "Use '.^2' instead of '.*' with the same operand",
+        description: "This use of MAT2CELL should probably be replaced by a simpler, faster call to NUM2CELL.",
     },
     CheckMeta {
         id: "MRPBW",
-        description: "Use 'imbinarize' instead of deprecated 'im2bw'",
+        description: "To use less memory, replace BWLABEL(bw) by LOGICAL(bw) in a call of REGIONPROPS.",
     },
     CheckMeta {
         id: "SPRIX",
-        description: "Avoid indexing sparse matrices with full logical arrays",
+        description: "This sparse indexing expression is likely to be slow.",
     },
     CheckMeta {
         id: "TRSRT",
-        description: "Use 'mink'/'maxk' instead of sorting then indexing",
+        description: "Transposing the input to 'sort' is often unnecessary.",
     },
     CheckMeta {
         id: "GRIDD",
-        description: "Consider using 'meshgrid' or 'ndgrid' for grid generation",
+        description: "Consider replacing GRIDDATA with SCATTEREDINTERPOLANT for better performance.",
     },
     CheckMeta {
         id: "CLALL",
-        description: "'clear all' also clears breakpoints; use 'clearvars' instead",
+        description: "Using 'clear' with the 'all' option usually decreases code performance and is often unnecessary.",
     },
     CheckMeta {
         id: "CLCLS",
-        description: "'clear classes' is a slow operation; avoid in production code",
+        description: "Using 'clear' with the 'classes' option will decrease code performance and is often unnecessary.",
     },
     CheckMeta {
         id: "CLFUNC",
-        description: "'clear functions' is a slow operation; avoid in production code",
+        description: "Using 'clear' with the 'functions' option usually decreases code performance and is often unnecessary.",
     },
     CheckMeta {
         id: "CLJAVA",
-        description: "'clear java' is a slow operation; avoid in production code",
+        description: "Using 'clear' with the 'java' option usually decreases code performance and is often unnecessary.",
     },
     CheckMeta {
         id: "CLMEX",
-        description: "'clear mex' clears all MEX files from memory; use specific names",
+        description: "Using 'clear' with the 'mex' option usually decreases code performance and is often unnecessary.",
     },
     CheckMeta {
         id: "CLEAR0ARGS",
-        description: "'clear' with no arguments clears all variables; use 'clearvars' instead",
+        description: "Avoid using 'clear' to clear more than necessary, this decreases code performance and is usually unnecessary.",
     },
     CheckMeta {
         id: "RGXP1",
-        description: "Regex pattern can be simplified for performance",
+        description: "Using REGEXP(str, pattern, 'ONCE') is faster in this case.",
     },
     CheckMeta {
         id: "RGXPI",
-        description: "Use 'regexpi' instead of 'regexp' with 'ignorecase' option",
+        description: "Using REGEXPI(str, pattern, 'ONCE') is faster in this case.",
     },
     CheckMeta {
         id: "TRIM1",
-        description: "Use 'strtrim' instead of 'deblank' for more thorough whitespace removal",
+        description: "Use STRTRIM(str) instead of nesting FLIPLR and DEBLANK calls.",
     },
     CheckMeta {
         id: "TRIM2",
-        description: "Use 'strip' instead of 'strtrim' for more flexible whitespace removal",
+        description: "Use STRTRIM(str) instead of DEBLANK(STRJUST(str,'left')).",
     },
     CheckMeta {
         id: "STTOK",
-        description: "Use 'split' instead of 'strtok' in a loop for better performance",
+        description: "Use one call to 'split' instead of calling 'strtok' in a loop.",
     },
     CheckMeta {
         id: "STNCI",
-        description: "Use 'strcmpi' instead of wrapping 'strcmp' with 'lower'",
+        description: "Use STRNCMPI(str1,str2) instead of using UPPER/LOWER in a call to STRNCMP.",
     },
     CheckMeta {
         id: "STCCS",
-        description: "Use 'contains' instead of '~isempty(strfind(...))'",
+        description: "It appears that STRCMPI/STRNCMPI can be replaced by a faster, case sensitive compare.",
     },
     CheckMeta {
         id: "FNDSB",
-        description: "Use 'contains' or 'matches' instead of 'findstr'",
+        description: "For array or cell array, performance can be improved using logical indexing instead of 'find'.",
     },
 ];
 
@@ -599,6 +599,25 @@ pub(crate) fn make_diag_with_fix(
         line: start.row + 1,
         column: start.column + 1,
         fix,
+    }
+}
+
+/// Build a diagnostic whose message embeds a runtime name in place of the
+/// `VAR_NAME` placeholder.
+pub(crate) fn make_diag_named(
+    check_id: &'static str,
+    node: tree_sitter::Node,
+    name: &str,
+) -> Diagnostic {
+    let start = node.start_position();
+    Diagnostic {
+        rule_id: check_id,
+        message: check_description(check_id).replace("VAR_NAME", name),
+        severity: Severity::Info,
+        byte_range: node.start_byte()..node.end_byte(),
+        line: start.row + 1,
+        column: start.column + 1,
+        fix: None,
     }
 }
 

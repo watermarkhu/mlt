@@ -24,7 +24,7 @@ impl GoodPracticesEngine {
         let pos = node.start_position();
         vec![Diagnostic {
             rule_id: "PFRNI",
-            message: "Do not specify the increment explicitly. The parfor loop can only use an increment of one.".to_string(),
+            message: "The parfor loop can only use a step size of 1 or -1.".to_string(),
             severity: Severity::Warning,
             byte_range: node.start_byte()..node.end_byte(),
             line: pos.row + 1,

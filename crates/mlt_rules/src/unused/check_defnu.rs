@@ -30,7 +30,7 @@ impl UnusedEngine {
             if !all_uses.contains(name.as_str()) {
                 diagnostics.push(Diagnostic {
                     rule_id: "DEFNU",
-                    message: format!("Local function '{name}' is defined but never called"),
+                    message: "Function might be unused.".to_string(),
                     severity: Severity::Warning,
                     byte_range: scope.byte_range.clone(),
                     line: scope.line,

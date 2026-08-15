@@ -17,7 +17,7 @@ impl GoodPracticesEngine {
         let pos = node.start_position();
         vec![Diagnostic {
             rule_id: "MEXCEP",
-            message: "Catch clause has no exception variable; use 'catch ME' to capture the error"
+            message: "To report an MException as a warning, use a format specifier to ensure the message is printed correctly. For example, 'warning(E.identifier, \"%s\", E.message)'."
                 .to_string(),
             severity: Severity::Warning,
             byte_range: node.start_byte()..node.start_byte() + "catch".len(),

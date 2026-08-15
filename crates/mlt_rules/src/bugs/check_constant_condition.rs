@@ -27,16 +27,9 @@ impl BugsEngine {
         let pos = cond.start_position();
 
         if is_always_true(cond_text) {
-            let stmt = if kind == "if_statement" {
-                "if"
-            } else {
-                "while"
-            };
             vec![Diagnostic {
                 rule_id: "CTRUE",
-                message: format!(
-                    "Condition is always true in '{stmt}' statement (condition: '{cond_text}')"
-                ),
+                message: "This logical comparison always returns true. Did you mean to use VAR_NAME to evaluate function argument: VAR_NAME(...VAR_NAME...)?".to_string(),
                 severity: Severity::Error,
                 byte_range: cond.start_byte()..cond.end_byte(),
                 line: pos.row + 1,
@@ -44,16 +37,9 @@ impl BugsEngine {
                 fix: None,
             }]
         } else if is_always_false(cond_text) {
-            let stmt = if kind == "if_statement" {
-                "if"
-            } else {
-                "while"
-            };
             vec![Diagnostic {
                 rule_id: "CFALSE",
-                message: format!(
-                    "Condition is always false in '{stmt}' statement (condition: '{cond_text}')"
-                ),
+                message: "This logical comparison always returns false. Did you mean to use VAR_NAME to evaluate function argument: VAR_NAME(...VAR_NAME...)?".to_string(),
                 severity: Severity::Error,
                 byte_range: cond.start_byte()..cond.end_byte(),
                 line: pos.row + 1,

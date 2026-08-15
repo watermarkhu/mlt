@@ -19,17 +19,17 @@ impl LanguageSpecEngine {
             "evalin" | "assignin" => {
                 let scope = first_string_argument(node, source);
                 if scope.as_deref() == Some("caller") {
-                    self.push_diag(node, "SPEVC", "EVALIN('caller') and ASSIGNIN('caller') are invalid inside of an SPMD block", diagnostics);
+                    self.push_diag(node, "SPEVC", "EVALIN('caller') and ASSIGNIN('caller') are invalid inside of an SPMD block.", diagnostics);
                 } else {
-                    self.push_diag(node, "SPBFN", "Use of this function is invalid inside an SPMD block because it accesses or modifies the workspace in a non-transparent way", diagnostics);
+                    self.push_diag(node, "SPBFN", "Use of this function is invalid inside an SPMD block because it accesses or modifies the workspace in a non-transparent way.", diagnostics);
                 }
             }
             "eval" => {
-                self.push_diag(node, "SPBFN", "Use of this function is invalid inside an SPMD block because it accesses or modifies the workspace in a non-transparent way", diagnostics);
+                self.push_diag(node, "SPBFN", "Use of this function is invalid inside an SPMD block because it accesses or modifies the workspace in a non-transparent way.", diagnostics);
             }
             "load" => {
                 if !is_assignment_rhs(node) {
-                    self.push_diag(node, "SPLD", "To avoid a transparency violation, assign the output of LOAD to a variable in SPMD blocks", diagnostics);
+                    self.push_diag(node, "SPLD", "To avoid a transparency violation, assign the output of LOAD to a variable in SPMD blocks.", diagnostics);
                 }
             }
             "save" => {
@@ -37,14 +37,14 @@ impl LanguageSpecEngine {
                     self.push_diag(
                         node,
                         "SPSV",
-                        "SAVE cannot be called in an SPMD block without the '-fromstruct' option",
+                        "SAVE cannot be called in an SPMD block without the '-fromstruct' option.",
                         diagnostics,
                     );
                 }
             }
             "who" | "whos" => {
                 if !has_string_argument(node, source, "-file") {
-                    self.push_diag(node, "SPWHOS", "Using \"who\" or \"whos\" without \"-file\" is invalid inside an SPMD block", diagnostics);
+                    self.push_diag(node, "SPWHOS", "Using \"who\" or \"whos\" without \"-file\" is invalid inside an SPMD block because it accesses the workspace in a non-transparent way.", diagnostics);
                 }
             }
             other => {
@@ -53,7 +53,7 @@ impl LanguageSpecEngine {
                         node,
                         "SPNF",
                         &format!(
-                            "The nested function {other} cannot be called from within an SPMD block"
+                            "The nested function {other} cannot be called from within an SPMD block."
                         ),
                         diagnostics,
                     );

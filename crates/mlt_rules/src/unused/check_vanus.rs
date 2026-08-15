@@ -20,7 +20,7 @@ impl UnusedEngine {
                 if !scope.is_used("ans") {
                     diagnostics.push(Diagnostic {
                         rule_id: "VANUS",
-                        message: "Value assigned to 'ans' is unused".to_string(),
+                        message: "Input argument 'varargin' might be unused.".to_string(),
                         severity: Severity::Info,
                         byte_range: def.byte_range.clone(),
                         line: def.line,

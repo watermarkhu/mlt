@@ -35,7 +35,8 @@ impl GoodPracticesEngine {
         let pos = node.start_position();
         vec![Diagnostic {
             rule_id: "UNRPWR",
-            message: "Power of a negative base may produce a complex result; use parentheses to clarify intent".to_string(),
+            message: "Consider using parentheses to explicitly specify operator precedence."
+                .to_string(),
             severity: Severity::Warning,
             byte_range: node.start_byte()..node.end_byte(),
             line: pos.row + 1,

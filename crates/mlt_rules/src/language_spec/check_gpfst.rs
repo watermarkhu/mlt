@@ -29,10 +29,8 @@ impl LanguageSpecEngine {
                     if first_use.byte_range.start < gp_def.byte_range.start {
                         diagnostics.push(Diagnostic {
                             rule_id: "GPFST",
-                            message: format!(
-                                "'{}' is used before its global/persistent declaration",
-                                gp_def.name
-                            ),
+                            message: "A GLOBAL or PERSISTENT declaration must precede first use."
+                                .to_string(),
                             severity: Severity::Error,
                             byte_range: gp_def.byte_range.clone(),
                             line: gp_def.line,
@@ -52,10 +50,8 @@ impl LanguageSpecEngine {
                     let _ = prior;
                     diagnostics.push(Diagnostic {
                         rule_id: "GPFST",
-                        message: format!(
-                            "'{}' is assigned before its global/persistent declaration",
-                            gp_def.name
-                        ),
+                        message: "A GLOBAL or PERSISTENT declaration must precede first use."
+                            .to_string(),
                         severity: Severity::Error,
                         byte_range: gp_def.byte_range.clone(),
                         line: gp_def.line,

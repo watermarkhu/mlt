@@ -25,31 +25,31 @@ use mlt_core::{Diagnostic, Severity};
 use tree_sitter::Node;
 
 /// PTCLO: changing axes LineStyleOrder/ColorOrder now affects existing charts.
-const MSG_PTCLO: &str = "Changing the axes LineStyleOrder or ColorOrder properties of an existing chart now affects the chart and may cause it to render differently.";
+const MSG_PTCLO: &str = "Changing the axes LineStyleOrder or ColorOrder properties of an existing chart now affects the chart immediately. To revert to the old behavior, set either the axes LineStyleOrderIndex or ColorOrderIndex to any value (such as its current value) before changing LineStyleOrder or ColorOrder.";
 
 /// PTDLO: multiple line styles in the axes LineStyleOrder render differently.
-const MSG_PTDLO: &str = "Specifying multiple line styles in the axes LineStyleOrder might result in charts that render differently.";
+const MSG_PTDLO: &str = "Specifying multiple line styles in the axes LineStyleOrder might result in charts that render differently than in the previous releases. MATLAB uses a new indexing scheme to select colors and line styles. To revert to the old behavior, set either the axes LineStyleOrderIndex or ColorOrderIndex to any value (such as its current value) and call 'hold on' before creating your chart.";
 
 /// SMTHG: 'GraphicsSmoothing' property removal notice.
-const MSG_SMTHG: &str = "'GraphicsSmoothing' property will be removed in a future release. Graphics smoothing behavior has been enabled by default since R2024a.";
+const MSG_SMTHG: &str = "'GraphicsSmoothing' property will be removed in a future release. Graphics smoothing behavior has been enabled by default. Editing this property does not have an effect.";
 
 /// SMTHGF: 'DefaultFigureGraphicsSmoothing' setting removal notice.
-const MSG_SMTHGF: &str = "'DefaultFigureGraphicsSmoothing' setting will be removed in a future release. Graphics smoothing behavior has been enabled by default since R2024a.";
+const MSG_SMTHGF: &str = "'DefaultFigureGraphicsSmoothing' setting will be removed in a future release. Graphics smoothing behavior has been enabled by default. Editing this setting does not have an effect.";
 
 /// SMTHF: 'FontSmoothing' property removal notice.
-const MSG_SMTHF: &str = "'FontSmoothing' property will be removed in a future release. Font smoothing behavior has been enabled by default since R2024a.";
+const MSG_SMTHF: &str = "'FontSmoothing' property will be removed in a future release. Font smoothing behavior has been enabled by default. Editing this property does not have an effect.";
 
 /// SMTHFA: 'DefaultAxesFontSmoothing' setting removal notice.
-const MSG_SMTHFA: &str = "'DefaultAxesFontSmoothing' setting will be removed in a future release. Font smoothing behavior has been enabled by default since R2024a.";
+const MSG_SMTHFA: &str = "'DefaultAxesFontSmoothing' setting will be removed in a future release. Font smoothing behavior has been enabled by default. Editing this setting does not have an effect.";
 
 /// SMTHFT: 'DefaultTextFontSmoothing' setting removal notice.
-const MSG_SMTHFT: &str = "'DefaultTextFontSmoothing' setting will be removed in a future release. Font smoothing behavior has been enabled by default since R2024a.";
+const MSG_SMTHFT: &str = "'DefaultTextFontSmoothing' setting will be removed in a future release. Font smoothing behavior has been enabled by default. Editing this setting does not have an effect.";
 
 /// INVHCRM: 'InvertHardCopy' property removal notice.
-const MSG_INVHCRM: &str = "The 'InvertHardCopy' property will be removed in a future release and currently has no effect.";
+const MSG_INVHCRM: &str = "The 'InvertHardCopy' property will be removed in a future release and currently has no effect. With appropriate code changes, set the 'Color' property of the figure before printing or call the 'exportgraphics' function to control the color for exporting.";
 
 /// DINVHCRM: 'defaultFigureInvertHardCopy' setting removal notice.
-const MSG_DINVHCRM: &str = "The 'defaultFigureInvertHardCopy' setting will be removed in a future release and currently has no effect.";
+const MSG_DINVHCRM: &str = "The 'defaultFigureInvertHardCopy' setting will be removed in a future release and currently has no effect. With appropriate code changes, set the 'Color' property of the figure before printing or call the 'exportgraphics' function to control the color for exporting.";
 
 /// Functions on which a `'LineStyleOrder'`/`'ColorOrder'` name-value argument
 /// triggers PTCLO: `set`, `axes`, and common chart-creation functions.

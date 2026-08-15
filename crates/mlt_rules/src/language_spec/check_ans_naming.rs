@@ -15,7 +15,7 @@ impl LanguageSpecEngine {
             if class.name == "ans" {
                 diagnostics.push(Diagnostic {
                     rule_id: "CLANS",
-                    message: "Class cannot be named 'ans'".to_string(),
+                    message: "Using ANS as a class name is not supported.".to_string(),
                     severity: Severity::Error,
                     byte_range: class.byte_range.clone(),
                     line: class.line,
@@ -30,7 +30,7 @@ impl LanguageSpecEngine {
             if func.name == "ans" {
                 diagnostics.push(Diagnostic {
                     rule_id: "FCNANS",
-                    message: "Function cannot be named 'ans'".to_string(),
+                    message: "Using ANS as a function name is not supported.".to_string(),
                     severity: Severity::Error,
                     byte_range: func.byte_range.clone(),
                     line: func.line,
@@ -53,7 +53,7 @@ impl LanguageSpecEngine {
                         // File is named 'ans' but function has a different name — still flag
                         diagnostics.push(Diagnostic {
                             rule_id: "FCNANS",
-                            message: "Function file cannot be named 'ans.m'".to_string(),
+                            message: "Using ANS as a function name is not supported.".to_string(),
                             severity: Severity::Error,
                             byte_range: main.byte_range.clone(),
                             line: main.line,

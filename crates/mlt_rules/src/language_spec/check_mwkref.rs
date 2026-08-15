@@ -20,7 +20,7 @@ impl LanguageSpecEngine {
             if is_weak && is_dependent {
                 diagnostics.push(Diagnostic {
                     rule_id: "MWKREF",
-                    message: "Specifying both WeakHandle and Dependent attributes is invalid"
+                    message: "Specifying both WeakHandle and Dependent attributes is invalid. A dependent property does not store a value."
                         .to_string(),
                     severity: Severity::Error,
                     byte_range: class.byte_range.clone(),

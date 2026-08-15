@@ -26,7 +26,7 @@ impl GoodPracticesEngine {
                             diagnostics.push(Diagnostic {
                                 rule_id: "CPROP",
                                 message: format!(
-                                    "Constant property '{}' has a complex default value; consider using a static method",
+                                    "{} is also the name of a property, which may be confusing. Use obj.PropertyName syntax to reference the property, or rename the property to improve readability.",
                                     prop.name
                                 ),
                                 severity: Severity::Info,

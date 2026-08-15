@@ -10,9 +10,16 @@ impl BugsEngine {
         }
 
         let op_text = find_operator_text(node, source);
-        let (rule_id, op_name) = match op_text.as_str() {
-            "&&" => ("SHOCIRT", "&&"),
-            "||" => ("SHOCIRF", "||"),
+        let (rule_id, message) = match op_text.as_str() {
+            "&&" => (
+                "SHOCIRT",
+                "The && operator is unexpected because &&(A && B) always returns true.".to_string(),
+            ),
+            "||" => (
+                "SHOCIRF",
+                "The || operator is unexpected because ||(A || B) always returns false."
+                    .to_string(),
+            ),
             _ => return Vec::new(),
         };
 
@@ -26,10 +33,7 @@ impl BugsEngine {
             let pos = node.start_position();
             vec![Diagnostic {
                 rule_id,
-                message: format!(
-                    "Short-circuit operator '{op_name}' used with potentially non-scalar operand; \
-                     consider using element-wise operator instead"
-                ),
+                message,
                 severity: Severity::Error,
                 byte_range: node.start_byte()..node.end_byte(),
                 line: pos.row + 1,

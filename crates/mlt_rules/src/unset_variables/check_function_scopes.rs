@@ -68,17 +68,14 @@ impl UnsetVariablesEngine {
                 (
                     "USENS",
                     format!(
-                        "Variable '{}' might not be set in all code paths before this use",
-                        unset_var.name
+                        "Explicitly initialize this variable to avoid a potential uninitialized variable, or use a valid syntax for function call on line {}.",
+                        unset_var.use_line
                     ),
                 )
             } else {
                 (
                     "NODEF",
-                    format!(
-                        "Variable '{}' might not be defined before this use",
-                        unset_var.name
-                    ),
+                    "Variable might be used before it is defined.".to_string(),
                 )
             };
 
@@ -119,9 +116,9 @@ end
         // x is assigned later in the function, so it is "used but not set
         // in all code paths" (USENS) rather than completely undefined.
         assert!(
-            diags.iter().any(
-                |d| (d.rule_id == "NODEF" || d.rule_id == "USENS") && d.message.contains("'x'")
-            ),
+            diags
+                .iter()
+                .any(|d| d.rule_id == "NODEF" || d.rule_id == "USENS"),
             "expected NODEF or USENS for 'x', got: {diags:?}"
         );
     }
@@ -135,9 +132,7 @@ end
 ";
         let diags = lint_file(&*engine(), source);
         assert!(
-            diags
-                .iter()
-                .any(|d| d.rule_id == "NODEF" && d.message.contains("'unknown_var'")),
+            diags.iter().any(|d| d.rule_id == "NODEF"),
             "expected NODEF for 'unknown_var', got: {diags:?}"
         );
     }
@@ -152,9 +147,7 @@ end
 ";
         let diags = lint_file(&*engine(), source);
         assert!(
-            !diags
-                .iter()
-                .any(|d| d.rule_id == "NODEF" && d.message.contains("'x'")),
+            !diags.iter().any(|d| d.rule_id == "NODEF"),
             "should not fire NODEF for 'x' when it is assigned before use"
         );
     }
@@ -175,7 +168,7 @@ end
         // z is assigned later on one path but used before being definitely assigned.
         let has_relevant = diags
             .iter()
-            .any(|d| (d.rule_id == "NODEF" || d.rule_id == "USENS") && d.message.contains("'z'"));
+            .any(|d| d.rule_id == "NODEF" || d.rule_id == "USENS");
         assert!(
             has_relevant,
             "expected NODEF or USENS for 'z', got: {diags:?}"

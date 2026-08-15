@@ -76,7 +76,7 @@ impl FormattingEngine {
         let command_form = format!("{} {}", name, arg_texts.join(" "));
         diagnostics.push(Diagnostic {
             rule_id: "PRTCAL",
-            message: format!("Consider using command syntax: '{}'", command_form),
+            message: "Add a semicolon after the function call to hide the output.".to_string(),
             severity: Severity::Info,
             byte_range: node.start_byte()..node.end_byte(),
             line: pos.row + 1,

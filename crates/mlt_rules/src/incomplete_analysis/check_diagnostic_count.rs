@@ -10,10 +10,7 @@ impl IncompleteAnalysisEngine {
         if diagnostics.len() > self.config.max_diagnostics {
             diagnostics.push(Diagnostic {
                 rule_id: "TMMSG",
-                message: format!(
-                    "More than {max} diagnostics generated; output may be truncated",
-                    max = self.config.max_diagnostics
-                ),
+                message: "More than 10,000 Code Analyzer messages were generated, leading to some being deleted.".to_string(),
                 severity: Severity::Error,
                 byte_range: 0..source.len().min(1),
                 line: 1,

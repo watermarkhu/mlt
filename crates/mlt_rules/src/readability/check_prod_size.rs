@@ -44,7 +44,7 @@ impl ReadabilityEngine {
                                 &source[inner_named[0].start_byte()..inner_named[0].end_byte()];
                             results.push(self.diag(
                                 "PSIZE",
-                                "Use 'numel(x)' instead of 'prod(size(x))'",
+                                "NUMEL(x) is usually faster than PROD(SIZE(x)).",
                                 node,
                                 Some(Fix::new(
                                     node.start_byte()..node.end_byte(),

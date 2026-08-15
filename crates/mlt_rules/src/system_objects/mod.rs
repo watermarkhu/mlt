@@ -116,16 +116,16 @@ pub(crate) struct CheckMeta {
 
 /// All 9 system object check definitions.
 pub(crate) const CHECKS: &[CheckMeta] = &[
-    CheckMeta { id: "SONUMIN", severity: Severity::Error, description: "System object method called with wrong number of inputs" },
-    CheckMeta { id: "SONUMOUT", severity: Severity::Error, description: "System object method called with wrong number of outputs" },
-    CheckMeta { id: "SODEPPROP", severity: Severity::Warning, description: "Deprecated system object property; use the recommended replacement" },
-    CheckMeta { id: "SOINITPROP", severity: Severity::Warning, description: "System object property should be set in the constructor, not after construction" },
-    CheckMeta { id: "SODFLTVAL", severity: Severity::Error, description: "Invalid initialization of DiscreteState property; initialize it within a 'resetImpl' method" },
-    CheckMeta { id: "SORSRVDNM", severity: Severity::Warning, description: "Reserved name used for system object member; choose a different name" },
-    CheckMeta { id: "SOINITPROP", severity: Severity::Warning, description: "Initialize DiscreteState property within a 'resetImpl' method" },
-    CheckMeta { id: "SOTUNPROP1", severity: Severity::Warning, description: "Logical attribute not supported for tunable properties on MATLAB System blocks" },
-    CheckMeta { id: "SOTUNPROP3", severity: Severity::Warning, description: "Tunable properties on MATLAB System blocks must be numeric; char property is made Nontunable" },
-    CheckMeta { id: "SOTUNPROP4", severity: Severity::Warning, description: "Tunable properties on MATLAB System blocks must be numeric; string property is made Nontunable" },
+    CheckMeta { id: "SONUMIN", severity: Severity::Error, description: "If 'stepImpl' accepts variable number of inputs, then you must define a 'getNumInputsImpl' method." },
+    CheckMeta { id: "SONUMOUT", severity: Severity::Error, description: "If 'stepImpl' returns variable number of outputs, then you must define a 'getNumOutputsImpl' method." },
+    CheckMeta { id: "SODEPPROP", severity: Severity::Warning, description: "Dependent properties are not supported for MATLAB System blocks. VAR_NAME property is not included on System block." },
+    CheckMeta { id: "SOINITPROP", severity: Severity::Warning, description: "Initialize DiscreteState property VAR_NAME within a 'resetImpl' method." },
+    CheckMeta { id: "SODFLTVAL", severity: Severity::Error, description: "Invalid initialization of DiscreteState property VAR_NAME. Initialize property within a 'resetImpl' method." },
+    CheckMeta { id: "SORSRVDNM", severity: Severity::Warning, description: "VAR_NAME property is a reserved name." },
+    CheckMeta { id: "SOINITPROP", severity: Severity::Warning, description: "Initialize DiscreteState property VAR_NAME within a 'resetImpl' method." },
+    CheckMeta { id: "SOTUNPROP1", severity: Severity::Warning, description: "Logical attribute not supported for tunable properties on MATLAB System blocks. VAR_NAME property is made Nontunable on System block." },
+    CheckMeta { id: "SOTUNPROP3", severity: Severity::Warning, description: "Tunable properties on MATLAB System blocks must be numeric. VAR_NAME property is made Nontunable on System block because it is a char." },
+    CheckMeta { id: "SOTUNPROP4", severity: Severity::Warning, description: "Tunable properties on MATLAB System blocks must be numeric. VAR_NAME property is made Nontunable on System block because it is a string." },
 ];
 
 /// System object lifecycle methods.
@@ -367,6 +367,25 @@ pub(crate) fn make_diag(check_id: &'static str, node: tree_sitter::Node) -> Diag
     }
 }
 
+/// Build a diagnostic whose message embeds a runtime name in place of the
+/// `VAR_NAME` placeholder.
+pub(crate) fn make_diag_named(
+    check_id: &'static str,
+    node: tree_sitter::Node,
+    name: &str,
+) -> Diagnostic {
+    let start = node.start_position();
+    Diagnostic {
+        rule_id: check_id,
+        message: check_description(check_id).replace("VAR_NAME", name),
+        severity: check_severity(check_id),
+        byte_range: node.start_byte()..node.end_byte(),
+        line: start.row + 1,
+        column: start.column + 1,
+        fix: None,
+    }
+}
+
 // ---------------------------------------------------------------------------
 // Helper: node text extraction
 // ---------------------------------------------------------------------------
@@ -374,6 +393,15 @@ pub(crate) fn make_diag(check_id: &'static str, node: tree_sitter::Node) -> Diag
 /// Extract the raw text of a node.
 pub(crate) fn node_text<'a>(node: tree_sitter::Node<'a>, source: &'a str) -> &'a str {
     &source[node.start_byte()..node.end_byte()]
+}
+
+/// The name of a `property` node — the first whitespace-delimited token of its
+/// text (e.g. `Flag` for `Flag logical = false`).
+pub(crate) fn property_name<'a>(node: tree_sitter::Node<'a>, source: &'a str) -> &'a str {
+    node_text(node, source)
+        .split_whitespace()
+        .next()
+        .unwrap_or("")
 }
 
 /// Extract function name from a `function_call` node.

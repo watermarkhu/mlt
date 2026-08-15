@@ -19,7 +19,11 @@ impl SystemObjectsEngine {
                     if text.contains('(') && text.contains(')') && text.contains('=') {
                         // Heuristic: property with function call default value
                         // e.g., `Prop = someFunction()`
-                        diags.push(make_diag("SODFLTVAL", child));
+                        diags.push(make_diag_named(
+                            "SODFLTVAL",
+                            child,
+                            property_name(child, source),
+                        ));
                     }
                 }
             }

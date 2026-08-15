@@ -31,7 +31,14 @@ impl BugsEngine {
         }
 
         let op = find_operator_text(node, source);
-        let rule_id = if op == "~=" { "MNANC" } else { "FNAN" };
+        let (rule_id, message) = if op == "~=" {
+            (
+                "MNANC",
+                "NaN never compares equal to any value, so this case will never be matched.",
+            )
+        } else {
+            ("FNAN", "Use ISNAN when comparing values to NaN.")
+        };
 
         let pos = node.start_position();
 
@@ -50,10 +57,7 @@ impl BugsEngine {
 
         vec![Diagnostic {
             rule_id,
-            message: format!(
-                "Comparison with NaN using '{op}' is always {}; use isnan() instead",
-                if op == "~=" { "true" } else { "false" }
-            ),
+            message: message.to_string(),
             severity: Severity::Error,
             byte_range: node.start_byte()..node.end_byte(),
             line: pos.row + 1,

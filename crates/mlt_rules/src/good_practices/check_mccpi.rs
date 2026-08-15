@@ -32,10 +32,8 @@ impl GoodPracticesEngine {
                 if !prop.has_default {
                     diagnostics.push(Diagnostic {
                         rule_id: "MCCPI",
-                        message: format!(
-                            "Initialize the Constant property '{}' or make it an Abstract Constant property.",
-                            prop.name
-                        ),
+                        message: "Initialize the Constant property or make it an Abstract Constant property."
+                            .to_string(),
                         severity: Severity::Warning,
                         byte_range: prop.byte_range.clone(),
                         line: prop.line,

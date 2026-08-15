@@ -37,10 +37,7 @@ impl ReadabilityEngine {
         if lhs_text == "i" || lhs_text == "j" {
             results.push(self.diag(
                 "IJCL",
-                &format!(
-                    "Variable '{lhs_text}' shadows the built-in complex unit. \
-                     Use '1i' or '1j' for complex numbers, or rename the variable."
-                ),
+                "For improved robustness, consider replacing i and j by 1i.",
                 lhs,
                 None,
             ));

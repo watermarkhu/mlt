@@ -19,7 +19,7 @@ impl LanguageSpecEngine {
                     diagnostics.push(Diagnostic {
                         rule_id: "MCPSG",
                         message:
-                            "Set or get method must be fully defined in the class definition file"
+                            "Set or get method must be fully defined in the class definition file."
                                 .to_string(),
                         severity: Severity::Error,
                         byte_range: method.byte_range.clone(),

@@ -21,7 +21,7 @@ impl LanguageSpecEngine {
             self.push_diag(
                 node,
                 "NCHKOS",
-                &format!("{name} does not return any values"),
+                "NARGINCHK does not return any values.",
                 diagnostics,
             );
         }

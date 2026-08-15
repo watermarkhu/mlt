@@ -39,7 +39,10 @@ impl ConfigIssuesEngine {
                         let start = arg.start_position();
                         diagnostics.push(Diagnostic {
                             rule_id: "BDOPT",
-                            message: format!("Invalid option '{unquoted}' for {func_name}"),
+                            message: format!(
+                                "Option {} is ignored because it is invalid.",
+                                unquoted
+                            ),
                             severity: Severity::Error,
                             byte_range: arg.start_byte()..arg.end_byte(),
                             line: start.row + 1,

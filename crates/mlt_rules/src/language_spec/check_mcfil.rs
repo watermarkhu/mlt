@@ -27,7 +27,7 @@ impl LanguageSpecEngine {
                 diagnostics.push(Diagnostic {
                     rule_id: "MCFIL",
                     message: format!(
-                        "Class name '{}' does not match file name '{}'",
+                        "Class name {} and file name do not agree: {}. Update the class name and constructor, if defined, or change the file name to match the class name.",
                         class.name, file_stem
                     ),
                     severity: Severity::Error,

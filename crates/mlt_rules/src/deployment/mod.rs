@@ -93,16 +93,57 @@ struct CheckMeta {
 
 /// All 10 deployment check definitions.
 const CHECKS: &[CheckMeta] = &[
-    CheckMeta { id: "MCCD", severity: Severity::Error, description: "'cd' should not be used in deployed applications" },
-    CheckMeta { id: "MCPRD", severity: Severity::Error, description: "Path modification functions should not be used in deployed applications" },
-    CheckMeta { id: "MCHLP", severity: Severity::Warning, description: "'help'/'doc' are not available in deployed applications" },
-    CheckMeta { id: "MCKBD", severity: Severity::Warning, description: "'keyboard' is not available in deployed applications" },
-    CheckMeta { id: "MCSVP", severity: Severity::Warning, description: "'savepath' is not available in deployed applications" },
-    CheckMeta { id: "MCMLR", severity: Severity::Warning, description: "'matlabroot' returns the MCR root in deployed applications, not MATLAB root" },
-    CheckMeta { id: "MCABF", severity: Severity::Error, description: "'addpath' with absolute path will fail in deployed applications" },
-    CheckMeta { id: "MCMFL", severity: Severity::Warning, description: "'mfilename' behaves differently in deployed applications" },
-    CheckMeta { id: "MCTBX", severity: Severity::Warning, description: "Toolbox function may not be available in deployed applications without proper toolbox compilation" },
-    CheckMeta { id: "MCLL", severity: Severity::Error, description: "License checking is not available in deployed applications" },
+    CheckMeta {
+        id: "MCCD",
+        severity: Severity::Error,
+        description: "MCC use of the CD function is problematic.",
+    },
+    CheckMeta {
+        id: "MCPRD",
+        severity: Severity::Error,
+        description: "MCC allows only one argument in the PRINTDLG function.",
+    },
+    CheckMeta {
+        id: "MCHLP",
+        severity: Severity::Warning,
+        description: "MCC does not permit the HELP function.",
+    },
+    CheckMeta {
+        id: "MCKBD",
+        severity: Severity::Warning,
+        description: "MCC does not permit the KEYBOARD function.",
+    },
+    CheckMeta {
+        id: "MCSVP",
+        severity: Severity::Warning,
+        description: "MCC does not permit the SAVEPATH function.",
+    },
+    CheckMeta {
+        id: "MCMLR",
+        severity: Severity::Warning,
+        description: "MCC use of the MATLABROOT function is problematic.",
+    },
+    CheckMeta {
+        id: "MCABF",
+        severity: Severity::Error,
+        description: "MCC use of absolute file names is likely to fail.",
+    },
+    CheckMeta {
+        id: "MCMFL",
+        severity: Severity::Warning,
+        description:
+            "MCC allows writing .m files, but they cannot be executed by the deployed application.",
+    },
+    CheckMeta {
+        id: "MCTBX",
+        severity: Severity::Warning,
+        description: "MCC use of toolbox folder file names is likely to fail.",
+    },
+    CheckMeta {
+        id: "MCLL",
+        severity: Severity::Error,
+        description: "MCC does not allow C++ files to be read directly using LOADLIBRARY.",
+    },
 ];
 
 /// Common toolbox-specific functions that require special compilation support.

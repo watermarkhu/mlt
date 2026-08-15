@@ -13,11 +13,7 @@ impl IncompleteAnalysisEngine {
         if metrics.max_function_depth > self.config.max_function_depth {
             diagnostics.push(Diagnostic {
                 rule_id: "DEEPN",
-                message: format!(
-                    "Functions nested too deeply (depth {depth}; limit is {max})",
-                    depth = metrics.max_function_depth,
-                    max = self.config.max_function_depth
-                ),
+                message: "Functions are nested too deeply.".to_string(),
                 severity: Severity::Error,
                 byte_range: 0..source.len().min(1),
                 line: 1,

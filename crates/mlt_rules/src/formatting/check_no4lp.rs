@@ -72,10 +72,7 @@ impl FormattingEngine {
                     let pos = stmt.start_position();
                     diagnostics.push(Diagnostic {
                         rule_id: "NO4LP",
-                        message: format!(
-                            "Use {}-space indentation (expected column {}, found {})",
-                            self.no4lp_config.indent_size, expected_indent, actual_col
-                        ),
+                        message: "Parentheses are not needed in a FOR statement.".to_string(),
                         severity: Severity::Info,
                         byte_range: line_start..stmt.start_byte(),
                         line: pos.row + 1,

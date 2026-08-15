@@ -32,7 +32,7 @@ impl GoodPracticesEngine {
         let pos = node.start_position();
         vec![Diagnostic {
             rule_id: "STCI",
-            message: "Use strcmpi() for case-insensitive comparison instead of strcmp(lower(...))"
+            message: "Use STRCMPI(str1,str2) instead of using UPPER/LOWER in a call to STRCMP."
                 .to_string(),
             severity: Severity::Warning,
             byte_range: node.start_byte()..node.end_byte(),

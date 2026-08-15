@@ -27,7 +27,7 @@ impl LanguageSpecEngine {
                             let pos = inner.start_position();
                             diagnostics.push(Diagnostic {
                                 rule_id: "FVNST",
-                                message: "Arguments blocks are not allowed in nested functions"
+                                message: "Arguments blocks in nested function declarations are not supported."
                                     .to_string(),
                                 severity: Severity::Error,
                                 byte_range: inner.start_byte()..inner.end_byte(),

@@ -506,7 +506,7 @@ impl LanguageSpecEngine {
                         let pos = node.start_position();
                         diagnostics.push(Diagnostic {
                             rule_id: "PFPF",
-                            message: "Nested parfor is not allowed inside a parfor loop"
+                            message: "parfor loops cannot be used inside other parfor loops."
                                 .to_string(),
                             severity: Severity::Error,
                             byte_range: node.start_byte()..node.end_byte(),
@@ -521,7 +521,8 @@ impl LanguageSpecEngine {
                         let pos = node.start_position();
                         diagnostics.push(Diagnostic {
                             rule_id: "SPNST",
-                            message: "parfor is not allowed inside an spmd block".to_string(),
+                            message: "PARFOR or SPMD cannot be used inside an SPMD block."
+                                .to_string(),
                             severity: Severity::Error,
                             byte_range: node.start_byte()..node.end_byte(),
                             line: pos.row + 1,
@@ -626,7 +627,7 @@ impl LanguageSpecEngine {
                     let pos = node.start_position();
                     diagnostics.push(Diagnostic {
                         rule_id: "PFSPMD",
-                        message: "spmd is not allowed inside a parfor loop".to_string(),
+                        message: "spmd statements cannot be used inside parfor loops.".to_string(),
                         severity: Severity::Error,
                         byte_range: node.start_byte()..node.end_byte(),
                         line: pos.row + 1,
@@ -640,7 +641,7 @@ impl LanguageSpecEngine {
                     let pos = node.start_position();
                     diagnostics.push(Diagnostic {
                         rule_id: "SPNST",
-                        message: "spmd is not allowed inside another spmd block".to_string(),
+                        message: "PARFOR or SPMD cannot be used inside an SPMD block.".to_string(),
                         severity: Severity::Error,
                         byte_range: node.start_byte()..node.end_byte(),
                         line: pos.row + 1,
@@ -673,7 +674,8 @@ impl LanguageSpecEngine {
                     let pos = node.start_position();
                     diagnostics.push(Diagnostic {
                         rule_id: "PFBRK",
-                        message: "break is not allowed inside a parfor loop".to_string(),
+                        message: "break statements cannot be used inside a parfor loop."
+                            .to_string(),
                         severity: Severity::Error,
                         byte_range: node.start_byte()..node.end_byte(),
                         line: pos.row + 1,
@@ -686,7 +688,7 @@ impl LanguageSpecEngine {
                     let pos = node.start_position();
                     diagnostics.push(Diagnostic {
                         rule_id: "SPRET",
-                        message: "break is not allowed inside an spmd block".to_string(),
+                        message: "break statement cannot be used inside an SPMD block.".to_string(),
                         severity: Severity::Error,
                         byte_range: node.start_byte()..node.end_byte(),
                         line: pos.row + 1,
@@ -701,7 +703,7 @@ impl LanguageSpecEngine {
                 let pos = node.start_position();
                 diagnostics.push(Diagnostic {
                     rule_id: "SPRET",
-                    message: "continue is not allowed inside an spmd block".to_string(),
+                    message: "continue statement cannot be used inside an SPMD block.".to_string(),
                     severity: Severity::Error,
                     byte_range: node.start_byte()..node.end_byte(),
                     line: pos.row + 1,
@@ -716,7 +718,8 @@ impl LanguageSpecEngine {
                     let pos = node.start_position();
                     diagnostics.push(Diagnostic {
                         rule_id: "PFRTN",
-                        message: "return is not allowed inside a parfor loop".to_string(),
+                        message: "return statements cannot be used inside a parfor loop."
+                            .to_string(),
                         severity: Severity::Error,
                         byte_range: node.start_byte()..node.end_byte(),
                         line: pos.row + 1,
@@ -729,7 +732,8 @@ impl LanguageSpecEngine {
                     let pos = node.start_position();
                     diagnostics.push(Diagnostic {
                         rule_id: "SPRET",
-                        message: "return is not allowed inside an spmd block".to_string(),
+                        message: "return statement cannot be used inside an SPMD block."
+                            .to_string(),
                         severity: Severity::Error,
                         byte_range: node.start_byte()..node.end_byte(),
                         line: pos.row + 1,
@@ -745,7 +749,7 @@ impl LanguageSpecEngine {
                     let pos = node.start_position();
                     diagnostics.push(Diagnostic {
                         rule_id: "PFGLOB",
-                        message: "global declarations are not allowed inside a parfor loop"
+                        message: "Global variable declarations are not supported in parfor loops."
                             .to_string(),
                         severity: Severity::Error,
                         byte_range: node.start_byte()..node.end_byte(),
@@ -759,7 +763,7 @@ impl LanguageSpecEngine {
                     let pos = node.start_position();
                     diagnostics.push(Diagnostic {
                         rule_id: "SPGP",
-                        message: "global declarations are not allowed inside an spmd block"
+                        message: "Setting the GLOBAL or PERSISTENT variable VAR_NAME in an SPMD block might fail because the set happens on a worker machine."
                             .to_string(),
                         severity: Severity::Error,
                         byte_range: node.start_byte()..node.end_byte(),
@@ -776,8 +780,9 @@ impl LanguageSpecEngine {
                     let pos = node.start_position();
                     diagnostics.push(Diagnostic {
                         rule_id: "PFPERS",
-                        message: "persistent declarations are not allowed inside a parfor loop"
-                            .to_string(),
+                        message:
+                            "Persistent variable declarations are not supported in parfor loops."
+                                .to_string(),
                         severity: Severity::Error,
                         byte_range: node.start_byte()..node.end_byte(),
                         line: pos.row + 1,
@@ -790,7 +795,7 @@ impl LanguageSpecEngine {
                     let pos = node.start_position();
                     diagnostics.push(Diagnostic {
                         rule_id: "SPGP",
-                        message: "persistent declarations are not allowed inside an spmd block"
+                        message: "Setting the GLOBAL or PERSISTENT variable VAR_NAME in an SPMD block might fail because the set happens on a worker machine."
                             .to_string(),
                         severity: Severity::Error,
                         byte_range: node.start_byte()..node.end_byte(),
@@ -816,9 +821,7 @@ impl LanguageSpecEngine {
                             let pos = node.start_position();
                             diagnostics.push(Diagnostic {
                                 rule_id: "PFXST",
-                                message: format!(
-                                    "Assignment to parfor loop variable '{lhs_name}' is not allowed"
-                                ),
+                                message: "Assigning to the parfor loop index variable is not supported in parfor loops.".to_string(),
                                 severity: Severity::Error,
                                 byte_range: node.start_byte()..node.end_byte(),
                                 line: pos.row + 1,
@@ -839,9 +842,9 @@ impl LanguageSpecEngine {
                         let pos = node.start_position();
                         diagnostics.push(Diagnostic {
                             rule_id: "PFFORA",
-                            message: format!(
-                                "Assignment to for-loop variable '{lhs_name}' inside parfor is not allowed"
-                            ),
+                            message:
+                                "Assigning to for loop variables is not supported in parfor loops."
+                                    .to_string(),
                             severity: Severity::Error,
                             byte_range: node.start_byte()..node.end_byte(),
                             line: pos.row + 1,
@@ -861,7 +864,7 @@ impl LanguageSpecEngine {
                     let pos = node.start_position();
                     diagnostics.push(Diagnostic {
                         rule_id: "PFNF",
-                        message: "Nested function definitions are not allowed inside a parfor loop"
+                        message: "Nested functions cannot be called from within parfor loops."
                             .to_string(),
                         severity: Severity::Error,
                         byte_range: node.start_byte()..node.end_byte(),
@@ -1065,7 +1068,7 @@ impl LanguageSpecEngine {
             self.push_diag(
                 node,
                 "PFANSNS",
-                "'ans' is not supported as a for loop variable in parfor loops",
+                "'ans' is not supported as a for loop variable in parfor loops.",
                 diagnostics,
             );
         }
@@ -1163,10 +1166,7 @@ impl LanguageSpecEngine {
             self.push_diag(
                 node,
                 "PFMLTI",
-                &format!(
-                    "The nested for loop variable '{lhs_name}' must not be assigned \
-                     other than by its for statement"
-                ),
+                "When indexing a sliced variable with a nested for loop variable, the for loop variable must not be assigned other than by its for statement.",
                 diagnostics,
             );
         }
@@ -1309,7 +1309,7 @@ impl LanguageSpecEngine {
                     self.push_diag(
                         node,
                         "PFEVC",
-                        "EVALIN('caller') and ASSIGNIN('caller') are invalid inside a PARFOR loop",
+                        "EVALIN('caller') and ASSIGNIN('caller') are invalid inside of a PARFOR loop.",
                         diagnostics,
                     );
                 }
@@ -1318,7 +1318,7 @@ impl LanguageSpecEngine {
                 self.push_diag(
                     node,
                     "PFINPT",
-                    "'inputname' is not supported in parfor loops",
+                    "'inputname' is not supported in parfor loops.",
                     diagnostics,
                 );
             }
@@ -1326,7 +1326,7 @@ impl LanguageSpecEngine {
                 self.push_diag(
                     node,
                     "PFNACK",
-                    &format!("'{name}' cannot be used in parfor loops"),
+                    "'narginchk' and 'nargoutchk' cannot be used in parfor loops.",
                     diagnostics,
                 );
             }
@@ -1335,7 +1335,7 @@ impl LanguageSpecEngine {
                     self.push_diag(
                         node,
                         "PFNAIO",
-                        &format!("'{name}' requires a function argument in parfor loops"),
+                        "'nargin' and 'nargout' require a function argument in parfor loops.",
                         diagnostics,
                     );
                 }
@@ -1345,7 +1345,7 @@ impl LanguageSpecEngine {
                     self.push_diag(
                         node,
                         "PFLD",
-                        "'load' must assign to an output variable in parfor loops",
+                        "'load' must assign to an output variable in parfor loops.",
                         diagnostics,
                     );
                 }
@@ -1355,7 +1355,7 @@ impl LanguageSpecEngine {
                     self.push_diag(
                         node,
                         "PFSV",
-                        "SAVE cannot be called in a PARFOR loop without the '-fromstruct' option",
+                        "SAVE cannot be called in a PARFOR loop without the '-fromstruct' option.",
                         diagnostics,
                     );
                 }
@@ -1365,8 +1365,8 @@ impl LanguageSpecEngine {
                     self.push_diag(
                         node,
                         "FPFORP",
-                        "'fprintf' is writing to a file opened with read permission only. \
-                         Open using 'fopen(...,''W'',...)'.",
+                        "'fprintf' is writing to a file that is opened with read permission only. \
+                         Open a file using 'fopen(...,'W',...)' instead.",
                         diagnostics,
                     );
                 }
@@ -1376,7 +1376,7 @@ impl LanguageSpecEngine {
                     self.push_diag(
                         node,
                         "FWFORP",
-                        "'fwrite' is writing to a file opened with read permission only.",
+                        "'fwrite' is writing to a file that is opened with read permission only. Open a file using 'fopen(...,'W',...)' instead.",
                         diagnostics,
                     );
                 }
@@ -1390,7 +1390,7 @@ impl LanguageSpecEngine {
                                 node,
                                 "PFCEL",
                                 &format!(
-                                    "The function '{name}' does not support cell arrays \
+                                    "The function {name} does not support cell arrays \
                                      (argument {}).",
                                     i + 1
                                 ),
@@ -1419,20 +1419,14 @@ impl LanguageSpecEngine {
             self.push_diag(
                 node,
                 "PFVSUB",
-                &format!(
-                    "Indexing the parfor loop variable '{name}' is not supported \
-                     in parfor loops"
-                ),
+                "Indexing parfor loop variables is not supported in parfor loops.",
                 diagnostics,
             );
         } else if nested_for_vars.contains(&name) {
             self.push_diag(
                 node,
                 "PFFSUB",
-                &format!(
-                    "Indexing the nested for loop variable '{name}' is not supported \
-                     in parfor loops"
-                ),
+                "Indexing a nested for loop variable is not supported in parfor loops.",
                 diagnostics,
             );
         } else if !node_is_inside_lambda(node) {
@@ -1576,10 +1570,7 @@ impl LanguageSpecEngine {
                     start,
                     start + 1,
                     "PFINCR",
-                    &format!(
-                        "Using different reduction functions with the same reduction \
-                         variable '{var}' is not supported in parfor loops"
-                    ),
+                    "Using different reduction functions with the same reduction variable is not supported in parfor loops.",
                     diagnostics,
                 );
             }
@@ -1593,10 +1584,7 @@ impl LanguageSpecEngine {
                     *start,
                     *start + 1,
                     "PFNAR",
-                    &format!(
-                        "Subtracting reduction variable '{var}' from expressions is not \
-                         supported in parfor loops"
-                    ),
+                    &format!("Subtracting reduction variable {var} from expressions is not supported in parfor loops."),
                     diagnostics,
                 );
             }
@@ -1614,8 +1602,7 @@ impl LanguageSpecEngine {
                         *start,
                         *start + 1,
                         "PFRFH",
-                        "The PARFOR reduction function must be a function name or a \
-                         broadcast variable",
+                        &format!("The parfor reduction function {callee} must either be a function name or a broadcast variable."),
                         diagnostics,
                     );
                 }
@@ -1642,10 +1629,7 @@ impl LanguageSpecEngine {
                         fr,
                         fr + 1,
                         "PFUTMP",
-                        &format!(
-                            "Temporary variable '{var}' must be set inside the parfor loop \
-                             before it is used"
-                        ),
+                        &format!("Temporary variable {var} must be set inside the parfor loop before it is used."),
                         diagnostics,
                     );
                 }
@@ -1780,10 +1764,7 @@ impl LanguageSpecEngine {
                     first_red,
                     first_red + 1,
                     "PFUTVR",
-                    &format!(
-                        "Variable '{var}' may have been intended as a reduction variable, \
-                         but is an uninitialized temporary"
-                    ),
+                    &format!("Variable {var} may have been intended as a reduction variable, but is an uninitialized temporary."),
                     diagnostics,
                 );
             }
@@ -1803,10 +1784,7 @@ impl LanguageSpecEngine {
                         first,
                         first + 1,
                         "PFSLO",
-                        &format!(
-                            "Variable '{var}' is indexed using the parfor loop variable, \
-                             but it is not a valid sliced output variable"
-                        ),
+                        &format!("Variable {var} is indexed using the parfor loop variable, but it is not a valid sliced output variable."),
                         diagnostics,
                     );
                 }
@@ -1822,10 +1800,7 @@ impl LanguageSpecEngine {
                         first,
                         first + 1,
                         "PFSLRD",
-                        &format!(
-                            "Invalid combination of sliced indexing and non-indexed reads \
-                             of the sliced output variable '{var}'"
-                        ),
+                        &format!("Parfor loop variable {var} is accessed with an invalid combination of sliced indexing expressions and non-indexed reads. It is not valid to access the whole value of a sliced output variable."),
                         diagnostics,
                     );
                 }
@@ -1847,10 +1822,7 @@ impl LanguageSpecEngine {
                     first,
                     first + 1,
                     "PFSLW",
-                    &format!(
-                        "Multiple sliced accesses to variable '{var}' must all use the same \
-                         list of subscripts"
-                    ),
+                    &format!("Parfor loop variable {var} has multiple sliced accesses, but they do not all have the same list of subscripts. Each access to a sliced variable must use precisely the same list of subscripts."),
                     diagnostics,
                 );
             }
@@ -1865,7 +1837,7 @@ impl LanguageSpecEngine {
                     start,
                     start + 1,
                     "PFUNK",
-                    &format!("The PARFOR loop cannot run due to the way variable '{var}' is used"),
+                    &format!("Unable to classify variable {var} in the body of the parfor loop."),
                     diagnostics,
                 );
             }
@@ -1880,7 +1852,7 @@ impl LanguageSpecEngine {
                     *start + 1,
                     "PFANON",
                     "Using a sliced output variable in an anonymous function is not \
-                     supported in parfor loops",
+                     supported in parfor loops.",
                     diagnostics,
                 );
             }
@@ -1901,7 +1873,7 @@ impl LanguageSpecEngine {
                 }
             }
         }
-        for (var, args, start, end) in accesses {
+        for (_, args, start, end) in accesses {
             let tokens = args_tokens(&args);
             for nf in &analysis.nested_fors {
                 if tokens.contains(&nf.var) && !(start >= nf.for_start && start <= nf.for_end) {
@@ -1910,12 +1882,7 @@ impl LanguageSpecEngine {
                         start,
                         end,
                         "PFCTXT",
-                        &format!(
-                            "When indexing the sliced variable '{var}' with the nested for \
-                             loop variable '{}', the sliced variable must be inside the for \
-                             loop that defines its range",
-                            nf.var
-                        ),
+                        "When indexing a sliced variable with a nested for loop variable, the sliced variable must be inside the for loop that defines the range of the for loop variable.",
                         diagnostics,
                     );
                 }
@@ -1942,7 +1909,7 @@ impl LanguageSpecEngine {
                     nf.range_end,
                     "PFFRNG",
                     "When indexing a sliced variable with a nested for loop variable, the \
-                     range must be a row vector of positive constant numbers",
+                     range of the for loop variable must be a row vector of positive constant numbers or variables.",
                     diagnostics,
                 );
             }
@@ -1956,7 +1923,7 @@ impl LanguageSpecEngine {
                 analysis.parfor_start,
                 analysis.parfor_end,
                 "PFVARS",
-                "Parfor loop contains too many variables",
+                "Parfor loop contains too many variables.",
                 diagnostics,
             );
         }

@@ -10,9 +10,21 @@ impl BugsEngine {
         }
 
         let op_text = find_operator_text(node, source);
-        let (rule_id, wrong_op, correct_op) = match op_text.as_str() {
-            "&" => ("CMDAND", "&", "&&"),
-            "|" => ("CMDOR", "|", "||"),
+        let (rule_id, wrong_op, correct_op, message) = match op_text.as_str() {
+            "&" => (
+                "CMDAND",
+                "&",
+                "&&",
+                "Use 'A && B' or 'A & B' to test whether A and B are both true in MATLAB."
+                    .to_string(),
+            ),
+            "|" => (
+                "CMDOR",
+                "|",
+                "||",
+                "Use 'A || B' or 'A | B' to test whether either A or B is true in MATLAB."
+                    .to_string(),
+            ),
             _ => return Vec::new(),
         };
 
@@ -24,10 +36,7 @@ impl BugsEngine {
         let pos = node.start_position();
         vec![Diagnostic {
             rule_id,
-            message: format!(
-                "Element-wise '{wrong_op}' used in boolean context; \
-                 did you mean short-circuit '{correct_op}'?"
-            ),
+            message,
             severity: Severity::Error,
             byte_range: node.start_byte()..node.end_byte(),
             line: pos.row + 1,

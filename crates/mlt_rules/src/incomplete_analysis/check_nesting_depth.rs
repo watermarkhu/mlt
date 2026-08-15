@@ -23,9 +23,7 @@ impl IncompleteAnalysisEngine {
         if max_depth > combined_limit {
             diagnostics.push(Diagnostic {
                 rule_id: "NOSPC",
-                message: format!(
-                    "File too complex: maximum nesting depth is {max_depth}; limit is {combined_limit}"
-                ),
+                message: "The file is too complex to analyze. Refactor the code to improve code maintainability. For example, reduce the nesting level of conditions or functions.".to_string(),
                 severity: Severity::Error,
                 byte_range: 0..source.len().min(1),
                 line: 1,

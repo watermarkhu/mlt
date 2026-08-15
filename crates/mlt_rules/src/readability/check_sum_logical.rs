@@ -26,7 +26,7 @@ impl ReadabilityEngine {
             if parent.kind() == "comparison_operator" {
                 results.push(self.diag(
                     "LOGSUM",
-                    "Consider using 'any(...)' instead of 'sum(...) > 0'",
+                    "Consider using 'nnz' instead of 'sum' for logical vectors to improve readability.",
                     parent,
                     None,
                 ));

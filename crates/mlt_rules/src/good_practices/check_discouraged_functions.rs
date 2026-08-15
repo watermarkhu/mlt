@@ -19,13 +19,14 @@ impl GoodPracticesEngine {
             None => return Vec::new(),
         };
 
-        let (check_id, message) = match func_name {
-            "addpref" if self.is_check_enabled("ADAPPREF") => {
-                ("ADAPPREF", "Avoid addpref(); use the settings API instead")
-            }
+        let (check_id, message): (&'static str, String) = match func_name {
+            "addpref" if self.is_check_enabled("ADAPPREF") => (
+                "ADAPPREF",
+                format!("Use app as the first argument for {func_name}."),
+            ),
             "keyboard" if self.is_check_enabled("KEYBOARDFUN") => (
                 "KEYBOARDFUN",
-                "keyboard() left in code; remove before deployment",
+                "Consider removing 'keyboard' function once you have finished debugging. This function may have security implications.".to_string(),
             ),
             _ => return Vec::new(),
         };
@@ -33,7 +34,7 @@ impl GoodPracticesEngine {
         let pos = node.start_position();
         vec![Diagnostic {
             rule_id: check_id,
-            message: message.to_string(),
+            message,
             severity: Severity::Warning,
             byte_range: node.start_byte()..node.end_byte(),
             line: pos.row + 1,
