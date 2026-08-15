@@ -3,7 +3,7 @@
   "checkpoint_id": "01M02Z3V5D2C67P351J4ZF11JB",
   "strategy": "manual-commit",
   "branch": "feat",
-  "checkpoints_count": 175,
+  "checkpoints_count": 176,
   "files_touched": [
     "crates/mlt_rules/src/codegen/mod.rs",
     "crates/mlt_rules/src/compatibility/mod.rs",
@@ -12,6 +12,7 @@
     "crates/mlt_rules/src/deployment/mod.rs",
     "crates/mlt_rules/src/formatting/mod.rs",
     "crates/mlt_rules/src/incomplete_analysis/mod.rs",
+    "crates/mlt_rules/src/language_spec/mod.rs",
     "crates/mlt_rules/src/naming.rs",
     "crates/mlt_rules/src/performance/mod.rs",
     "crates/mlt_rules/src/readability/mod.rs",
@@ -640,13 +641,20 @@
       "compact_transcript": "/86/transcript.jsonl",
       "content_hash": "/86/content_hash.txt",
       "prompt": "/86/prompt.txt"
+    },
+    {
+      "metadata": "/87/metadata.json",
+      "transcript": "/87/full.jsonl",
+      "compact_transcript": "/87/transcript.jsonl",
+      "content_hash": "/87/content_hash.txt",
+      "prompt": "/87/prompt.txt"
     }
   ],
   "token_usage": {
-    "input_tokens": 24658244,
+    "input_tokens": 24780089,
     "cache_creation_tokens": 0,
-    "cache_read_tokens": 1374015232,
-    "output_tokens": 1572477,
-    "api_call_count": 4762
+    "cache_read_tokens": 1381035264,
+    "output_tokens": 1591552,
+    "api_call_count": 4807
   }
 }

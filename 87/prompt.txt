@@ -1,0 +1,46 @@
+You are migrating rule module docstrings in the `mlt` Rust project at /home/watermarkhu/repositories/mlt to a standardized documentation schema so that docs/scripts/gen_rules_docs.ts can generate documentation pages from them.
+
+## The schema (MUST read first)
+Read `docs/scripts/SCHEMA.md` in full — it defines the exact docstring format.
+
+## Reference implementations (MUST read)
+These two modules are already migrated correctly and are your ground truth:
+- `crates/mlt_rules/src/nosemi.rs` (single-check flat rule)
+- `crates/mlt_rules/src/bugs/mod.rs` (multi-check engine with `## Check IDs` table, `## Fix`, `## Examples`)
+
+## Your modules (migrate BOTH)
+1. `crates/mlt_rules/src/performance/mod.rs` (meta ID `PERFORMANCE_ENGINE`, category `performance`, severity Info, ~41 check IDs)
+2. `crates/mlt_rules/src/readability/mod.rs` (meta ID `READABILITY_ENGINE`, category `readability`, severity Info, ~35 check IDs)
+
+## Important background
+These two engines' check-ID tables currently live ONLY as a hardcoded `LEGACY_CURATED` table inside `docs/scripts/gen_rules_docs.ts` (they are not yet in the docstrings). Once you migrate the docstrings, the generator will read the check IDs from the docstring `## Check IDs` table instead. You can copy the check-ID list from `LEGACY_CURATED` in `docs/scripts/gen_rules_docs.ts` (performance has 41 entries, readability has 35) — but VERIFY the actual IDs by grepping `grep -rn 'rule_id:' crates/mlt_rules/src/performance/` and `crates/mlt_rules/src/readability/`; the curated list may be stale.
+
+## Front-matter slugs (keep existing URLs)
+`performance` and `readability`. Icons: `lucide/zap` and `lucide/eye`.
+
+## What to do
+1. Read each module's current `//!` docstring and the `Rule` impl. Determine the exact check IDs emitted (`grep -rn 'rule_id:'`) and which emit fixes (`grep -rn 'fix: Some'`).
+2. Rewrite the `//!` header to the schema format:
+   - `# <META_ID>: <Title>` H1
+   - ```mlt front-matter block with id/title/category/severity/fix/icon/slug
+   - `## Rule` — what the engine does (prose)
+   - `## Check IDs` — a `| Check ID | Severity | Fix | Description |` markdown table listing EVERY check ID. Use the descriptions from the LEGACY_CURATED list in docs/scripts/gen_rules_docs.ts (clean them up if needed). Per-check `severity` (engine default is Info) and `fix` (`yes` only if that check's Diagnostic sets `fix: Some(...)`).
+   - `## Fix` — ONLY if `fix = true`. Describe the rewrites. Otherwise omit.
+   - `## Examples` — `### Incorrect` / `### Correct` MATLAB blocks; add `### Fixed` with a diff if there are fixes. These engines are about performance/style — use representative snippets (e.g. preallocation for AGROW, bsxfun→broadcasting, `&`→`&&`).
+   - Keep the existing `## Configuration` section (TOML) as-is after Examples.
+3. Preserve useful module-level prose by folding it into `## Rule`.
+4. IMPORTANT: keep the `//!` doc comment valid Rust — every line starts with `//!`, ends cleanly before the first `use`/`mod` statement.
+
+## Verification (mandatory)
+For EACH migrated module run:
+```
+bun docs/scripts/gen_rules_docs.ts --check-module performance
+bun docs/scripts/gen_rules_docs.ts --check-module readability
+```
+Each must exit 0. Other agents may be editing other modules concurrently — only YOUR modules' results matter.
+
+Also run `cargo build` at the end.
+
+Do NOT run the plain write mode, do NOT edit `docs/rules.md`, `docs/scripts/gen_rules_docs.ts`, `docs/scripts/SCHEMA.md`, or any file outside your two modules. Do NOT commit.
+
+Return a summary of which check IDs each module now documents, and which checks have fixes.
