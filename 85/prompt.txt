@@ -1,0 +1,3163 @@
+Check @AGENTS.md and @PLAN.md to understand the structure
+Called the Read tool with the following input: {"filePath":"/home/watermarkhu/repositories/mlt/AGENTS.md"}
+<path>/home/watermarkhu/repositories/mlt/AGENTS.md</path>
+<type>file</type>
+<content>
+1: # AGENTS.md
+2: 
+3: This document describes how to develop and document the `mlt` codebase for AI coding agents and human contributors.
+4: 
+5: ## Project Overview
+6: 
+7: `mlt` (pronounced "melt") is an ultra-fast, extensible linter for MATLAB written in Rust. It uses `tree-sitter-matlab` for parsing and is architecturally inspired by [ruff](https://github.com/astral-sh/ruff) and [rumdl](https://github.com/rvben/rumdl).
+8: 
+9: The goal is full feature parity with MATLAB's Code Analyzer (~2,680 checks), using the same check IDs (e.g., `NOSEMI`, `AGROW`, `naming.class.casing`).
+10: 
+11: ## Workspace Structure
+12: 
+13: ```
+14: mlt/
+15: ├── Cargo.toml              # Workspace root (resolver = "2")
+16: ├── zensical.toml           # Documentation site config (Zensical/MkDocs)
+17: ├── crates/
+18: │   ├── mlt_cli/            # CLI binary (clap, config discovery, output formatting)
+19: │   ├── mlt_core/           # Core engine (Rule trait, RuleRegistry, Linter, Config, Diagnostic)
+20: │   └── mlt_rules/          # Individual lint rule implementations
+21: └── docs/                   # Zensical documentation site (Markdown)
+22: ```
+23: 
+24: ### Crate Responsibilities
+25: 
+26: | Crate | Purpose |
+27: |-------|---------|
+28: | `mlt_core` | Defines `Rule` trait, `Category` enum, `NodeContext`/`FileContext`, `RuleRegistry`, `Linter` engine, `Config` parsing, `Diagnostic`/`Fix`/`Severity` types. No concrete rules live here. |
+29: | `mlt_rules` | All concrete rule implementations. Uses `inventory` crate for auto-registration. Exports `all_rules(&Config)` and `active_rules(&Config)`. Depends on `mlt_core`. |
+30: | `mlt_cli` | Binary entry point. Discovers `.mlt.toml`, builds registry, invokes linter, formats output. Depends on both `mlt_core` and `mlt_rules`. |
+31: 
+32: ### Dependency Direction
+33: 
+34: ```
+35: mlt_cli → mlt_rules → mlt_core
+36: ```
+37: 
+38: `mlt_core` has zero internal dependencies. `mlt_rules` depends only on `mlt_core`. `mlt_cli` depends on both.
+39: 
+40: ## Architecture
+41: 
+42: ### Lint Engine Flow
+43: 
+44: 1. CLI loads `.mlt.toml` → parses into `Config`
+45: 2. `mlt_rules::active_rules(&config)` → constructs only enabled rules (filtered by per-rule and per-category config)
+46: 3. `RuleRegistry::new(rules, &config)` → indexes rules by `target_node_types()`, resolves effective severity per rule (per-rule > per-category > rule default)
+47: 4. `Linter::new(registry)` → initializes tree-sitter parser with MATLAB grammar
+48: 5. `linter.lint(source, file_path)` → single-pass DFS traversal:
+49:    - For each node: O(1) lookup of subscribed rules, dispatch `rule.check(&NodeContext)`
+50:    - After traversal: call `rule.check_file(&FileContext)` only on rules where `has_file_check() == true`
+51:    - Stamp effective severity (config override) onto all diagnostics
+52:    - Return sorted diagnostics
+53: 
+54: ### Rule Trait
+55: 
+56: ```rust
+57: pub trait Rule: Send + Sync {
+58:     fn id(&self) -> &'static str;                          // e.g., "NOSEMI"
+59:     fn description(&self) -> &'static str;                 // One-line summary
+60:     fn severity(&self) -> Severity;                        // Default severity
+61:     fn category(&self) -> Category;                        // Rule category for bulk config
+62:     fn target_node_types(&self) -> &'static [&'static str]; // Node types to subscribe to
+63: 
+64:     fn can_be_disabled(&self) -> bool { true }             // false for critical checks
+65:     fn has_file_check(&self) -> bool { false }             // true if check_file is implemented
+66: 
+67:     fn check(&self, ctx: &NodeContext) -> Vec<Diagnostic> { vec![] }      // Per-node
+68:     fn check_file(&self, ctx: &FileContext) -> Vec<Diagnostic> { vec![] } // Per-file
+69: }
+70: ```
+71: 
+72: - **Node-level rules**: Implement `check()`, return non-empty `target_node_types()`.
+73: - **File-level rules**: Implement `check_file()`, set `has_file_check() → true`, return empty `target_node_types()`.
+74: - **Hybrid**: Implement both (rare).
+75: 
+76: ### Rule Categories
+77: 
+78: Rules are organized into categories matching MATLAB's Code Analyzer groups:
+79: 
+80: | Category Enum | Config Key | Description |
+81: |---------------|-----------|-------------|
+82: | `IncompleteAnalysis` | `incomplete-analysis` | Internal linter limits |
+83: | `SyntaxErrors` | `syntax-errors` | Parser-level validation |
+84: | `LanguageSpecification` | `language-specification` | Language constraint violations |
+85: | `Bugs` | `bugs` | Likely bugs and logic errors |
+86: | `CustomChecks` | `custom-checks` | Complexity/style metrics |
+87: | `Naming` | `naming` | Naming conventions |
+88: | `Compatibility` | `compatibility` | Deprecated/removed APIs |
+89: | `ForwardCompatibility` | `forward-compatibility` | Forward compatibility |
+90: | `GoodPractices` | `good-practices` | Best practices |
+91: | `UnsetVariables` | `unset-variables` | Undefined variables |
+92: | `UnusedConstructions` | `unused-constructions` | Dead code |
+93: | `SuggestedImprovements` | `suggested-improvements` | Code improvement suggestions |
+94: | `Readability` | `readability` | Readability improvements |
+95: | `Formatting` | `formatting` | Code formatting |
+96: | `Performance` | `performance` | Performance hints |
+97: | `CodeGeneration` | `code-generation` | MATLAB Coder constraints |
+98: | `FixedPoint` | `fixed-point` | Fixed-point toolbox |
+99: | `Deployment` | `deployment` | MATLAB Compiler constraints |
+100: | `SystemObjects` | `system-objects` | System object validation |
+101: | `Unsupported` | `unsupported` | Unsupported features |
+102: | `BehaviorChanges` | `behavior-changes` | Version behavior changes |
+103: | `ConfigurationIssues` | `configuration-issues` | Config file validation |
+104: 
+105: ### Auto-Registration
+106: 
+107: Rules self-register using the `inventory` crate. No manual editing of `lib.rs` registration arrays is needed. Each rule module adds at the bottom:
+108: 
+109: ```rust
+110: inventory::submit!(crate::RuleRegistration::new("RULE_ID", RuleStruct::from_config));
+111: ```
+112: 
+113: ### Configuration System
+114: 
+115: Config file: `.mlt.toml` (discovered in CWD, or explicit `--config <path>`).
+116: 
+117: ```toml
+118: [lint]
+119: exclude = ["vendor/**"]
+120: 
+121: [lint.categories]
+122: performance = "off"          # Disable all performance rules
+123: compatibility = "warn"       # Set all compatibility rules to warning
+124: 
+125: [lint.rules]
+126: NOSEMI = "info"              # Shorthand: severity only
+127: AGROW = "off"               # Disable rule
+128: 
+129: [lint.rules.NOSEMI]          # Full table: severity + rule-specific params
+130: severity = "error"
+131: ignore_functions = ["disp", "fprintf"]
+132: ```
+133: 
+134: Resolution order: per-rule > per-category > rule default.
+135: 
+136: Rules access typed parameters via `config.rule_params::<T>(rule_id)`, which deserializes the rule's TOML table into a `#[derive(Deserialize, Default)]` struct.
+137: 
+138: ## Adding a New Rule
+139: 
+140: This is the most common task. Follow these steps exactly:
+141: 
+142: ### 1. Create the rule module
+143: 
+144: Create `crates/mlt_rules/src/<rule_id_lowercase>.rs`:
+145: 
+146: ```rust
+147: //! # RULE_ID: Rule Description
+148: //!
+149: //! Explanation of what the rule checks.
+150: 
+151: use mlt_core::{Category, Config, Diagnostic, Fix, NodeContext, Rule, Severity};
+152: use serde::Deserialize;
+153: 
+154: /// Rule-specific configuration (deserialized from .mlt.toml).
+155: #[derive(Debug, Clone, Deserialize, Default)]
+156: pub struct RuleIdConfig {
+157:     // Add rule-specific parameters here with #[serde(default)]
+158: }
+159: 
+160: pub struct RuleId {
+161:     config: RuleIdConfig,
+162: }
+163: 
+164: impl RuleId {
+165:     pub fn from_config(config: &Config) -> Box<dyn Rule> {
+166:         let rule_config: RuleIdConfig = config.rule_params("RULE_ID");
+167:         Box::new(Self { config: rule_config })
+168:     }
+169: }
+170: 
+171: impl Rule for RuleId {
+172:     fn id(&self) -> &'static str { "RULE_ID" }
+173:     fn description(&self) -> &'static str { "..." }
+174:     fn severity(&self) -> Severity { Severity::Warning }
+175:     fn category(&self) -> Category { Category::GoodPractices }
+176:     fn target_node_types(&self) -> &'static [&'static str] { &["..."] }
+177: 
+178:     fn check(&self, ctx: &NodeContext) -> Vec<Diagnostic> {
+179:         // Implementation here
+180:         Vec::new()
+181:     }
+182: }
+183: 
+184: inventory::submit!(crate::RuleRegistration::new("RULE_ID", RuleId::from_config));
+185: ```
+186: 
+187: ### 2. Register the module
+188: 
+189: In `crates/mlt_rules/src/lib.rs`, add only:
+190: 
+191: ```rust
+192: pub mod rule_id_lowercase;
+193: ```
+194: 
+195: No other changes needed — `inventory` handles the rest.
+196: 
+197: ### 3. Add documentation
+198: 
+199: Create `docs/<rule_id_lowercase>.md` following the format of `docs/nosemi.md`:
+200: 
+201: - Title with rule ID and name
+202: - Default severity, auto-fix status, category, can-be-disabled
+203: - "What this rule does" section
+204: - "Why this matters" section
+205: - Examples: Correct / Incorrect / Fixed (with MATLAB code blocks)
+206: - Configuration table with parameters
+207: - Automatic fixes description
+208: - Target node types
+209: - Related rules
+210: 
+211: ### 4. Update docs/rules.md
+212: 
+213: Add a row to the rule table in `docs/rules.md`.
+214: 
+215: ### 5. Update zensical.toml nav
+216: 
+217: Add the rule page to the `Rules` section in `zensical.toml`:
+218: 
+219: ```toml
+220: { "RULE_ID - Name" = "rule_id_lowercase.md" },
+221: ```
+222: 
+223: ### 6. Verify
+224: 
+225: ```bash
+226: cargo build
+227: cargo clippy
+228: cargo test
+229: ```
+230: 
+231: ## Key Patterns and Conventions
+232: 
+233: ### Rule ID Convention
+234: 
+235: Rule IDs match MATLAB Code Analyzer check IDs exactly (e.g., `NOSEMI`, `AGROW`, `PFBNS`, `naming.class.casing`). This gives users familiar IDs and enables feature parity tracking.
+236: 
+237: ### Data-Driven Rules
+238: 
+239: For large groups of similar checks (Compatibility: ~1800, Suggested Improvements: ~243), use data-driven lookup tables:
+240: 
+241: ```rust
+242: // Load from embedded TOML data file
+243: const DATA: &str = include_str!("data/compatibility.toml");
+244: ```
+245: 
+246: A single rule module handles many check IDs by matching function names against a lookup table.
+247: 
+248: ### Generic Rule Engines
+249: 
+250: For systematic patterns (Naming: 81 checks = 9 entities x 9 check types), implement a single generic engine parameterized by configuration.
+251: 
+252: ### Tree-sitter Node Types
+253: 
+254: The MATLAB grammar (tree-sitter-matlab 1.3) defines these important node types:
+255: 
+256: - **Statements**: `assignment`, `function_call`, `command`, `for_statement`, `if_statement`, `while_statement`, `switch_statement`, `try_statement`, `return_statement`, `break_statement`, `continue_statement`
+257: - **Expressions**: `binary_operator`, `boolean_operator`, `comparison_operator`, `unary_operator`, `postfix_operator`, `number`, `string`, `identifier`, `function_call`, `field_expression`, `cell`, `matrix`, `range`, `lambda`
+258: - **Structural**: `source_file`, `block`, `function_definition`, `class_definition`, `properties`, `methods`, `arguments_statement`
+259: - **OOP**: `attributes`, `attribute`, `enumeration`, `enum`, `events`, `property`, `superclasses`
+260: - **Statement parents**: `source_file`, `block` (use these to determine if a node is at statement level)
+261: 
+262: **Important limitation**: `function_call` is used for both actual function calls AND array/cell indexing. The grammar cannot distinguish them.
+263: 
+264: ### Checking Statement-Level Context
+265: 
+266: Many rules need to know if a node is a statement (top-level in a block) vs. a sub-expression. Pattern:
+267: 
+268: ```rust
+269: let is_statement_level = node
+270:     .parent()
+271:     .map(|p| ["source_file", "block"].contains(&p.kind()))
+272:     .unwrap_or(false);
+273: ```
+274: 
+275: ### Fix Construction
+276: 
+277: ```rust
+278: // Simple insertion
+279: Fix::insert(byte_offset, ";")
+280: 
+281: // Replacement
+282: Fix::new(start..end, "replacement_text")
+283: 
+284: // Multi-edit (atomic)
+285: Fix::with_additional(primary_range, primary_replacement, vec![
+286:     Fix::new(other_range, other_replacement),
+287: ])
+288: ```
+289: 
+290: ### Rule Config Pattern
+291: 
+292: Every rule should define a `#[derive(Deserialize, Default)]` config struct, even if currently empty. This makes adding parameters non-breaking:
+293: 
+294: ```rust
+295: #[derive(Debug, Clone, Deserialize, Default)]
+296: pub struct RuleIdConfig {
+297:     #[serde(default)]
+298:     pub some_param: Vec<String>,
+299: }
+300: ```
+301: 
+302: ## Commands
+303: 
+304: | Command | Purpose |
+305: |---------|---------|
+306: | `cargo build` | Build all crates |
+307: | `cargo clippy` | Lint Rust code (must pass with zero warnings) |
+308: | `cargo test` | Run all tests (unit tests in `mlt_core::config`) |
+309: | `cargo run -- <file.m>` | Run the linter on a MATLAB file |
+310: | `cargo run -- --fix <file.m>` | Apply auto-fixes |
+311: | `cargo run -- --config path/.mlt.toml <file.m>` | Lint with explicit config |
+312: 
+313: ## Quality Standards
+314: 
+315: - Zero clippy warnings (CI gate)
+316: - All public types and functions must have doc comments
+317: - Rule modules must have module-level `//!` documentation with examples
+318: - Every rule must have a corresponding `docs/<rule_id>.md` documentation page
+319: - Tests should cover: rule fires correctly, rule does NOT fire on valid code, config parameters are respected
+320: 
+321: ## Documentation System
+322: 
+323: Documentation uses [Zensical](https://zensical.org) (successor to Material for MkDocs):
+324: 
+325: - Config: `zensical.toml` at repo root
+326: - Content: `docs/` directory (Markdown)
+327: - Preview: `zensical serve` (requires `pip install zensical`)
+328: - Build: `zensical build`
+329: 
+330: ### Documentation Structure
+331: 
+332: ```
+333: docs/
+334: ├── index.md                    # Landing page
+335: ├── getting-started/
+336: │   ├── installation.md         # How to install
+337: │   └── quickstart.md           # Basic usage
+338: ├── usage/
+339: │   ├── cli.md                  # CLI reference
+340: │   ├── editors.md              # Editor integration
+341: │   └── ci-cd.md                # CI/CD integration
+342: ├── configuration.md            # .mlt.toml schema reference
+343: ├── rules.md                    # Rules overview + table
+344: └── <rule_id>.md                # One page per rule (flat, not nested)
+345: ```
+346: 
+347: ### Rule Documentation Template
+348: 
+349: Every rule page follows this structure (see `docs/nosemi.md` as the canonical example):
+350: 
+351: 1. `# RULE_ID - <Human Name>`
+352: 2. Default severity + auto-fix badge + category + can-be-disabled
+353: 3. "What this rule does"
+354: 4. "Why this matters" (bullet points)
+355: 5. "Examples" → Correct / Incorrect / Fixed (MATLAB code blocks)
+356: 6. "Configuration" (TOML example + parameters table)
+357: 7. "Automatic fixes" (describe what the fix does)
+358: 8. "Target node types" (tree-sitter nodes)
+359: 9. "Related rules"
+
+(End of file - total 359 lines)
+</content>
+Called the Read tool with the following input: {"filePath":"/home/watermarkhu/repositories/mlt/PLAN.md"}
+<path>/home/watermarkhu/repositories/mlt/PLAN.md</path>
+<type>file</type>
+<content>
+1: # PLAN.md — MATLAB Code Analyzer Feature Parity for mlt
+2: 
+3: This document tracks the implementation plan for bringing mlt to full feature
+4: parity with MATLAB's Code Analyzer (~2,680 checks).
+5: 
+6: **Decisions made:**
+7: - Rule IDs match MATLAB's native check IDs exactly (e.g., `NOSEMI`, `AGROW`, `naming.class.casing`).
+8: - Compatibility/behavior-change checks (~1,800) use a data-driven TOML lookup table.
+9: - Naming checks (81) use a single generic engine with 81 separate rule IDs.
+10: - Custom checks (25) use a single engine with per-check thresholds.
+11: - Rules auto-register via the `inventory` crate — no manual `lib.rs` arrays.
+12: - Category-level config is supported (`[lint.categories]` in `.mlt.toml`).
+13: 
+14: ---
+15: 
+16: ## Current State
+17: 
+18: ### Implemented Engines
+19: 
+20: | Module | File | Functional Check IDs | Approach |
+21: |--------|------|---------------------|----------|
+22: | NOSEMI | `nosemi.rs` | 1 | Node-level, auto-fix |
+23: | Compatibility | `compatibility.rs` + `data/compatibility.toml` | ~275 (of 323 entries; 48 are generic/unfilled) | Data-driven HashMap lookup |
+24: | Naming | `naming.rs` | 81 (63 are no-ops without user config) | File-level traversal, configurable |
+25: | Custom Checks | `custom_checks.rs` | 25 | File-level metrics, configurable thresholds |
+26: 
+27: **Total functional check IDs: ~382 of ~2,680 (14%)**
+28: 
+29: ### Core Infrastructure
+30: 
+31: | Feature | Status |
+32: |---------|--------|
+33: | Rule trait with `category()`, `can_be_disabled()`, `has_file_check()` | Done |
+34: | Category enum (22 variants) | Done |
+35: | Category-level config (`[lint.categories]`) | Done |
+36: | `inventory` auto-registration | Done |
+37: | File-level dispatch optimization | Done |
+38: | Overlapping fix detection | Done |
+39: | Config error reporting (non-silent) | Done |
+40: | Symbol table / scope analysis | Not started |
+41: | Control flow analysis | Not started |
+42: | Cross-file analysis | Not started |
+43: | Inline suppression (`%#ok<RULE>`) | Not started |
+44: 
+45: ---
+46: 
+47: ## Target: MATLAB Code Analyzer Check Inventory
+48: 
+49: | # | Category | Count | Severity | Notes |
+50: |---|----------|-------|----------|-------|
+51: | 1 | Incomplete Analysis | 17 | Error | All `can_be_disabled = false`; linter-internal limits |
+52: | 2 | Syntax Errors | 50 | Error | Parser-adjacent validation |
+53: | 3 | Language Specification Errors | 157 | Error | OOP, parfor, spmd, argument validation |
+54: | 4 | Bugs | 35 | Error | Suspicious patterns, logic errors |
+55: | 5 | Custom Checks | 25 | Warning | **Done** — complexity/style metrics |
+56: | 6 | Naming Checks | 81 | Info | **Done** — 9 entities × 9 check types |
+57: | 7 | Compatibility Considerations | 891 | Error/Warning | **Partial** — 275 of 891 populated in data file |
+58: | 8 | Forward Compatibility | 7 | Error/Warning | In data file as generic (not matchable yet) |
+59: | 9 | Good Practices | 106 | Warning | Not started |
+60: | 10 | Unset Variables | 6 | Warning | Needs symbol table |
+61: | 11 | Unused Constructions | 17 | Warning/Info | Needs symbol table + control flow |
+62: | 12 | Suggested Improvements | 243 | Info | Data-driven (function replacement suggestions) |
+63: | 13 | Readability Improvements | 35 | Info | Pattern matching on AST |
+64: | 14 | Formatting Suggestions | 8 | Info | **Partial** — NOSEMI done; 7 remaining |
+65: | 15 | Performance Improvements | 41 | Info | Pattern matching on AST |
+66: | 16 | MATLAB for Code Generation | 19 | Error | Specialized |
+67: | 17 | Fixed-Point Messages | 1 | Warning | Specialized |
+68: | 18 | MATLAB Compiler (Deployment) | 10 | Error/Warning | Specialized |
+69: | 19 | System Objects | 9 | Error/Warning | Specialized |
+70: | 20 | Unsupported Features | 13 | Warning | Specialized |
+71: | 21 | Behavior Changes | 5 | Warning | In data file (5 entries) |
+72: | 22 | Behavior Changes (Low Reliability) | 265 | Warning | **Partial** — ~55 of 265 in data file |
+73: | 23 | Upcoming Behavior Changes | 3 | Warning | In data file as generic |
+74: | 24 | Upcoming Behavior Changes (Low Reliability) | 632 | Warning | Not started |
+75: | 25 | Code Analyzer Configuration Issues | 4 | Error | Not started |
+76: | | **TOTAL** | **2,680** | | |
+77: 
+78: ---
+79: 
+80: ## Phase 0: Architecture Fixes ✅ COMPLETE
+81: 
+82: All items completed and verified.
+83: 
+84: ### 0.1 — Fix Config Parsing Bug ✅
+85: - **File:** `crates/mlt_core/src/config.rs`
+86: - **Problem:** Early `return` in `from_config_file()` when a rule has `severity = "off"` in full-table form dropped all subsequently-processed rules.
+87: - **Fix:** Replaced `return Ok(...)` with `continue` in the loop.
+88: - **Test added:** `test_full_table_off_does_not_drop_subsequent_rules`
+89: 
+90: ### 0.2 — Fix `rule_params()` Silent Error Swallowing ✅
+91: - **File:** `crates/mlt_core/src/config.rs`
+92: - **Problem:** `value.try_into::<T>().ok()` silently returned `Default` on malformed config.
+93: - **Fix:** Added `eprintln!` warning when deserialization fails, so users see config errors.
+94: 
+95: ### 0.3 — Add Rule Categories ✅
+96: - **File:** `crates/mlt_core/src/rule.rs`
+97: - Added `Category` enum with 22 variants matching MATLAB Code Analyzer groups.
+98: - Added `fn category(&self) -> Category` to `Rule` trait.
+99: - **File:** `crates/mlt_core/src/config.rs`
+100: - Added `[lint.categories]` section support with `HashMap<Category, Option<Severity>>`.
+101: - Added `is_rule_enabled_for_category()` and `effective_severity()` methods.
+102: - Resolution order: per-rule > per-category > rule default.
+103: 
+104: ### 0.4 — Auto-Registration with `inventory` ✅
+105: - **File:** `crates/mlt_rules/src/lib.rs`
+106: - Replaced static `RULE_FACTORIES` const slice with `inventory::collect!(RuleRegistration)`.
+107: - Each rule module self-registers via `inventory::submit!`.
+108: - Adding a rule requires only: create module file + add `pub mod` line. No other edits.
+109: 
+110: ### 0.5 — File-Level Dispatch Optimization ✅
+111: - **File:** `crates/mlt_core/src/registry.rs`
+112: - Added `file_check_indices: Vec<usize>` populated at construction from `rule.has_file_check()`.
+113: - **File:** `crates/mlt_core/src/linter.rs`
+114: - Changed file-level dispatch to iterate only `file_check_rules()` instead of all rules.
+115: 
+116: ### 0.6 — Overlapping Fix Detection ✅
+117: - **File:** `crates/mlt_cli/src/main.rs`
+118: - Added overlap detection in `apply_fixes()`: if a fix's byte range overlaps with the previously applied fix, skip it and emit a warning.
+119: 
+120: ### 0.7 — Rename M001 → NOSEMI ✅
+121: - Renamed `m001_trailing_semicolon.rs` → `nosemi.rs`.
+122: - Updated rule ID from `"M001"` to `"NOSEMI"`.
+123: - Updated severity from `Warning` to `Info` (matching MATLAB's Formatting Suggestions).
+124: - Added `fn category(&self) -> Category { Category::Formatting }`.
+125: - Updated docs, `zensical.toml`, and `rules.md`.
+126: 
+127: ### 0.8 — Rule Metadata ✅
+128: - Added `fn can_be_disabled(&self) -> bool { true }` to `Rule` trait (default true).
+129: - Added `fn has_file_check(&self) -> bool { false }` to `Rule` trait (default false).
+130: 
+131: ---
+132: 
+133: ## Phase 1: Data-Driven Rule Engines ✅ COMPLETE
+134: 
+135: ### 1.1 — Compatibility Lookup Engine ✅
+136: - **File:** `crates/mlt_rules/src/compatibility.rs` (245 lines)
+137: - **Data:** `crates/mlt_rules/src/data/compatibility.toml` (323 entries, 2,350 lines)
+138: - Single `CompatibilityEngine` targeting `function_call` and `command` nodes.
+139: - `LazyLock<HashMap>` built from TOML at first access; O(1) lookup per function name.
+140: - Diagnostics carry the specific MATLAB check ID (e.g., `DPSD`), not the meta-ID.
+141: - **275 entries** have real function names and are actively matchable.
+142: - **48 entries** are generic (empty `function_name`); require future AST pattern matching.
+143: - **Known issue:** Duplicate function names (`tcpip`, `legend`, `web`) cause one check ID to be shadowed.
+144: - **Remaining work:** Populate remaining ~1,480 entries to reach full 1,803 coverage.
+145: 
+146: ### 1.2 — Generic Naming Engine ✅
+147: - **File:** `crates/mlt_rules/src/naming.rs` (849 lines)
+148: - Single `NamingEngine` registered as file-level rule.
+149: - Generates 81 static rule IDs (`naming.<entity>.<checkType>`).
+150: - 9 entity types: class, function, localFunction, method, nestedFunction, property, event, enumeration, variable.
+151: - 9 check types: maxLength, minLength, regularExpression, requiredPrefix, disallowedPrefix, disallowedPhrase, requiredSuffix, disallowedSuffix, casing.
+152: - Entity extraction via full-tree DFS classifying `function_definition`, `class_definition`, `property`, `enum`, `assignment` nodes.
+153: - **Note:** 7 of 9 check types require user config to produce diagnostics. Only `maxLength` (default 63) and `minLength` (default 2) fire without config.
+154: 
+155: ### 1.3 — Custom Checks Framework ✅
+156: - **File:** `crates/mlt_rules/src/custom_checks.rs` (1,286 lines)
+157: - Single `CustomChecksEngine` as file-level rule.
+158: - All 25 check IDs implemented with configurable thresholds.
+159: - Cyclomatic complexity (standard and strict), nesting depth, line-based metrics, function-level metrics.
+160: - **Known issue:** DAFSC semicolons-per-line counts semicolons inside strings/comments.
+161: - **Known issue:** Average complexity uses integer division (truncates fractions).
+162: 
+163: ---
+164: 
+165: ## Phase 2: Semantic Analysis Infrastructure ✅ COMPLETE
+166: 
+167: ### 2.1 — Symbol Table ✅
+168: - **File:** `crates/mlt_rules/src/analysis/symbols.rs` (1,355 lines)
+169: - `SymbolTable::build(tree, source)` — single DFS pass producing `Vec<Scope>`
+170: - Types: `DefKind` (8 variants), `VarDef`, `VarUse`, `ScopeKind` (6 variants), `Scope`, `SymbolTable`
+171: - Tracks: input/output args, assignments, for-loop iterators, global/persistent, nested functions, lambda params
+172: - Helpers: `scope_at()`, `function_scopes()`, `defs_of()`, `uses_of()`, `is_defined()`, `is_used()`
+173: - 14 unit tests
+174: 
+175: ### 2.2 — Control Flow Analysis ✅
+176: - **File:** `crates/mlt_rules/src/analysis/control_flow.rs` (1,448 lines)
+177: - `find_unreachable(tree, source)` — detects code after return/break/continue
+178: - `analyze_definite_assignment(func_node, source)` — set-based flow analysis through if/switch/try/loop branches
+179: - `block_terminates(block_node)` — recursive termination check
+180: - Handles: if/elseif/else intersection, switch/case/otherwise, try/catch, for/while (conservative), global/persistent as assigned
+181: - 24 unit tests
+182: 
+183: ### 2.3 — Function/Class Metadata Extraction ✅
+184: - **File:** `crates/mlt_rules/src/analysis/metadata.rs` (1,304 lines)
+185: - `FileMeta::build(tree, source)` — extracts `FileType`, `ClassMeta`, `FunctionMeta`, `PropertyMeta`, etc.
+186: - Detects: file type (Script/FunctionFile/ClassFile), constructors, setters/getters, abstract methods, argument validation blocks
+187: - Helpers: `main_function()`, `all_methods()`, `all_properties()`, `is_sealed()`, `is_abstract()`, `is_handle()`
+188: - 10 unit tests
+189: 
+190: ### 2.4 — Analysis Module Scaffold ✅
+191: - **File:** `crates/mlt_rules/src/analysis/mod.rs`
+192: - Re-exports `symbols`, `control_flow`, `metadata` sub-modules.
+193: 
+194: ---
+195: 
+196: ## Phase 3: Rule Implementation by Category
+197: 
+198: Each category is an independent module that can be implemented by a parallel
+199: agent. Categories are listed in priority order.
+200: 
+201: ### 3.1 — Formatting Suggestions (7 remaining of 8)
+202: - **File:** `crates/mlt_rules/src/formatting.rs`
+203: - **Check IDs:** NOCOMMA, NO4LP, ALIGN, NOPTS, NOPRT, PRTCAL, NCOMMA
+204: - **Depends on:** Nothing (NOSEMI already done separately)
+205: - **Approach:** Node-level pattern matching
+206: 
+207: | Check ID | Description | Target Nodes |
+208: |----------|-------------|-------------|
+209: | NOCOMMA | Missing comma between matrix elements | `matrix`, `cell` |
+210: | NO4LP | Missing indentation for loop body | `for_statement`, `while_statement` |
+211: | ALIGN | Misaligned code | `block` |
+212: | NOPTS | Missing parentheses in control statement | `if_statement`, `while_statement` |
+213: | NOPRT | Unnecessary parentheses | `parenthesis` |
+214: | PRTCAL | Parentheses in function call could use command syntax | `function_call` |
+215: | NCOMMA | Missing comma in function arguments | `arguments` |
+216: 
+217: ### 3.2 — Bugs (35 checks)
+218: - **File:** `crates/mlt_rules/src/bugs.rs`
+219: - **Check IDs:** IFBDUP, IFCDUP, PFUIXE, PFBFN, PFWHOS, PFTUSE, PFRNC, BDSCA2, RHSFN, FNAN, FUNFUN, MOCUP, MDUPC, MNANC, MULCC, STCUL, LOGEMP, NOPRC, SHOCIRT, SHOCIRF, CTRUE, CFALSE, DEFSIZE, VARARG, STRCMPCSTR, MEXCEP, ASSRT, FWFORP, FPFORP, LBODUP, DEBUGFUN, INCR, DECR, CMDAND, CMDOR
+220: - **Depends on:** 2.3 (metadata) for some checks
+221: - **Approach:** Node-level pattern matching; some file-level
+222: 
+223: Key checks:
+224: | Check ID | Description | Approach |
+225: |----------|-------------|----------|
+226: | IFBDUP | Duplicate if-branch bodies | Compare child block text |
+227: | IFCDUP | Duplicate if-branch conditions | Compare condition node text |
+228: | CTRUE | Condition is always true | Detect `if true`, `while true` |
+229: | CFALSE | Condition is always false | Detect `if false` |
+230: | DEBUGFUN | Debug function left in code | Match `keyboard`, `dbstop` calls |
+231: | CMDAND | `&` used in command context (should be `&&`) | Check boolean_operator in command |
+232: | CMDOR | `\|` used in command context (should be `\|\|`) | Check boolean_operator in command |
+233: | INCR | Inefficient increment `x = x + 1` | Pattern match assignment |
+234: | DECR | Inefficient decrement `x = x - 1` | Pattern match assignment |
+235: 
+236: ### 3.3 — Readability Improvements (35 checks)
+237: - **File:** `crates/mlt_rules/src/readability.rs`
+238: - **Check IDs:** ASGSL, COMNL, SPERR, SPWRN, NCHKE, DSPSP, DSPSY, STLOW, FLUDLR, RPMT1, RPMT0, RPMTT, RPMTF, RPMTI, RPMTN, PSIZE, LOGSUM, LOGL, ISCHR, ISSTR, ISLOG, ISCEL, IJCL, ISMAT, ISROW, ISCOL, NBRAK2, MFAMB, FVINR, STREMP, STRCL1, STRCLFH, STRIFCND, CHARTEN, SPRINTFN
+239: - **Depends on:** Nothing
+240: - **Approach:** Node-level pattern matching (suggest more readable alternatives)
+241: 
+242: Key checks:
+243: | Check ID | Description |
+244: |----------|-------------|
+245: | ISCHR | Use `ischar(x)` instead of `isa(x,'char')` |
+246: | ISSTR | Use `isstring(x)` instead of `isa(x,'string')` |
+247: | IJCL | `i` or `j` used as variable (shadows complex unit) |
+248: | NBRAK2 | Unnecessary brackets in indexing |
+249: | STREMP | Use `strlength(s)==0` instead of `strcmp(s,'')` |
+250: 
+251: ### 3.4 — Performance Improvements (41 checks)
+252: - **File:** `crates/mlt_rules/src/performance.rs`
+253: - **Check IDs:** PFBNS, RGXP1, TRIM1, STTOK, TRIM2, STNCI, STCCS, FNDSB, SFLD, GFLD, CCAT, AGROW, SAGROW, ISMT, ISCL, ST2NM, FLPST, MXFND, EFIND, EXIST, UDIM, FREAD, N2UNI, TNMLP, MINV, LAXES, MMTC, MRPBW, SPRIX, TRSRT, CCAT1, GRIDD, AND2, OR2, CLALL, CLCLS, CLFUNC, CLJAVA, CLMEX, RGXPI, CLEAR0ARGS
+254: - **Depends on:** 2.1 (symbols) for AGROW (detecting growth inside loops)
+255: - **Approach:** Mostly node-level pattern matching
+256: 
+257: Key checks:
+258: | Check ID | Description |
+259: |----------|-------------|
+260: | AGROW | Variable appears to grow inside loop |
+261: | AND2 | Use `&&` instead of `&` for scalar logical |
+262: | OR2 | Use `\|\|` instead of `\|` for scalar logical |
+263: | MINV | Use `A\b` instead of `inv(A)*b` |
+264: | GFLD | Use dynamic field names instead of `getfield` |
+265: | SFLD | Use dynamic field names instead of `setfield` |
+266: | EXIST | Use `isfile`/`isfolder` instead of `exist` |
+267: 
+268: ### 3.5 — Good Practices (106 checks)
+269: - **File:** `crates/mlt_rules/src/good_practices.rs`
+270: - **Depends on:** 2.1 (symbols), 2.3 (metadata)
+271: - **Approach:** Mix of node-level and file-level checks
+272: 
+273: Split into sub-groups within the module:
+274: | Sub-Group | Check IDs | Count |
+275: |-----------|-----------|-------|
+276: | Error handling | TRYNC, CTCH, WLAST, WNTAG, ERTAG, MEXCEP | 6 |
+277: | String comparison | STCMP, STCI, STISA, STRNU | 4 |
+278: | OOP practices | MCHDP, MCVM, MCPO, MCCPI, MCSUP, MOBSRV, etc. | ~20 |
+279: | eval/dynamic code | EVLCS, EVLDOT, EVLEQ, EVLSYS, EVLDUAL, EVLSEQVAR | 6 |
+280: | Parfor/SPMD practices | PFRNI, PFGP, PFGV, PFEVB, PFOUS, PFIIN, etc. | ~15 |
+281: | General | NOANS, LOAD, SEPEX, NBRAK1, LNGNM, CHAIN, DISPLAY, etc. | ~55 |
+282: 
+283: ### 3.6 — Incomplete Analysis (17 checks)
+284: - **File:** `crates/mlt_rules/src/incomplete_analysis.rs` or integrated into `mlt_core/src/linter.rs`
+285: - **Check IDs:** TMMSG, TMSMS, MXASET, QUIT, NOSPC, MBIG, NOFIL, MDOTM, MDMCR, RDERR, EOFER, EOFMI, MDEEP, DEEPC, DEEPN, DEEPS, TEXTL
+286: - **All `can_be_disabled = false`**
+287: - **Depends on:** Nothing (linter-internal limits)
+288: - **Approach:** Guard conditions in the lint engine:
+289:   - TMMSG: emit if diagnostics count exceeds 10,000
+290:   - MBIG: emit if source file exceeds size threshold
+291:   - MDEEP: emit if parenthesis nesting exceeds threshold
+292:   - EOFER: emit if parse tree has too many ERROR nodes
+293:   - NOFIL, RDERR, MDOTM: emit from CLI on file I/O errors
+294: 
+295: ### 3.7 — Syntax Errors (50 checks)
+296: - **File:** `crates/mlt_rules/src/syntax_errors.rs`
+297: - **Check IDs:** NOLHS, BDFIL, BADCH, BADCT, BADFP, BADHBH, BADHBB, BADHBHT, BADHBBT, BADSP, HEXTOOLONG, BINARYTOOLONG, BADOT, BADNE, DOUQT, STRIN, INBLK, RESWD, REDEF, UNSET, LHROW, NOPAR, NOPAR2, EOLPAR, TWOCM, FNDOT, ENDCT, ENDCT2, ENDCT3, ENDCT4, SYNER, SOFOC, CLIS, MCPLD, SBTMP, BADNOT, BADNOTLHS, ENDPAR, SEPEXR, SEPEXC, VTPOD, FNSWA, SYNEND, SEMFU, CLTWO, FVACI, FVACS, FVAMI, FVNST, FVSYN
+298: - **Depends on:** 2.3 (metadata) for some
+299: - **Approach:** Many are already caught by tree-sitter parse errors. Augment with post-parse validation:
+300:   - Check tree-sitter `ERROR` and `MISSING` nodes for specific patterns
+301:   - Validate file name vs class/function name (BDFIL, MCFIL)
+302:   - Check for known bad patterns (BADNE: `!=` instead of `~=`, BADOT: `..`)
+303: 
+304: ### 3.8 — Language Specification Errors (157 checks)
+305: Split into sub-modules due to size:
+306: 
+307: #### 3.8a — Parfor Rules (45 checks)
+308: - **File:** `crates/mlt_rules/src/parfor.rs`
+309: - **Check IDs:** PFANSLP, PFANSNS, PFFORA, PFGLOB, PFINPT, PFPERS, PFCTXT, PFFRNG, PFMLTI, PFANON, PFFSUB, PFINCR, PFVARS, PFVSUB, PFRNG, PFPF, PFSPMD, PFBRK, PFRTN, PFLD, PFSV, PFNAR, PFUTVR, PFUTMP, PFEVC, PFNAIO, PFNACK, PFSLO, PFSLW, PFSLRD, PFUNK, PFNF, PFRFH, PFXST, PFCEL, BRKFOR, CONTFOR, FWFORP, FPFORP, plus related SPMD checks
+310: - **Depends on:** 2.1 (symbols), 2.3 (metadata)
+311: - **Approach:** File-level; detect `for_statement` with parfor keyword, then validate variable classification
+312: 
+313: #### 3.8b — Class/Method Rules (45 checks)
+314: - **File:** `crates/mlt_rules/src/class_rules.rs`
+315: - **Check IDs:** MCDIR, MCFIL, MCEB, MCSGP, MCSGA, MCS2I, MCS1O, MCG1I, MCG1O, MCGSA, MCSCN, MCANI, MCASC, MCRED, MCCBD, MCPSG, MCSCT, MCSCO, MCSCF, MCCBS, MCCBU, MCCMC, MCSCC, MCSCM, MCCSOP, MTMAT, MTAGS3, MCAPP, MABSEAC, MABSEAM, MCMIO, MCMSP, MCMTP, MHERIT, MCSWA, MCPIN, MWKREF, MWKCT, MWKCL, MCSMO, plus AT* attribute checks
+316: - **Depends on:** 2.3 (metadata)
+317: - **Approach:** File-level; requires class structure understanding
+318: 
+319: #### 3.8c — Function Validation Rules (40 checks)
+320: - **File:** `crates/mlt_rules/src/function_validation.rs`
+321: - **Check IDs:** FVAPN, FVATF, FVIOA, FVBTN, FVDAN, FVDAP, FVDNF, FVDREP, FVMCL, FVNDE, FVIDV, FVNIV, FVNREP, FVOND, FVORDI, FVORDN, FVORDO, FVORDP, FVONV, FVREPD, FVREPO, FVNSC, FVNVL, FVSOR, FVSORO, FVUBD, FVVCON, FVOCON, FVVIN, FVVREP, TTOOFEWDIMS, TINVALDIM, FVOBI, FVOOD, FVOON, FVOVREP, FVOOI, FVORM, plus VTPEAL, VTPCON, VTPIN
+322: - **Depends on:** 2.3 (metadata)
+323: - **Approach:** File-level; validate `arguments` blocks
+324: 
+325: #### 3.8d — Other Language Spec (27 checks)
+326: - **File:** `crates/mlt_rules/src/language_spec.rs`
+327: - **Check IDs:** FCONV, FCONF, ROWLN, GPFST, GPNES, NPERS, SPDEC, SPDEC3, SPNST, SPRET, SPBRK, SPLD, SPSV, SPGP, SPEVC, SPBFN, SPNF, SPWHOS, FCNANS, CLANS, USESWNS, IDXCOLND, CTOINE, CTORO, NCHKOS, ERTXT, WTXT
+328: - **Depends on:** 2.1 (symbols), 2.3 (metadata)
+329: 
+330: ### 3.9 — Unset Variables (6 checks)
+331: - **File:** `crates/mlt_rules/src/unset_variables.rs`
+332: - **Check IDs:** PSET, USENS, SVNODEF, SUSENS, NODEF, STOUT
+333: - **Depends on:** 2.1 (symbols), 2.2 (control flow)
+334: - **Approach:** File-level; use symbol table to find variables read before written
+335: 
+336: ### 3.10 — Unused Constructions (17 checks)
+337: - **File:** `crates/mlt_rules/src/unused.rs`
+338: - **Check IDs:** NOEFF, NUSED, EQEFF, PUSE, SETNU, ASGLU, NASGU, PREALL, INUSA, INUSD, VANUS, DEFNU, UNRCH, MANU, VUNUS, MSNU, MSNE
+339: - **Depends on:** 2.1 (symbols), 2.2 (control flow)
+340: - **Approach:** File-level; use symbol table to find unused assignments and unreachable code
+341: 
+342: ### 3.11 — Suggested Improvements (243 checks)
+343: - **File:** `crates/mlt_rules/src/suggested_improvements.rs`
+344: - **Data:** `crates/mlt_rules/src/data/suggested_improvements.toml`
+345: - **Depends on:** Nothing (data-driven, like compatibility)
+346: - **Approach:** Same lookup-engine pattern as compatibility. Function name → suggested replacement.
+347: 
+348: Key checks:
+349: | Check ID | Description |
+350: |----------|-------------|
+351: | CSVRD | Use `readmatrix` instead of `csvread` |
+352: | DLMRD | Use `readmatrix` instead of `dlmread` |
+353: | XLSRD | Use `readmatrix`/`readtable` instead of `xlsread` |
+354: | CSVWT | Use `writematrix` instead of `csvwrite` |
+355: | DLMWT | Use `writematrix` instead of `dlmwrite` |
+356: | XLSWT | Use `writematrix`/`writetable` instead of `xlswrite` |
+357: | ISDIR | Use `isfolder` instead of `isdir` |
+358: | HIST | Use `histogram` instead of `hist` |
+359: | HISTC | Use `histcounts` instead of `histc` |
+360: 
+361: ### 3.12 — Specialized Domains (combined, 52 checks)
+362: 
+363: #### Code Generation (19 checks)
+364: - **File:** `crates/mlt_rules/src/codegen.rs`
+365: - **Check IDs:** EMVDF, EMGRO, EMNODEF, EMFCN, PRMNOIN, EMCEL, EMTC, EMIMP, EMNST, EMSCR, EMBRK, EMCNT, EMPFR, EMRTN, EMWHL, EMRIFAV, LOOPPRAGMAWITHOUTFOR, EMLOAD, EMS2N
+366: - **Depends on:** 2.3 (metadata)
+367: 
+368: #### Deployment (10 checks)
+369: - **File:** `crates/mlt_rules/src/deployment.rs`
+370: - **Check IDs:** MCCD, MCPRD, MCHLP, MCKBD, MCSVP, MCMLR, MCABF, MCMFL, MCTBX, MCLL
+371: 
+372: #### System Objects (9 checks)
+373: - **File:** `crates/mlt_rules/src/system_objects.rs`
+374: - **Check IDs:** SONUMIN, SONUMOUT, SODEPPROP, SOINITPROP, SODFLTVAL, SORSRVDNM, SOTUNPROP1, SOTUNPROP3, SOTUNPROP4
+375: 
+376: #### Unsupported Features (13 checks)
+377: - **File:** `crates/mlt_rules/src/unsupported.rs`
+378: - **Check IDs:** MCADE, AWTIUD, AXCHUD, FEATUD, FNDPUD, HGCNUD, IMPKG, ISMBUD, MIPKG, SEPTUD, SYDEUD, UIRSUD, UISUUD
+379: 
+380: #### Fixed-Point (1 check)
+381: - Included in `codegen.rs`: FPASE
+382: 
+383: ### 3.13 — Configuration Issues (4 checks)
+384: - Integrated into `crates/mlt_core/src/config.rs`
+385: - **Check IDs:** BDCFG, CFERR, BDOPT, CFIG
+386: - **Approach:** Emit diagnostics during config parsing for malformed `.mlt.toml`
+387: 
+388: ---
+389: 
+390: ## Phase 4: Expand Compatibility Data File
+391: 
+392: The compatibility engine (`compatibility.rs`) is code-complete. The data file
+393: needs to be expanded from 323 entries to the full ~1,803.
+394: 
+395: ### 4.1 — Compatibility Considerations (remaining ~616 entries)
+396: - Current: 256 entries; target: 891
+397: - Add remaining deprecated function entries from MATLAB documentation
+398: - Handle duplicate function names (e.g., multi-function deprecations) by switching HashMap to `HashMap<String, Vec<CompatEntry>>`
+399: 
+400: ### 4.2 — Behavior Changes Low Reliability (remaining ~210 entries)
+401: - Current: ~55 entries; target: 265
+402: - Primarily JAPIEXT* checks (Java API removals)
+403: 
+404: ### 4.3 — Upcoming Behavior Changes Low Reliability (632 entries)
+405: - Current: 0 entries; target: 632
+406: - All JAPIEXT* entries for upcoming Java API removals
+407: 
+408: ### 4.4 — Forward Compatibility (7 entries)
+409: - Current: 7 entries but all generic (empty function_name)
+410: - These require AST-pattern checks, not function-name lookup
+411: - Consider implementing as node-level rules in `compatibility.rs` or a separate module
+412: 
+413: ---
+414: 
+415: ## Phase 5: Test Suite
+416: 
+417: ### 5.1 — Test Fixture Structure
+418: ```
+419: tests/
+420: ├── fixtures/
+421: │   ├── nosemi/
+422: │   │   ├── pass.m
+423: │   │   └── fail.m
+424: │   ├── compatibility/
+425: │   │   ├── pass.m
+426: │   │   └── fail.m
+427: │   ├── naming/
+428: │   │   ├── pass.m
+429: │   │   └── fail.m
+430: │   ├── custom_checks/
+431: │   │   ├── pass.m
+432: │   │   └── fail.m
+433: │   ├── bugs/
+434: │   │   ├── pass.m
+435: │   │   └── fail.m
+436: │   └── ... (one dir per category)
+437: └── integration/
+438:     ├── test_all_rules.rs
+439:     └── test_fixes.rs
+440: ```
+441: 
+442: ### 5.2 — Test Types
+443: - **Unit tests:** Per-rule, in each rule module (using `#[cfg(test)]` mod)
+444: - **Fixture tests:** MATLAB files with expected diagnostics; assert linter output matches
+445: - **Fix tests:** Apply `--fix` and verify output matches expected
+446: - **Config tests:** Verify rules respect severity overrides, category disabling, rule params
+447: 
+448: ---
+449: 
+450: ## Phase 6: Documentation
+451: 
+452: ### 6.1 — Rule Documentation Pages
+453: - One `docs/<rule_id>.md` page per non-data-driven rule (or per category for data-driven engines)
+454: - Follow template from `docs/nosemi.md`
+455: - Data-driven engines get a single page explaining the engine + a table of all check IDs
+456: 
+457: ### 6.2 — Update `docs/rules.md`
+458: - Complete rule table with all ~2,680 check IDs
+459: - Sortable/filterable by category, severity, auto-fix status
+460: 
+461: ### 6.3 — Update `docs/configuration.md`
+462: - Document `[lint.categories]` feature
+463: - Document all rule-specific parameters
+464: - Examples for common workflows
+465: 
+466: ---
+467: 
+468: ## Dependency Graph & Parallelization
+469: 
+470: ```
+471: Phase 0 ✅ ─────────────────────────────────────────────────────┐
+472: Phase 1 ✅ ─────────────────────────────────────────────────────┤
+473:                                                                 │
+474: Phase 2 (infrastructure) ──── depends on Phase 0 ──────────────┤
+475:   ├─ 2.1 Symbol table ─────────────→ start immediately         │
+476:   ├─ 2.2 Control flow ─────────────→ depends on 2.1            │
+477:   ├─ 2.3 Metadata extraction ──────→ parallel with 2.1         │
+478:   └─ 2.4 Module scaffold ─────────→ parallel with 2.1          │
+479:                                                                 │
+480: Phase 3 (rules) ──── depends on Phase 2 where noted ───────────┘
+481:   │
+482:   │  No dependencies (can start immediately):
+483:   ├─ 3.1  Formatting (7)         ────→ PARALLEL
+484:   ├─ 3.3  Readability (35)       ────→ PARALLEL
+485:   ├─ 3.6  Incomplete Analysis (17) ──→ PARALLEL
+486:   ├─ 3.11 Suggested Improvements (243) → PARALLEL (data-driven)
+487:   ├─ 3.13 Configuration Issues (4)  ─→ PARALLEL
+488:   │
+489:   │  Depends on 2.3 (metadata) only:
+490:   ├─ 3.2  Bugs (35)             ────→ PARALLEL after 2.3
+491:   ├─ 3.7  Syntax Errors (50)    ────→ PARALLEL after 2.3
+492:   ├─ 3.8b Class Rules (45)      ────→ PARALLEL after 2.3
+493:   ├─ 3.8c Function Validation (40) ─→ PARALLEL after 2.3
+494:   ├─ 3.12 Specialized (52)      ────→ PARALLEL after 2.3
+495:   │
+496:   │  Depends on 2.1 (symbols) + 2.3 (metadata):
+497:   ├─ 3.4  Performance (41)      ────→ PARALLEL after 2.1+2.3
+498:   ├─ 3.5  Good Practices (106)  ────→ PARALLEL after 2.1+2.3
+499:   ├─ 3.8a Parfor (45)           ────→ PARALLEL after 2.1+2.3
+500:   ├─ 3.8d Language Spec Other (27) ─→ PARALLEL after 2.1+2.3
+501:   │
+502:   │  Depends on 2.1 + 2.2 (symbols + control flow):
+503:   ├─ 3.9  Unset Variables (6)   ────→ after 2.2
+504:   └─ 3.10 Unused Constructions (17) → after 2.2
+505: 
+506: Phase 4 (data expansion) ──── no code deps, can run anytime ───
+507:   ├─ 4.1 Compat remaining entries    → PARALLEL
+508:   ├─ 4.2 Behavior changes entries    → PARALLEL
+509:   ├─ 4.3 Upcoming behavior entries   → PARALLEL
+510:   └─ 4.4 Forward compat patterns     → after engine update
+511: 
+512: Phase 5 (tests) ──── after each Phase 3 module ────────────────
+513: Phase 6 (docs) ───── after each Phase 3 module ────────────────
+514: ```
+515: 
+516: ### Recommended Execution Order
+517: 
+518: | Wave | Work Items | Parallelism |
+519: |------|-----------|-------------|
+520: | **Wave 1** | 2.1 (symbols), 2.3 (metadata), 2.4 (scaffold) | 3 agents |
+521: | **Wave 2** | 2.2 (control flow), 3.1 (formatting), 3.3 (readability), 3.6 (incomplete), 3.11 (suggested), 3.13 (config issues) | 6 agents |
+522: | **Wave 3** | 3.2 (bugs), 3.4 (perf), 3.5 (good practices), 3.7 (syntax), 3.8a-d (lang spec × 4), 3.12 (specialized) | 9 agents |
+523: | **Wave 4** | 3.9 (unset vars), 3.10 (unused), 4.1-4.3 (data expansion) | 5 agents |
+524: | **Wave 5** | Phase 5 (tests), Phase 6 (docs) | parallel per category |
+525: 
+526: ---
+527: 
+528: ## File Structure (Final State)
+529: 
+530: ```
+531: crates/mlt_rules/src/
+532: ├── lib.rs
+533: ├── data/
+534: │   ├── compatibility.toml            # ~1,803 entries
+535: │   └── suggested_improvements.toml   # ~243 entries
+536: ├── analysis/
+537: │   ├── mod.rs
+538: │   ├── symbols.rs                    # Symbol table
+539: │   ├── control_flow.rs              # Reachability analysis
+540: │   └── metadata.rs                  # Function/class structure
+541: ├── nosemi.rs                         # ✅ NOSEMI (1 check)
+542: ├── compatibility.rs                  # ✅ Data-driven engine (~1,803 checks)
+543: ├── naming.rs                         # ✅ Generic engine (81 checks)
+544: ├── custom_checks.rs                  # ✅ Metrics engine (25 checks)
+545: ├── formatting.rs                     # 7 checks
+546: ├── bugs.rs                           # 35 checks
+547: ├── readability.rs                    # 35 checks
+548: ├── performance.rs                    # 41 checks
+549: ├── good_practices.rs                 # 106 checks
+550: ├── incomplete_analysis.rs            # 17 checks
+551: ├── syntax_errors.rs                  # 50 checks
+552: ├── parfor.rs                         # 45 checks
+553: ├── class_rules.rs                    # 45 checks
+554: ├── function_validation.rs            # 40 checks
+555: ├── language_spec.rs                  # 27 checks
+556: ├── unset_variables.rs                # 6 checks
+557: ├── unused.rs                         # 17 checks
+558: ├── suggested_improvements.rs         # 243 checks
+559: ├── codegen.rs                        # 20 checks
+560: ├── deployment.rs                     # 10 checks
+561: ├── system_objects.rs                 # 9 checks
+562: └── unsupported.rs                    # 13 checks
+563: ```
+564: 
+565: ---
+566: 
+567: ## Verification
+568: 
+569: After each module:
+570: ```bash
+571: cargo build          # All crates compile
+572: cargo clippy         # Zero warnings
+573: cargo test           # All tests pass
+574: cargo run -- tests/fixtures/<rule>/fail.m   # Rule fires correctly
+575: cargo run -- tests/fixtures/<rule>/pass.m   # Rule does NOT fire
+576: ```
+
+(End of file - total 576 lines)
+</content>
+
+---
+
+Go to phase 3
+
+---
+
+we are currently on branch feat. Make use of https://docs.github.com/en/pull-requests/get-started/stacked-prs-quickstart to stack our changes and create stacked prs. Add this to PLAN.md
+
+---
+
+what phase is completed?
+
+---
+
+continue with phase 3 until it is completed.
+
+---
+
+previously you created a new stack just for updating PLAN.md. This is not necessary. Create a stack for a meaningfull change
+
+---
+
+continue
+
+---
+
+Continue if you have next steps, or stop and ask for clarification if you are unsure how to proceed.
+
+---
+
+Continue if you have next steps, or stop and ask for clarification if you are unsure how to proceed.
+
+---
+
+are these prs in a gh stack?
+
+---
+
+are we done with phase 3?
+
+---
+
+well continue with phase 3, update PLAN.md accordingly
+
+---
+
+Add to plan an your context that https://mathworks.com/help/matlab/matlab_env/index-of-code-analyzer-checks.html can be used for information
+
+---
+
+Look in https://nl.mathworks.com/help/matlab/matlab_env/index-of-code-analyzer-checks.html
+
+---
+
+can you use playwright to access the page?
+
+---
+
+try again
+
+---
+
+no i mean try to access the webpage with the mcp
+
+---
+
+I'd like to to first log in PLAN.md that rules needs to be looked up on that url with playwright. 
+Then create a new set of agent configurations for opencode in a local .opencode directoory.
+1. Planner, using "DeepSeek V4 Flash Free", get the rule context and make a implementation plan.
+2. Reviewer. using "Laguna S 2.1 Free", review the implementation plan of the plan made by planner.
+3. Implementer, using "DeepSeek V4 Flash Free", implement the rule. 
+
+We need that the for each new rule, the 1 -> 2 -> 3 flow is followed. Each flow should be independent such that we can launch many flows simultanously (for each rule)
+
+---
+
+Continue if you have next steps, or stop and ask for clarification if you are unsure how to proceed.
+
+---
+
+Write the Phase 3 wave plementation plan in a document
+
+---
+
+# Rule Implementation Pipeline (Planner → Reviewer → Implementer)
+
+Every new MATLAB Code Analyzer rule in `mlt` is implemented via an independent,
+three-stage flow. Flows for different rules are fully independent and run in
+**parallel**.
+
+## The three agents
+
+| Step | Subagent (`subagent_type`) | Model | Output |
+|------|---------------------------|-------|--------|
+| 1. Planner | `planner` | `opencode/deepseek-v4-flash-free` | Implementation plan |
+| 2. Reviewer | `reviewer` | `opencode/laguna-s-2.1-free` | Verdict + corrected plan |
+| 3. Implementer | `implementer` | `opencode/deepseek-v4-flash-free` | Code, tests, docs + verification |
+
+Agents are defined in `.opencode/agent/{planner,reviewer,implementer}.md`.
+
+## Rule context lookup
+
+Before planning, the rule's official context (description, severity, examples) MUST be
+looked up at:
+`https://www.mathworks.com/help/matlab/matlab_env/index-of-code-analyzer-checks.html`
+using Playwright (`playwright_browser_navigate` → `playwright_browser_find` →
+`playwright_browser_snapshot`). MathWorks returns HTTP 403 to plain `webfetch`, so
+Playwright is required. Fallback archive:
+`~/.local/share/opencode/tool-output/REDACTED`.
+
+## Orchestration
+
+Given a list of rule IDs (e.g. the remaining readability checks COMNL, STLOW, FLUDLR,
+MFAMB, FVINR), run one full flow per rule:
+
+1. **Launch ALL Planners in parallel** — one `task` call per rule, all in a single
+   message, `subagent_type: "planner"`, prompt includes the rule ID and its category.
+   Do not wait between them.
+2. **Collect the plans**, then **launch ALL Reviewers in parallel** — one per plan,
+   `subagent_type: "reviewer"`, prompt includes the rule ID, the category, and the
+   plan text.
+3. **Collect the verdicts**, then **launch ALL Implementers in parallel** — one per
+   approved/corrected plan, `subagent_type: "implementer"`, prompt includes the rule
+   ID, the category, and the plan text. Skip a rule only if the Reviewer rejects it
+   outright with no usable plan; otherwise pass the corrected plan through.
+
+Do not serialize these flows. Each of the three stages is a batch of parallel tasks.
+
+## Completion criteria per rule
+
+- `cargo build` succeeds
+- `cargo clippy --all-targets` passes with zero warnings
+- `cargo test` passes (fires, not-fires, and config tests from the plan)
+- Docs updated: `docs/<rule_id>.md`, `docs/rules.md`, `zensical.toml`
+- `crates/mlt_rules/src/lib.rs` has the `pub mod` line for any new module
+
+## Notes
+
+- Do not commit changes unless the user explicitly asks.
+- If the tree-sitter grammar cannot represent the pattern (e.g. `function_call` also
+  covers indexing), the plan/review must address the ambiguity explicitly.
+
+
+Base directory for this skill: /home/watermarkhu/repositories/mlt/.opencode/skill/rule-pipeline
+Relative paths in this skill (e.g., scripts/, references/) are relative to this base directory.
+
+implement @PHASE3_WAVE_PLAN.md 
+Called the Read tool with the following input: {"filePath":"/home/watermarkhu/repositories/mlt/PHASE3_WAVE_PLAN.md"}
+<path>/home/watermarkhu/repositories/mlt/PHASE3_WAVE_PLAN.md</path>
+<type>file</type>
+<content>
+1: # Phase 3 Wave Implementation Plan
+2: 
+3: This document is the execution plan for finishing **Phase 3: Rule Implementation
+4: by Category** in the `mlt` MATLAB linter. It supersedes the stale per-category
+5: sections of `PLAN.md` with an accurate, wave-based plan built on a fresh audit of
+6: the current codebase.
+7: 
+8: Every rule is implemented via the **Planner → Reviewer → Implementer** pipeline
+9: defined in `.opencode/` (see §2). Each rule runs its own independent flow, and all
+10: flows within a wave launch **in parallel**.
+11: 
+12: ---
+13: 
+14: ## 1. Current State (audited 2026-08)
+15: 
+16: Counts below were extracted directly from each rule module's registered check IDs
+17: and cross-checked against the official MATLAB Code Analyzer check index
+18: (`https://www.mathworks.com/help/matlab/matlab_env/index-of-code-analyzer-checks.html`,
+19: read via Playwright; archive at `~/.local/share/opencode/tool-output/REDACTED`).
+20: 
+21: | Category | Module | Target | Implemented | Remaining |
+22: |----------|--------|-------:|------------:|----------:|
+23: | 3.1 Formatting | `formatting.rs` | 7 | 7 | 0 ✅ |
+24: | 3.2 Bugs | `bugs.rs` | 35 | 35 | 0 ✅ |
+25: | 3.3 Readability | `readability.rs` | 35 | 30 | **5** |
+26: | 3.4 Performance | `performance.rs` | 41 | 41 | 0 ✅ |
+27: | 3.5 Good Practices | `good_practices.rs` | 106 | 42 | **64** |
+28: | 3.6 Incomplete Analysis | `incomplete_analysis.rs` | 17 | 14 | **3** |
+29: | 3.7 Syntax Errors | `syntax_errors.rs` | 50 | 19 | **31** |
+30: | 3.8 Language Spec | `language_spec.rs` | 157 | 37 | **~120** |
+31: | 3.9 Unset Variables | `unset_variables.rs` | 6 | 6 | 0 ✅ |
+32: | 3.10 Unused | `unused.rs` | 17 | 17 | 0 ✅ |
+33: | 3.11 Suggested Improvements | `suggested_improvements.rs` | 243 | 243 | 0 ✅ |
+34: | 3.12 Specialized (codegen/deployment/so/unsupported) | — | 52 | 52 | 0 ✅ |
+35: | 3.13 Config Issues | `config_issues.rs` | 4 | 4 | 0 ✅ |
+36: | **Total** | | **770** | **547** | **~223** |
+37: 
+38: **Remaining work = ~223 checks across 4 categories.**
+39: 
+40: ---
+41: 
+42: ## 2. Per-Rule Implementation Pipeline
+43: 
+44: Each rule follows an independent three-stage flow defined in `.opencode/agent/`:
+45: 
+46: ```
+47: ┌─────────┐    plan     ┌──────────┐  verdict+   ┌─────────────┐
+48: │ Planner │ ──────────▶ │ Reviewer │  corrected  │ Implementer │
+49: │  (1)    │             │   (2)    │  plan      │    (3)      │
+50: └─────────┘             └──────────┘ ─────────▶ └─────────────┘
+51:    DeepSeek               Laguna S 2.1              DeepSeek
+52:    V4 Flash Free          Free                      V4 Flash Free
+53: ```
+54: 
+55: | Step | Subagent | Model | Produces | Read-only |
+56: |------|----------|-------|----------|-----------|
+57: | 1 | `planner` | `opencode/deepseek-v4-flash-free` | Implementation plan (rule context via Playwright from the MathWorks check index) | yes |
+58: | 2 | `reviewer` | `opencode/laguna-s-2.1-free` | `VERDICT: APPROVED` / `CHANGES REQUIRED` + corrected plan | yes |
+59: | 3 | `implementer` | `opencode/deepseek-v4-flash-free` | Code, tests, docs; runs `cargo build`/`clippy`/`test` | no |
+60: 
+61: The orchestration skill (`.opencode/skill/rule-pipeline/SKILL.md`) mandates:
+62: 
+63: 1. **Launch all Planners in parallel** — one `task` per rule in a single message.
+64: 2. **Launch all Reviewers in parallel** — one per plan.
+65: 3. **Launch all Implementers in parallel** — one per approved plan.
+66: 
+67: Each rule's flow is fully independent, so the wave runs the three stages as three
+68: parallel batches.
+69: 
+70: ---
+71: 
+72: ## 3. The Waves
+73: 
+74: Waves are ordered by dependency/cost. Each wave maps to one stacked-PR branch.
+75: 
+76: ### Wave A — Readability + Incomplete Analysis (8 checks) → `feature/phase3-readability`
+77: 
+78: Smallest, self-contained, no dependencies on symbol tables. Good first wave to
+79: validate the pipeline.
+80: 
+81: **A1 — Readability (5):** `crates/mlt_rules/src/readability.rs`
+82: 
+83: | Check ID | Description | Target nodes |
+84: |----------|-------------|--------------|
+85: | COMNL | Newline after comma in matrix row acts as row separator; suggest semicolon (or ellipsis) | `matrix` |
+86: | STLOW | Unnecessary `upper`/`lower` call in a comparison | `function_call` |
+87: | FLUDLR | Suggest `rot90(x,2)` instead of `flipud(fliplr(x))` / `fliplr(flipud(x))` | `function_call` |
+88: | MFAMB | Cannot determine whether name is variable or function; assumes function | `identifier` / `function_call` |
+89: | FVINR | Suggest adding `Input` attribute to `arguments` block | `arguments_statement` |
+90: 
+91: > Note: `readability.rs:28` module doc currently mis-describes FLUDLR as "prefer
+92: > fullfile" — correct it while implementing.
+93: 
+94: **A2 — Incomplete Analysis (3):** `crates/mlt_rules/src/incomplete_analysis.rs` (or CLI level)
+95: 
+96: | Check ID | Description | Approach |
+97: |----------|-------------|----------|
+98: | QUIT | `quit`/`exit` encountered before end of file | node-level `function_call` |
+99: | NOFIL | No output file written (linter-internal) | linter/CLI guard |
+100: | RDERR | Input file read error | CLI guard |
+101: 
+102: These three are linter-internal guards; the flow must decide module vs
+103: `mlt_core`/CLI placement and set `can_be_disabled = false`.
+104: 
+105: **Gate:** `cargo build` + `cargo clippy --all-targets` (zero warnings) + `cargo test`.
+106: 
+107: ### Wave B — Syntax Errors (31 checks) → `feature/phase3-syntax-errors`
+108: 
+109: `crates/mlt_rules/src/syntax_errors.rs`. Many of these are parser-adjacent
+110: validations that leverage tree-sitter `ERROR`/`MISSING` nodes.
+111: 
+112: **B — Missing 31:**
+113: `BADCT`, `BADFP`, `BADHBH`, `BADHBB`, `BADHBHT`, `BADHBBT`, `HEXTOOLONG`,
+114: `BINARYTOOLONG`, `DOUQT`, `STRIN`, `INBLK`, `RESWD`, `UNSET`, `LHROW`, `NOPAR2`,
+115: `EOLPAR`, `ENDCT2`, `ENDCT3`, `ENDCT4`, `MCPLD`, `SBTMP`, `BADNOT`, `BADNOTLHS`,
+116: `ENDPAR`, `SEPEXC`, `VTPOD`, `SYNEND`, `FVACI`, `FVACS`, `FVAMI`, `FVNST`, `FVSYN`
+117: 
+118: > `FVNST` is already implemented in `language_spec.rs` — confirm overlap and avoid
+119: > duplicating the check ID.
+120: 
+121: **Triage rule:** before planning each check, verify whether tree-sitter already
+122: emits `ERROR`/`MISSING` for the pattern. If it does, the check is a
+123: post-parse validator on those nodes; if not, it may be a node-level pattern check.
+124: 
+125: **Gate:** `cargo build` + `cargo clippy --all-targets` + `cargo test`.
+126: 
+127: ### Wave C — Language Specification (~108 checks) → `feature/phase3-language-spec`
+128: 
+129: `crates/mlt_rules/src/language_spec.rs` (existing consolidated module — do not
+130: split into new files unless a specific check is unwieldy). Grouped by sub-domain;
+131: each group is a parallel batch:
+132: 
+133: **C1 — Parfor/SPMD (28):**
+134: `FPFORP`, `FWFORP`, `PFANON`, `PFANSLP`, `PFANSNS`, `PFCEL`, `PFCTXT`, `PFEVC`,
+135: `PFFRNG`, `PFFSUB`, `PFINCR`, `PFINPT`, `PFLD`, `PFMLTI`, `PFNACK`, `PFNAIO`,
+136: `PFNAR`, `PFRFH`, `PFRNG`, `PFSLO`, `PFSLRD`, `PFSLW`, `PFSV`, `PFUNK`, `PFUTMP`,
+137: `PFUTVR`, `PFVARS`, `PFVSUB`
+138: 
+139: **C2 — Class/Method (26):**
+140: `MABSEAC`, `MABSEAM`, `MCAPP`, `MCCBS`, `MCCBU`, `MCCMC`, `MCCSOP`, `MCGSA`,
+141: `MCMIO`, `MCMSP`, `MCMTP`, `MCPIN`, `MCPSG`, `MCSCC`, `MCSCF`, `MCSCM`, `MCSCN`,
+142: `MCSCO`, `MCSCT`, `MCSMO`, `MCSWA`, `MTAGS3`, `MTMAT`, `MWKCL`, `MWKCT`, `MWKREF`
+143: 
+144: **C3 — Function Validation (38):**
+145: `FVAPN`, `FVATF`, `FVBTN`, `FVDAN`, `FVDAP`, `FVDNF`, `FVDREP`, `FVIDV`, `FVIOA`,
+146: `FVMCL`, `FVNDE`, `FVNIV`, `FVNREP`, `FVNSC`, `FVNVL`, `FVOBI`, `FVOCON`, `FVOND`,
+147: `FVONV`, `FVOOD`, `FVOOI`, `FVOON`, `FVORDI`, `FVORDN`, `FVORDO`, `FVORDP`, `FVORM`,
+148: `FVOVREP`, `FVREPD`, `FVREPO`, `FVSOR`, `FVSORO`, `FVUBD`, `FVVCON`, `FVVIN`,
+149: `FVVREP`, `TINVALDIM`, `TTOOFEWDIMS`
+150: 
+151: **C4 — Other Language Spec (16):**
+152: `CTOINE`, `CTORO`, `ERTXT`, `MHERIT`, `NCHKOS`, `SPBFN`, `SPBRK`, `SPDEC`, `SPDEC3`,
+153: `SPEVC`, `SPLD`, `SPNF`, `SPSV`, `SPWHOS`, `USESWNS`, `WTXT`
+154: 
+155: > The four groups run as four parallel batches (each batch = many simultaneous
+156: > per-rule flows). Depends on `analysis/metadata.rs` (2.3) for class/function checks.
+157: 
+158: **Gate:** `cargo build` + `cargo clippy --all-targets` + `cargo test`.
+159: 
+160: ### Wave D — Good Practices (~64 checks) → `feature/phase3-good-practices`
+161: 
+162: `crates/mlt_rules/src/good_practices.rs`. Depends on symbol table (2.1) and
+163: metadata (2.3). Largest remaining gap; split into sub-groups that run as parallel
+164: batches:
+165: 
+166: **D1 — OOP practices (12, from PLAN.md list):**
+167: `MCCPI`, `MCHDP`, `MCPO`, `MCSUP`, `MCVM`, `MOBSRV`, `PFEVB`, `PFGP`, `PFGV`, `PFIIN`,
+168: `PFOUS`, `PFRNI`
+169: 
+170: **D2 — Remaining ~52 general checks:** enumerated from the check index during
+171: planning; includes eval/dynamic-code (`EVL*`), error handling, string comparison,
+172: parfor/SPMD practices, and general suggestions.
+173: 
+174: > Because Good Practices checks were not fully enumerated in `PLAN.md`, Wave D
+175: > starts with a **planning batch**: one Planner per known ID to fill the gap list
+176: > from the MathWorks index before the implementation batches run.
+177: 
+178: **Gate:** `cargo build` + `cargo clippy --all-targets` + `cargo test`.
+179: 
+180: ---
+181: 
+182: ## 4. Execution Protocol
+183: 
+184: ### Per-rule flow (identical for every check)
+185: 
+186: 1. Launch `planner` subagent with the rule ID + module/category.
+187:    - Planner looks up official description/severity/examples on the MathWorks check
+188:      index via Playwright.
+189:    - Planner reads `AGENTS.md` "Adding a New Rule", the target module, `nosemi.rs`,
+190:      and `docs/nosemi.md` as references; returns a self-contained plan.
+191: 2. Launch `reviewer` subagent with the plan; returns `VERDICT` + corrected plan.
+192: 3. Launch `implementer` subagent with the approved plan; writes code/tests/docs and
+193:    verifies with `cargo build`, `cargo clippy --all-targets`, `cargo test`.
+194: 
+195: ### Batching (per wave)
+196: 
+197: - **Stage 1:** spawn N planners (one per rule) in a single message — parallel.
+198: - **Stage 2:** spawn N reviewers — parallel.
+199: - **Stage 3:** spawn N implementers — parallel.
+200: 
+201: Each rule's three tasks are strictly sequential; different rules never wait on
+202: each other.
+203: 
+204: ### Completion criteria per rule
+205: 
+206: - Rule registered via `inventory::submit!`; `pub mod` added to `lib.rs` if new module.
+207: - Tests added: fires, not-fires, config-respected.
+208: - `docs/<rule_id>.md` created; row added to `docs/rules.md`; nav entry in `zensical.toml`.
+209: - `cargo build` passes; `cargo clippy --all-targets` clean; `cargo test` passes.
+210: 
+211: ### Wave gate before moving to next wave
+212: 
+213: - All rules in the wave pass the per-rule criteria.
+214: - `PLAN.md` Current State table updated with accurate per-module counts.
+215: 
+216: ---
+217: 
+218: ## 5. Branch / PR Strategy
+219: 
+220: Follow the stacked-PR workflow in `PLAN.md` ("Development Workflow: Stacked Pull
+221: Requests"). One branch per wave, stacked on `feat`:
+222: 
+223: ```
+224: feat
+225: └── feature/phase3-readability     (Wave A, 8 checks)
+226:     └── feature/phase3-syntax-errors    (Wave B, 31 checks)
+227:         └── feature/phase3-language-spec    (Wave C, ~108 checks)
+228:             └── feature/phase3-good-practices   (Wave D, ~64 checks)
+229: ```
+230: 
+231: - Use `gh stack init --base feat feature/phase3-readability feature/phase3-syntax-errors feature/phase3-language-spec feature/phase3-good-practices`.
+232: - Commit per rule (or per sub-group), keep branches shallow (4 branches here is fine).
+233: - Push and submit PRs bottom-up; review/merge bottom-up.
+234: - **Do not commit during agent flows** — agents report results; a human/orchestrator
+235:   commits per wave after the gate passes.
+236: 
+237: ---
+238: 
+239: ## 6. Risks & Open Items
+240: 
+241: | Risk | Mitigation |
+242: |------|------------|
+243: | MathWorks blocks live page fetches | Playwright (already working); fall back to local archive file |
+244: | `function_call` doubles as indexing in tree-sitter | Planner/reviewer must address ambiguity explicitly |
+245: | Syntax checks already caught by tree-sitter `ERROR` nodes | Triage step in Wave B before planning |
+246: | `FVNST` implemented in two modules | Dedupe check during Wave B triage |
+247: | Good Practices gap list not in `PLAN.md` | Wave D opens with a planning batch to enumerate from the index |
+248: | QUIT/NOFIL/RDERR are CLI-level, not node rules | Wave A explicitly decides module vs `mlt_core`/CLI placement |
+249: | Parallel flows editing the same module file (`language_spec.rs`, `good_practices.rs`) | Batch implementers by sub-group; each flow owns distinct check IDs; resolve conflicts at commit time |
+250: 
+251: ---
+252: 
+253: ## 7. Summary
+254: 
+255: | Wave | Branch | Checks | Batch groups |
+256: |------|--------|-------:|--------------|
+257: | A | `feature/phase3-readability` | 8 | Readability(5) + Incomplete(3) |
+258: | B | `feature/phase3-syntax-errors` | 31 | Syntax triage(31) |
+259: | C | `feature/phase3-language-spec` | ~108 | Parfor(28) + Class(26) + FuncVal(38) + Other(16) |
+260: | D | `feature/phase3-good-practices` | ~64 | OOP(12) + General(~52) |
+261: | **Total** | | **~211** | 8 parallel batches |
+262: 
+263: Completion moves mlt from **547/770 (71%)** to **770/770** for the Phase 3 rule
+264: categories, with full docs and tests for every new rule.
+
+(End of file - total 264 lines)
+</content>
+
+---
+
+hi
+
+---
+
+We need to alter the plan. The planning needs to happen in the main session, because there is a single MCP instance that otherwise each flow will try to alter. 
+
+So plan in main, then let separate flows review and implement. 
+
+Also change the models: 
+- main (current): DeepSeek V4 Flash (2x usage)
+- review: MiMo-V2.5
+- implementer: DeepSeek V4 Flash (2x usage)
+
+---
+
+continue
+
+---
+
+These models are in opencode-go
+
+---
+
+1. delete
+2. ok leave it
+
+---
+
+Yeah do it
+
+---
+
+implement
+
+---
+
+commit and do wave B
+
+---
+
+if you want to execute python just do it in this directory
+
+---
+
+yes continue to wave C
+
+---
+
+don't forget to continue creating gh pull stacks
+
+---
+
+start it
+
+---
+
+we've merged a lot of the stacks. But currently there are conflicts in https://github.com/watermarkhu/mlt/pull/16. Check why
+
+---
+
+ok do it
+
+---
+
+do it
+
+---
+
+review and update  @PHASE3_WAVE_PLAN.md and @PLAN.md 
+Called the Read tool with the following input: {"filePath":"/home/watermarkhu/repositories/mlt/PHASE3_WAVE_PLAN.md"}
+<path>/home/watermarkhu/repositories/mlt/PHASE3_WAVE_PLAN.md</path>
+<type>file</type>
+<content>
+1: # Phase 3 Wave Implementation Plan
+2: 
+3: This document is the execution plan for finishing **Phase 3: Rule Implementation
+4: by Category** in the `mlt` MATLAB linter. It supersedes the stale per-category
+5: sections of `PLAN.md` with an accurate, wave-based plan built on a fresh audit of
+6: the current codebase.
+7: 
+8: Every rule is implemented via the **plan-in-main → Reviewer → Implementer** pipeline
+9: defined in `.opencode/` (see §2). Each rule runs its own independent flow, and all
+10: flows within a wave launch **in parallel**.
+11: 
+12: ---
+13: 
+14: ## 1. Current State (audited 2026-08)
+15: 
+16: Counts below were extracted directly from each rule module's registered check IDs
+17: and cross-checked against the official MATLAB Code Analyzer check index
+18: (`https://www.mathworks.com/help/matlab/matlab_env/index-of-code-analyzer-checks.html`,
+19: read via Playwright; archive at `~/.local/share/opencode/tool-output/REDACTED`).
+20: 
+21: | Category | Module | Target | Implemented | Remaining |
+22: |----------|--------|-------:|------------:|----------:|
+23: | 3.1 Formatting | `formatting.rs` | 7 | 7 | 0 ✅ |
+24: | 3.2 Bugs | `bugs.rs` | 35 | 35 | 0 ✅ |
+25: | 3.3 Readability | `readability.rs` | 35 | 30 | **5** |
+26: | 3.4 Performance | `performance.rs` | 41 | 41 | 0 ✅ |
+27: | 3.5 Good Practices | `good_practices.rs` | 106 | 42 | **64** (39 done in Wave D, 24 deferred, 1 remaining) |
+28: | 3.6 Incomplete Analysis | `incomplete_analysis.rs` | 17 | 14 | **3** |
+29: | 3.7 Syntax Errors | `syntax_errors.rs` | 50 | 19 | **31** |
+30: | 3.8 Language Spec | `language_spec.rs` | 157 | 37 | **~120** |
+31: | 3.9 Unset Variables | `unset_variables.rs` | 6 | 6 | 0 ✅ |
+32: | 3.10 Unused | `unused.rs` | 17 | 17 | 0 ✅ |
+33: | 3.11 Suggested Improvements | `suggested_improvements.rs` | 243 | 243 | 0 ✅ |
+34: | 3.12 Specialized (codegen/deployment/so/unsupported) | — | 52 | 52 | 0 ✅ |
+35: | 3.13 Config Issues | `config_issues.rs` | 4 | 4 | 0 ✅ |
+36: | **Total** | | **770** | **547** | **~223** |
+37: 
+38: **Remaining work = ~223 checks across 4 categories.**
+39: 
+40: ---
+41: 
+42: ## 2. Per-Rule Implementation Pipeline
+43: 
+44: Each rule flows through the pipeline defined in `.opencode/skill/rule-pipeline/` and
+45: `.opencode/agent/`. **Planning happens in the main session** (it owns the single
+46: Playwright MCP instance); review and implementation run as parallel subagent flows:
+47: 
+48: ```
+49: ┌────────────────── MAIN SESSION (plans here) ──────────────────┐
+50: │ 1. Playwright lookup on the MathWorks check index (single MCP)│
+51: │ 2. Study codebase conventions (AGENTS.md, module, nosemi.rs)  │
+52: │ 3. Write self-contained implementation plan                   │
+53: └───────────────────────────────────────────────────────────────┘
+54:         │ plan per rule
+55:         ▼
+56: ┌──────────────────────────┐   verdict+   ┌──────────────────────────┐
+57: │ 2. Reviewer (subagent)   │  corrected  │ 3. Implementer (subagent)│
+58: │    mimo-v2.5             │ ──────────▶ │    deepseek-v4-flash     │
+59: └──────────────────────────┘    plan     └──────────────────────────┘
+60: ```
+61: 
+62: | Step | Where | Model | Produces | Read-only |
+63: |------|-------|-------|----------|-----------|
+64: | 1 | **main session** | `opencode-go/deepseek-v4-flash` (current) | Implementation plan (rule context via Playwright from the MathWorks check index) | yes |
+65: | 2 | `reviewer` subagent | `opencode-go/mimo-v2.5` | `VERDICT: APPROVED` / `CHANGES REQUIRED` + corrected plan | yes |
+66: | 3 | `implementer` subagent | `opencode-go/deepseek-v4-flash` | Code, tests, docs; runs `cargo build`/`clippy`/`test` | no |
+67: 
+68: The orchestration skill (`.opencode/skill/rule-pipeline/SKILL.md`) mandates:
+69: 
+70: 1. **Plan in the main session** — one plan per rule, produced up front using the
+71:    single Playwright MCP instance (subagents never touch Playwright).
+72: 2. **Launch all Reviewers in parallel** — one per plan, with the plan text in the prompt.
+73: 3. **Launch all Implementers in parallel** — one per approved plan.
+74: 
+75: Each rule's flow is fully independent, so the wave runs stages 2 and 3 as two parallel
+76: batches.
+77: 
+78: ---
+79: 
+80: ## 3. The Waves
+81: 
+82: Waves are ordered by dependency/cost. Each wave maps to one stacked-PR branch.
+83: 
+84: ### Wave A — Readability + Incomplete Analysis (8 checks) → `feature/phase3-readability`
+85: 
+86: Smallest, self-contained, no dependencies on symbol tables. Good first wave to
+87: validate the pipeline.
+88: 
+89: **A1 — Readability (5):** `crates/mlt_rules/src/readability.rs`
+90: 
+91: | Check ID | Description | Target nodes |
+92: |----------|-------------|--------------|
+93: | COMNL | Newline after comma in matrix row acts as row separator; suggest semicolon (or ellipsis) | `matrix` |
+94: | STLOW | Unnecessary `upper`/`lower` call in a comparison | `function_call` |
+95: | FLUDLR | Suggest `rot90(x,2)` instead of `flipud(fliplr(x))` / `fliplr(flipud(x))` | `function_call` |
+96: | MFAMB | Cannot determine whether name is variable or function; assumes function | `identifier` / `function_call` |
+97: | FVINR | Suggest adding `Input` attribute to `arguments` block | `arguments_statement` |
+98: 
+99: > Note: `readability.rs:28` module doc currently mis-describes FLUDLR as "prefer
+100: > fullfile" — correct it while implementing.
+101: 
+102: **A2 — Incomplete Analysis (3):** `crates/mlt_rules/src/incomplete_analysis.rs` (or CLI level)
+103: 
+104: | Check ID | Description | Approach |
+105: |----------|-------------|----------|
+106: | QUIT | `quit`/`exit` encountered before end of file | node-level `function_call` |
+107: | NOFIL | No output file written (linter-internal) | linter/CLI guard |
+108: | RDERR | Input file read error | CLI guard |
+109: 
+110: These three are linter-internal guards; the flow must decide module vs
+111: `mlt_core`/CLI placement and set `can_be_disabled = false`.
+112: 
+113: **Gate:** `cargo build` + `cargo clippy --all-targets` (zero warnings) + `cargo test`.
+114: 
+115: ### Wave B — Syntax Errors (30 checks) → `feature/phase3-syntax-errors`
+116: 
+117: `crates/mlt_rules/src/syntax_errors.rs`. Many of these are parser-adjacent
+118: validations that leverage tree-sitter `ERROR`/`MISSING` nodes.
+119: 
+120: **B — Missing 30 (SEPEXC is not a real MathWorks check; FVNST already lives in `language_spec.rs`):**
+121: `BADCT`, `BADFP`, `BADHBH`, `BADHBB`, `BADHBHT`, `BADHBBT`, `HEXTOOLONG`,
+122: `BINARYTOOLONG`, `DOUQT`, `STRIN`, `INBLK`, `RESWD`, `UNSET`, `LHROW`, `NOPAR2`,
+123: `EOLPAR`, `ENDCT2`, `ENDCT3`, `ENDCT4`, `MCPLD`, `SBTMP`, `BADNOT`, `BADNOTLHS`,
+124: `ENDPAR`, `VTPOD`, `SYNEND`, `FVACI`, `FVACS`, `FVAMI`, `FVSYN`
+125: 
+126: **Triage rule:** before planning each check, verify whether tree-sitter already
+127: emits `ERROR`/`MISSING` for the pattern. If it does, the check is a
+128: post-parse validator on those nodes; if not, it may be a node-level pattern check.
+129: 
+130: **Gate:** `cargo build` + `cargo clippy --all-targets` + `cargo test`.
+131: 
+132: ### Wave C — Language Specification (~108 checks) → `feature/phase3-language-spec`
+133: 
+134: `crates/mlt_rules/src/language_spec.rs` (existing consolidated module — do not
+135: split into new files unless a specific check is unwieldy). Grouped by sub-domain;
+136: each group is a parallel batch:
+137: 
+138: **C1 — Parfor/SPMD (28):**
+139: `FPFORP`, `FWFORP`, `PFANON`, `PFANSLP`, `PFANSNS`, `PFCEL`, `PFCTXT`, `PFEVC`,
+140: `PFFRNG`, `PFFSUB`, `PFINCR`, `PFINPT`, `PFLD`, `PFMLTI`, `PFNACK`, `PFNAIO`,
+141: `PFNAR`, `PFRFH`, `PFRNG`, `PFSLO`, `PFSLRD`, `PFSLW`, `PFSV`, `PFUNK`, `PFUTMP`,
+142: `PFUTVR`, `PFVARS`, `PFVSUB`
+143: 
+144: **C2 — Class/Method (26):**
+145: `MABSEAC`, `MABSEAM`, `MCAPP`, `MCCBS`, `MCCBU`, `MCCMC`, `MCCSOP`, `MCGSA`,
+146: `MCMIO`, `MCMSP`, `MCMTP`, `MCPIN`, `MCPSG`, `MCSCC`, `MCSCF`, `MCSCM`, `MCSCN`,
+147: `MCSCO`, `MCSCT`, `MCSMO`, `MCSWA`, `MTAGS3`, `MTMAT`, `MWKCL`, `MWKCT`, `MWKREF`
+148: 
+149: **C3 — Function Validation (38):**
+150: `FVAPN`, `FVATF`, `FVBTN`, `FVDAN`, `FVDAP`, `FVDNF`, `FVDREP`, `FVIDV`, `FVIOA`,
+151: `FVMCL`, `FVNDE`, `FVNIV`, `FVNREP`, `FVNSC`, `FVNVL`, `FVOBI`, `FVOCON`, `FVOND`,
+152: `FVONV`, `FVOOD`, `FVOOI`, `FVOON`, `FVORDI`, `FVORDN`, `FVORDO`, `FVORDP`, `FVORM`,
+153: `FVOVREP`, `FVREPD`, `FVREPO`, `FVSOR`, `FVSORO`, `FVUBD`, `FVVCON`, `FVVIN`,
+154: `FVVREP`, `TINVALDIM`, `TTOOFEWDIMS`
+155: 
+156: **C4 — Other Language Spec (16):**
+157: `CTOINE`, `CTORO`, `ERTXT`, `MHERIT`, `NCHKOS`, `SPBFN`, `SPBRK`, `SPDEC`, `SPDEC3`,
+158: `SPEVC`, `SPLD`, `SPNF`, `SPSV`, `SPWHOS`, `USESWNS`, `WTXT`
+159: 
+160: > The four groups run as four parallel batches (each batch = many simultaneous
+161: > per-rule flows). Depends on `analysis/metadata.rs` (2.3) for class/function checks.
+162: 
+163: **Gate:** `cargo build` + `cargo clippy --all-targets` + `cargo test`.
+164: 
+165: ### Wave D — Good Practices (~64 checks) → `feature/phase3-good-practices`
+166: 
+167: `crates/mlt_rules/src/good_practices.rs`. Depends on symbol table (2.1) and
+168: metadata (2.3). Largest remaining gap; split into sub-groups that run as parallel
+169: batches:
+170: 
+171: **D1 — OOP practices (12, from PLAN.md list):**
+172: `MCCPI`, `MCHDP`, `MCPO`, `MCSUP`, `MCVM`, `MOBSRV`, `PFEVB`, `PFGP`, `PFGV`, `PFIIN`,
+173: `PFOUS`, `PFRNI`
+174: 
+175: **D2 — Remaining ~52 general checks:** enumerated from the check index during
+176: planning; includes eval/dynamic-code (`EVL*`), error handling, string comparison,
+177: parfor/SPMD practices, and general suggestions.
+178: 
+179: > Because Good Practices checks were not fully enumerated in `PLAN.md`, Wave D
+180: > starts with a **planning pass in the main session**: look up each known ID on the
+181: > MathWorks index to fill the gap list before the implementation batches run.
+182: 
+183: **Gate:** `cargo build` + `cargo clippy --all-targets` + `cargo test`.
+184: 
+185: ---
+186: 
+187: ## 4. Execution Protocol
+188: 
+189: ### Per-rule flow (identical for every check)
+190: 
+191: 1. **Plan in the main session.** Look up the rule ID's official
+192:    description/severity/examples on the MathWorks check index via Playwright (single
+193:    MCP instance). Read `AGENTS.md` "Adding a New Rule", the target module, `nosemi.rs`,
+194:    and `docs/nosemi.md` as references; write a self-contained plan.
+195: 2. Launch `reviewer` subagent with the plan; returns `VERDICT` + corrected plan.
+196: 3. Launch `implementer` subagent with the approved plan; writes code/tests/docs and
+197:    verifies with `cargo build`, `cargo clippy --all-targets`, `cargo test`.
+198: 
+199: ### Batching (per wave)
+200: 
+201: - **Stage 1:** plan all rules in the main session (one plan per rule).
+202: - **Stage 2:** spawn N reviewers (one per plan) in a single message — parallel.
+203: - **Stage 3:** spawn N implementers (one per approved plan) — parallel.
+204: 
+205: Each rule's stages are strictly sequential; different rules never wait on each other.
+206: 
+207: ### Completion criteria per rule
+208: 
+209: - Rule registered via `inventory::submit!`; `pub mod` added to `lib.rs` if new module.
+210: - Tests added: fires, not-fires, config-respected.
+211: - `docs/<rule_id>.md` created; row added to `docs/rules.md`; nav entry in `zensical.toml`.
+212: - `cargo build` passes; `cargo clippy --all-targets` clean; `cargo test` passes.
+213: 
+214: ### Wave gate before moving to next wave
+215: 
+216: - All rules in the wave pass the per-rule criteria.
+217: - `PLAN.md` Current State table updated with accurate per-module counts.
+218: 
+219: ---
+220: 
+221: ## 5. Branch / PR Strategy
+222: 
+223: Follow the stacked-PR workflow in `PLAN.md` ("Development Workflow: Stacked Pull
+224: Requests"). One branch per wave, stacked on `feat`:
+225: 
+226: ```
+227: feat
+228: └── feature/phase3-readability     (Wave A, 8 checks)
+229:     └── feature/phase3-syntax-errors    (Wave B, 31 checks)
+230:         └── feature/phase3-language-spec    (Wave C, ~108 checks)
+231:             └── feature/phase3-good-practices   (Wave D, ~64 checks)
+232: ```
+233: 
+234: - Use `gh stack init --base feat feature/phase3-readability feature/phase3-syntax-errors feature/phase3-language-spec feature/phase3-good-practices`.
+235: - Commit per rule (or per sub-group), keep branches shallow (4 branches here is fine).
+236: - Push and submit PRs bottom-up; review/merge bottom-up.
+237: - **Do not commit during agent flows** — agents report results; a human/orchestrator
+238:   commits per wave after the gate passes.
+239: 
+240: ---
+241: 
+242: ## 6. Risks & Open Items
+243: 
+244: | Risk | Mitigation |
+245: |------|------------|
+246: | MathWorks blocks live page fetches | Playwright (already working); fall back to local archive file |
+247: | `function_call` doubles as indexing in tree-sitter | Planning (main session) and review must address ambiguity explicitly |
+248: | Syntax checks already caught by tree-sitter `ERROR` nodes | Triage step in Wave B before planning |
+249: | `FVNST` implemented in two modules | Dedupe check during Wave B triage |
+250: | Good Practices gap list not in `PLAN.md` | Wave D opens with a planning batch to enumerate from the index |
+251: | QUIT/NOFIL/RDERR are CLI-level, not node rules | Wave A explicitly decides module vs `mlt_core`/CLI placement |
+252: | Parallel flows editing the same module file (`language_spec.rs`, `good_practices.rs`) | Batch implementers by sub-group; each flow owns distinct check IDs; resolve conflicts at commit time |
+253: 
+254: ---
+255: 
+256: ## 7. Summary
+257: 
+258: | Wave | Branch | Checks | Batch groups |
+259: |------|--------|-------:|--------------|
+260: | A | `feature/phase3-readability` | 8 | Readability(5) + Incomplete(3) |
+261: | B | `feature/phase3-syntax-errors` | 30 | NumberLiterals(7) + Strings(3) + ReservedWords(5) + AssignmentLHS(2) + Brackets(3) + MissingEnd(3) + CallSyntax(5) + VTPOD(1) |
+262: | C | `feature/phase3-language-spec` | 108 | Parfor(28) + Class(26) + FuncVal(38) + Other(16) — **done (Wave C complete)** |
+263: | D | `feature/phase3-good-practices` | 39 done / 24 deferred | OOP(12) + Parfor/SPMD(11) + Logical(3) + FnCall(6) + Struct/String(7) — **Wave D complete** |
+264: | **Total** | | **~210** | 8 parallel batches |
+265: 
+266: Completion moves mlt from **547/770 (71%)** to **770/770** for the Phase 3 rule
+267: categories, with full docs and tests for every new rule.
+
+(End of file - total 267 lines)
+</content>
+Called the Read tool with the following input: {"filePath":"/home/watermarkhu/repositories/mlt/PLAN.md"}
+<path>/home/watermarkhu/repositories/mlt/PLAN.md</path>
+<type>file</type>
+<content>
+1: # PLAN.md — MATLAB Code Analyzer Feature Parity for mlt
+2: 
+3: This document tracks the implementation plan for bringing mlt to full feature
+4: parity with MATLAB's Code Analyzer (~2,680 checks).
+5: 
+6: **Decisions made:**
+7: - Rule IDs match MATLAB's native check IDs exactly (e.g., `NOSEMI`, `AGROW`, `naming.class.casing`).
+8: - Compatibility/behavior-change checks (~1,800) use a data-driven TOML lookup table.
+9: - Naming checks (81) use a single generic engine with 81 separate rule IDs.
+10: - Custom checks (25) use a single engine with per-check thresholds.
+11: - Rules auto-register via the `inventory` crate — no manual `lib.rs` arrays.
+12: - Category-level config is supported (`[lint.categories]` in `.mlt.toml`).
+13: - Changes land via **stacked pull requests** (see below).
+14: - Rule context (description, severity, examples) for every check MUST be looked up on the
+15:   official MATLAB Code Analyzer check index:
+16:   `https://www.mathworks.com/help/matlab/matlab_env/index-of-code-analyzer-checks.html`.
+17:   MathWorks blocks plain HTTP/webfetch with HTTP 403, so the page is read with the
+18:   **Playwright MCP browser** (`playwright_browser_navigate` → `playwright_browser_find` →
+19:   `playwright_browser_snapshot`). A local archive of the page also exists at
+20:   `~/.local/share/opencode/tool-output/REDACTED` as fallback.
+21: - Each new rule is implemented via the **rule-pipeline** (see
+22:   `.opencode/skill/rule-pipeline/`): planning happens in the main session (it owns the
+23:   single Playwright MCP instance), then each rule is reviewed and implemented via
+24:   independent parallel **Reviewer → Implementer** subagent flows (`.opencode/agent/`).
+25:   Subagents never use Playwright; rule context is passed to them as plan text.
+26: 
+27: ---
+28: 
+29: ## Development Workflow: Stacked Pull Requests
+30: 
+31: This repository uses **stacked pull requests** to land changes as a chain of
+32: small, independently reviewable PRs instead of one large PR. Each PR targets
+33: the branch of the PR below it, forming an ordered stack that lands on `feat`.
+34: 
+35: See the [GitHub stacked PRs quickstart](https://docs.github.com/en/pull-requests/get-started/stacked-prs-quickstart)
+36: for the official guide.
+37: 
+38: ### Setup (once per machine)
+39: 
+40: ```bash
+41: gh extension install github/gh-stack
+42: gh auth login
+43: ```
+44: 
+45: Requires `gh` ≥ 2.90 and Git ≥ 2.20.
+46: 
+47: ### Daily flow
+48: 
+49: 1. **Start a stack** from the trunk (`feat`):
+50: 
+51:    ```bash
+52:    gh stack init --base feat        # prompts for the first branch name
+53:    ```
+54: 
+55:    To turn existing branches into a stack, list them in dependency order:
+56: 
+57:    ```bash
+58:    gh stack init --base feat feature/foo feature/bar feature/baz
+59:    ```
+60: 
+61: 2. **Work and commit** on the current branch:
+62: 
+63:    ```bash
+64:    # ... write code ...
+65:    git add .
+66:    git commit -m "helpful message"
+67:    ```
+68: 
+69: 3. **Add the next logical unit** on top of the stack:
+70: 
+71:    ```bash
+72:    gh stack add BRANCH-NAME
+73:    # ... write code ...
+74:    git add .
+75:    git commit -m "next unit"
+76:    ```
+77: 
+78:    Or stage, commit, and branch in one step:
+79: 
+80:    ```bash
+81:    gh stack add -Am "next unit"
+82:    ```
+83: 
+84: 4. **Push and submit** the PRs (each PR is auto-linked to its base branch):
+85: 
+86:    ```bash
+87:    gh stack push
+88:    gh stack submit
+89:    ```
+90: 
+91: 5. **Inspect the stack** at any time:
+92: 
+93:    ```bash
+94:    gh stack view
+95:    ```
+96: 
+97: ### Conventions
+98: 
+99: - **Trunk:** `feat` is this repo's integration branch; the bottom PR of every
+100:   stack targets it.
+101: - **One logical unit per branch.** Split work so each branch is independently
+102:   reviewable — e.g., one branch for clippy cleanups, the next for a rule
+103:   engine plus its tests, and docs/plan updates on top.
+104: - **Keep stacks shallow** (2–4 branches). Deep stacks are hard to review and
+105:   prone to merge conflicts.
+106: - **Review and merge bottom-up.** Each PR's diff shrinks as its dependencies
+107:   land, keeping downstream PRs small.
+108: - **Sync with trunk** before merging: rebase the bottom branch onto `feat`,
+109:   then each branch onto its parent.
+110: 
+111: ---
+112: 
+113: ## Current State
+114: 
+115: ### Implemented Engines
+116: 
+117: | Module | File | Functional Check IDs | Approach |
+118: |--------|------|---------------------|----------|
+119: | NOSEMI | `nosemi.rs` | 1 | Node-level, auto-fix |
+120: | Compatibility | `compatibility.rs` + `data/compatibility.toml` | ~275 (of 323 entries; 48 are generic/unfilled) | Data-driven HashMap lookup |
+121: | Naming | `naming.rs` | 81 (63 are no-ops without user config) | File-level traversal, configurable |
+122: | Custom Checks | `custom_checks.rs` | 25 | File-level metrics, configurable thresholds |
+123: 
+124: **Total functional check IDs: ~382 of ~2,680 (14%)**
+125: 
+126: ### Core Infrastructure
+127: 
+128: | Feature | Status |
+129: |---------|--------|
+130: | Rule trait with `category()`, `can_be_disabled()`, `has_file_check()` | Done |
+131: | Category enum (22 variants) | Done |
+132: | Category-level config (`[lint.categories]`) | Done |
+133: | `inventory` auto-registration | Done |
+134: | File-level dispatch optimization | Done |
+135: | Overlapping fix detection | Done |
+136: | Config error reporting (non-silent) | Done |
+137: | Symbol table / scope analysis | Not started |
+138: | Control flow analysis | Not started |
+139: | Cross-file analysis | Not started |
+140: | Inline suppression (`%#ok<RULE>`) | Not started |
+141: 
+142: ---
+143: 
+144: ## Target: MATLAB Code Analyzer Check Inventory
+145: 
+146: | # | Category | Count | Severity | Notes |
+147: |---|----------|-------|----------|-------|
+148: | 1 | Incomplete Analysis | 17 | Error | **17/17 done** — Wave A completed QUIT, NOFIL, RDERR; all `can_be_disabled = false`; linter-internal limits |
+149: | 2 | Syntax Errors | 50 | Error | **50/50 done** — Wave B completed 30 checks (BADCT, BADFP, BADHBH, BADHBB, BADHBHT, BADHBBT, HEXTOOLONG, BINARYTOOLONG, DOUQT, STRIN, INBLK, RESWD, UNSET, LHROW, NOPAR2, EOLPAR, ENDCT2, ENDCT3, ENDCT4, MCPLD, SBTMP, BADNOT, BADNOTLHS, ENDPAR, VTPOD, SYNEND, FVACI, FVACS, FVAMI, FVSYN) |
+150: | 3 | Language Specification Errors | 157 | Error | **145/157 done** — Wave C completed 108 checks (parfor/spmd 28, class/method 26, function validation 38, other 16) |
+151: | 4 | Bugs | 35 | Error | Suspicious patterns, logic errors |
+152: | 5 | Custom Checks | 25 | Warning | **Done** — complexity/style metrics |
+153: | 6 | Naming Checks | 81 | Info | **Done** — 9 entities × 9 check types |
+154: | 7 | Compatibility Considerations | 891 | Error/Warning | **Partial** — 275 of 891 populated in data file |
+155: | 8 | Forward Compatibility | 7 | Error/Warning | In data file as generic (not matchable yet) |
+156: | 9 | Good Practices | 106 | Warning | **81/106 done** — Wave D completed 39 checks (OOP 12, parfor/spmd 11, logical 3, function-call 6, structure/string 7); 24 deferred (type/flow-analysis dependent) |
+157: | 10 | Unset Variables | 6 | Warning | Needs symbol table |
+158: | 11 | Unused Constructions | 17 | Warning/Info | Needs symbol table + control flow |
+159: | 12 | Suggested Improvements | 243 | Info | Data-driven (function replacement suggestions) |
+160: | 13 | Readability Improvements | 35 | Info | **35/35 done** — Wave A completed COMNL, STLOW, FLUDLR, MFAMB, FVINR |
+161: | 14 | Formatting Suggestions | 8 | Info | **Partial** — NOSEMI done; 7 remaining |
+162: | 15 | Performance Improvements | 41 | Info | Pattern matching on AST |
+163: | 16 | MATLAB for Code Generation | 19 | Error | Specialized |
+164: | 17 | Fixed-Point Messages | 1 | Warning | Specialized |
+165: | 18 | MATLAB Compiler (Deployment) | 10 | Error/Warning | Specialized |
+166: | 19 | System Objects | 9 | Error/Warning | Specialized |
+167: | 20 | Unsupported Features | 13 | Warning | Specialized |
+168: | 21 | Behavior Changes | 5 | Warning | In data file (5 entries) |
+169: | 22 | Behavior Changes (Low Reliability) | 265 | Warning | **Partial** — ~55 of 265 in data file |
+170: | 23 | Upcoming Behavior Changes | 3 | Warning | In data file as generic |
+171: | 24 | Upcoming Behavior Changes (Low Reliability) | 632 | Warning | Not started |
+172: | 25 | Code Analyzer Configuration Issues | 4 | Error | Not started |
+173: | | **TOTAL** | **2,680** | | |
+174: 
+175: ---
+176: 
+177: ## Phase 0: Architecture Fixes ✅ COMPLETE
+178: 
+179: All items completed and verified.
+180: 
+181: ### 0.1 — Fix Config Parsing Bug ✅
+182: - **File:** `crates/mlt_core/src/config.rs`
+183: - **Problem:** Early `return` in `from_config_file()` when a rule has `severity = "off"` in full-table form dropped all subsequently-processed rules.
+184: - **Fix:** Replaced `return Ok(...)` with `continue` in the loop.
+185: - **Test added:** `test_full_table_off_does_not_drop_subsequent_rules`
+186: 
+187: ### 0.2 — Fix `rule_params()` Silent Error Swallowing ✅
+188: - **File:** `crates/mlt_core/src/config.rs`
+189: - **Problem:** `value.try_into::<T>().ok()` silently returned `Default` on malformed config.
+190: - **Fix:** Added `eprintln!` warning when deserialization fails, so users see config errors.
+191: 
+192: ### 0.3 — Add Rule Categories ✅
+193: - **File:** `crates/mlt_core/src/rule.rs`
+194: - Added `Category` enum with 22 variants matching MATLAB Code Analyzer groups.
+195: - Added `fn category(&self) -> Category` to `Rule` trait.
+196: - **File:** `crates/mlt_core/src/config.rs`
+197: - Added `[lint.categories]` section support with `HashMap<Category, Option<Severity>>`.
+198: - Added `is_rule_enabled_for_category()` and `effective_severity()` methods.
+199: - Resolution order: per-rule > per-category > rule default.
+200: 
+201: ### 0.4 — Auto-Registration with `inventory` ✅
+202: - **File:** `crates/mlt_rules/src/lib.rs`
+203: - Replaced static `RULE_FACTORIES` const slice with `inventory::collect!(RuleRegistration)`.
+204: - Each rule module self-registers via `inventory::submit!`.
+205: - Adding a rule requires only: create module file + add `pub mod` line. No other edits.
+206: 
+207: ### 0.5 — File-Level Dispatch Optimization ✅
+208: - **File:** `crates/mlt_core/src/registry.rs`
+209: - Added `file_check_indices: Vec<usize>` populated at construction from `rule.has_file_check()`.
+210: - **File:** `crates/mlt_core/src/linter.rs`
+211: - Changed file-level dispatch to iterate only `file_check_rules()` instead of all rules.
+212: 
+213: ### 0.6 — Overlapping Fix Detection ✅
+214: - **File:** `crates/mlt_cli/src/main.rs`
+215: - Added overlap detection in `apply_fixes()`: if a fix's byte range overlaps with the previously applied fix, skip it and emit a warning.
+216: 
+217: ### 0.7 — Rename M001 → NOSEMI ✅
+218: - Renamed `m001_trailing_semicolon.rs` → `nosemi.rs`.
+219: - Updated rule ID from `"M001"` to `"NOSEMI"`.
+220: - Updated severity from `Warning` to `Info` (matching MATLAB's Formatting Suggestions).
+221: - Added `fn category(&self) -> Category { Category::Formatting }`.
+222: - Updated docs, `zensical.toml`, and `rules.md`.
+223: 
+224: ### 0.8 — Rule Metadata ✅
+225: - Added `fn can_be_disabled(&self) -> bool { true }` to `Rule` trait (default true).
+226: - Added `fn has_file_check(&self) -> bool { false }` to `Rule` trait (default false).
+227: 
+228: ---
+229: 
+230: ## Phase 1: Data-Driven Rule Engines ✅ COMPLETE
+231: 
+232: ### 1.1 — Compatibility Lookup Engine ✅
+233: - **File:** `crates/mlt_rules/src/compatibility.rs` (245 lines)
+234: - **Data:** `crates/mlt_rules/src/data/compatibility.toml` (323 entries, 2,350 lines)
+235: - Single `CompatibilityEngine` targeting `function_call` and `command` nodes.
+236: - `LazyLock<HashMap>` built from TOML at first access; O(1) lookup per function name.
+237: - Diagnostics carry the specific MATLAB check ID (e.g., `DPSD`), not the meta-ID.
+238: - **275 entries** have real function names and are actively matchable.
+239: - **48 entries** are generic (empty `function_name`); require future AST pattern matching.
+240: - **Known issue:** Duplicate function names (`tcpip`, `legend`, `web`) cause one check ID to be shadowed.
+241: - **Remaining work:** Populate remaining ~1,480 entries to reach full 1,803 coverage.
+242: 
+243: ### 1.2 — Generic Naming Engine ✅
+244: - **File:** `crates/mlt_rules/src/naming.rs` (849 lines)
+245: - Single `NamingEngine` registered as file-level rule.
+246: - Generates 81 static rule IDs (`naming.<entity>.<checkType>`).
+247: - 9 entity types: class, function, localFunction, method, nestedFunction, property, event, enumeration, variable.
+248: - 9 check types: maxLength, minLength, regularExpression, requiredPrefix, disallowedPrefix, disallowedPhrase, requiredSuffix, disallowedSuffix, casing.
+249: - Entity extraction via full-tree DFS classifying `function_definition`, `class_definition`, `property`, `enum`, `assignment` nodes.
+250: - **Note:** 7 of 9 check types require user config to produce diagnostics. Only `maxLength` (default 63) and `minLength` (default 2) fire without config.
+251: 
+252: ### 1.3 — Custom Checks Framework ✅
+253: - **File:** `crates/mlt_rules/src/custom_checks.rs` (1,286 lines)
+254: - Single `CustomChecksEngine` as file-level rule.
+255: - All 25 check IDs implemented with configurable thresholds.
+256: - Cyclomatic complexity (standard and strict), nesting depth, line-based metrics, function-level metrics.
+257: - **Known issue:** DAFSC semicolons-per-line counts semicolons inside strings/comments.
+258: - **Known issue:** Average complexity uses integer division (truncates fractions).
+259: 
+260: ---
+261: 
+262: ## Phase 2: Semantic Analysis Infrastructure ✅ COMPLETE
+263: 
+264: ### 2.1 — Symbol Table ✅
+265: - **File:** `crates/mlt_rules/src/analysis/symbols.rs` (1,355 lines)
+266: - `SymbolTable::build(tree, source)` — single DFS pass producing `Vec<Scope>`
+267: - Types: `DefKind` (8 variants), `VarDef`, `VarUse`, `ScopeKind` (6 variants), `Scope`, `SymbolTable`
+268: - Tracks: input/output args, assignments, for-loop iterators, global/persistent, nested functions, lambda params
+269: - Helpers: `scope_at()`, `function_scopes()`, `defs_of()`, `uses_of()`, `is_defined()`, `is_used()`
+270: - 14 unit tests
+271: 
+272: ### 2.2 — Control Flow Analysis ✅
+273: - **File:** `crates/mlt_rules/src/analysis/control_flow.rs` (1,448 lines)
+274: - `find_unreachable(tree, source)` — detects code after return/break/continue
+275: - `analyze_definite_assignment(func_node, source)` — set-based flow analysis through if/switch/try/loop branches
+276: - `block_terminates(block_node)` — recursive termination check
+277: - Handles: if/elseif/else intersection, switch/case/otherwise, try/catch, for/while (conservative), global/persistent as assigned
+278: - 24 unit tests
+279: 
+280: ### 2.3 — Function/Class Metadata Extraction ✅
+281: - **File:** `crates/mlt_rules/src/analysis/metadata.rs` (1,304 lines)
+282: - `FileMeta::build(tree, source)` — extracts `FileType`, `ClassMeta`, `FunctionMeta`, `PropertyMeta`, etc.
+283: - Detects: file type (Script/FunctionFile/ClassFile), constructors, setters/getters, abstract methods, argument validation blocks
+284: - Helpers: `main_function()`, `all_methods()`, `all_properties()`, `is_sealed()`, `is_abstract()`, `is_handle()`
+285: - 10 unit tests
+286: 
+287: ### 2.4 — Analysis Module Scaffold ✅
+288: - **File:** `crates/mlt_rules/src/analysis/mod.rs`
+289: - Re-exports `symbols`, `control_flow`, `metadata` sub-modules.
+290: 
+291: ---
+292: 
+293: ## Phase 3: Rule Implementation by Category
+294: 
+295: Each category is an independent module that can be implemented by a parallel
+296: agent. Categories are listed in priority order.
+297: 
+298: ### 3.1 — Formatting Suggestions (7 remaining of 8)
+299: - **File:** `crates/mlt_rules/src/formatting.rs`
+300: - **Check IDs:** NOCOMMA, NO4LP, ALIGN, NOPTS, NOPRT, PRTCAL, NCOMMA
+301: - **Depends on:** Nothing (NOSEMI already done separately)
+302: - **Approach:** Node-level pattern matching
+303: 
+304: | Check ID | Description | Target Nodes |
+305: |----------|-------------|-------------|
+306: | NOCOMMA | Missing comma between matrix elements | `matrix`, `cell` |
+307: | NO4LP | Missing indentation for loop body | `for_statement`, `while_statement` |
+308: | ALIGN | Misaligned code | `block` |
+309: | NOPTS | Missing parentheses in control statement | `if_statement`, `while_statement` |
+310: | NOPRT | Unnecessary parentheses | `parenthesis` |
+311: | PRTCAL | Parentheses in function call could use command syntax | `function_call` |
+312: | NCOMMA | Missing comma in function arguments | `arguments` |
+313: 
+314: ### 3.2 — Bugs (35 checks)
+315: - **File:** `crates/mlt_rules/src/bugs.rs`
+316: - **Check IDs:** IFBDUP, IFCDUP, PFUIXE, PFBFN, PFWHOS, PFTUSE, PFRNC, BDSCA2, RHSFN, FNAN, FUNFUN, MOCUP, MDUPC, MNANC, MULCC, STCUL, LOGEMP, NOPRC, SHOCIRT, SHOCIRF, CTRUE, CFALSE, DEFSIZE, VARARG, STRCMPCSTR, MEXCEP, ASSRT, FWFORP, FPFORP, LBODUP, DEBUGFUN, INCR, DECR, CMDAND, CMDOR
+317: - **Depends on:** 2.3 (metadata) for some checks
+318: - **Approach:** Node-level pattern matching; some file-level
+319: 
+320: Key checks:
+321: | Check ID | Description | Approach |
+322: |----------|-------------|----------|
+323: | IFBDUP | Duplicate if-branch bodies | Compare child block text |
+324: | IFCDUP | Duplicate if-branch conditions | Compare condition node text |
+325: | CTRUE | Condition is always true | Detect `if true`, `while true` |
+326: | CFALSE | Condition is always false | Detect `if false` |
+327: | DEBUGFUN | Debug function left in code | Match `keyboard`, `dbstop` calls |
+328: | CMDAND | `&` used in command context (should be `&&`) | Check boolean_operator in command |
+329: | CMDOR | `\|` used in command context (should be `\|\|`) | Check boolean_operator in command |
+330: | INCR | Inefficient increment `x = x + 1` | Pattern match assignment |
+331: | DECR | Inefficient decrement `x = x - 1` | Pattern match assignment |
+332: 
+333: ### 3.3 — Readability Improvements (35 checks)
+334: - **File:** `crates/mlt_rules/src/readability.rs`
+335: - **Check IDs:** ASGSL, COMNL, SPERR, SPWRN, NCHKE, DSPSP, DSPSY, STLOW, FLUDLR, RPMT1, RPMT0, RPMTT, RPMTF, RPMTI, RPMTN, PSIZE, LOGSUM, LOGL, ISCHR, ISSTR, ISLOG, ISCEL, IJCL, ISMAT, ISROW, ISCOL, NBRAK2, MFAMB, FVINR, STREMP, STRCL1, STRCLFH, STRIFCND, CHARTEN, SPRINTFN
+336: - **Depends on:** Nothing
+337: - **Approach:** Node-level pattern matching (suggest more readable alternatives)
+338: 
+339: Key checks:
+340: | Check ID | Description |
+341: |----------|-------------|
+342: | ISCHR | Use `ischar(x)` instead of `isa(x,'char')` |
+343: | ISSTR | Use `isstring(x)` instead of `isa(x,'string')` |
+344: | IJCL | `i` or `j` used as variable (shadows complex unit) |
+345: | NBRAK2 | Unnecessary brackets in indexing |
+346: | STREMP | Use `strlength(s)==0` instead of `strcmp(s,'')` |
+347: 
+348: ### 3.4 — Performance Improvements (41 checks)
+349: - **File:** `crates/mlt_rules/src/performance.rs`
+350: - **Check IDs:** PFBNS, RGXP1, TRIM1, STTOK, TRIM2, STNCI, STCCS, FNDSB, SFLD, GFLD, CCAT, AGROW, SAGROW, ISMT, ISCL, ST2NM, FLPST, MXFND, EFIND, EXIST, UDIM, FREAD, N2UNI, TNMLP, MINV, LAXES, MMTC, MRPBW, SPRIX, TRSRT, CCAT1, GRIDD, AND2, OR2, CLALL, CLCLS, CLFUNC, CLJAVA, CLMEX, RGXPI, CLEAR0ARGS
+351: - **Depends on:** 2.1 (symbols) for AGROW (detecting growth inside loops)
+352: - **Approach:** Mostly node-level pattern matching
+353: 
+354: Key checks:
+355: | Check ID | Description |
+356: |----------|-------------|
+357: | AGROW | Variable appears to grow inside loop |
+358: | AND2 | Use `&&` instead of `&` for scalar logical |
+359: | OR2 | Use `\|\|` instead of `\|` for scalar logical |
+360: | MINV | Use `A\b` instead of `inv(A)*b` |
+361: | GFLD | Use dynamic field names instead of `getfield` |
+362: | SFLD | Use dynamic field names instead of `setfield` |
+363: | EXIST | Use `isfile`/`isfolder` instead of `exist` |
+364: 
+365: ### 3.5 — Good Practices (106 checks)
+366: - **File:** `crates/mlt_rules/src/good_practices.rs`
+367: - **Depends on:** 2.1 (symbols), 2.3 (metadata)
+368: - **Approach:** Mix of node-level and file-level checks
+369: 
+370: Split into sub-groups within the module:
+371: | Sub-Group | Check IDs | Count |
+372: |-----------|-----------|-------|
+373: | Error handling | TRYNC, CTCH, WLAST, WNTAG, ERTAG, MEXCEP | 6 |
+374: | String comparison | STCMP, STCI, STISA, STRNU | 4 |
+375: | OOP practices | MCHDP, MCVM, MCPO, MCCPI, MCSUP, MOBSRV, etc. | ~20 |
+376: | eval/dynamic code | EVLCS, EVLDOT, EVLEQ, EVLSYS, EVLDUAL, EVLSEQVAR | 6 |
+377: | Parfor/SPMD practices | PFRNI, PFGP, PFGV, PFEVB, PFOUS, PFIIN, etc. | ~15 |
+378: | General | NOANS, LOAD, SEPEX, NBRAK1, LNGNM, CHAIN, DISPLAY, etc. | ~55 |
+379: 
+380: ### 3.6 — Incomplete Analysis (17 checks)
+381: - **File:** `crates/mlt_rules/src/incomplete_analysis.rs` or integrated into `mlt_core/src/linter.rs`
+382: - **Check IDs:** TMMSG, TMSMS, MXASET, QUIT, NOSPC, MBIG, NOFIL, MDOTM, MDMCR, RDERR, EOFER, EOFMI, MDEEP, DEEPC, DEEPN, DEEPS, TEXTL
+383: - **All `can_be_disabled = false`**
+384: - **Depends on:** Nothing (linter-internal limits)
+385: - **Approach:** Guard conditions in the lint engine:
+386:   - TMMSG: emit if diagnostics count exceeds 10,000
+387:   - MBIG: emit if source file exceeds size threshold
+388:   - MDEEP: emit if parenthesis nesting exceeds threshold
+389:   - EOFER: emit if parse tree has too many ERROR nodes
+390:   - NOFIL, RDERR, MDOTM: emit from CLI on file I/O errors
+391: 
+392: ### 3.7 — Syntax Errors (50 checks)
+393: - **File:** `crates/mlt_rules/src/syntax_errors.rs`
+394: - **Check IDs:** NOLHS, BDFIL, BADCH, BADCT, BADFP, BADHBH, BADHBB, BADHBHT, BADHBBT, BADSP, HEXTOOLONG, BINARYTOOLONG, BADOT, BADNE, DOUQT, STRIN, INBLK, RESWD, REDEF, UNSET, LHROW, NOPAR, NOPAR2, EOLPAR, TWOCM, FNDOT, ENDCT, ENDCT2, ENDCT3, ENDCT4, SYNER, SOFOC, CLIS, MCPLD, SBTMP, BADNOT, BADNOTLHS, ENDPAR, SEPEXR, SEPEXC, VTPOD, FNSWA, SYNEND, SEMFU, CLTWO, FVACI, FVACS, FVAMI, FVNST, FVSYN
+395: - **Depends on:** 2.3 (metadata) for some
+396: - **Approach:** Many are already caught by tree-sitter parse errors. Augment with post-parse validation:
+397:   - Check tree-sitter `ERROR` and `MISSING` nodes for specific patterns
+398:   - Validate file name vs class/function name (BDFIL, MCFIL)
+399:   - Check for known bad patterns (BADNE: `!=` instead of `~=`, BADOT: `..`)
+400: 
+401: ### 3.8 — Language Specification Errors (157 checks)
+402: Split into sub-modules due to size:
+403: 
+404: #### 3.8a — Parfor Rules (45 checks)
+405: - **File:** `crates/mlt_rules/src/parfor.rs`
+406: - **Check IDs:** PFANSLP, PFANSNS, PFFORA, PFGLOB, PFINPT, PFPERS, PFCTXT, PFFRNG, PFMLTI, PFANON, PFFSUB, PFINCR, PFVARS, PFVSUB, PFRNG, PFPF, PFSPMD, PFBRK, PFRTN, PFLD, PFSV, PFNAR, PFUTVR, PFUTMP, PFEVC, PFNAIO, PFNACK, PFSLO, PFSLW, PFSLRD, PFUNK, PFNF, PFRFH, PFXST, PFCEL, BRKFOR, CONTFOR, FWFORP, FPFORP, plus related SPMD checks
+407: - **Depends on:** 2.1 (symbols), 2.3 (metadata)
+408: - **Approach:** File-level; detect `for_statement` with parfor keyword, then validate variable classification
+409: 
+410: #### 3.8b — Class/Method Rules (45 checks)
+411: - **File:** `crates/mlt_rules/src/class_rules.rs`
+412: - **Check IDs:** MCDIR, MCFIL, MCEB, MCSGP, MCSGA, MCS2I, MCS1O, MCG1I, MCG1O, MCGSA, MCSCN, MCANI, MCASC, MCRED, MCCBD, MCPSG, MCSCT, MCSCO, MCSCF, MCCBS, MCCBU, MCCMC, MCSCC, MCSCM, MCCSOP, MTMAT, MTAGS3, MCAPP, MABSEAC, MABSEAM, MCMIO, MCMSP, MCMTP, MHERIT, MCSWA, MCPIN, MWKREF, MWKCT, MWKCL, MCSMO, plus AT* attribute checks
+413: - **Depends on:** 2.3 (metadata)
+414: - **Approach:** File-level; requires class structure understanding
+415: 
+416: #### 3.8c — Function Validation Rules (40 checks)
+417: - **File:** `crates/mlt_rules/src/function_validation.rs`
+418: - **Check IDs:** FVAPN, FVATF, FVIOA, FVBTN, FVDAN, FVDAP, FVDNF, FVDREP, FVMCL, FVNDE, FVIDV, FVNIV, FVNREP, FVOND, FVORDI, FVORDN, FVORDO, FVORDP, FVONV, FVREPD, FVREPO, FVNSC, FVNVL, FVSOR, FVSORO, FVUBD, FVVCON, FVOCON, FVVIN, FVVREP, TTOOFEWDIMS, TINVALDIM, FVOBI, FVOOD, FVOON, FVOVREP, FVOOI, FVORM, plus VTPEAL, VTPCON, VTPIN
+419: - **Depends on:** 2.3 (metadata)
+420: - **Approach:** File-level; validate `arguments` blocks
+421: 
+422: #### 3.8d — Other Language Spec (27 checks)
+423: - **File:** `crates/mlt_rules/src/language_spec.rs`
+424: - **Check IDs:** FCONV, FCONF, ROWLN, GPFST, GPNES, NPERS, SPDEC, SPDEC3, SPNST, SPRET, SPBRK, SPLD, SPSV, SPGP, SPEVC, SPBFN, SPNF, SPWHOS, FCNANS, CLANS, USESWNS, IDXCOLND, CTOINE, CTORO, NCHKOS, ERTXT, WTXT
+425: - **Depends on:** 2.1 (symbols), 2.3 (metadata)
+426: 
+427: ### 3.9 — Unset Variables (6 checks)
+428: - **File:** `crates/mlt_rules/src/unset_variables.rs`
+429: - **Check IDs:** PSET, USENS, SVNODEF, SUSENS, NODEF, STOUT
+430: - **Depends on:** 2.1 (symbols), 2.2 (control flow)
+431: - **Approach:** File-level; use symbol table to find variables read before written
+432: 
+433: ### 3.10 — Unused Constructions (17 checks)
+434: - **File:** `crates/mlt_rules/src/unused.rs`
+435: - **Check IDs:** NOEFF, NUSED, EQEFF, PUSE, SETNU, ASGLU, NASGU, PREALL, INUSA, INUSD, VANUS, DEFNU, UNRCH, MANU, VUNUS, MSNU, MSNE
+436: - **Depends on:** 2.1 (symbols), 2.2 (control flow)
+437: - **Approach:** File-level; use symbol table to find unused assignments and unreachable code
+438: 
+439: ### 3.11 — Suggested Improvements (243 checks)
+440: - **File:** `crates/mlt_rules/src/suggested_improvements.rs`
+441: - **Data:** `crates/mlt_rules/src/data/suggested_improvements.toml`
+442: - **Depends on:** Nothing (data-driven, like compatibility)
+443: - **Approach:** Same lookup-engine pattern as compatibility. Function name → suggested replacement.
+444: 
+445: Key checks:
+446: | Check ID | Description |
+447: |----------|-------------|
+448: | CSVRD | Use `readmatrix` instead of `csvread` |
+449: | DLMRD | Use `readmatrix` instead of `dlmread` |
+450: | XLSRD | Use `readmatrix`/`readtable` instead of `xlsread` |
+451: | CSVWT | Use `writematrix` instead of `csvwrite` |
+452: | DLMWT | Use `writematrix` instead of `dlmwrite` |
+453: | XLSWT | Use `writematrix`/`writetable` instead of `xlswrite` |
+454: | ISDIR | Use `isfolder` instead of `isdir` |
+455: | HIST | Use `histogram` instead of `hist` |
+456: | HISTC | Use `histcounts` instead of `histc` |
+457: 
+458: ### 3.12 — Specialized Domains (combined, 52 checks)
+459: 
+460: #### Code Generation (19 checks)
+461: - **File:** `crates/mlt_rules/src/codegen.rs`
+462: - **Check IDs:** EMVDF, EMGRO, EMNODEF, EMFCN, PRMNOIN, EMCEL, EMTC, EMIMP, EMNST, EMSCR, EMBRK, EMCNT, EMPFR, EMRTN, EMWHL, EMRIFAV, LOOPPRAGMAWITHOUTFOR, EMLOAD, EMS2N
+463: - **Depends on:** 2.3 (metadata)
+464: 
+465: #### Deployment (10 checks)
+466: - **File:** `crates/mlt_rules/src/deployment.rs`
+467: - **Check IDs:** MCCD, MCPRD, MCHLP, MCKBD, MCSVP, MCMLR, MCABF, MCMFL, MCTBX, MCLL
+468: 
+469: #### System Objects (9 checks)
+470: - **File:** `crates/mlt_rules/src/system_objects.rs`
+471: - **Check IDs:** SONUMIN, SONUMOUT, SODEPPROP, SOINITPROP, SODFLTVAL, SORSRVDNM, SOTUNPROP1, SOTUNPROP3, SOTUNPROP4
+472: 
+473: #### Unsupported Features (13 checks)
+474: - **File:** `crates/mlt_rules/src/unsupported.rs`
+475: - **Check IDs:** MCADE, AWTIUD, AXCHUD, FEATUD, FNDPUD, HGCNUD, IMPKG, ISMBUD, MIPKG, SEPTUD, SYDEUD, UIRSUD, UISUUD
+476: 
+477: #### Fixed-Point (1 check)
+478: - Included in `codegen.rs`: FPASE
+479: 
+480: ### 3.13 — Configuration Issues (4 checks)
+481: - Integrated into `crates/mlt_core/src/config.rs`
+482: - **Check IDs:** BDCFG, CFERR, BDOPT, CFIG
+483: - **Approach:** Emit diagnostics during config parsing for malformed `.mlt.toml`
+484: 
+485: ---
+486: 
+487: ## Phase 4: Expand Compatibility Data File
+488: 
+489: The compatibility engine (`compatibility.rs`) is code-complete. The data file
+490: needs to be expanded from 323 entries to the full ~1,803.
+491: 
+492: ### 4.1 — Compatibility Considerations (remaining ~616 entries)
+493: - Current: 256 entries; target: 891
+494: - Add remaining deprecated function entries from MATLAB documentation
+495: - Handle duplicate function names (e.g., multi-function deprecations) by switching HashMap to `HashMap<String, Vec<CompatEntry>>`
+496: 
+497: ### 4.2 — Behavior Changes Low Reliability (remaining ~210 entries)
+498: - Current: ~55 entries; target: 265
+499: - Primarily JAPIEXT* checks (Java API removals)
+500: 
+501: ### 4.3 — Upcoming Behavior Changes Low Reliability (632 entries)
+502: - Current: 0 entries; target: 632
+503: - All JAPIEXT* entries for upcoming Java API removals
+504: 
+505: ### 4.4 — Forward Compatibility (7 entries)
+506: - Current: 7 entries but all generic (empty function_name)
+507: - These require AST-pattern checks, not function-name lookup
+508: - Consider implementing as node-level rules in `compatibility.rs` or a separate module
+509: 
+510: ---
+511: 
+512: ## Phase 5: Test Suite
+513: 
+514: ### 5.1 — Test Fixture Structure
+515: ```
+516: tests/
+517: ├── fixtures/
+518: │   ├── nosemi/
+519: │   │   ├── pass.m
+520: │   │   └── fail.m
+521: │   ├── compatibility/
+522: │   │   ├── pass.m
+523: │   │   └── fail.m
+524: │   ├── naming/
+525: │   │   ├── pass.m
+526: │   │   └── fail.m
+527: │   ├── custom_checks/
+528: │   │   ├── pass.m
+529: │   │   └── fail.m
+530: │   ├── bugs/
+531: │   │   ├── pass.m
+532: │   │   └── fail.m
+533: │   └── ... (one dir per category)
+534: └── integration/
+535:     ├── test_all_rules.rs
+536:     └── test_fixes.rs
+537: ```
+538: 
+539: ### 5.2 — Test Types
+540: - **Unit tests:** Per-rule, in each rule module (using `#[cfg(test)]` mod)
+541: - **Fixture tests:** MATLAB files with expected diagnostics; assert linter output matches
+542: - **Fix tests:** Apply `--fix` and verify output matches expected
+543: - **Config tests:** Verify rules respect severity overrides, category disabling, rule params
+544: 
+545: ---
+546: 
+547: ## Phase 6: Documentation
+548: 
+549: ### 6.1 — Rule Documentation Pages
+550: - One `docs/<rule_id>.md` page per non-data-driven rule (or per category for data-driven engines)
+551: - Follow template from `docs/nosemi.md`
+552: - Data-driven engines get a single page explaining the engine + a table of all check IDs
+553: 
+554: ### 6.2 — Update `docs/rules.md`
+555: - Complete rule table with all ~2,680 check IDs
+556: - Sortable/filterable by category, severity, auto-fix status
+557: 
+558: ### 6.3 — Update `docs/configuration.md`
+559: - Document `[lint.categories]` feature
+560: - Document all rule-specific parameters
+561: - Examples for common workflows
+562: 
+563: ---
+564: 
+565: ## Dependency Graph & Parallelization
+566: 
+567: ```
+568: Phase 0 ✅ ─────────────────────────────────────────────────────┐
+569: Phase 1 ✅ ─────────────────────────────────────────────────────┤
+570:                                                                 │
+571: Phase 2 (infrastructure) ──── depends on Phase 0 ──────────────┤
+572:   ├─ 2.1 Symbol table ─────────────→ start immediately         │
+573:   ├─ 2.2 Control flow ─────────────→ depends on 2.1            │
+574:   ├─ 2.3 Metadata extraction ──────→ parallel with 2.1         │
+575:   └─ 2.4 Module scaffold ─────────→ parallel with 2.1          │
+576:                                                                 │
+577: Phase 3 (rules) ──── depends on Phase 2 where noted ───────────┘
+578:   │
+579:   │  No dependencies (can start immediately):
+580:   ├─ 3.1  Formatting (7)         ────→ PARALLEL
+581:   ├─ 3.3  Readability (35)       ────→ PARALLEL
+582:   ├─ 3.6  Incomplete Analysis (17) ──→ PARALLEL
+583:   ├─ 3.11 Suggested Improvements (243) → PARALLEL (data-driven)
+584:   ├─ 3.13 Configuration Issues (4)  ─→ PARALLEL
+585:   │
+586:   │  Depends on 2.3 (metadata) only:
+587:   ├─ 3.2  Bugs (35)             ────→ PARALLEL after 2.3
+588:   ├─ 3.7  Syntax Errors (50)    ────→ PARALLEL after 2.3
+589:   ├─ 3.8b Class Rules (45)      ────→ PARALLEL after 2.3
+590:   ├─ 3.8c Function Validation (40) ─→ PARALLEL after 2.3
+591:   ├─ 3.12 Specialized (52)      ────→ PARALLEL after 2.3
+592:   │
+593:   │  Depends on 2.1 (symbols) + 2.3 (metadata):
+594:   ├─ 3.4  Performance (41)      ────→ PARALLEL after 2.1+2.3
+595:   ├─ 3.5  Good Practices (106)  ────→ PARALLEL after 2.1+2.3
+596:   ├─ 3.8a Parfor (45)           ────→ PARALLEL after 2.1+2.3
+597:   ├─ 3.8d Language Spec Other (27) ─→ PARALLEL after 2.1+2.3
+598:   │
+599:   │  Depends on 2.1 + 2.2 (symbols + control flow):
+600:   ├─ 3.9  Unset Variables (6)   ────→ after 2.2
+601:   └─ 3.10 Unused Constructions (17) → after 2.2
+602: 
+603: Phase 4 (data expansion) ──── no code deps, can run anytime ───
+604:   ├─ 4.1 Compat remaining entries    → PARALLEL
+605:   ├─ 4.2 Behavior changes entries    → PARALLEL
+606:   ├─ 4.3 Upcoming behavior entries   → PARALLEL
+607:   └─ 4.4 Forward compat patterns     → after engine update
+608: 
+609: Phase 5 (tests) ──── after each Phase 3 module ────────────────
+610: Phase 6 (docs) ───── after each Phase 3 module ────────────────
+611: ```
+612: 
+613: ### Recommended Execution Order
+614: 
+615: | Wave | Work Items | Parallelism |
+616: |------|-----------|-------------|
+617: | **Wave 1** | 2.1 (symbols), 2.3 (metadata), 2.4 (scaffold) | 3 agents |
+618: | **Wave 2** | 2.2 (control flow), 3.1 (formatting), 3.3 (readability), 3.6 (incomplete), 3.11 (suggested), 3.13 (config issues) | 6 agents |
+619: | **Wave 3** | 3.2 (bugs), 3.4 (perf), 3.5 (good practices), 3.7 (syntax), 3.8a-d (lang spec × 4), 3.12 (specialized) | 9 agents |
+620: | **Wave 4** | 3.9 (unset vars), 3.10 (unused), 4.1-4.3 (data expansion) | 5 agents |
+621: | **Wave 5** | Phase 5 (tests), Phase 6 (docs) | parallel per category |
+622: 
+623: ---
+624: 
+625: ## File Structure (Final State)
+626: 
+627: ```
+628: crates/mlt_rules/src/
+629: ├── lib.rs
+630: ├── data/
+631: │   ├── compatibility.toml            # ~1,803 entries
+632: │   └── suggested_improvements.toml   # ~243 entries
+633: ├── analysis/
+634: │   ├── mod.rs
+635: │   ├── symbols.rs                    # Symbol table
+636: │   ├── control_flow.rs              # Reachability analysis
+637: │   └── metadata.rs                  # Function/class structure
+638: ├── nosemi.rs                         # ✅ NOSEMI (1 check)
+639: ├── compatibility.rs                  # ✅ Data-driven engine (~1,803 checks)
+640: ├── naming.rs                         # ✅ Generic engine (81 checks)
+641: ├── custom_checks.rs                  # ✅ Metrics engine (25 checks)
+642: ├── formatting.rs                     # 7 checks
+643: ├── bugs.rs                           # 35 checks
+644: ├── readability.rs                    # 35 checks
+645: ├── performance.rs                    # 41 checks
+646: ├── good_practices.rs                 # 106 checks
+647: ├── incomplete_analysis.rs            # 17 checks
+648: ├── syntax_errors.rs                  # 50 checks
+649: ├── parfor.rs                         # 45 checks
+650: ├── class_rules.rs                    # 45 checks
+651: ├── function_validation.rs            # 40 checks
+652: ├── language_spec.rs                  # 27 checks
+653: ├── unset_variables.rs                # 6 checks
+654: ├── unused.rs                         # 17 checks
+655: ├── suggested_improvements.rs         # 243 checks
+656: ├── codegen.rs                        # 20 checks
+657: ├── deployment.rs                     # 10 checks
+658: ├── system_objects.rs                 # 9 checks
+659: └── unsupported.rs                    # 13 checks
+660: ```
+661: 
+662: ---
+663: 
+664: ## Verification
+665: 
+666: After each module:
+667: ```bash
+668: cargo build          # All crates compile
+669: cargo clippy         # Zero warnings
+670: cargo test           # All tests pass
+671: cargo run -- tests/fixtures/<rule>/fail.m   # Rule fires correctly
+672: cargo run -- tests/fixtures/<rule>/pass.m   # Rule does NOT fire
+673: ```
+
+(End of file - total 673 lines)
+</content>
+
+---
+
+So are we done with wave 3? delete the document if yes, if not, finish it and deleted. Make a summary of what is done from the wave 3 document in PLAN.md (only relevant information for later phases)
+
+---
+
+But what do you mean 726/771? where is the remaining 6%?
+
+---
+
+yeah
+
+---
+
+I think all the files in @crates/mlt_rules/ are getting rather large. I'd like that for each category, a directory is created where rule implementations are put into and import them in the main file. Do this for rules that are independent. Rules that are not independent can stay in the file. 
+Called the Read tool with the following input: {"filePath":"/home/watermarkhu/repositories/mlt/crates/mlt_rules/"}
+<path>/home/watermarkhu/repositories/mlt/crates/mlt_rules/</path>
+<type>directory</type>
+<entries>
+Cargo.toml
+src/
+
+(2 entries)
+</entries>
+
+---
+
+1. all
+2. one file per check
+3. move with code if it makes sense. e.g. function test moves with function
+4. sure
+
+let's launch of fleet of subagents for creating the new files. Only after move are verified, we edit the main files in this main session.
+
+---
+
+1. that is right. main session cutover
+2. ok that is fine.
+
+---
+
+do it
+
+---
+
+continue with the next phase. similarly as before, create a new phase plan document first
+
+---
+
+do it
+
+---
+
+some where cancelled. continue
+
+---
+
+do it
+
+---
+
+so are we going to tackle the remaining checks in the next phases?
+
+---
+
+hello?
+
+---
+
+sure
+
+---
+
+a
+
+---
+
+Continue if you have next steps, or stop and ask for clarification if you are unsure how to proceed.
+
+---
+
+why you stop
+
+---
+
+continue
+
+---
+
+so is @PHASE4_5_PLAN.md done?
+Called the Read tool with the following input: {"filePath":"/home/watermarkhu/repositories/mlt/PHASE4_5_PLAN.md"}
+<path>/home/watermarkhu/repositories/mlt/PHASE4_5_PLAN.md</path>
+<type>file</type>
+<content>
+1: # Phase 4.5 + Phase 3 Completion Plan
+2: 
+3: This document covers the final rule-implementation work to move mlt from ~93%
+4: toward full parity with MATLAB's Code Analyzer (2,680 checks). It has two parts:
+5: 
+6: - **Part A — Phase 4.5:** implement the 68 "generic" compatibility checks that
+7:   the data-driven lookup engine cannot match (they need AST-pattern logic).
+8: - **Part B — Phase 3 completion:** close the remaining code-level gaps in
+9:   Language Spec (11), Good Practices (26), and System Objects (2).
+10: 
+11: ---
+12: 
+13: ## Part A — Phase 4.5: Generic Compatibility AST Checks
+14: 
+15: ### Current state
+16: 
+17: The compatibility data file (`data/compatibility.toml`) contains 68 entries with
+18: `function_name = ""` (and `pattern = "generic"`). The lookup engine skips these
+19: because they cannot be matched by function name alone — each requires inspecting
+20: the AST for a specific pattern (a property, attribute, option name, argument, or
+21: language construct).
+22: 
+23: These 68 IDs are diverse. The 1,794 matchable IDs are already fully covered
+24: (Phase 4).
+25: 
+26: ### The 68 generic checks, grouped by AST pattern
+27: 
+28: | Group | Count | Check IDs | Detection |
+29: |-------|------:|-----------|-----------|
+30: | **Property/attribute removal** | 9 | MCPDC, PSTAT, DSPIDF, DSPFDF, ATVIZW, SMPLMODE, GETERR, SETERR, MCGCP | Property/attribute name used on a class/property/object |
+31: | **Removed option / name-value** | 14 | HESST, HESSM, TTSMP, LSRET, RAYNR, DFEATUREPARAM1, DFEATUREPARAM2, COEFFS, COEFF1-3, COEFFD1-3, COEFFC1-3 | Option/name-value argument in a call |
+32: | **Removed input argument** | 8 | FPRENAME, XPCRENAME, SLRTRENAME, PSRENAME, DCRENAME, SERENAME, HHCNA, HHCWE | Specific string literal input argument |
+33: | **Class/scripting syntax** | 7 | REPUDD, MCATP, NOV6, FROPT, FROPTX, RESOU, FGREN/FGREM | `schema.m` classes, `@` property restriction, `v6`, `-dill`/`-adobecset` flags, `resources` folder |
+34: | **Forward-compat version gates** | 7 | FCLEN, FCCPV, FCDQS, FCFAV, FCHBL, FCLFS, FCNVA | Language feature unavailable before a MATLAB version |
+35: | **Global/import scope** | 4 | REDEFGI, REDEFGG, NSTIMP, IMPIVD, IMPKEY | `global` declaration misuse, nested import inheritance |
+36: | **Unset-variable style** | 3 | SHVAI, IDISVARHIGH, IDISVARLOW | Variable defined-before-use edge cases |
+37: | **Behavior-change (property/plot)** | 10 | PTCLO, PTDLO, SMTHG, SMTHGF, SMTHF, SMTHFA, SMTHFT, INVHCRM, DINVHCRM, FGREN/FGREM | Removed/affected figure/axes properties |
+38: 
+39: **Total: 68.**
+40: 
+41: ### Approach
+42: 
+43: Add a **file-level `check_file` pass** (or a set of node-level checks) to
+44: `compatibility.rs` that walks the tree once and applies the generic-pattern
+45: rules. Two options:
+46: 
+47: - **Option A (preferred):** Add `has_file_check() = true` to
+48:   `CompatibilityEngine` and implement the 68 checks as a dispatched set of
+49:   `check_*` methods (one file per check, following the Phase 3 directory
+50:   convention). Uses `FileContext`/`SymbolTable` where needed (unset-variable
+51:   group).
+52: - **Option B:** A new `generic_compat.rs` engine registered separately.
+53: 
+54: Recommend Option A so all compatibility checks stay in one engine/rule.
+55: 
+56: ### Wave structure (parallel implementer subagents)
+57: 
+58: | Wave | Group | Checks |
+59: |------|-------|--------|
+60: | 4.5-A | Property/attribute + option removals | ~23 (MCPDC, PSTAT, DSPIDF, DSPFDF, ATVIZW, SMPLMODE, GETERR, SETERR, MCGCP, HESST, HESSM, TTSMP, LSRET, RAYNR, DFEATUREPARAM1/2, COEFFS, COEFF1-3, COEFFD1-3, COEFFC1-3) — **DONE** (in `check_property_attr.rs`; also READSZK/READSZR) |
+61: | 4.5-B | Input arg + class/scripting syntax | ~15 (FPRENAME, XPCRENAME, SLRTRENAME, PSRENAME, DCRENAME, SERENAME, HHCNA, HHCWE, REPUDD, MCATP, NOV6, FROPT, FROPTX, RESOU, FGREN/FGREM) — **DONE** (in `check_input_syntax.rs`) |
+62: | 4.5-C | Forward-compat gates + scope/unset | ~14 (FCLEN, FCCPV, FCDQS, FCFAV, FCHBL, FCLFS, FCNVA, REDEFGI, REDEFGG, NSTIMP, IMPIVD, IMPKEY) — **DONE** (in `check_forward_gates.rs`); SHVAI, IDISVARHIGH, IDISVARLOW deferred to Phase 7 |
+63: | 4.5-D | Behavior-change properties | ~10 (PTCLO, PTDLO, SMTHG, SMTHGF, SMTHF, SMTHFA, SMTHFT, INVHCRM, DINVHCRM) — **DONE** (in `check_behavior_prop.rs`) |
+64: 
+65: **Status: 65 of 68 generic IDs implemented** (3 unset-variable checks deferred).
+66: The file-level scope checks (REDEFGI/REDEFGG/NSTIMP) run via
+67: `generic::collect_file_checks`, dispatched from `CompatibilityEngine::check_file`.
+68: 
+69: **Gate per wave:** `cargo build` + `cargo clippy --all-targets` (zero warnings)
+70: + `cargo test`. Each check gets fires/not-fires tests.
+71: 
+72: ---
+73: 
+74: ## Part B — Phase 3 Completion (code-level gaps)
+75: 
+76: Close the remaining in-scope gaps using the existing rule-pipeline
+77: (plan in main → parallel reviewer → parallel implementer), same as Waves A-D.
+78: 
+79: ### B1 — Language Spec (11 missing) → `phase3/langspeccompletion`
+80: 
+81: The 157-check index has 146 implemented. The 11 remaining are the doc-table gap
+82: identified in Phase 3. Triage each against the live index to confirm the exact
+83: IDs, then implement in `language_spec.rs` (already split into per-check files).
+84: 
+85: **Gate:** build + clippy + test.
+86: 
+87: ### B2 — Good Practices (26 missing) → `phase3/gpcompletion`
+88: 
+89: 80/106 implemented. The 26 remaining: 2 straightforward pending + 24 previously
+90: deferred (ADPROP, ADPROPLC, BDLGI, BDLOG1, BDLOG2, BDSCA, BDSCI, CTOINW, FXUP,
+91: GTARG, LTARG, MCCSPS, MCHDP, MCHDT, MCNPN, MCNPR, MCSUP, MCVM, MCSNOV, MCSOH,
+92: PFRIN, PFRUS, SHVAU, VTFIN). Re-triage: some may be implementable now with the
+93: existing symbol table/control-flow analysis; the ones genuinely needing type
+94: inference stay deferred (tracked as Phase 7).
+95: 
+96: **Gate:** build + clippy + test.
+97: 
+98: ### B3 — System Objects (2) → `phase3/socompletion`
+99: 
+100: 7/9. The SOTUNPROP1/3/4 variants were consolidated into one SOTUNPROP emission.
+101: Reconcile: either split back to the 3 distinct IDs with distinct messages, or
+102: accept the consolidation and update the target count. Resolve with the live
+103: index.
+104: 
+105: **Gate:** build + clippy + test.
+106: 
+107: ---
+108: 
+109: ## Phase 7 (future) — Type Inference for the remaining deferred checks
+110: 
+111: The subset of Good Practices checks that genuinely need type inference
+112: (BDLGI, BDLOG1/2, BDSCA, BDSCI, MCHDP/MCHDT, MCVM/MCSNOV/MCSOH, MCNPN/MCNPR,
+113: GTARG/LTARG, SHVAU, and the generic compat unset-variable group) requires a
+114: type-propagation pass over the symbol table. This is a larger infrastructure
+115: effort and is tracked separately (not in this plan's scope).
+116: 
+117: ---
+118: 
+119: ## Execution order
+120: 
+121: 1. **Part A (Phase 4.5)** — 4 parallel waves, one branch per wave, stacked on `feat`.
+122: 2. **Part B** — 3 branches, stacked.
+123: 3. Update `PLAN.md` inventory + coverage at the end.
+124: 
+125: Completion criteria: full `cargo build`, `cargo clippy --all-targets` zero
+126: warnings, `cargo test`, and PLAN.md inventory rows all green.
+
+(End of file - total 126 lines)
+</content>
+
+---
+
+finish part B and converge all the PLAN documents into PLAN.md, keeping the stuff relevant for the remaining phases.
+
+---
+
+continue
+
+---
+
+continue
+
+---
+
+commit and stack
+
+---
+
+we are now on branch feat with stackes merged. What is the next phase?
+
+---
+
+1. use a generator
+2. ok
+
+---
+
+we can make use of https://zensical.org/docs/setup/extensions/markdown-exec/ to do it
+
+---
+
+Also, does it now still make sense to have the rule specific pages like @docs/strin.md?
+
+---
+
+I've now setup a local @pyproject.toml and we can run zensical from the venv
+Called the Read tool with the following input: {"filePath":"/home/watermarkhu/repositories/mlt/pyproject.toml"}
+<path>/home/watermarkhu/repositories/mlt/pyproject.toml</path>
+<type>file</type>
+<content>
+1: [project]
+2: name = "mlt"
+3: version = "0.1.0"
+4: requires-python = ">=3.14"
+5: 
+6: [dependency-groups]
+7: docs = [
+8:     "markdown-exec>=1.12.3",
+9:     "zensical>=0.0.53",
+10: ]
+
+(End of file - total 10 lines)
+</content>
+
+---
+
+but now many pages in the nav in @zensical.toml refer to the same page, but others have unique pages. E.g. FVAMI has a unique page but FVAPN is on the same page. what about it
+Called the Read tool with the following input: {"filePath":"/home/watermarkhu/repositories/mlt/zensical.toml"}
+<path>/home/watermarkhu/repositories/mlt/zensical.toml</path>
+<type>file</type>
+<content>
+1: # =============================================================================
+2: # mlt Documentation - Zensical Configuration
+3: # =============================================================================
+4: 
+5: [project]
+6: site_name = "mlt"
+7: site_description = "An ultra-fast, extensible linter for MATLAB, written in Rust"
+8: site_author = "Mark Shui Hu"
+9: site_url = "https://mlt.dev/"
+10: copyright = """
+11: Copyright &copy; 2026 Mark Shui Hu
+12: """
+13: 
+14: # Repository settings for edit links
+15: repo_url = "https://github.com/watermarkhu/mlt"
+16: edit_uri = "blob/main/docs/"
+17: repo_name = "watermarkhu/mlt"
+18: 
+19: # Execute code blocks at build time (e.g. generate the data-driven rule-ID
+20: # tables in docs/rules.md from the TOML data files).
+21: [project.plugins.markdown-exec]
+22: 
+23: # Navigation structure
+24: nav = [
+25:   { "Home" = "index.md" },
+26:   { "Getting Started" = [
+27:     { "Installation" = "getting-started/installation.md" },
+28:     { "Quick Start" = "getting-started/quickstart.md" },
+29:   ]},
+30:   { "Usage" = [
+31:     { "CLI Reference" = "usage/cli.md" },
+32:     { "Editor Integration" = "usage/editors.md" },
+33:     { "CI/CD" = "usage/ci-cd.md" },
+34:   ]},
+35:   { "Configuration" = "configuration.md" },
+36:   { "Rules" = [
+37:     { "Overview" = "rules.md" },
+38:     { "NOSEMI - Trailing Semicolon" = "nosemi.md" },
+39:     { "NOFIL - File Not Found" = "nofil.md" },
+40:     { "RDERR - Unable to Read File" = "rderr.md" },
+41:     { "STLOW - Unnecessary UPPER/LOWER" = "stlow.md" },
+42:     { "MFAMB - Ambiguous Identifier" = "mfamb.md" },
+43:     { "COMNL - Comma Newline" = "comnl.md" },
+44:     { "FVINR - Input Attribute" = "fvinr.md" },
+45:     { "QUIT - Analysis Did Not Complete" = "quit.md" },
+46:     { "UNSET - Operator on Left of Assignment" = "unset.md" },
+47:     { "LHROW - Multiple Rows on Left of Assignment" = "lhrow.md" },
+48:     { "RESWD - Invalid Use of a Reserved Word" = "reswd.md" },
+49:     { "SYNEND - Invalid Use for END Operator" = "synend.md" },
+50:     { "MCPLD - Invalid Property Syntax" = "mcpld.md" },
+51:     { "BADNOT - Invalid Use of ~ to Ignore a Value" = "badnot.md" },
+52:     { "BADNOTLHS - Invalid ~ on Left of an Assignment" = "badnotlhs.md" },
+53:     { "BADCT - Directional Formatting Characters" = "badct.md" },
+54:     { "ENDCT2 - END Might Be Missing After a Block Opener" = "endct2.md" },
+55:     { "ENDCT3 - END Might Be Missing Before a Block Opener" = "endct3.md" },
+56:     { "ENDCT4 - METHODS Block or END Missing Before a Function" = "endct4.md" },
+57:     { "STRIN - Unterminated Character Vector" = "strin.md" },
+58:     { "DOUQT - Unterminated Double Quoted String" = "douqt.md" },
+59:     { "INBLK - Unterminated Block Comment" = "inblk.md" },
+60:     { "BADFP - Invalid Floating-Point Constant" = "badfp.md" },
+61:     { "BADHBH - Invalid Hex Literal Digit" = "badhbh.md" },
+62:     { "BADHBB - Invalid Binary Literal Digit" = "badhbb.md" },
+63:     { "BADHBHT - Hex Literal Too Long for Suffix" = "badhbht.md" },
+64:     { "BADHBBT - Binary Literal Too Long for Suffix" = "badhbbt.md" },
+65:     { "HEXTOOLONG - Hex Literal Has Too Many Digits" = "hextoolong.md" },
+66:     { "BINARYTOOLONG - Binary Literal Has Too Many Digits" = "binarytoolong.md" },
+67:     { "SBTMP - Chaining Outputs After Parenthesis" = "sbtmp.md" },
+68:     { "FVSYN - Invalid Function Argument Syntax" = "fvsyn.md" },
+69:     { "FVACI - Name-Value in Cell Indexing" = "fvaci.md" },
+70:     { "FVACS - Quoted String as Name in Name=Value" = "fvacs.md" },
+71:     { "FVAMI - Invalid Name in Name=Value" = "fvami.md" },
+72:     { "NOPAR2 - Missing Closing Bracket (Mid-File)" = "nopar2.md" },
+73:     { "EOLPAR - Missing Closing Bracket at End of Line" = "eolpar.md" },
+74:     { "ENDPAR - Missing Closing Bracket at End of File" = "endpar.md" },
+75:     { "VTPOD - Argument Validation Order" = "vtpod.md" },
+76:     { "FVAPN - Function Validation" = "language-spec.md" },
+77:     { "FVATF - Function Validation" = "language-spec.md" },
+78:     { "FVBTN - Function Validation" = "language-spec.md" },
+79:     { "FVDAN - Function Validation" = "language-spec.md" },
+80:     { "FVDAP - Function Validation" = "language-spec.md" },
+81:     { "FVDNF - Function Validation" = "language-spec.md" },
+82:     { "FVDREP - Function Validation" = "language-spec.md" },
+83:     { "FVIDV - Function Validation" = "language-spec.md" },
+84:     { "FVIOA - Function Validation" = "language-spec.md" },
+85:     { "FVMCL - Function Validation" = "language-spec.md" },
+86:     { "FVNDE - Function Validation" = "language-spec.md" },
+87:     { "FVNIV - Function Validation" = "language-spec.md" },
+88:     { "FVNREP - Function Validation" = "language-spec.md" },
+89:     { "FVNSC - Function Validation" = "language-spec.md" },
+90:     { "FVNVL - Function Validation" = "language-spec.md" },
+91:     { "FVOBI - Function Validation" = "language-spec.md" },
+92:     { "FVOCON - Function Validation" = "language-spec.md" },
+93:     { "FVOND - Function Validation" = "language-spec.md" },
+94:     { "FVONV - Function Validation" = "language-spec.md" },
+95:     { "FVOOD - Function Validation" = "language-spec.md" },
+96:     { "FVOOI - Function Validation" = "language-spec.md" },
+97:     { "FVOON - Function Validation" = "language-spec.md" },
+98:     { "FVORDI - Function Validation" = "language-spec.md" },
+99:     { "FVORDN - Function Validation" = "language-spec.md" },
+100:     { "FVORDO - Function Validation" = "language-spec.md" },
+101:     { "FVORDP - Function Validation" = "language-spec.md" },
+102:     { "FVORM - Function Validation" = "language-spec.md" },
+103:     { "FVOVREP - Function Validation" = "language-spec.md" },
+104:     { "FVREPD - Function Validation" = "language-spec.md" },
+105:     { "FVREPO - Function Validation" = "language-spec.md" },
+106:     { "FVSOR - Function Validation" = "language-spec.md" },
+107:     { "FVSORO - Function Validation" = "language-spec.md" },
+108:     { "FVUBD - Function Validation" = "language-spec.md" },
+109:     { "FVVCON - Function Validation" = "language-spec.md" },
+110:     { "FVVIN - Function Validation" = "language-spec.md" },
+111:     { "FVVREP - Function Validation" = "language-spec.md" },
+112:     { "TINVALDIM - Function Validation" = "language-spec.md" },
+113:     { "TTOOFEWDIMS - Function Validation" = "language-spec.md" },
+114:     { "Language Specification Engine" = "language-spec.md" },
+115:     { "CTOINE - Constructed Object as Constructor Input" = "language-spec.md" },
+116:     { "CTORO - Constructor Needs Output Argument" = "language-spec.md" },
+117:     { "ERTXT - Specify Error Message" = "language-spec.md" },
+118:     { "MHERIT - Deriving From Built-in Class" = "language-spec.md" },
+119:     { "NCHKOS - NARGINCHK Returns No Values" = "language-spec.md" },
+120:     { "SPBFN - Non-Transparent Workspace Access in SPMD" = "language-spec.md" },
+121:     { "SPBRK - Break/Continue Not Contained in SPMD" = "language-spec.md" },
+122:     { "SPDEC - Invalid SPMD Worker Bounds" = "language-spec.md" },
+123:     { "SPDEC3 - Too Many SPMD Worker Bounds" = "language-spec.md" },
+124:     { "SPEVC - EVALIN/ASSIGNIN Caller in SPMD" = "language-spec.md" },
+125:     { "SPLD - Assign LOAD Output in SPMD" = "language-spec.md" },
+126:     { "SPNF - Nested Function Call in SPMD" = "language-spec.md" },
+127:     { "SPSV - SAVE Needs -fromstruct in SPMD" = "language-spec.md" },
+128:     { "SPWHOS - who/whos Without -file in SPMD" = "language-spec.md" },
+129:     { "USESWNS - Variable Must Be Defined Before First Use" = "language-spec.md" },
+130:     { "WTXT - Specify Warning Message" = "language-spec.md" },
+131:     { "MABSEAC - Sealed+Abstract Instance Members" = "language-spec.md" },
+132:     { "MABSEAM - Abstract and Sealed Method" = "language-spec.md" },
+133:     { "MCAPP - Private Abstract Property" = "language-spec.md" },
+134:     { "MCCBS - Undeclared Superclass Constructor" = "language-spec.md" },
+135:     { "MCCBU - Superclass Constructor After Object Use" = "language-spec.md" },
+136:     { "MCCMC - Superclass Constructor Called Twice" = "language-spec.md" },
+137:     { "MCCSOP - Modify Constant Property" = "language-spec.md" },
+138:     { "MCGSA - Access Abstract Property" = "language-spec.md" },
+139:     { "MCMIO - Too Many Inputs or Outputs" = "language-spec.md" },
+140:     { "MCMSP - Private Abstract Method" = "language-spec.md" },
+141:     { "MCMTP - TestParameterDefinition Must Be Static" = "language-spec.md" },
+142:     { "MCPIN - Self-Instance Property Initialization" = "language-spec.md" },
+143:     { "MCPSG - Set/Get Method Not Fully Defined" = "language-spec.md" },
+144:     { "MCSCC - Superclass Constructor Name Mismatch" = "language-spec.md" },
+145:     { "MCSCF - Superclass Constructor Not Assigned to First Output" = "language-spec.md" },
+146:     { "MCSCM - Superclass Method Name Mismatch" = "language-spec.md" },
+147:     { "MCSCN - Method Sets Constant Property" = "language-spec.md" },
+148:     { "MCSCO - Superclass Constructor Not Using First Output" = "language-spec.md" },
+149:     { "MCSCT - Conditionalized Superclass Constructor Call" = "language-spec.md" },
+150:     { "MCSMO - Multiple Superclass Outputs" = "language-spec.md" },
+151:     { "MCSWA - Sealed Class With AllowedSubclasses" = "language-spec.md" },
+152:     { "MTAGS3 - Access With SetAccess/GetAccess" = "language-spec.md" },
+153:     { "MTMAT - Attribute Set Twice" = "language-spec.md" },
+154:     { "MWKCL - WeakHandle Without Class Validation" = "language-spec.md" },
+155:     { "MWKCT - WeakHandle With Constant" = "language-spec.md" },
+156:     { "MWKREF - WeakHandle With Dependent" = "language-spec.md" },
+157:     { "FPFORP - fprintf to Read-Only File" = "language-spec.md" },
+158:     { "FWFORP - fwrite to Read-Only File" = "language-spec.md" },
+159:     { "PFANON - Sliced Output in Anonymous Function" = "language-spec.md" },
+160:     { "PFANSLP - ans as Parfor Variable" = "language-spec.md" },
+161:     { "PFANSNS - ans as For Variable in Parfor" = "language-spec.md" },
+162:     { "PFCEL - Function Does Not Support Cell Arrays" = "language-spec.md" },
+163:     { "PFCTXT - Sliced Variable Outside Defining Loop" = "language-spec.md" },
+164:     { "PFEVC - EVALIN/ASSIGNIN Caller in Parfor" = "language-spec.md" },
+165:     { "PFFRNG - Nested For Range Not Positive Constants" = "language-spec.md" },
+166:     { "PFFSUB - Indexing Nested For Variable" = "language-spec.md" },
+167:     { "PFINCR - Mixed Reduction Functions" = "language-spec.md" },
+168:     { "PFINPT - inputname in Parfor" = "language-spec.md" },
+169:     { "PFLD - load Must Assign Output in Parfor" = "language-spec.md" },
+170:     { "PFMLTI - Nested For Variable Assigned" = "language-spec.md" },
+171:     { "PFNACK - narginchk/nargoutchk in Parfor" = "language-spec.md" },
+172:     { "PFNAIO - nargin/nargout Need Argument in Parfor" = "language-spec.md" },
+173:     { "PFNAR - Subtracting Reduction Variable" = "language-spec.md" },
+174:     { "PFRFH - Invalid Parfor Reduction Function" = "language-spec.md" },
+175:     { "PFRNG - Parfor Range Not Consecutive Integers" = "language-spec.md" },
+176:     { "PFSLO - Invalid Sliced Output Variable" = "language-spec.md" },
+177:     { "PFSLRD - Mixed Sliced and Whole Reads" = "language-spec.md" },
+178:     { "PFSLW - Mismatched Sliced Subscripts" = "language-spec.md" },
+179:     { "PFSV - SAVE Without -fromstruct in Parfor" = "language-spec.md" },
+180:     { "PFUNK - Parfor Cannot Run" = "language-spec.md" },
+181:     { "PFUTMP - Temporary Used Before Set" = "language-spec.md" },
+182:     { "PFUTVR - Uninitialized Reduction Variable" = "language-spec.md" },
+183:     { "PFVARS - Too Many Parfor Variables" = "language-spec.md" },
+184:     { "PFVSUB - Indexing Parfor Variable" = "language-spec.md" },
+185:     { "Good Practices Engine" = "good-practices.md" },
+186:     { "COMFS - Comma Makes File a Script" = "good-practices.md" },
+187:     { "DUALC - Command Ended by Comma" = "good-practices.md" },
+188:     { "RMFLD - RMFIELD Must Be Assigned" = "good-practices.md" },
+189:     { "RMWRN - Removed Warning Tag" = "good-practices.md" },
+190:     { "SEMFS - Semicolon Makes File a Script" = "good-practices.md" },
+191:     { "STFLD - SETFIELD Must Be Assigned" = "good-practices.md" },
+192:     { "STRSZ - Compare Different-Size Char Vectors" = "good-practices.md" },
+193:     { "COMPNOP - Comparison Simplifies to Call" = "good-practices.md" },
+194:     { "COMPNOT - Comparison Simplifies to Negated Call" = "good-practices.md" },
+195:     { "M3COL - Three Colons in Expression" = "good-practices.md" },
+196:     { "CTPCT - Format and Argument Count" = "good-practices.md" },
+197:     { "FXSET - Loop Index Modified in Loop" = "good-practices.md" },
+198:     { "SIMPT - Import Not First in Function" = "good-practices.md" },
+199:     { "TLEV - Dynamic-Code Sub-Expression" = "good-practices.md" },
+200:     { "UNONC - onCleanup Output Not Assigned" = "good-practices.md" },
+201:     { "MIPC1 - computer arch Query" = "good-practices.md" },
+202:     { "ATTF - Abstract Attribute Not a Literal" = "good-practices.md" },
+203:     { "ATTOF - Abstract Set to False" = "good-practices.md" },
+204:     { "MCPO - Observable Attribute on Value Class" = "good-practices.md" },
+205:     { "MCSAC - SetAccess on Constant Property" = "good-practices.md" },
+206:     { "MOBSRV - Observable on Constant Property" = "good-practices.md" },
+207:     { "MDEPIN - Default Value on Dependent Property" = "good-practices.md" },
+208:     { "MCCPI - Uninitialized Constant Property" = "good-practices.md" },
+209:     { "MGMD - Dependent Property Without get Method" = "good-practices.md" },
+210:     { "MCCPE - Property or Event Called as Function" = "good-practices.md" },
+211:     { "MTHANS - ans as Method Name" = "good-practices.md" },
+212:     { "MHERM - Parenthesize Transpose Multiplication" = "good-practices.md" },
+213:     { "MNUML - Square Matrix From Single numel" = "good-practices.md" },
+214:     { "PFEVB - EVALIN/ASSIGNIN Base in Parfor" = "good-practices.md" },
+215:     { "PFGP - Global Assignment in Parfor" = "good-practices.md" },
+216:     { "PFGV - Global Use in Parfor" = "good-practices.md" },
+217:     { "PFIIN - Parfor Input Not Initialized" = "good-practices.md" },
+218:     { "PFOUS - Parfor Output Not Used" = "good-practices.md" },
+219:     { "PFRNI - Explicit Parfor Increment" = "good-practices.md" },
+220:     { "PFTUSW - Temporary Used After Parfor" = "good-practices.md" },
+221:     { "PFUIXW - Index Used After Parfor" = "good-practices.md" },
+222:     { "SPEVB - EVALIN/ASSIGNIN Base in SPMD" = "good-practices.md" },
+223:     { "SPGV - Global Use in SPMD" = "good-practices.md" },
+224:     { "DSPMDA - Distributed Array in SPMD" = "good-practices.md" },
+225:     { "Bugs" = "bugs.md" },
+226:     { "Performance Improvements" = "performance.md" },
+227:     { "Readability Improvements" = "readability.md" },
+228:     { "Formatting Suggestions" = "formatting.md" },
+229:     { "Unset Variables" = "unset-variables.md" },
+230:     { "Unused Constructions" = "unused.md" },
+231:     { "MATLAB for Code Generation" = "codegen.md" },
+232:     { "MATLAB Compiler (Deployment)" = "deployment.md" },
+233:     { "System Objects" = "system-objects.md" },
+234:     { "Unsupported Features" = "unsupported.md" },
+235:     { "Code Analyzer Configuration Issues" = "config-issues.md" },
+236:     { "Incomplete Analysis" = "incomplete-analysis.md" },
+237:     { "Syntax Errors" = "syntax-errors.md" },
+238:     { "Compatibility Considerations" = "compatibility.md" },
+239:     { "Suggested Improvements" = "suggested-improvements.md" },
+240:     { "Naming Checks" = "naming.md" },
+241:     { "Custom Checks" = "custom-checks.md" },
+242:     ]},
+243: ]
+244: 
+245: # -----------------------------------------------------------------------------
+246: # Theme configuration
+247: # -----------------------------------------------------------------------------
+248: [project.theme]
+249: language = "en"
+250: 
+251: features = [
+252:     "content.action.edit",
+253:     "content.action.view",
+254:     "content.code.annotate",
+255:     "content.code.copy",
+256:     "content.code.select",
+257:     "content.tabs.link",
+258:     "content.tooltips",
+259:     "navigation.footer",
+260:     "navigation.instant",
+261:     "navigation.instant.prefetch",
+262:     "navigation.path",
+263:     "navigation.sections",
+264:     "navigation.top",
+265:     "navigation.tracking",
+266:     "search.highlight",
+267: ]
+268: 
+269: # Light/dark mode toggle — MathWorks blue + orange
+270: [[project.theme.palette]]
+271: scheme = "default"
+272: primary = "blue"
+273: accent = "orange"
+274: toggle.icon = "lucide/sun"
+275: toggle.name = "Switch to dark mode"
+276: 
+277: [[project.theme.palette]]
+278: scheme = "slate"
+279: primary = "blue"
+280: accent = "orange"
+281: toggle.icon = "lucide/moon"
+282: toggle.name = "Switch to light mode"
+283: 
+284: # Icons
+285: [project.theme.icon]
+286: logo = "lucide/flame"
+287: repo = "fontawesome/brands/github"
+288: 
+289: # -----------------------------------------------------------------------------
+290: # Social links
+291: # -----------------------------------------------------------------------------
+292: [[project.extra.social]]
+293: icon = "fontawesome/brands/github"
+294: link = "https://github.com/watermarkhu/mlt"
+295: 
+296: [[project.extra.social]]
+297: icon = "fontawesome/brands/rust"
+298: link = "https://crates.io/crates/mlt"
+
+(End of file - total 298 lines)
+</content>
+
+---
+
+1. ok
+2. the category pages now cover the same ground yes
+
+---
+
+The docs headers look very ugly, don't have icons, the nav is not that logical. 
+also checkout https://zensical.org/docs/setup/navigation/
+
+---
+
+you can also run serve and use playwright to test
+
+---
+
+now make a detailed plan for the last phase?
+
+---
+
+1. skip it. add documentation on these skipped checks and reason why
+2. sounds good, table is fine
+3. parallelize
+
+---
+
+This repository is based on ../rumdl. I'd like to copy its WASM build and embedding into the docs
+
+---
+
+1. Parity with rumdl, but have local docs build have an option to load it from a local build as well
+2. mirror rumdl
+2. sure
+
+Also don't call it wasm.yml, just release.yml
+
+---
+
+Use https://github.com/casey/just in stead of Makefile
+
+---
+
+can't we add these to Cargo.toml as dev dependencies?
+
+---
+
+No let us use https://mise.jdx.dev/ instead
+
+---
+
+Use mise. Also let us also prepare for a npm publish
+
+---
+
+1. pin, we can use renovate to update
+2. ok
+3. ok
+4. ok
+
+---
+
+godspeed
+
+---
+
+continue. The docs linked are fixed now
+
+---
+
+thanks! so we should commit @wasm-pkg/  and its contents?
+Called the Read tool with the following input: {"filePath":"/home/watermarkhu/repositories/mlt/wasm-pkg/"}
+<path>/home/watermarkhu/repositories/mlt/wasm-pkg/</path>
+<type>directory</type>
+<entries>
+package.json.tmpl
+pkg/
+README.md
+
+(3 entries)
+</entries>
+
+---
+
+do it
+
+---
+
+use https://hk.jdx.dev/ to setup the logical pre commit hooks
+
+---
+
+1. use rumdl with mkdocs flavor
+2. ok for now
+3. ok
+
+---
+
+moved to @.rumdl.toml 
+Called the Read tool with the following input: {"filePath":"/home/watermarkhu/repositories/mlt/.rumdl.toml"}
+<path>/home/watermarkhu/repositories/mlt/.rumdl.toml</path>
+<type>file</type>
+<content>
+1: # rumdl configuration for mlt docs
+2: #
+3: # The docs site is MkDocs/Zensical flavored. The defaults are relaxed for
+4: # patterns that are intentional in these docs: long generated rule tables,
+5: # repeated section headings across rule pages, and the inline HTML/CSS/JS in
+6: # the playground page.
+7: 
+8: [global]
+9: disable = ["MD024", "MD033"]
+10: respect_gitignore = true
+11: exclude = [
+12:     ".git",
+13:     ".venv",
+14:     "site",
+15:     "target",
+16:     ".tools",
+17:     "wasm-pkg",
+18:     ".opencode",
+19:     ".playwright-mcp",
+20: ]
+21: 
+22: [MD013]
+23: line_length = 120
+24: code_blocks = false
+25: tables = false
+26: 
+27: [MD057]
+28: # Enforce that relative links resolve; scoped to the docs tree.
+
+(End of file - total 28 lines)
+</content>
+
+---
+
+use https://github.com/actions-rust-lang/setup-rust-toolchain instead
+
+---
+
+Let's not run pinact in hk
+
+---
+
+This wouldn't be an issue if we don't generate the table first, but rather let the content be generated during the docs build. see https://zensical.org/docs/setup/extensions/markdown-exec/
+
+---
+
+It is already included in the python environment if you run `uv run zensical...`
+
+---
+
+we've implemented a lot of rules now. But they shouldn't all be enabled by default. Check the MathWorks docs to see which rules are on by default and make that our default too
+
+---
+
+Let's ship with some default configurations. 
+[Working directory: /home/watermarkhu/repositories/mlt]
+
+---
+
+Let's ship with some default configurations. 
+- All
+- MathWorks
+- Recommended
+
+Make the setup ready such that we can easily define more presets
+[Working directory: /home/watermarkhu/repositories/mlt]
+
+---
+
+1. mathworks
+2. ok
+3. the preset should be defined in the config file. the wasm binding should be able to read from the config file.
+
+Let there also be a cli override --preset that takes priority over the config file
+
+---
+
+do it
