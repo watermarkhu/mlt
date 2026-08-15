@@ -1,0 +1,45 @@
+You are migrating rule module docstrings in the `mlt` Rust project at /home/watermarkhu/repositories/mlt to a standardized documentation schema so that docs/scripts/gen_rules_docs.ts can generate documentation pages from them.
+
+## The schema (MUST read first)
+Read `docs/scripts/SCHEMA.md` in full — it defines the exact docstring format.
+
+## Reference implementations (MUST read)
+These two modules are already migrated correctly and are your ground truth:
+- `crates/mlt_rules/src/nosemi.rs` (single-check flat rule)
+- `crates/mlt_rules/src/bugs/mod.rs` (multi-check engine with `## Check IDs` table, `## Fix`, `## Examples`)
+
+## Your modules (migrate ALL of them)
+1. `crates/mlt_rules/src/syntax_errors/mod.rs` (meta ID `SYNTAX_ERRORS_ENGINE`, category `syntax-errors`, severity Error)
+2. `crates/mlt_rules/src/incomplete_analysis/mod.rs` (meta ID `INCOMPLETE_ANALYSIS`, category `incomplete-analysis`, severity Error)
+3. `crates/mlt_rules/src/config_issues/mod.rs` (meta ID `CONFIG_ISSUES_ENGINE`, category `configuration-issues`, severity Error)
+4. `crates/mlt_rules/src/unused/mod.rs` (meta ID `UNUSED_ENGINE`, category `unused-constructions`, severity Warning)
+5. `crates/mlt_rules/src/unset_variables/mod.rs` (meta ID `UNSET_VARIABLES_ENGINE`, category `unset-variables`, severity Warning)
+
+## Front-matter slugs (keep existing URLs)
+Use these `slug` values so pages keep current filenames: `syntax-errors`, `incomplete-analysis`, `config-issues`, `unused`, `unset-variables`. Pick a sensible `icon` from the lucide set already used (see docs/.vitepress/theme/components/PageIcon.vue for the supported list, e.g. `lucide/x-circle`, `lucide/wrench`, `lucide/cog`, `lucide/trash-2`, `lucide/alert-triangle`).
+
+## What to do
+1. Read each module's current `//!` docstring and the `Rule` impl (`fn id`, `fn description`, `fn severity`, `fn category`, `fn check`, `fn check_file`, whether any `Diagnostic` has `fix: Some(...)`).
+2. Rewrite the `//!` header to the schema format:
+   - `# <META_ID>: <Title>` H1
+   - ```mlt front-matter block with id/title/category/severity/fix/icon/slug
+   - `## Rule` — what the engine does (prose)
+   - `## Check IDs` — a `| Check ID | Severity | Fix | Description |` markdown table listing EVERY check ID the engine emits. **Verify the exact check IDs by grepping the Rust source for `rule_id:` literals** — do NOT trust the old docstring table blindly; add missing ones and fix stale ones. Determine per-check `severity` (usually the engine default) and `fix` (`yes` only if that check's emitted Diagnostic sets `fix: Some(...)`).
+   - `## Fix` — ONLY if `fix = true` in front-matter (i.e. at least one check emits a fix). Describe the rewrites. Otherwise omit the section.
+   - `## Examples` — with `### Incorrect` and `### Correct` MATLAB blocks covering representative checks. If the engine has auto-fixes, add a `### Fixed` with a diff.
+   - Keep the existing `## Configuration` section (TOML) as-is after Examples.
+3. Preserve any useful module-level prose (architecture notes, data-file descriptions) by folding it into `## Rule` or a `## Data File` section.
+4. IMPORTANT: keep the `//!` doc comment valid Rust — it must start with `//!` on every line and end cleanly before the first `use`/`mod` statement. Do not add non-`//!` comments.
+
+## Verification (mandatory)
+For EACH migrated module run:
+```
+bun docs/scripts/gen_rules_docs.ts --check-module <slug>
+```
+It must exit 0. If it fails, fix the docstring and re-run. Note: other agents may be editing other modules concurrently, so only YOUR module's check result matters — ignore errors about other slugs.
+
+Also run `cargo build` at the end to confirm the Rust still compiles.
+
+Do NOT run the plain write mode `bun docs/scripts/gen_rules_docs.ts` (no --check-module), do NOT edit `docs/rules.md`, `docs/scripts/gen_rules_docs.ts`, `docs/scripts/SCHEMA.md`, or any file outside your five modules. Do NOT commit.
+
+Return a summary of which check IDs each module now documents, and which checks have fixes.
