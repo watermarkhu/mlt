@@ -1,0 +1,26 @@
+You are fixing the `mlt` MATLAB linter (Rust, at /home/watermarkhu/repositories/mlt) to remove hallucinated checks and reimplement mismatched checks in the `language_spec` engine.
+
+## Background
+`mlt` aims for parity with MATLAB Code Analyzer. In `crates/mlt_rules/src/language_spec/mod.rs` (and its `check_*.rs` files), some check IDs are mlt-invented (no MathWorks equivalent) — remove them — and some use a MathWorks ID but detect the wrong thing — reimplement them. Messages are already MathWorks-verbatim (leave them). Docstring `## Check IDs` rows are already correct (just delete rows for removed checks).
+
+## 1. REMOVE these hallucinated checks (no MathWorks equivalent; MathWorks already has the correct equivalents which mlt ALSO implements)
+All are in `language_spec/mod.rs` (search each ID). Remove the check ID, its detection code, its docstring table row, and its tests:
+- `PFANSRE` — "'ans' is not supported as a reduction variable in parfor". (MathWorks has no such ID.)
+- `PFANSSL` — "'ans' is not supported as a sliced variable". (No MathWorks equivalent.)
+- `PFDF` — "FOR with DRANGE (old parfor syntax) becomes a conventional FOR". (No MathWorks equivalent — obsolete syntax.)
+- `PFPIE` — "valid indices for a sliced variable are restricted". (No MathWorks equivalent.)
+- `PFSAME` — "sliced variable indexed in different ways". MathWorks equivalent is `PFSLW` which mlt already implements — remove `PFSAME` as a duplicate.
+- `PFTIN` — "temporary variable must be set before use". MathWorks equivalent is `PFUTMP` which mlt already implements — remove `PFTIN` as a duplicate.
+
+These IDs appear in: a `const`/array of parfor check IDs (grep for each string literal, e.g. a list `"PFANSRE", "PFANSSL", ...`), the docstring `## Check IDs` table, and possibly `is_check_enabled("X")` guards and unit tests (`has_id(&diags, "PFANSRE")` etc.). Remove all references cleanly so the crate still compiles.
+
+## 2. REIMPLEMENT these mismatched checks
+- `PFNF` (in a parfor check): MathWorks = "Nested functions cannot be called from within parfor loops." Current logic flags "nested function DEFINITIONS inside parfor". Reimplement to flag a CALL to a nested function (a function defined inside the current function) from within a `parfor` loop body — not a function definition.
+- `SPGP` (in an spmd check): MathWorks = "Setting the GLOBAL or PERSISTENT variable VAR_NAME in an SPMD block might fail because the set happens on a worker machine." Current logic flags "global/persistent declarations not allowed inside spmd". Reimplement to flag an ASSIGNMENT to a global or persistent variable inside an `spmd` block, substituting the variable name for VAR_NAME. (A declaration alone should not fire; an assignment/use should.)
+
+Keep the already-aligned messages verbatim; only change detection logic and remove code. Keep `Severity` etc. Add/adjust unit tests.
+
+## Verify
+Run `cargo build -p mlt_rules 2>&1 | grep -E 'error'` and `cargo test -p mlt_rules language_spec 2>&1 | tail -5`. Ignore errors in files outside `language_spec/`. Fix errors in your files; delete orphaned helpers.
+
+Return: which checks you removed and reimplemented, and any you could not confidently reimplement.
