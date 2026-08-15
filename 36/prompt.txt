@@ -1,0 +1,23 @@
+Group: GOODPRAC G1 — OOP/Class/Property rules (21: ADPROP, ADPROPLC, ATTF, ATTOF, CTOINW, MCCPE, MCCPI, MCCSPS, MCHDP, MCHDT, MCNPN, MCNPR, MCPO, MCSAC, MCSNOV, MCSOH, MCSUP, MCVM, MDEPIN, MGMD, MHERM, MIPC1, MNUML, MOBSRV, MTHANS — note the plan lists 26 but several (M3COL→G3, CTOINW) are reassigned; adjudicate the final set)
+Module: crates/mlt_rules/src/good_practices.rs
+
+You are the Reviewer in mlt's rule pipeline. Review the GOODPRAC G1 plan.
+
+READ the plan at /tmp/opencode/plans/GOODPRAC_G1.md and the message list at /tmp/opencode/plans/GP_messages.txt first.
+
+Then verify against the codebase:
+- Read crates/mlt_rules/src/good_practices.rs (especially the engine structure: TARGET_NODES, is_check_enabled, the hybrid check()/check_file() impl, existing OOP checks CPROP/NOIN/PROP/MEXCEP/DISPLAY).
+- Read crates/mlt_rules/src/analysis/metadata.rs (ClassMeta, PropertyMeta, FunctionMeta, AttributeMeta).
+- Run the astprobe (cd /tmp/opencode/astprobe && cargo run) on classdef samples.
+
+Key adjudications:
+1. Which of the listed checks are genuinely implementable with metadata vs needing tree walks? The engine is hybrid (check_file has FileMeta+SymbolTable) — confirm.
+2. ADPROP/ADPROPLC — App Designer `app.Property` pattern. Is field_expression detection feasible?
+3. The plan's check list is messy (says 21 but lists 26). Produce the DEFINITIVE final check list for this group with correct messages (from GP_messages.txt).
+4. Which checks should be deferred as too unreliable? Recommend.
+5. Are MUST/MUST NOT examples right? file/step/test requirements complete?
+
+Return exactly:
+- `VERDICT: APPROVED` or `VERDICT: CHANGES REQUIRED`
+- A short list of required corrections
+- The corrected, complete implementation plan (repeat the whole plan with fixes) — self-contained, since the Implementer only sees your message.
