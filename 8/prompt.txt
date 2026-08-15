@@ -1,0 +1,47 @@
+You are appending compatibility-check data entries to `crates/mlt_rules/src/data/compatibility.toml` in the `mlt` MATLAB linter. This is a PURE DATA EXPANSION task — no Rust code changes.
+
+## Input
+Your assigned batch is at `/tmp/opencode/compat_batch3.tsv` — lines of `ID<TAB>Severity<TAB>Message`. Read it fully.
+
+## Task
+For EACH line in the batch, append a TOML entry to the `crates/mlt_rules/src/data/compatibility.toml` file. Append new `[[checks]]` blocks at the END of the file:
+
+```toml
+[[checks]]
+id = "XXXX"
+function_name = "somefunction"
+severity = "error"     # lowercase: "error" or "warning"
+message = "'...' has been removed. Use '...' instead."
+category = "compatibility"
+```
+
+## How to derive fields
+- `id`: the ID from the TSV (keep as-is).
+- `severity`: map "Error"→"error", "Warning"→"warning".
+- `message`: verbatim from TSV; keep `VAR_NAME` placeholders; escape `"` as `\"`.
+- `function_name`: derive from the message:
+  - Deprecated function/class in quotes (e.g. `'mapping' toolbox function`) → use that name.
+  - Removed option/parameter of a function → use the parent function name.
+  - Multiple candidates → most specific function/class matchable on a `function_call`/`command` node.
+  - Otherwise the parent function from the message.
+- `category`: always `"compatibility"`.
+
+## CRITICAL constraints
+- Only APPEND; do NOT modify existing entries.
+- Do NOT modify any Rust file. Do NOT commit.
+- Preserve existing file content exactly.
+
+## Reference convention
+Match existing entries like `BUFSIZE`, `CHKGR`, `WEBBEHAVE`.
+
+## Verification (REQUIRED)
+1. `cargo build` must succeed (engine parses TOML at construct). Fix any TOML errors you introduced.
+2. Python check: every ID in your batch present exactly once.
+3. `cargo test -p mlt_rules compatibility` passes.
+4. Confirm you appended exactly 209 entries.
+
+## Report back
+- Count appended
+- Verification results
+- Ambiguous function_name choices
+- Warnings/notes
