@@ -1,0 +1,22 @@
+Group: GOODPRAC G3 — Logical/Branch/Scalar rules (8: BDLGI, BDLOG1, BDLOG2, BDSCA, BDSCI, COMPNOP, COMPNOT, M3COL)
+Module: crates/mlt_rules/src/good_practices.rs
+
+You are the Reviewer in mlt's rule pipeline. Review the GOODPRAC G3 plan.
+
+READ the plan at /tmp/opencode/plans/GOODPRAC_G3.md and the message list at /tmp/opencode/plans/GP_messages.txt first.
+
+Then verify against the codebase:
+- Read crates/mlt_rules/src/good_practices.rs (TARGET_NODES includes boolean_operator, comparison_operator, if_statement, while_statement — good for these checks; the engine's existing logical checks LOGMAX/LOGMIN/LOGPROD/ELARLOG/SHOCIRAA show the pattern).
+- Run the astprobe (cd /tmp/opencode/astprobe && cargo run) on `if x`, `a:b:c:d`, `isa(x,'double')==true`, `x & y` samples to confirm AST shapes.
+
+Key adjudications:
+1. BDLOG1/BDLOG2 — conditional on non-scalar array. How to determine "non-scalar" from AST (operand is not a comparison/boolean/call returning scalar)? Conservative approach?
+2. BDSCA/BDSCI — `&`/`|` on scalars vs `&&`/`||` on arrays. Confirm the boolean_operator node distinguishes `&` from `&&` (extract operator text).
+3. COMPNOP/COMPNOT — `func(x) == true` simplifies. Confirm comparison with literal true/false detection.
+4. M3COL — `a:b:c:d` → range node with 3 colons. Confirm.
+5. Are MUST/MUST NOT examples right? file/step/test requirements complete?
+
+Return exactly:
+- `VERDICT: APPROVED` or `VERDICT: CHANGES REQUIRED`
+- A short list of required corrections
+- The corrected, complete implementation plan (repeat the whole plan with fixes) — self-contained, since the Implementer only sees your message.
