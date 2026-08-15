@@ -1,0 +1,44 @@
+You are writing unit tests for the `mlt` MATLAB linter (Rust workspace at /home/watermarkhu/repositories/mlt). Add a comprehensive `#[cfg(test)] mod tests` block to TWO files in `crates/mlt_rules/src/`:
+1. `naming.rs` — the `NamingEngine` (file-level rule; 81 rule IDs `naming.<entity>.<checkType>`; only maxLength/minLength fire with default config — maxLength default 63, minLength default 2)
+2. `custom_checks.rs` — the `CustomChecksEngine` (file-level metrics engine, 25 check IDs, configurable thresholds)
+
+READ FIRST, in this order:
+- `crates/mlt_rules/src/test_util.rs` — the shared test helpers you MUST use (parse, file_ctx, lint_nodes, lint_file, has_id).
+- `crates/mlt_rules/src/formatting.rs` lines ~810 to end — the canonical example test module to imitate.
+- Read both target files FULLY. For naming.rs, understand the 81 rule IDs, how entities are extracted (class/function/variable/etc.), and which checks fire with default config. For custom_checks.rs, read all 25 check IDs, their thresholds, and the config struct fields (e.g. `max_line_length`, `max_function_length`, etc.).
+
+APPEND to each file (at the very end, after the `inventory::submit!` block) a test module like this:
+
+```rust
+// ---------------------------------------------------------------------------
+// Tests
+// ---------------------------------------------------------------------------
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::test_util::{has_id, lint_file, lint_nodes, parse};
+    use mlt_core::Config;
+
+    fn engine() -> Box<dyn Rule> {
+        <EngineName>::from_config(&Config::default())
+    }
+    // ...
+}
+```
+
+GUIDELINES:
+- naming.rs (use `lint_file`): with default config, a variable/function name shorter than 2 chars should fire `naming.variable.minLength` (or `naming.function.minLength`); a long name (> 63 chars) should fire maxLength; normal names should not. ALSO test config-respected behavior: build a `Config::from_toml` that sets naming rules (read the module to find how the config struct works, e.g. `NamingConfig`), enabling e.g. `requiredPrefix` or `casing`, and verify it fires. Cover at least: minLength fires, maxLength fires, minLength does not fire on a 2+ char name, and at least one config-enabled check (e.g. prefix or casing) fires when configured.
+- custom_checks.rs (use `lint_file`): cover representative checks. With default thresholds, e.g. cyclomatic complexity (check the default threshold and craft a function exceeding it) and line-length checks. Prefer crafting code that exceeds defaults, AND/OR use `Config::from_toml` to lower thresholds to make checks fire on small inputs (read the config struct field names first). Write positive + negative tests for at least ~10 of the 25 check IDs.
+- Test inputs are MATLAB source strings. You MUST verify each input actually triggers the intended check by RUNNING: `cargo test -p mlt_rules naming`, `cargo test -p mlt_rules custom_checks`. Use `-- --nocapture` to see diagnostics.
+- If a check won't fire no matter the input, skip it and note why. Do NOT leave failing tests.
+- If an input produces unexpected results, add a TEMPORARY tree-dump test to understand the parse structure, then DELETE it before finishing.
+- Do NOT modify anything outside your two assigned files. Do NOT touch lib.rs, test_util.rs, other modules, or data files.
+
+VERIFY before finishing (must all pass):
+- `cargo build`
+- `cargo test -p mlt_rules naming` — all pass
+- `cargo test -p mlt_rules custom_checks` — all pass
+- `cargo clippy --all-targets 2>&1 | grep -A3 'warning'` — ZERO warnings introduced by your files (ignore unrelated warnings elsewhere).
+
+Report back: the tests added per module (count), check IDs covered, any skips and why, and confirmation that cargo test + clippy pass.
