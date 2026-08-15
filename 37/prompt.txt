@@ -1,0 +1,25 @@
+Group: LANGSPEC C2 — Class/Method rules (26: MABSEAC, MABSEAM, MCAPP, MCCBS, MCCBU, MCCMC, MCCSOP, MCGSA, MCMIO, MCMSP, MCMTP, MCPIN, MCPSG, MCSCC, MCSCF, MCSCM, MCSCN, MCSCO, MCSCT, MCSMO, MCSWA, MTAGS3, MTMAT, MWKCL, MWKCT, MWKREF)
+Module: crates/mlt_rules/src/language_spec.rs
+
+You are the Implementer in mlt's rule pipeline. Implement LANGSPEC C2 exactly per the approved plan.
+
+READ the plan at /tmp/opencode/plans/LANGSPEC_C2.md INCLUDING the REVIEW CORRECTIONS section at the end.
+
+Implementation steps:
+1. Read crates/mlt_rules/src/language_spec.rs (especially check_class_rules and existing class checks MCFIL/MCDIR/MCRED/MCCBD/MCEB/MCANI/MCASC/MCSGA/MCSGP).
+2. Read crates/mlt_rules/src/analysis/metadata.rs (ClassMeta, PropertiesBlockMeta, MethodsBlockMeta, AttributeMeta, PropertyMeta, FunctionMeta, and the is_sealed/is_abstract/has_attribute/attribute_value helpers).
+3. Run the astprobe (cd /tmp/opencode/astprobe && cargo run) on classdef samples to confirm AST shapes (probe sample 1).
+4. Extend check_class_rules: add the 26 sub-check calls + implementations. Group A-D use pure metadata; Group E (constructor/superclass: MCCBS, MCCBU, MCCMC, MCSCC, MCSCF, MCSCM, MCSCO, MCSCT, MCSMO) and MCCSOP/MCSCN/MCPIN need tree walking (find function_definition by name/byte_range via ctx.tree, walk blocks).
+5. Update the module `//!` doc table with 26 rows. Add a docs/language-spec.md engine page if not present. Add rows to docs/rules.md + zensical.toml nav.
+6. Add tests: explicit MUST-fire + MUST-NOT-fire classdef fixtures per check (all with proper `end` keywords).
+
+Verify:
+cargo build
+cargo clippy --all-targets
+cargo test
+
+Fix failures until clean. Do NOT add code comments unless the plan requires them. Do NOT commit.
+
+NOTE: One of 4 parallel flows editing language_spec.rs. Use stable anchors; re-verify compilation. Only add YOUR check IDs/functions.
+
+Return a summary: files created/modified, AST findings, fires/not-fires verified, cargo results, deviations.
