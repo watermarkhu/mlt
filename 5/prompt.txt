@@ -1,0 +1,60 @@
+You are implementing the **input-argument + class/scripting-syntax** generic compatibility checks in the `mlt` MATLAB linter.
+
+## Context
+`crates/mlt_rules/src/compatibility/` was just converted from a flat file to a directory. The engine's file-level walker (`check_file` → `check_generic` → `visit_generic_checks`) calls `crate::compatibility::generic::collect_node_checks` on every node. Your group's checks live in the stub file:
+
+`crates/mlt_rules/src/compatibility/generic/check_input_syntax.rs`
+
+which currently has a no-op `collect_checks`. Implement your assigned checks in that file.
+
+## Your assigned check IDs (16)
+FPRENAME, XPCRENAME, SLRTRENAME, PSRENAME, DCRENAME, SERENAME, HHCNA, HHCWE, REPUDD, MCATP, NOV6, FROPT, FROPTX, RESOU, FGREN, FGREM
+
+## Official messages (use verbatim)
+FPRENAME: "Input argument 'fixpoint' will be removed in a future release. Use 'fixedpoint' instead."
+XPCRENAME: "Input argument 'xpc' will be removed in a future release. Use 'slrealtime' instead."
+SLRTRENAME: "Input argument 'slrt' will be removed in a future release. Use 'slrealtime' instead."
+PSRENAME: "Input argument 'powersys' will be removed in a future release. Use 'sps' instead."
+DCRENAME: "Input argument 'distcomp' will be removed in a future release. Use 'parallel' instead."
+SERENAME: "Input argument 'simevents' will be removed in a future release. Use 'slde' instead."
+HHCNA: "Input argument 'North America' has been removed. Use 'hrn:here:data::olp-here-had:here-hdlm-protobuf:mapservices:northamerica' instead."
+HHCWE: "Input argument 'Western Europe' has been removed. Use 'hrn:here:data::olp-here-had:here-hdlm-protobuf:mapservices:westeurope' instead."
+REPUDD: "Classes defined using schema.m files are no longer supported. Use MATLAB Classes defined using the classdef keyword instead."
+MCATP: "Using an @ sign to specify a class property restriction is unsupported and has been removed. Use property validation functions instead."
+NOV6: "'v6' will be removed in a future release. There is no simple replacement for this."
+FROPT: "'-dill' has been removed. Use Encapsulated PostScript instead."
+FROPTX: "'-adobecset' has been removed. There is no simple replacement for this."
+RESOU: "'resources' is a reserved folder. Running MATLAB files located in a folder named 'resources' is not supported."
+FGREN: "'Renderer' will be removed in a future release and currently has no effect. There is no simple replacement for this."
+FGREM: "'RendererMode' will be removed in a future release and currently has no effect. There is no simple replacement for this."
+
+## Detection guidance
+- **FPRENAME/XPCRENAME/SLRTRENAME/PSRENAME/DCRENAME/SERENAME/HHCNA/HHCWE**: string-literal input arguments. Detect a `string` node matching the removed argument text (e.g. `'fixpoint'`, `'xpc'`, `'slrt'`, `'powersys'`, `'distcomp'`, `'simevents'`, `'North America'`, `'Western Europe'`) used as a call/command argument. For the `*RENAME` group, also accept the argument as a command-style arg. Fire on the string literal node.
+- **REPUDD**: a `schema.m`-style class — detect `function` calls named `schema`/`schemaType`/`schema.prop` used to define a class, or a file whose content references `schema` definitions. Conservative: fire on `schema.*` function calls.
+- **MCATP**: an `@` sign used for a class property restriction — detect `@` followed by a type name in a property/argument validation context (e.g. `x @double`). Conservative: detect `@` token where it's not a function handle.
+- **NOV6**: string literal `'v6'` used as a version/format argument.
+- **FROPT/FROPTX**: string literals `'-dill'` / `'-adobecset'` used as print/export options.
+- **RESOU**: the file path/name contains a `resources` folder component. Use `ctx.file_path` if accessible, or detect `resources/` in a path-like string. Conservative: if file_path not accessible in your walker, fire on a `command`/string containing `resources` — but prefer file-path detection; if not feasible, implement a node-level detection of a `resources` folder reference.
+- **FGREN/FGREM**: name-value strings `'Renderer'` / `'RendererMode'` on a `figure`/`set`/`get` call.
+
+Implement each as `pub(crate) fn check_<ID>(&self, node: Node, source: &str, diagnostics: &mut Vec<Diagnostic>)` on `CompatibilityEngine` in this file, dispatched from `collect_checks`.
+
+## File to modify
+- `crates/mlt_rules/src/compatibility/generic/check_input_syntax.rs` — implement `collect_checks` + methods + `#[cfg(test)] mod tests`.
+
+## Constraints
+- Only modify your file. Do NOT touch other files. Do NOT commit.
+- Use `crate::test_util::{has_id, lint_file}`. Add fires + not-fires tests per check.
+- No code comments unless needed; `pub(crate)` for shared helpers.
+
+## Verification (REQUIRED)
+1. `cargo build` succeeds.
+2. `cargo clippy --all-targets` — zero warnings.
+3. `cargo test -p mlt_rules compatibility` passes (new + existing 22).
+4. Each ID has a fires and a not-fires test.
+
+## Report back
+- Checks implemented + how detected
+- Test count added
+- Verification results
+- Any IDs skipped with reason (esp. RESOU if file-path detection wasn't feasible — describe what you did)
