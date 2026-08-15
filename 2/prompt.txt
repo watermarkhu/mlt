@@ -1,0 +1,34 @@
+You are fixing the `mlt` MATLAB linter (Rust, at /home/watermarkhu/repositories/mlt) to reimplement semantically-mismatched checks in the `bugs` engine (`crates/mlt_rules/src/bugs/`). Messages are ALREADY aligned to MathWorks verbatim — do not change them. Only fix the DETECTION LOGIC so each check triggers on what MathWorks describes.
+
+For each check below, read the current implementation (grep the ID across `bugs/`), then rewrite its logic to match the MathWorks message. Keep the ID, message, severity, and fix where sensible.
+
+- `ASSRT` (check_assert_constant.rs): MathWorks = "The first input argument to 'assert' must be a condition. To always throw an error, use 'error(msg)'". Reimplement to flag an `assert` whose first argument is NOT a logical condition (e.g. `assert('string')` or a constant non-logical), not "assert with constant true".
+
+- `MOCUP` (check_operator_precedence.rs): MathWorks = "Variable VAR_NAME may be cleared before the cleanup function that references VAR_NAME executes, resulting in an undefined variable error." Current logic flags "operator precedence". Reimplement to detect `clear X` (or a variable going out of scope) where a later `onCleanup` function/cleanup object references that variable.
+
+- `MULCC` (check_duplicate_conditions.rs): MathWorks = "This case cannot be matched due to a call to UPPER or LOWER on the SWITCH value." Reimplement to flag a `switch` expression wrapped in `upper(...)`/`lower(...)` where a case label uses a different case than the switch value, making the case unmatchable.
+
+- `NOPRC` (mod.rs switch check): MathWorks = "A line break terminates the statement so it may be incomplete. Use ellipsis (...) to continue the statement. Or add a semicolon to hide the output." Current logic flags "switch has no otherwise". Reimplement to flag a statement that is terminated by a line break where continuation (ellipsis) or a semicolon is needed (i.e. an incomplete-looking statement split across lines without `...`). If this is too ambiguous, flag a `switch` without an `otherwise` clause is WRONG — remove that behavior and implement the line-break detection.
+
+- `LOGEMP` (check_length_empty.rs): MathWorks = "Using 'isempty' on a logical expression creates incorrect results. To determine if all the conditions are false, use '~any(..., "all")' instead." Current logic flags "length(x)==0". Reimplement to flag `isempty(...)` applied to a logical/comparison expression (which produces wrong results for arrays), not `length(x)==0`.
+
+- `STCUL` (check_strcmpi_same_case.rs): MathWorks = "The comparison will likely fail due to case mismatch." Reimplement to flag a `strcmp` (case-SENSITIVE) comparison where the two arguments differ only by case (so it will fail), not "strcmpi with identical args".
+
+- `STRCMPCSTR` (check_strcmp_char.rs): MathWorks = "'strcmp' always returns false for string elements of a cell array. Use [\"str1\", \"str2\", ...] instead." Reimplement to flag `strcmp(cellstr, ...)` where a cell array of strings is compared using `strcmp` (which always returns false for cell elements), suggesting `==` or string array syntax.
+
+- `RHSFN` (mod.rs walk_rhs_function_name): MathWorks = "The expression cannot be assigned to multiple values." Current logic flags "function name on RHS without @". Reimplement to flag an assignment whose left-hand side is a multiple-output expression (e.g. `[a, b] = expr` where expr returns a single value, or `[a b] = f(...)` with a scalar-returning f).
+
+- `IFBDUP` (mod.rs duplicate if bodies): MathWorks = "This condition has no effect because all blocks in this if statement are identical. This indicates a bug in the code." Current logic flags "duplicate if-branch body". Verify it flags identical bodies; if it only flags the condition, fix to flag identical BODIES across all branches (including else).
+
+- `PFWHOS` (mod.rs parfor): MathWorks = "Using \"who\" or \"whos\" without \"-file\" is invalid inside a PARFOR loop because it accesses the workspace in a non-transparent way." Verify current logic flags `who`/`whos` without `-file` inside parfor; fix if it flags the wrong thing.
+
+- `VARARG` (mod.rs check_vararg_in_body): MathWorks = "Initialize VARARGOUT with a CELL." Current logic flags varargin/varargout used without declaration. Reimplement to flag a `varargout` used in a function WITHOUT being initialized to a cell array (i.e. `varargout` assigned a non-cell or used before `varargout = {}` initialization), suggesting "Initialize VARARGOUT with a CELL". Note the two branches (varargin/varargout) currently both emit this message — rework so the check matches MathWorks.
+
+Also note `DEFSIZE` (check_size_comparison.rs): MathWorks = "Do not overload 'size' for fundamental data types." If current logic flags `size(x)==[m n]` (a different thing), reimplement to flag a redefinition/overload of the builtin `size` function. If uncertain, at minimum stop flagging `size(x)==[m n]` and implement the overload detection.
+
+IMPORTANT: Do NOT change `rule_id`, `severity`, or the (already-aligned) message strings. Only change detection logic. Add/adjust unit tests for reimplemented checks (fire + no-fire). Delete orphaned helpers.
+
+## Verify
+Run `cargo build -p mlt_rules 2>&1 | grep -E 'error'` and `cargo test -p mlt_rules bugs 2>&1 | tail -5`. Ignore errors in files outside `bugs/`. Fix errors in your files.
+
+Return: which checks you reimplemented, and any you could not confidently reimplement (explain why).
