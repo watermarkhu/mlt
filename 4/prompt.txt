@@ -1,0 +1,66 @@
+You are implementing the **forward-compat version gates + global/import scope** generic compatibility checks in the `mlt` MATLAB linter.
+
+## Context
+`crates/mlt_rules/src/compatibility/` was just converted from a flat file to a directory. The engine's file-level walker (`check_file` → `check_generic` → `visit_generic_checks`) calls `crate::compatibility::generic::collect_node_checks` on every node. Your group's checks live in the stub file:
+
+`crates/mlt_rules/src/compatibility/generic/check_forward_gates.rs`
+
+which currently has a no-op `collect_checks`. Implement your assigned checks there.
+
+## Your assigned check IDs (15)
+FCLEN, FCCPV, FCDQS, FCFAV, FCHBL, FCLFS, FCNVA, REDEFGI, REDEFGG, NSTIMP, IMPIVD, IMPKEY, SHVAI, IDISVARHIGH, IDISVARLOW
+
+## Official messages (use verbatim)
+FCLEN: "Identifiers longer than 63 characters are not supported before R2025a."
+FCCPV: "Class property validation is not available before R2017a."
+FCDQS: "Double-quoted strings are not available before R2017a. Use character vectors for scalar strings or cell arrays for string collections."
+FCFAV: "Function argument validation is not available before R2019b."
+FCHBL: "Hexadecimal and binary literals are not available before R2019b. Use 'hex2dec' and 'bin2dec' instead."
+FCLFS: "Local functions in a script are not available before R2016b."
+FCNVA: "Name=Value syntax is not available before R2021a. Use comma-separated syntax instead."
+REDEFGI: "Declaring an input or output variable to be global might not be supported in a future release."
+REDEFGG: "Declaring a variable to be global more than once might not be supported in a future release."
+NSTIMP: "Nested functions now inherit import statements from this parent function."
+IMPIVD: "Malformed import argument VAR_NAME will not be supported in a future release."
+IMPKEY: "Importing VAR_NAME will not be supported in a future release because VAR_NAME is a reserved word."
+SHVAI: "Explicitly define shared variables in the parent function before calling the nested function. MATLAB does not share uninitialized variables between a nested function and the parent function."
+IDISVARHIGH: "Variable must be explicitly defined before first use. In some cases, the definition was not required in previous releases, but it is now required."
+IDISVARLOW: "To avoid a potential conflict with functions on the path, explicitly define the variable before indexing into it."
+
+## Detection guidance
+- **Forward-compat version gates (FCLEN, FCCPV, FCDQS, FCFAV, FCHBL, FCLFS, FCNVA)**: these are **forward-compatibility** checks — flag a language feature that requires a newer MATLAB than the code's target. Since mlt targets "current MATLAB", interpret them as: detect the language construct and emit the check. Concretely:
+  - FCLEN: an identifier longer than 63 characters.
+  - FCCPV: a class property with validation (a `properties` block property having a type constraint / validation function).
+  - FCDQS: a double-quoted string literal (`"..."`).
+  - FCFAV: a function with an `arguments` block.
+  - FCHBL: a hex (`0x...`) or binary (`0b...`) literal (a `number` node starting with `0x`/`0b`).
+  - FCLFS: a script file containing a `function_definition` after non-function statements (local functions in a script).
+  - FCNVA: `Name=Value` syntax in a function call (an `=` token inside `arguments` where left is an identifier).
+- **REDEFGI/REDEFGG**: `global` declarations. REDEFGI when a function input/output variable is also declared global; REDEFGG when the same variable is declared global more than once. Use the symbol table (`crate::analysis::symbols::SymbolTable`) if helpful — build it from the tree in a file-level pass.
+- **NSTIMP**: nested function inherits import statements — detect a nested `function_definition` whose parent function has an `import` before it; fire on the nested function (informational).
+- **IMPIVD/IMPKEY**: `import` statements. IMPKEY when importing a reserved word; IMPIVD when the import argument is malformed. Detect `import` command/function calls.
+- **SHVAI/IDISVARHIGH/IDISVARLOW**: unset-variable style. These overlap with the Unset Variables engine (already implemented). Implement conservative versions:
+  - SHVAI: a nested function uses a variable not defined in its parent before the nested call.
+  - IDISVARHIGH/IDISVARLOW: a variable used before definition. Use the symbol table. If this is too overlapping with the existing unset_variables engine, implement a minimal version and note it. Favor the symbol-table approach.
+
+Note: some of these (esp. the version gates) are straightforward AST-pattern checks; the scope/unset ones can use `SymbolTable`. Implement each as `pub(crate) fn check_<ID>(&self, node: Node, source: &str, diagnostics: &mut Vec<Diagnostic>)` on `CompatibilityEngine` (or file-level methods taking `&Tree` where needed), dispatched from `collect_checks`.
+
+## File to modify
+- `crates/mlt_rules/src/compatibility/generic/check_forward_gates.rs` — implement `collect_checks` + methods + `#[cfg(test)] mod tests`.
+
+## Constraints
+- Only modify your file. Do NOT touch other files. Do NOT commit.
+- Use `crate::test_util::{has_id, lint_file}`. Add fires + not-fires tests per check.
+- No code comments unless needed; `pub(crate)` for shared helpers.
+
+## Verification (REQUIRED)
+1. `cargo build` succeeds.
+2. `cargo clippy --all-targets` — zero warnings.
+3. `cargo test -p mlt_rules compatibility` passes.
+4. Each ID has a fires and a not-fires test.
+
+## Report back
+- Checks implemented + how detected
+- Test count added
+- Verification results
+- Any IDs you deferred or implemented minimally, with reason (e.g. overlapping existing engines)
