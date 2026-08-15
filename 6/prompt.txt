@@ -1,0 +1,68 @@
+You are implementing the **property/attribute + option-removal** generic compatibility checks in the `mlt` MATLAB linter.
+
+## Context
+`crates/mlt_rules/src/compatibility/` was just converted from a flat file to a directory. The engine's file-level walker (`check_file` → `check_generic` → `visit_generic_checks`) calls `crate::compatibility::generic::collect_node_checks` on every node. Your group's checks live in the stub file:
+
+`crates/mlt_rules/src/compatibility/generic/check_property_attr.rs`
+
+which currently has a no-op `collect_checks`. You will implement the checks for your assigned IDs in that file.
+
+## Your assigned check IDs (26)
+MCPDC, PSTAT, DSPIDF, DSPFDF, ATVIZW, SMPLMODE, GETERR, SETERR, MCGCP, HESST, HESSM, TTSMP, LSRET, RAYNR, DFEATUREPARAM1, DFEATUREPARAM2, COEFFS, COEFF1, COEFF2, COEFF3, COEFFD1, COEFFD2, COEFFD3, COEFFC1, COEFFC2, COEFFC3
+
+## Official messages (from data/compatibility.toml — use these verbatim)
+MCPDC: "Specifying both the 'Constant' and 'Dependent' attributes on the same property is not supported."
+PSTAT: "The 'Static' attribute on properties has been removed. Use the 'Constant' attribute instead."
+DSPIDF: "'DirectFeedthrough' property of 'dsp.VariableIntegerDelay' class has been removed."
+DSPFDF: "'DirectFeedthrough' property of 'dsp.VariableFractionalDelay' class has been removed."
+ATVIZW: "The 'Visible' attribute has been removed. Use the '~Hidden' attribute instead or omit the attribute entirely."
+SMPLMODE: "The property 'FrameBasedProcessing' has been removed."
+GETERR: "The 'ErrorMessage' property has been removed. At the command line, use 'MException.last' instead."
+SETERR: "The 'ErrorMessage' property has been removed. There is no simple replacement for this."
+MCGCP: "Defining a get method for a constant property is not supported."
+HESST: "'InitialHessType' has been removed. There is no simple replacement for this."
+HESSM: "'InitialHessMatrix' has been removed. There is no simple replacement for this."
+TTSMP: "'SamplingRate' has been removed. Use 'SampleRate' instead."
+LSRET: "'LaserReturns' has been removed. Use 'LaserReturn' instead, which is a direct replacement."
+RAYNR: "Input argument 'NumReflections' has been removed. Use 'MaxNumReflections' property of a ray tracing propagation model instead."
+DFEATUREPARAM1: "'UseHG2' has been removed. With appropriate code changes, use '~verLessThan('matlab','8.4.0')' instead."
+DFEATUREPARAM2: "'HGUsingMATLABClasses' has been removed. With appropriate code changes, use '~verLessThan('matlab','8.4.0')' instead."
+COEFFS: "The property 'FilterSpecification' has been removed."
+COEFF1: "The property 'FirstFilterCoefficients' has been removed."
+COEFF2: "The property 'SecondFilterCoefficients' has been removed."
+COEFF3: "The property 'ThirdFilterCoefficients' has been removed."
+COEFFD1: "The property 'FirstFilterCoefficientsDataType' has been removed."
+COEFFD2: "The property 'SecondFilterCoefficientsDataType' has been removed."
+COEFFD3: "The property 'ThirdFilterCoefficientsDataType' has been removed."
+COEFFC1: "The property 'CustomFirstFilterCoefficientsDataType' has been removed."
+COEFFC2: "The property 'CustomSecondFilterCoefficientsDataType' has been removed."
+COEFFC3: "The property 'CustomThirdFilterCoefficientsDataType' has been removed."
+
+## Detection guidance
+These are AST-pattern checks for removed **class property attributes** and **name-value option/property names**:
+- **MCPDC/PSTAT/ATVIZW**: classdef `properties` block attributes — detect when both `Constant`+`Dependent` (MCPDC), or `Static` (PSTAT), or `Visible` (ATVIZW) attributes appear. Inspect `class_definition` → `properties` blocks and their `attributes`.
+- **DSPIDF/DSPFDF/GETERR/SETERR/SMPLMODE/COEFF\*/TTSMP/LSRET/HESST/HESSM/DFEATUREPARAM\***: removed **name-value option/property** strings passed to a function/object. Detect a `string` literal matching the removed name (e.g. `'SamplingRate'`, `'FilterSpecification'`, `'InitialHessType'`, `'UseHG2'`, `'DirectFeedthrough'`) appearing as a name-value argument in a call. For `dsp.VariableIntegerDelay`-style, check `'DirectFeedthrough'` name-value on the `dsp.VariableIntegerDelay(...)`/`dsp.VariableFractionalDelay(...)` constructor.
+- **MCGCP**: classdef with a `methods` block defining a `get.<Prop>` method for a `Constant` property.
+- **RAYNR**: string literal `'NumReflections'` used as an input argument.
+
+Be conservative — use exact string-literal matches on the removed name in call arguments / class attributes. Implement each check as `pub(crate) fn check_<ID>(&self, node: Node, source: &str, diagnostics: &mut Vec<Diagnostic>)` on `CompatibilityEngine` (add via `impl CompatibilityEngine` in this file with `use super::super::*;` or full paths), and call them from `collect_checks`.
+
+## File to modify
+- `crates/mlt_rules/src/compatibility/generic/check_property_attr.rs` — implement `collect_checks` (dispatch to your per-ID methods) + the methods + `#[cfg(test)] mod tests`.
+
+## Constraints
+- Only modify your file. Do NOT touch `mod.rs`, `generic.rs`, other `check_*.rs`, or the data file. Do NOT commit.
+- Use the existing test harness (`crate::test_util::{has_id, lint_file}`). Add fires + not-fires tests per check.
+- Follow repo conventions: no code comments unless needed, `pub(crate)` for shared helpers.
+
+## Verification (REQUIRED)
+1. `cargo build` succeeds.
+2. `cargo clippy --all-targets` — zero warnings (fix any from your code).
+3. `cargo test -p mlt_rules compatibility` passes (your new tests + existing 22).
+4. For each ID, confirm a fires test and a not-fires test exist and pass.
+
+## Report back
+- Checks implemented + how detected
+- Test count added
+- Verification results (build/clippy/test)
+- Any IDs you skipped (e.g. too ambiguous) with reason
