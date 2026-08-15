@@ -1,0 +1,51 @@
+You are migrating rule module docstrings in the `mlt` Rust project at /home/watermarkhu/repositories/mlt to a standardized documentation schema so that docs/scripts/gen_rules_docs.ts can generate documentation pages from them.
+
+## The schema (MUST read first)
+Read `docs/scripts/SCHEMA.md` in full — it defines the exact docstring format.
+
+## Reference implementations (MUST read)
+These two modules are already migrated correctly and are your ground truth:
+- `crates/mlt_rules/src/nosemi.rs` (single-check flat rule)
+- `crates/mlt_rules/src/bugs/mod.rs` (multi-check engine with `## Check IDs` table, `## Fix`, `## Examples`)
+
+## Your modules (migrate ALL FOUR)
+1. `crates/mlt_rules/src/compatibility/mod.rs` (meta ID `COMPAT`, category `compatibility`, severity Warning) — DATA-DRIVEN engine
+2. `crates/mlt_rules/src/suggested_improvements.rs` (meta ID `SUGGESTED_IMPROVEMENTS`, category `suggested-improvements`, severity Info) — DATA-DRIVEN engine, flat .rs file
+3. `crates/mlt_rules/src/naming.rs` (meta ID `NAMING_ENGINE`, category `naming`, severity Info) — GENERATED engine
+4. `crates/mlt_rules/src/custom_checks.rs` (meta ID `CUSTOM_CHECKS`, category `custom-checks`, severity Warning, ~25 check IDs) — has a Check IDs table in its docstring
+
+## How data-driven/generated engines work (IMPORTANT)
+- **compatibility** and **suggested_improvements**: their check IDs come from TOML data files (`crates/mlt_rules/src/data/compatibility.toml` and `data/suggested_improvements.toml`). In the front-matter, set `data_file = "compatibility.toml"` / `data_file = "suggested_improvements.toml"` and **OMIT the `## Check IDs` table entirely** — the generator builds the anchored table from the TOML. Set `fix = false` unless the engine emits fixes (verify with `grep -rn 'fix: Some'`).
+- **naming**: check IDs are the Cartesian product `naming.<entity>.<checkType>` (9 entities × 9 check types = 81). Set `generated = "naming"` in the front-matter and **OMIT the `## Check IDs` table** — the generator computes the 81 IDs. Verify the entity/checkType lists by reading the module source. Set `fix = false` unless verified otherwise.
+- **custom_checks**: NOT data-driven — has a `## Check IDs` table in its docstring. Migrate it as a normal engine (keep the table in the docstring, 4 columns `Check ID | Severity | Fix | Description`).
+
+## Front-matter slugs (keep existing URLs)
+`compatibility`, `suggested-improvements`, `naming`, `custom-checks`. Icons: `lucide/archive`, `lucide/lightbulb`, `lucide/type`, `lucide/sliders-horizontal`.
+
+## What to do
+1. Read each module's current `//!` docstring and `Rule` impl. Verify fix availability with `grep -rn 'fix: Some' <module dir>`. Determine the default severity from `fn severity()`.
+2. Rewrite the `//!` header to the schema format:
+   - `# <META_ID>: <Title>` H1
+   - ```mlt front-matter block (id/title/category/severity/fix/icon/slug, plus `data_file` or `generated` as applicable)
+   - `## Rule` — what the engine does (prose): architecture, the data-file lookup approach, how many check IDs it covers, and for compatibility the three category groups (compatibility / forward-compatibility / behavior-changes). Fold in the existing prose from the current docstring.
+   - For custom_checks: `## Check IDs` table (4 columns) listing all ~25 checks.
+   - `## Fix` — only if `fix = true`.
+   - `## Examples` — `### Incorrect` / `### Correct` MATLAB blocks with representative checks (e.g. for compatibility: a deprecated function call; for suggested: `csvread` → `readmatrix`; for naming: a variable name that fails casing).
+   - Keep the existing `## Configuration` section (TOML) as-is after Examples.
+3. IMPORTANT: keep the `//!` doc comment valid Rust — every line starts with `//!`, ends cleanly before the first `use`/`mod`/`const` statement.
+
+## Verification (mandatory)
+For EACH migrated module run:
+```
+bun docs/scripts/gen_rules_docs.ts --check-module compatibility
+bun docs/scripts/gen_rules_docs.ts --check-module suggested-improvements
+bun docs/scripts/gen_rules_docs.ts --check-module naming
+bun docs/scripts/gen_rules_docs.ts --check-module custom-checks
+```
+Each must exit 0. The compatibility page will be large (thousands of checks) — that is expected. Other agents may be editing other modules concurrently — only YOUR modules' results matter.
+
+Also run `cargo build` at the end.
+
+Do NOT run the plain write mode, do NOT edit `docs/rules.md`, `docs/scripts/gen_rules_docs.ts`, `docs/scripts/SCHEMA.md`, or the TOML data files. Do NOT commit.
+
+Return a summary of what each module now documents (data_file/generated keys used, check counts, fixes).
