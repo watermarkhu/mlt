@@ -1,0 +1,36 @@
+I need a detailed audit of the Phase 3 rule implementation coverage in the Rust codebase at /home/watermarkhu/repositories/mlt. This is a MATLAB linter. The PLAN.md at /home/watermarkhu/repositories/mlt/PLAN.md lists Phase 3 targets (sections 3.1-3.13) with expected check IDs per module.
+
+For EACH of these files in crates/mlt_rules/src/, determine:
+1. Which check IDs are actually implemented (fire diagnostics)
+2. Which check IDs from PLAN.md are MISSING
+3. Any TODO/unimplemented stubs
+
+Files to audit (compare against PLAN.md sections 3.1-3.13):
+- formatting.rs (target: NOCOMMA, NO4LP, ALIGN, NOPTS, NOPRT, PRTCAL, NCOMMA)
+- bugs.rs (target 35: IFBDUP, IFCDUP, PFUIXE, PFBFN, PFWHOS, PFTUSE, PFRNC, BDSCA2, RHSFN, FNAN, FUNFUN, MOCUP, MDUPC, MNANC, MULCC, STCUL, LOGEMP, NOPRC, SHOCIRT, SHOCIRF, CTRUE, CFALSE, DEFSIZE, VARARG, STRCMPCSTR, MEXCEP, ASSRT, FWFORP, FPFORP, LBODUP, DEBUGFUN, INCR, DECR, CMDAND, CMDOR)
+- readability.rs (target 35: ASGSL, COMNL, SPERR, SPWRN, NCHKE, DSPSP, DSPSY, STLOW, FLUDLR, RPMT1, RPMT0, RPMTT, RPMTF, RPMTI, RPMTN, PSIZE, LOGSUM, LOGL, ISCHR, ISSTR, ISLOG, ISCEL, IJCL, ISMAT, ISROW, ISCOL, NBRAK2, MFAMB, FVINR, STREMP, STRCL1, STRCLFH, STRIFCND, CHARTEN, SPRINTFN)
+- performance.rs (target 41: PFBNS, RGXP1, TRIM1, STTOK, TRIM2, STNCI, STCCS, FNDSB, SFLD, GFLD, CCAT, AGROW, SAGROW, ISMT, ISCL, ST2NM, FLPST, MXFND, EFIND, EXIST, UDIM, FREAD, N2UNI, TNMLP, MINV, LAXES, MMTC, MRPBW, SPRIX, TRSRT, CCAT1, GRIDD, AND2, OR2, CLALL, CLCLS, CLFUNC, CLJAVA, CLMEX, RGXPI, CLEAR0ARGS)
+- good_practices.rs (target 106: TRYNC, CTCH, WLAST, WNTAG, ERTAG, MEXCEP, STCMP, STCI, STISA, STRNU, MCHDP, MCVM, MCPO, MCCPI, MCSUP, MOBSRV, EVLCS, EVLDOT, EVLEQ, EVLSYS, EVLDUAL, EVLSEQVAR, PFRNI, PFGP, PFGV, PFEVB, PFOUS, PFIIN, NOANS, LOAD, SEPEX, NBRAK1, LNGNM, CHAIN, DISPLAY, etc.)
+- incomplete_analysis.rs (target 17: TMMSG, TMSMS, MXASET, QUIT, NOSPC, MBIG, NOFIL, MDOTM, MDMCR, RDERR, EOFER, EOFMI, MDEEP, DEEPC, DEEPN, DEEPS, TEXTL)
+- syntax_errors.rs (target 50)
+- language_spec.rs (target 157: parfor 45, class 45, function validation 40, other 27)
+- unset_variables.rs (target 6: PSET, USENS, SVNODEF, SUSENS, NODEF, STOUT)
+- unused.rs (target 17: NOEFF, NUSED, EQEFF, PUSE, SETNU, ASGLU, NASGU, PREALL, INUSA, INUSD, VANUS, DEFNU, UNRCH, MANU, VUNUS, MSNU, MSNE)
+- suggested_improvements.rs (target 243, data-driven)
+- codegen.rs (target 19 + FPASE)
+- deployment.rs (target 10: MCCD, MCPRD, MCHLP, MCKBD, MCSVP, MCMLR, MCABF, MCMFL, MCTBX, MCLL)
+- system_objects.rs (target 9)
+- unsupported.rs (target 13)
+- config_issues.rs (target 4: BDCFG, CFERR, BDOPT, CFIG)
+
+For each file, report:
+- File path
+- The list of check IDs actually emitted (grep for the literal ID strings in diagnostic construction, e.g. rule_id: "XXX" or Diagnostic::new("XXX")
+- The list of check IDs from the target that are MISSING
+- Whether the module is a data-driven engine (lookup table) vs hand-written
+
+Be thorough and accurate. Report as a structured list per file. Do NOT modify any files - this is research only.
+
+---
+
+Continue if you have next steps, or stop and ask for clarification if you are unsure how to proceed.

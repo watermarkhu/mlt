@@ -3,7 +3,7 @@
   "checkpoint_id": "01M02Z3V5D2C67P351J4ZF11JB",
   "strategy": "manual-commit",
   "branch": "feat",
-  "checkpoints_count": 168,
+  "checkpoints_count": 170,
   "files_touched": [
     "crates/mlt_rules/src/codegen/mod.rs",
     "crates/mlt_rules/src/compatibility/mod.rs",
@@ -606,13 +606,20 @@
       "compact_transcript": "/82/transcript.jsonl",
       "content_hash": "/82/content_hash.txt",
       "prompt": "/82/prompt.txt"
+    },
+    {
+      "metadata": "/83/metadata.json",
+      "transcript": "/83/full.jsonl",
+      "compact_transcript": "/83/transcript.jsonl",
+      "content_hash": "/83/content_hash.txt",
+      "prompt": "/83/prompt.txt"
     }
   ],
   "token_usage": {
-    "input_tokens": 6693247,
+    "input_tokens": 6988553,
     "cache_creation_tokens": 0,
-    "cache_read_tokens": 187758464,
-    "output_tokens": 717390,
-    "api_call_count": 2083
+    "cache_read_tokens": 189559168,
+    "output_tokens": 730302,
+    "api_call_count": 2122
   }
 }
