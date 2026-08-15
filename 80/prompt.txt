@@ -1,0 +1,9 @@
+Rule ID: FLUDLR
+Category: Readability (3.3)
+Module: crates/mlt_rules/src/readability.rs
+
+Follow your planner workflow: look up FLUDLR on the MathWorks check index via Playwright (fallback archive ~/.local/share/opencode/tool-output/REDACTED), read the existing readability.rs engine, AGENTS.md, nosemi.rs, and docs/nosemi.md. Produce a self-contained implementation plan.
+
+NOTE: readability.rs module doc at line ~28 currently mis-describes FLUDLR as "prefer fullfile". The correct check: suggest rot90(x,2) instead of flipud(fliplr(x)) or fliplr(flipud(x)). Include a doc fix in your plan.
+
+This is one of 5 readability checks being implemented in parallel in the same module (COMNL, STLOW, FLUDLR, MFAMB, FVINR) — keep your additions isolated to distinct check IDs and functions.
