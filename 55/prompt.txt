@@ -1,0 +1,25 @@
+Rule ID: QUIT
+Category: Incomplete Analysis (3.6)
+Modules: crates/mlt_core/src/linter.rs + crates/mlt_rules/src/incomplete_analysis.rs
+
+You are the Implementer in mlt's rule pipeline. Implement QUIT exactly per the approved plan.
+
+READ the approved plan at /tmp/opencode/plans/QUIT.md first. QUIT is an ENGINE PANIC GUARD implemented via std::panic::catch_unwind in Linter::lint. Do NOT add a tree-based QUIT branch to IncompleteAnalysisEngine::check_file.
+
+CRITICAL: First read crates/mlt_core/src/linter.rs to understand the real lint() structure (variable names, where traverse + check_file happen, whether sorting is inside lint). Adapt the plan's sketch to the actual code.
+
+Then implement:
+- crates/mlt_core/src/linter.rs: catch_unwind guard wrapping traverse + check_file, quit_diagnostic helper, and tests (quit_fires_when_a_rule_panics, quit_does_not_fire_on_clean_file).
+- crates/mlt_rules/src/incomplete_analysis.rs: update module-doc table row for QUIT and the inline no-op comment; add absence tests (quit_does_not_fire_on_clean_file/syntax_error/unterminated_if/incomplete_tail).
+- docs/quit.md (new, per docs/nosemi.md template, adapted: no target node types, cannot disable).
+- docs/rules.md: add row.
+- zensical.toml: add nav entry.
+
+Verify:
+cargo build
+cargo clippy --all-targets
+cargo test
+
+Fix any failures until clean. Do NOT add code comments unless the plan requires them. Do NOT commit.
+
+Return a summary: files created/modified, cargo results, deviations from the plan.
