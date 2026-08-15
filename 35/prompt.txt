@@ -1,0 +1,21 @@
+Group: GOODPRAC G2 — Parfor/SPMD/Parallel practices (13: PFEVB, PFGP, PFGV, PFIIN, PFOUS, PFRIN, PFRNI, PFRUS, PFTUSW, PFUIXW, SPEVB, SPGV, DSPMDA)
+Module: crates/mlt_rules/src/good_practices.rs
+
+You are the Reviewer in mlt's rule pipeline. Review the GOODPRAC G2 plan.
+
+READ the plan at /tmp/opencode/plans/GOODPRAC_G2.md and the message list at /tmp/opencode/plans/GP_messages.txt first.
+
+Then verify against the codebase:
+- Read crates/mlt_rules/src/good_practices.rs (engine structure, TARGET_NODES, hybrid check()/check_file(), is_check_enabled).
+- Run the astprobe (cd /tmp/opencode/astprobe && cargo run) on parfor/spmd samples (parfor → for_statement with parfor keyword; spmd → spmd_statement).
+
+Key adjudications:
+1. The engine is hybrid (check_file has FileMeta+SymbolTable). Confirm which of the 13 need the file-level path vs node-level.
+2. PFRNI (parfor range increment) — feasible via for_statement range step analysis?
+3. The 6 dataflow checks (PFIIN, PFOUS, PFRIN, PFRUS, PFTUSW, PFUIXW) are best-effort. Which are reliable enough? Recommend a conservative implementation.
+4. Are MUST/MUST NOT examples right? file/step/test requirements complete?
+
+Return exactly:
+- `VERDICT: APPROVED` or `VERDICT: CHANGES REQUIRED`
+- A short list of required corrections
+- The corrected, complete implementation plan (repeat the whole plan with fixes) — self-contained, since the Implementer only sees your message.
