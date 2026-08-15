@@ -1,0 +1,47 @@
+You are splitting the `bugs` rule engine in `crates/mlt_rules/src/bugs.rs` into a directory of one-file-per-check modules. This is a PURE MECHANICAL REFACTOR — zero behavior change.
+
+## CRITICAL CONSTRAINTS
+- Do NOT delete or modify `crates/mlt_rules/src/bugs.rs`.
+- Do NOT modify `crates/mlt_rules/src/lib.rs` (it already declares `pub mod bugs;` which will auto-resolve to the directory once the flat file is removed later).
+- Only CREATE new files under `crates/mlt_rules/src/bugs/`.
+- Do NOT commit.
+
+## Target layout
+```
+crates/mlt_rules/src/bugs/
+├── mod.rs                        # BugsEngine, BugsConfig, impl Rule (dispatch), inventory::submit!,
+│                                #   shared free helpers (pub(crate)), module doc, shared #[cfg(test)] helpers
+├── check_constant_condition.rs   # use super::*; impl BugsEngine { pub(crate) fn check_constant_condition ... } + its tests
+├── check_short_circuit.rs        # ...
+└── ...                           # one file per independent check
+```
+
+## How to do it
+1. Read `crates/mlt_rules/src/bugs.rs` fully.
+2. `mod.rs` gets: the module `//!` doc (first ~60 lines), all `use` statements, `BugsConfig`, `BugsEngine` struct, ALL free helper functions (`node_text`, `normalize_whitespace`, `find_condition_child`, etc. — anything not a `check_*` method), the `impl Rule for BugsEngine` block with its `check()`/`check_file()` dispatch, and `inventory::submit!`. Make the shared free helpers `pub(crate)` (or `pub(super)`) so child files can call them via `use super::*`.
+3. For each INDEPENDENT `check_*` method (node-level pattern matches that only use `self.is_check_enabled` + shared helpers): create `bugs/check_<name>.rs` containing:
+   ```rust
+   use super::*;
+   impl BugsEngine {
+       pub(crate) fn check_constant_condition(&self, ...) -> Vec<Diagnostic> { ... }
+   }
+   ```
+   plus that check's `#[cfg(test)] mod tests` moved into the same file.
+4. Methods that share MUTABLE traversal state (e.g. `check_parfor_issues`/`check_parfor_body` which build shared state, or methods that call each other across a stateful walk) — decide per method. If a `check_*` method is called by another `check_*` method that stays in mod.rs and they share state, keep them together in mod.rs. Node-level independent pattern matchers move out.
+5. Move the tests: each test function that tests a specific moved check goes into that check's file (`use super::*; use crate::test_util::{has_id, lint_nodes, lint_file}; use mlt_core::Config;` + an `engine()` helper if needed). Generic engine-level tests stay in mod.rs's test module.
+
+## Verification (REQUIRED — do not skip)
+After writing all files, verify the move is byte-correct:
+- For each moved `check_*` method, extract its body from `bugs.rs` and diff against the new file's method (should be identical aside from the `pub(crate)` visibility keyword and indentation).
+- Confirm each check ID string appears exactly once across the whole `bugs/` directory (plus `bugs.rs`).
+- Confirm the dispatch in `mod.rs` still references the same method names.
+- Confirm test count in `bugs/` matches what was in `bugs.rs` for moved checks.
+You can write a small python/rust script to do the diff; you may NOT run `cargo build` (that's the main session's job after cutover).
+
+## Report back (final message)
+- List of files created under `bugs/`
+- Which `check_*` methods were moved to files vs. kept in mod.rs (and why)
+- Verification results (diff/parity check outcome, test counts)
+- Any risks or notes
+
+Do not touch anything outside `crates/mlt_rules/src/bugs/`.
