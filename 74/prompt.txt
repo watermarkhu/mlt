@@ -1,0 +1,19 @@
+Rule ID: COMNL
+Category: Readability (3.3)
+Module: crates/mlt_rules/src/readability.rs
+
+You are the Reviewer in mlt's rule pipeline (plan in main → Reviewer → Implementer). Review the implementation plan for COMNL.
+
+READ the plan at /tmp/opencode/plans/COMNL.md first.
+
+Then verify against the codebase:
+- Read crates/mlt_rules/src/readability.rs (especially the engine dispatch in check(), check_matrix, the diag() helper, TARGET_NODES, and the existing tests mod).
+- Read crates/mlt_rules/src/lib.rs, crates/mlt_rules/src/nosemi.rs, AGENTS.md "Adding a New Rule", and docs/nosemi.md.
+- Optionally run the AST probe in /tmp/opencode/astprobe to confirm the matrix/row/comma node structure described in the plan.
+
+Check: target node types correct? detection logic works with the real grammar node kinds? false-positive/false-negative cases covered? files/steps complete (module, docs/comnl.md, docs/rules.md row, zensical.toml nav, tests)? Is the `...` ellipsis edge case handled?
+
+Return exactly:
+- `VERDICT: APPROVED` or `VERDICT: CHANGES REQUIRED`
+- A short list of required corrections (or confirmations if approved)
+- The corrected, complete implementation plan (repeat the whole plan with fixes) — self-contained, since the Implementer only sees your message.
