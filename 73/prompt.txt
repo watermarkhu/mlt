@@ -1,0 +1,19 @@
+Rule ID: STLOW
+Category: Readability (3.3)
+Module: crates/mlt_rules/src/readability.rs
+
+You are the Reviewer in mlt's rule pipeline (plan in main → Reviewer → Implementer). Review the implementation plan for STLOW.
+
+READ the plan at /tmp/opencode/plans/STLOW.md first.
+
+Then verify against the codebase:
+- Read crates/mlt_rules/src/readability.rs (especially check_strcmp, check_function_call dispatch, find_arguments, diag() helper, and the tests mod).
+- Read crates/mlt_rules/src/lib.rs, crates/mlt_rules/src/nosemi.rs, AGENTS.md "Adding a New Rule", and docs/nosemi.md.
+- Optionally run the AST probe in /tmp/opencode/astprobe to confirm the strcmp/upper/string-literal node structure.
+
+Check: is the detection logic (upper+uppercase-literal, lower+lowercase-literal redundancy) correct and implementable with the real grammar? Does it integrate cleanly with the existing check_strcmp (avoiding overlap with STREMP/STRIFCND)? Are MUST/MUST NOT cases right? files/steps/tests complete?
+
+Return exactly:
+- `VERDICT: APPROVED` or `VERDICT: CHANGES REQUIRED`
+- A short list of required corrections (or confirmations if approved)
+- The corrected, complete implementation plan (repeat the whole plan with fixes) — self-contained, since the Implementer only sees your message.
