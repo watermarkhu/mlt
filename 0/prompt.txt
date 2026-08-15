@@ -1,0 +1,1 @@
+ok the descriptions that are included now are widely different from mathworks.com/help/matlab/matlab_env/index-of-code-analyzer-checks.html. Something must be off

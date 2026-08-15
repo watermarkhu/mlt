@@ -1,0 +1,62 @@
+{
+  "cli_version": "0.10.0",
+  "checkpoint_id": "01M03AQD1C9BZ2YC89QKF7WRSJ",
+  "strategy": "manual-commit",
+  "branch": "feat",
+  "checkpoints_count": 6,
+  "files_touched": [
+    "crates/mlt_rules/src/bugs/mod.rs",
+    "crates/mlt_rules/src/codegen/mod.rs",
+    "crates/mlt_rules/src/config_issues/mod.rs",
+    "crates/mlt_rules/src/custom_checks.rs",
+    "crates/mlt_rules/src/data/compatibility.toml",
+    "crates/mlt_rules/src/data/suggested_improvements.toml",
+    "crates/mlt_rules/src/deployment/mod.rs",
+    "crates/mlt_rules/src/formatting/mod.rs",
+    "crates/mlt_rules/src/good_practices/mod.rs",
+    "crates/mlt_rules/src/incomplete_analysis/mod.rs",
+    "crates/mlt_rules/src/language_spec/mod.rs",
+    "crates/mlt_rules/src/performance/mod.rs",
+    "crates/mlt_rules/src/readability/mod.rs",
+    "crates/mlt_rules/src/syntax_errors/mod.rs",
+    "crates/mlt_rules/src/system_objects/mod.rs",
+    "crates/mlt_rules/src/unset_variables/mod.rs",
+    "crates/mlt_rules/src/unsupported/mod.rs",
+    "crates/mlt_rules/src/unused/mod.rs",
+    "docs/rules.md",
+    "docs/rules/bugs.md",
+    "docs/rules/codegen.md",
+    "docs/rules/compatibility.md",
+    "docs/rules/config-issues.md",
+    "docs/rules/custom-checks.md",
+    "docs/rules/deployment.md",
+    "docs/rules/formatting.md",
+    "docs/rules/good-practices.md",
+    "docs/rules/incomplete-analysis.md",
+    "docs/rules/language-spec.md",
+    "docs/rules/performance.md",
+    "docs/rules/readability.md",
+    "docs/rules/suggested-improvements.md",
+    "docs/rules/syntax-errors.md",
+    "docs/rules/system-objects.md",
+    "docs/rules/unset-variables.md",
+    "docs/rules/unsupported.md",
+    "docs/rules/unused.md"
+  ],
+  "sessions": [
+    {
+      "metadata": "/0/metadata.json",
+      "transcript": "/0/full.jsonl",
+      "compact_transcript": "/0/transcript.jsonl",
+      "content_hash": "/0/content_hash.txt",
+      "prompt": "/0/prompt.txt"
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 544414,
+    "cache_creation_tokens": 0,
+    "cache_read_tokens": 17035008,
+    "output_tokens": 16789,
+    "api_call_count": 66
+  }
+}
