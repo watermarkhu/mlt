@@ -1,0 +1,7 @@
+Rule ID: RDERR
+Category: Incomplete Analysis (3.6)
+Module: crates/mlt_rules/src/incomplete_analysis.rs or mlt_core/CLI (decide placement)
+
+Follow your planner workflow: look up RDERR on the MathWorks check index via Playwright (fallback archive ~/.local/share/opencode/tool-output/REDACTED), read the existing incomplete_analysis.rs engine, AGENTS.md, nosemi.rs, and docs/nosemi.md. Produce a self-contained implementation plan.
+
+Note: RDERR is one of 3 remaining Incomplete Analysis checks (QUIT, NOFIL, RDERR). These are linter-internal guards. Decide explicitly in your plan whether RDERR belongs in the incomplete_analysis module or in mlt_core/CLI, and set can_be_disabled = false.
