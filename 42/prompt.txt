@@ -1,0 +1,32 @@
+Group: SYNTAX G6 — Missing END variants (ENDCT2, ENDCT3, ENDCT4)
+Module: crates/mlt_rules/src/syntax_errors.rs
+
+You are the Implementer in mlt's rule pipeline. Implement the SYNTAX G6 group exactly per the approved plan.
+
+READ the approved plan at /tmp/opencode/plans/SYNTAX_G6.md first.
+
+CRITICAL:
+1. Step 0 — run the astprobe (cd /tmp/opencode/astprobe && cargo run) on the unterminated-construct cases FIRST and adapt detection to the actual AST. Record findings.
+2. Modify the ENDCT branch in walk_error_nodes: use `classify_missing_end(node, source)` returning Option<(variant_id, message)>. Variant fires → replace generic ENDCT; variant disabled → fall back to generic ENDCT; no variant → generic ENDCT. NO double-fire.
+3. ENDCT4: ERROR text contains "classdef" + function_definition sibling after it + no "methods" between.
+4. ENDCT2: block opener in ERROR text or prev_sibling.
+5. ENDCT3: ERROR followed by a block-opening keyword.
+6. Update the existing `endct_fires_on_unterminated_if` test to expect ENDCT2 (or adjust).
+7. Add BLOCK_OPENERS const.
+
+Implement:
+- crates/mlt_rules/src/syntax_errors.rs: BLOCK_OPENERS, classify_missing_end, modify walk_error_nodes ENDCT branch, module doc rows, tests.
+- docs/endct2.md, docs/endct3.md, docs/endct4.md (new).
+- docs/rules.md: add 3 rows.
+- zensical.toml: add 3 nav entries.
+
+NOTE: This group modifies walk_error_nodes, which G5 (NOPAR removal) and G7 (FVSYN) also modify in PARALLEL. Coordinate carefully: only touch the ENDCT branch; don't disturb NOPAR/bracket or SYNER branches. Re-verify compilation after each edit.
+
+Verify:
+cargo build
+cargo clippy --all-targets
+cargo test
+
+Fix failures until clean. Do NOT add code comments unless the plan requires them. Do NOT commit.
+
+Return a summary: files created/modified, AST findings, fires/not-fires verified, cargo results, deviations.
