@@ -1,0 +1,36 @@
+You are splitting the `syntax_errors` rule engine in `crates/mlt_rules/src/syntax_errors.rs` (16 check_ methods, 167 tests) into a directory of one-file-per-check modules. PURE MECHANICAL REFACTOR — zero behavior change.
+
+## CRITICAL CONSTRAINTS
+- Do NOT delete or modify `crates/mlt_rules/src/syntax_errors.rs`.
+- Do NOT modify `crates/mlt_rules/src/lib.rs`.
+- Only CREATE new files under `crates/mlt_rules/src/syntax_errors/`.
+- Do NOT commit.
+
+## Target layout
+```
+crates/mlt_rules/src/syntax_errors/
+├── mod.rs                        # SyntaxErrorsEngine, config, impl Rule (dispatch), inventory::submit!,
+│                                #   shared free helpers (pub(crate)), module doc, shared #[cfg(test)] helpers
+├── check_*.rs                    # one file per independent check
+└── ...
+```
+
+## How to do it
+1. Read `crates/mlt_rules/src/syntax_errors.rs` fully.
+2. `mod.rs` gets: module `//!` doc, `use` statements, config (`SyntaxErrorsConfig`), `SyntaxErrorsEngine` struct, ALL free helpers + consts (including `collect_skip_ranges`, `in_skip_range`, `last_descendant`, etc.), the `impl Rule` with `check_file()` dispatch, and `inventory::submit!`. Make shared free helpers `pub(crate)`.
+3. Each INDEPENDENT `check_*` method → own file `syntax_errors/check_<name>.rs`. Note many checks are large file-level passes (e.g. `scan_source_text`, `check_error_nodes`, `check_file_structure`, `check_number_literals`, `check_unterminated`). Each is self-contained — give each its own file. Methods sharing MUTABLE state (e.g. `walk_error_nodes` called by `check_error_nodes`, or `check_parfor_body`-style helpers) stay together with their caller in one file (prefer keeping caller+walker in the same file).
+4. Move tests with their check: `use super::*; use crate::test_util::{has_id, lint_file}; use mlt_core::Config;` + local `engine()` / `engine_with()` helpers. Generic tests stay in mod.rs.
+
+## Verification (REQUIRED)
+- Diff each moved method body against original (identical except `pub(crate)` + indentation).
+- Confirm each check ID appears exactly once across `syntax_errors/`.
+- Confirm dispatch references match; moved-test count matches.
+You may write a diff script; do NOT run `cargo build`.
+
+## Report back
+- Files created
+- Moved vs kept methods
+- Verification results
+- Risks/notes
+
+Do not touch anything outside `crates/mlt_rules/src/syntax_errors/`.
