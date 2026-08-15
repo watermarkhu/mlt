@@ -1,0 +1,19 @@
+Rule ID: FVINR
+Category: Readability (3.3)
+Module: crates/mlt_rules/src/readability.rs
+
+You are the Reviewer in mlt's rule pipeline (plan in main → Reviewer → Implementer). Review the implementation plan for FVINR.
+
+READ the plan at /tmp/opencode/plans/FVINR.md first.
+
+Then verify against the codebase:
+- Read crates/mlt_rules/src/readability.rs (especially TARGET_NODES, the check() dispatch, and the diag() helper).
+- Read crates/mlt_rules/src/lib.rs, crates/mlt_rules/src/nosemi.rs, AGENTS.md "Adding a New Rule", and docs/nosemi.md.
+- Optionally run the AST probe in /tmp/opencode/astprobe to confirm the arguments_statement node structure (arguments keyword child, optional attributes child, property children) and whether arguments_statement appears outside function_definition (class properties).
+
+Check: is "arguments_statement" a valid target node type? Does the detection (fire when no attributes child, i.e. no (Input)/(Output)) match the rule? Is the fix insert position (after the `arguments` keyword child) correct? Are MUST/MUST NOT cases right? files/steps/tests complete? Any false-positive risk from class argument blocks?
+
+Return exactly:
+- `VERDICT: APPROVED` or `VERDICT: CHANGES REQUIRED`
+- A short list of required corrections (or confirmations if approved)
+- The corrected, complete implementation plan (repeat the whole plan with fixes) — self-contained, since the Implementer only sees your message.
