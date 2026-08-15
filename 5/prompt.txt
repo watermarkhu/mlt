@@ -1,0 +1,46 @@
+You are aligning linter diagnostic messages in the mlt project (Rust, MATLAB linter at /home/watermarkhu/repositories/mlt) to match MathWorks Code Analyzer messages verbatim.
+
+## Context
+Each lint check emits a `Diagnostic { message: String, ... }`. The current messages paraphrase MathWorks; rewrite them to quote MathWorks exactly.
+
+## Your target data
+JSON files list your engines' check IDs + exact MathWorks messages. Read them:
+- /home/watermarkhu/repositories/mlt/.playwright-mcp/targets/performance.json
+- /home/watermarkhu/repositories/mlt/.playwright-mcp/targets/codegen.json
+- /home/watermarkhu/repositories/mlt/.playwright-mcp/targets/deployment.json
+- /home/watermarkhu/repositories/mlt/.playwright-mcp/targets/system_objects.json
+- /home/watermarkhu/repositories/mlt/.playwright-mcp/targets/unsupported.json
+- /home/watermarkhu/repositories/mlt/.playwright-mcp/targets/readability.json
+
+Each entry is `{"id": "CHECKID", "mw": "the exact MathWorks message"}`. Entries with empty `"mw"` have no MathWorks equivalent — leave those checks unchanged.
+
+## Your engines (directories under crates/mlt_rules/src/)
+- `performance/mod.rs` (41 checks — centralized `CheckMeta` table with `description:` fields)
+- `codegen/mod.rs` (20 checks — `CheckMeta` table)
+- `deployment/mod.rs` (10 checks — `CheckMeta` table)
+- `system_objects/mod.rs` (9 checks — `CheckMeta` table)
+- `unsupported/mod.rs` (13 checks — `CheckMeta` table)
+- `readability/mod.rs` (35 checks — message definitions in `check_*.rs` files and mod.rs; find each by grep)
+
+## What to do
+For every check ID with a non-empty `mw`, locate its message definition and replace it with the MathWorks text verbatim. Message definitions appear as:
+1. `CheckMeta { id: "X", description: "..." }` (possibly `severity:` field between id and description).
+2. Inline `Diagnostic { rule_id: "X", message: "...".to_string(), ... }`.
+3. `make_diag("X", ...)` / `make_diag_with_fix("X", ...)` helpers that read from a metadata table.
+
+## Placeholder substitution
+MathWorks messages may contain placeholders. Map them to the check's runtime values:
+- `VAR_NAME` → the variable/identifier name; `VAR_NUMBER` → line number or numeric value; `VAR_RESERVED_WORD` → keyword; `VAR_OPERATOR` → operator; `VAR_FILE` → filename.
+If the check does not compute a natural value, substitute the closest available value; if none exists, keep the placeholder token literally.
+
+## Rules (strict)
+- The `Diagnostic.message` field is `String`. For static messages (no placeholders), replace the entire message expression with `"<text>".to_string()` — do NOT leave a `format!` with stray/unused arguments.
+- Do NOT change `rule_id`, `severity`, `fix`, byte ranges, or any logic.
+- Do NOT touch the `//!` docstring comments (already correct).
+- Leave empty-`mw` checks unchanged.
+- Keep code compiling (correct format! arg counts where you do use format!).
+
+## Verify
+Run `cargo build -p mlt_rules 2>&1 | grep -E 'error'`. Ignore errors referencing files NOT in your six engine directories (other agents edit concurrently); fix any errors in YOUR files.
+
+Return: for each engine, how many messages you changed, and list any check IDs you could NOT find or left unchanged (besides empty-mw ones).
