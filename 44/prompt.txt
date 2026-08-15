@@ -1,0 +1,22 @@
+Rule IDs: STRIN, DOUQT, INBLK
+Category: Syntax Errors (3.7)
+Module: crates/mlt_rules/src/syntax_errors.rs
+
+You are the Reviewer in mlt's rule pipeline. Review the implementation plan for the SYNTAX G2 group (unterminated strings/comments).
+
+READ the plan at /tmp/opencode/plans/SYNTAX_G2.md first.
+
+Then verify against the codebase:
+- Read crates/mlt_rules/src/syntax_errors.rs (especially collect_skip_ranges, scan_source_text, check_error_nodes, check_file dispatch, and the tests mod around lines 915-1205).
+- Run the AST probe in /tmp/opencode/astprobe if needed to confirm how `x = 'abc;`, `x = "abc;`, and unterminated `%{` block comments parse.
+
+Key questions to adjudicate:
+1. STRIN: is the line-scan approach (odd number of unmatched `'` on a line, treating `''` as escaped) robust? Or is a comment-aware source scan better? Note `'` also appears in double-quoted strings (which use `"`), cell/char arrays, and transpose operators `A'`. How to avoid false positives (e.g., `x = A';` — a transpose is NOT unterminated)?
+2. DOUQT: double-quoted strings can span lines; only fire if unclosed at EOF.
+3. INBLK: comment node starting with `%{` without `%}` — is that the reliable signal?
+4. Are MUST/MUST NOT cases right? file/step/test requirements complete?
+
+Return exactly:
+- `VERDICT: APPROVED` or `VERDICT: CHANGES REQUIRED`
+- A short list of required corrections (or confirmations if approved)
+- The corrected, complete implementation plan (repeat the whole plan with fixes) — self-contained, since the Implementer only sees your message.
