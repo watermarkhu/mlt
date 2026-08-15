@@ -1,0 +1,24 @@
+Group: GOODPRAC G5 — Structure/String/Misc (10: ADPROP, ADPROPLC, COMFS, DUALC, RMFLD, RMWRN, SEMFS, SHVAU, STFLD, STRSZ)
+Module: crates/mlt_rules/src/good_practices.rs
+
+You are the Reviewer in mlt's rule pipeline. Review the GOODPRAC G5 plan.
+
+READ the plan at /tmp/opencode/plans/GOODPRAC_G5.md and the message list at /tmp/opencode/plans/GP_messages.txt first.
+
+Then verify against the codebase:
+- Read crates/mlt_rules/src/good_practices.rs (engine structure, hybrid check()/check_file(), existing LOAD/STCMP/NBRAK1 checks).
+- Run the astprobe (cd /tmp/opencode/astprobe && cargo run) on `rmfield(s,'a');`, `app.WindowTitle = 'x';`, `s = rmfield(s,'a');`, `'abc' == 'abcd'` samples.
+
+Key adjudications:
+1. ADPROP appears in BOTH G1 and G5 plans — the reviewer must adjudicate which group owns it (recommend G5 or G1; it must be implemented once).
+2. RMFLD/STFLD — standalone statement (result not assigned). Confirmed via parent check?
+3. COMFS/SEMFS need file-level context (top-level comma/semicolon + functions in file). Feasible via check_file?
+4. RMWRN — removed warning tags. Conservative approach?
+5. STRSZ — distinguish from existing STCMP check.
+6. SHVAU — best-effort symbol analysis. Worth implementing or defer?
+7. Are MUST/MUST NOT examples right? file/step/test requirements complete?
+
+Return exactly:
+- `VERDICT: APPROVED` or `VERDICT: CHANGES REQUIRED`
+- A short list of required corrections
+- The corrected, complete implementation plan (repeat the whole plan with fixes) — self-contained, since the Implementer only sees your message.
