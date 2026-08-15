@@ -4,6 +4,15 @@ use super::*;
 
 impl UnusedEngine {
     /// Run NUSED check: global or persistent variables declared but never used.
+    ///
+    /// # Limitations
+    ///
+    /// NUSED covers both global AND persistent variables, per the MathWorks
+    /// message. An unused `persistent` variable therefore also matches the
+    /// narrower PUSE check ("Persistent variable might be unused") and will be
+    /// reported by both. This overlap is intentional — it follows the two
+    /// messages verbatim — but means a single unused persistent declaration can
+    /// emit two diagnostics.
     pub(crate) fn check_nused(&self, table: &SymbolTable, diagnostics: &mut Vec<Diagnostic>) {
         if self.is_check_disabled("NUSED") {
             return;

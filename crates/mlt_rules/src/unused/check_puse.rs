@@ -4,6 +4,12 @@ use super::*;
 
 impl UnusedEngine {
     /// Run PUSE check: persistent variables declared but not used.
+    ///
+    /// # Limitations
+    ///
+    /// PUSE is the narrower sibling of NUSED (which also covers globals). An
+    /// unused `persistent` declaration fires both PUSE and NUSED; this overlap
+    /// follows the two MathWorks messages verbatim.
     pub(crate) fn check_puse(&self, table: &SymbolTable, diagnostics: &mut Vec<Diagnostic>) {
         if self.is_check_disabled("PUSE") {
             return;

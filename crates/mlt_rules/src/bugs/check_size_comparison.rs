@@ -3,6 +3,14 @@ use super::*;
 impl BugsEngine {
     /// DEFSIZE: a user-defined function named `size` overloads the builtin
     /// `size` for fundamental data types.
+    ///
+    /// # Limitations (heuristic)
+    ///
+    /// This flags any free function named `size`; a legitimate `size` method on
+    /// a user-defined class is correctly excluded (guarded by
+    /// `!is_inside_class_method`), but no static analysis verifies that the
+    /// free function actually overloads the builtin for fundamental types — the
+    /// name match alone triggers the diagnostic.
     pub(crate) fn check_size_overload(&self, root: Node, source: &str) -> Vec<Diagnostic> {
         let mut diagnostics = Vec::new();
         Self::walk_size_overload(root, source, &mut diagnostics);

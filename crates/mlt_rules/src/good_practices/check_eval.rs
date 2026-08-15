@@ -26,6 +26,12 @@ impl GoodPracticesEngine {
 
         // EVLDUAL: eval('funcname(args)') where the argument is a literal
         // function call that can be invoked directly.
+        //
+        // Limitation (heuristic): only a single string-literal argument whose
+        // contents are a plain `name(args)` call is recognized. An `eval` of a
+        // call built through concatenation, a variable, or a command-form
+        // argument is not flagged as EVLDUAL (it falls through to the other
+        // eval sub-checks).
         if self.is_check_enabled("EVLDUAL") && self.eval_is_literal_function_call(node, source) {
             return vec![Diagnostic {
                 rule_id: "EVLDUAL",

@@ -7,6 +7,15 @@ impl UnusedEngine {
     /// value is never subsequently used. Unlike NASGU (which fires when a
     /// variable is never used at all), SETNU fires per-assignment when the
     /// value written at that point is never read before the next assignment.
+    ///
+    /// # Limitations
+    ///
+    /// The boundary between SETNU and NASGU is not documented precisely by
+    /// MathWorks. This implementation fires SETNU on any assignment whose value
+    /// is never read before the next assignment (a dead store), which overlaps
+    /// with NASGU for variables that are assigned once and never read: such a
+    /// variable may be reported by both checks. This follows the message text
+    /// literally but is intentionally permissive.
     pub(crate) fn check_setnu(&self, table: &SymbolTable, diagnostics: &mut Vec<Diagnostic>) {
         if self.is_check_disabled("SETNU") {
             return;

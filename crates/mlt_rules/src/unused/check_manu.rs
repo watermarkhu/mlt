@@ -6,6 +6,13 @@ impl UnusedEngine {
     /// Run MANU check: an input argument of a method that is never used in the
     /// method body. MATLAB suggests replacing it with `~` or making the method
     /// `Static`.
+    ///
+    /// # Limitations
+    ///
+    /// MANU overlaps with the INUSD/INUSA checks (`check_unused_inputs`), which
+    /// also report unused method inputs. A method with an unused input argument
+    /// may therefore emit MANU alongside INUSD/INUSA; this overlap follows the
+    /// distinct MathWorks messages verbatim.
     pub(crate) fn check_manu(&self, table: &SymbolTable, diagnostics: &mut Vec<Diagnostic>) {
         if self.is_check_disabled("MANU") {
             return;

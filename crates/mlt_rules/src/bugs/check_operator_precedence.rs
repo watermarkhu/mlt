@@ -5,6 +5,15 @@ impl BugsEngine {
     /// MOCUP: a variable is cleared (via `clear`/`clearvars`) but an `onCleanup`
     /// object whose cleanup function references that variable is still live, so
     /// the cleanup function will hit an undefined variable when it runs.
+    ///
+    /// # Limitations (heuristic)
+    ///
+    /// This is a whole-file analysis without lexical scope resolution: cleanup
+    /// references and `clear` commands are matched by variable NAME alone, not
+    /// by scope. A variable name that appears in both an `onCleanup` callback
+    /// and an unrelated `clear` in a different function/scope can therefore
+    /// produce a false positive. There is no static type or data-flow analysis,
+    /// so "is still live" is inferred from a name match rather than proved.
     pub(crate) fn check_mocup(&self, root: Node, source: &str) -> Vec<Diagnostic> {
         // First pass: collect variable names referenced by onCleanup cleanup
         // functions.

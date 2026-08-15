@@ -2,6 +2,14 @@ use super::*;
 
 impl GoodPracticesEngine {
     /// DISPLAY: a function or method named `display` overloads the builtin.
+    ///
+    /// # Limitations (heuristic)
+    ///
+    /// This flags any function/method named `display` on the name match alone.
+    /// Overloading `display` for a custom class is a common, legitimate pattern
+    /// (the builtin `display` is dispatched on user objects by design); Code
+    /// Analyzer's actual check is more nuanced. No static analysis verifies
+    /// that the definition actually shadows the builtin for a fundamental type.
     pub(crate) fn check_display_override(
         &self,
         tree: &tree_sitter::Tree,

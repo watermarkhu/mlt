@@ -8,6 +8,16 @@ impl GoodPracticesEngine {
     /// Flags assignments that modify a structure (`s.field = ...` or
     /// `s = struct(...)`) where the modified structure is never subsequently
     /// read. File-level because it needs whole-scope use information.
+    ///
+    /// # Limitations (heuristic)
+    ///
+    /// "Apparently a structure" is inferred from two syntactic signals only:
+    /// a `field_expression` on the left-hand side, or a `struct(...)` call on
+    /// the right-hand side. A variable that receives a structure through any
+    /// other expression (e.g. `s = someStruct()` or a passed-in argument) is
+    /// not recognized. Usage is resolved per enclosing scope via the symbol
+    /// table, so a use in a nested function/lambda is not counted and may
+    /// produce a false positive.
     pub(crate) fn check_strnu(&self, tree: &tree_sitter::Tree, source: &str) -> Vec<Diagnostic> {
         if !self.is_check_enabled("STRNU") {
             return Vec::new();

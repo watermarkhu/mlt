@@ -984,6 +984,13 @@ impl LanguageSpecEngine {
     ///
     /// A `global`/`persistent` declaration alone does not fire; only an
     /// assignment to such a variable inside the spmd body does.
+    ///
+    /// # Limitations
+    ///
+    /// Global/persistent resolution consults the enclosing scope chain in the
+    /// symbol table, so an assignment to a name that is declared
+    /// `global`/`persistent` in an OUTER scope is flagged, but a name that is
+    /// only declared in a nested scope is not attributed to the spmd body.
     pub(crate) fn check_spmd_gp_assignment(
         &self,
         root: tree_sitter::Node,

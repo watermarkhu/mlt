@@ -408,6 +408,13 @@ impl BugsEngine {
     /// When a line that begins with a unary `+`/`-` follows a completed
     /// statement, tree-sitter parses it as a separate `unary_operator` at
     /// statement level — the signature of a split, incomplete statement.
+    ///
+    /// # Limitations (heuristic)
+    ///
+    /// This is a syntactic heuristic, not a faithful reproduction of Code
+    /// Analyzer's line-break analysis. It only detects the specific
+    /// statement-level unary `+`/`-` signature; other split-statement shapes
+    /// are not caught.
     fn check_line_break_termination(&self, root: Node, source: &str) -> Vec<Diagnostic> {
         let mut diagnostics = Vec::new();
         Self::walk_line_break_termination(root, source, &mut diagnostics);
@@ -503,6 +510,15 @@ impl BugsEngine {
 
     /// RHSFN: an assignment whose left-hand side is a multiple-output
     /// expression but whose right-hand side cannot return multiple values.
+    ///
+    /// # Limitations (grammar)
+    ///
+    /// Only a right-hand side that is NOT a `function_call` is flagged. The
+    /// tree-sitter MATLAB grammar uses `function_call` for both actual function
+    /// calls and array/cell indexing, so `[a, b] = f(...)` (a scalar-returning
+    /// `f`) cannot be distinguished from `[a, b] = f(i)` (an index into an
+    /// array `f`). As a result this check misses multi-output assignments whose
+    /// RHS is a genuinely scalar-returning function call.
     fn check_multioutput_assignment(&self, root: Node) -> Vec<Diagnostic> {
         let mut diagnostics = Vec::new();
         Self::walk_multioutput_assignment(root, &mut diagnostics);
@@ -542,6 +558,15 @@ impl BugsEngine {
 
     /// VARARG: `varargout` used in a function without being initialized to a
     /// cell array.
+    ///
+    /// # Limitations (heuristic)
+    ///
+    /// "Initialized to a CELL" is recognized only from a literal `cell`
+    /// literal (`varargout = {}`) or a `cell(...)` call. Initialization via a
+    /// variable, a helper, or any other cell-producing expression is treated
+    /// as uninitialized and flagged. Nested function definitions are skipped,
+    /// so `varargout` used only inside a nested function is not attributed to
+    /// the enclosing function.
     fn check_vararg_init(&self, root: Node, source: &str) -> Vec<Diagnostic> {
         let mut diagnostics = Vec::new();
         Self::walk_vararg_init(root, source, &mut diagnostics);
