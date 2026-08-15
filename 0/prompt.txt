@@ -1,0 +1,46 @@
+You are implementing the `%#ok<RULE>` inline suppression feature in the `mlt` Rust linter (repo: /home/watermarkhu/repositories/mlt). Work ONLY in `crates/mlt_core/` and `crates/mlt_cli/`. Do NOT touch `crates/mlt_rules/` (other agents are working there concurrently — do not edit that crate at all).
+
+## Goal
+
+Mirror MATLAB's inline suppression directive. A comment of the form `%#ok<RULE_ID>` on a line suppresses diagnostics for that rule on that line. Support forms:
+- `%#ok<NOSEMI>` — suppress one rule
+- `%#ok<*NOSEMI*>` — same (with optional surrounding `*`)
+- `%#ok<*all*>` or `%#ok<*>...` — suppress ALL rules on the line
+- `%#ok<NOSEMI,AGROW>` — comma-separated multiple rules
+- `%#ok<*NOSEMI*>` — wildcard-matched prefix/suffix (match if the directive rule-id matches by prefix/suffix with `*`)
+
+The directive applies only to the line it appears on (MATLAB semantics). Match against the diagnostic's `rule_id` (the specific check ID, e.g. "NOSEMI", not the engine meta-ID like "NOSEMI" engine or "SYNTAX_ERRORS_ENGINE").
+
+## Current code to study
+
+- `crates/mlt_core/src/linter.rs` — `Linter::lint(source, file_path)` at ~line 63. Flow: parse → `traverse()` (node checks) → file-level checks → stamp severity → sort → return. Add suppression as a post-processing filter: after diagnostics are collected and sorted (or before sort — pick a clean point), scan `source` for suppression directives, build a map of line → allowed-rule-IDs (or "all"), and filter out diagnostics whose `line` is suppressed and whose `rule_id` matches.
+- `crates/mlt_core/src/config.rs` — `Config` struct (fields `exclude`, `rules`, `categories`). Add an opt-in config flag `inline_suppression: bool` (default **true**) under `[lint]`. `LintSection` already has `exclude`, `rules`, `categories`. Add `#[serde(default = "default_true")] pub inline_suppression: bool;` to both `LintSection` (raw) and propagate to `Config` in `from_config_file`. (Check how `exclude` flows from LintSection to Config and mirror it.)
+- `crates/mlt_core/src/diagnostic.rs` — `Diagnostic` struct (has `rule_id`, `line`, etc.).
+- `crates/mlt_cli/src/main.rs` — CLI. No config flags needed for this, but if there's an existing config file validation that would reject unknown keys, make sure `inline_suppression` is accepted. Check how config is loaded and passed to `Linter`. The `Linter` needs access to the suppression flag: either store it on `Linter` (set via constructor/new) or pass source+config to `lint`. Prefer storing on `Linter` if `Linter::new` takes config; otherwise add a field and set it. Look at how `Linter::new` is called in main.rs and in `test_util`/tests.
+
+## Implementation
+
+1. **Parsing directives**: a pure function in `linter.rs` (or a new `crates/mlt_core/src/suppression.rs`) that scans the source line-by-line. For each line, find `%#ok<...>` occurrences. Parse the contents between `<` and `>` (may contain `*`). Build a `HashMap<usize /*line*/, Vec<String> /*rule ids*/>` plus a `HashSet<usize>` for lines with `*all*`. A rule id in the directive is treated as a pattern if it contains `*`: `*X*` matches any id containing X; `X*` matches ids starting with X; `*X` matches ids ending with X. (Implement simple glob: split on `*` and check prefix/suffix/contains.)
+2. **Filtering**: in `lint()`, after collecting diagnostics, if `self.inline_suppression` is true, filter `diagnostics` removing those whose line is in the all-suppress set, or whose `rule_id` matches any directive on that line.
+3. **Config**: add `inline_suppression` flag (default true) to `Config` and `LintSection`; thread through to `Linter`. If threading through `Linter::new` is complex, a simpler approach: add a public field/setter on `Linter` and have `main.rs` set it after constructing from config; ensure unit tests in `mlt_core` construct `Linter` with the flag set as needed.
+
+## Tests
+
+- In `crates/mlt_core` (the config tests live in `config.rs`; linter tests may exist in `linter.rs` or `tests/`): add tests for
+  - suppression of a single rule id on a line
+  - `*all*` suppresses everything on that line
+  - comma-separated multiple ids
+  - `*wildcard*` prefix/suffix matching
+  - non-matching rule on same line NOT suppressed
+  - `inline_suppression = false` in config disables the feature
+  - directive on a different line does not suppress the target line
+  - Test the suppression function directly (pure function) AND an end-to-end `Linter::lint` test. For the end-to-end test you need at least one rule to fire — the `test_util`/existing linter tests in mlt_core may have a minimal rule; check `linter.rs` tests (there's a `#[cfg(test)]` harness at ~line 225 with a stub rule). Reuse that.
+
+## Verify (from repo root /home/watermarkhu/repositories/mlt)
+- `cargo build`
+- `cargo test -p mlt_core` — all pass (new + existing)
+- `cargo clippy --all-targets` — ZERO warnings (this will also compile mlt_rules; if mlt_rules has in-progress changes from another agent that fail to compile, that's OK to report — focus on `mlt_core` being clean. But try to keep the workspace compiling; if mlt_rules breaks due to concurrent edits, note it and ensure YOUR crate is clean.)
+- If the workspace is left in a non-compiling state because of concurrent mlt_rules edits, still run `cargo clippy -p mlt_core` and `cargo test -p mlt_core`.
+
+## Return
+Files created/modified, how the directive parsing + filtering works, config wiring, tests added, final build/test/clippy results for mlt_core. Do NOT commit.
