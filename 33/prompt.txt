@@ -1,0 +1,24 @@
+Group: GOODPRAC G4 — Function-call conventions (10: GTARG, LTARG, VTFIN, CTPCT, FXSET, FXUP, SIMPT, TLEV, UNONC, MIPC1)
+Module: crates/mlt_rules/src/good_practices.rs
+
+You are the Reviewer in mlt's rule pipeline. Review the GOODPRAC G4 plan.
+
+READ the plan at /tmp/opencode/plans/GOODPRAC_G4.md and the message list at /tmp/opencode/plans/GP_messages.txt first.
+
+Then verify against the codebase:
+- Read crates/mlt_rules/src/good_practices.rs (engine structure, TARGET_NODES includes for_statement, function_call; existing FNDEF/FVAL checks).
+- Run the astprobe (cd /tmp/opencode/astprobe && cargo run) on `for i=1:10 i=5; end`, `import foo.bar`, `onCleanup(@f)`, `computer('arch')`, `fprintf('%d %d', x)` samples.
+
+Key adjudications:
+1. GTARG/LTARG need function arity. Is there any reliable arity source (FileMeta for user functions)? If not, should they be deferred or made conservative? Recommend.
+2. FXSET — loop index assigned in its own loop. Feasible via for_statement iterator var + body assignment scan?
+3. SIMPT — import not first statement. Feasible?
+4. TLEV — inefficient function not top-level. Feasible?
+5. UNONC — onCleanup result not assigned. Feasible?
+6. CTPCT — format/arg count mismatch. Feasible (parse format string placeholders)?
+7. Are MUST/MUST NOT examples right? file/step/test requirements complete?
+
+Return exactly:
+- `VERDICT: APPROVED` or `VERDICT: CHANGES REQUIRED`
+- A short list of required corrections
+- The corrected, complete implementation plan (repeat the whole plan with fixes) — self-contained, since the Implementer only sees your message.
