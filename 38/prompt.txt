@@ -1,0 +1,23 @@
+Group: LANGSPEC C4 — Other language spec (16: CTOINE, CTORO, ERTXT, MHERIT, NCHKOS, SPBFN, SPBRK, SPDEC, SPDEC3, SPEVC, SPLD, SPNF, SPSV, SPWHOS, USESWNS, WTXT)
+Module: crates/mlt_rules/src/language_spec.rs
+
+You are the Reviewer in mlt's rule pipeline. Review the LANGSPEC C4 plan.
+
+READ the plan at /tmp/opencode/plans/LANGSPEC_C4.md first.
+
+Then verify against the codebase:
+- Read crates/mlt_rules/src/language_spec.rs (especially check_dfs with LoopContext::Spmd, and existing spmd checks SPNST/SPRET/SPGP/SPBRK).
+- Run the astprobe (cd /tmp/opencode/astprobe && cargo run) to confirm the spmd AST (probe sample 3: spmd_statement) and how error/warning function_calls parse.
+
+Key adjudications:
+1. The spmd transparency checks (SPEVC, SPLD, SPSV, SPWHOS, SPBFN, SPNF) — confirm the LoopContext::Spmd dispatch can handle these in the existing check_dfs.
+2. ERTXT/WTXT: the plan says fire when error/warning has only an ID without a message. Adjudicate the correct MATLAB semantics (error('ID') vs error('ID:msg') vs error('msg')) — what's the reliable detection?
+3. MHERIT: which built-in classes does MATLAB disallow subclassing? If uncertain, is deferring acceptable?
+4. SPDEC/SPDEC3: probe the `spmd (n)`/`spmd (m,n)` syntax.
+5. USESWNS overlaps with Unset Variables engine — adjudicate the distinction.
+6. Are MUST/MUST NOT cases right? file/step/test requirements complete?
+
+Return exactly:
+- `VERDICT: APPROVED` or `VERDICT: CHANGES REQUIRED`
+- A short list of required corrections (or confirmations if approved)
+- The corrected, complete implementation plan (repeat the whole plan with fixes) — self-contained, since the Implementer only sees your message.
