@@ -1,0 +1,36 @@
+{
+  "cli_version": "0.10.0",
+  "checkpoint_id": "01M03PXF0X254F81JVZQQMGAF0",
+  "strategy": "manual-commit",
+  "branch": "feat",
+  "checkpoints_count": 1,
+  "files_touched": [
+    "crates/mlt_rules/src/bugs/check_operator_precedence.rs",
+    "crates/mlt_rules/src/bugs/check_size_comparison.rs",
+    "crates/mlt_rules/src/bugs/mod.rs",
+    "crates/mlt_rules/src/good_practices/check_display_override.rs",
+    "crates/mlt_rules/src/good_practices/check_eval.rs",
+    "crates/mlt_rules/src/good_practices/check_strnu.rs",
+    "crates/mlt_rules/src/language_spec/mod.rs",
+    "crates/mlt_rules/src/unused/check_manu.rs",
+    "crates/mlt_rules/src/unused/check_nused.rs",
+    "crates/mlt_rules/src/unused/check_puse.rs",
+    "crates/mlt_rules/src/unused/check_setnu.rs"
+  ],
+  "sessions": [
+    {
+      "metadata": "/0/metadata.json",
+      "transcript": "/0/full.jsonl",
+      "compact_transcript": "/0/transcript.jsonl",
+      "content_hash": "/0/content_hash.txt",
+      "prompt": "/0/prompt.txt"
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 80749,
+    "cache_creation_tokens": 0,
+    "cache_read_tokens": 11692800,
+    "output_tokens": 5767,
+    "api_call_count": 25
+  }
+}
