@@ -1,30 +1,70 @@
-//! # UNUSED_ENGINE: Unused Constructions Detection Engine
+//! # UNUSED_ENGINE: Unused Constructions
 //!
-//! This module implements a file-level rule engine that detects unused variables,
-//! functions, and dead code in MATLAB source files. It covers 17 distinct check IDs
-//! that correspond to MATLAB Code Analyzer's "Unused Constructions" category.
+//! ```mlt
+//! id = "UNUSED_ENGINE"
+//! title = "Unused Constructions"
+//! category = "unused-constructions"
+//! severity = "warning"
+//! fix = false
+//! icon = "lucide/trash-2"
+//! slug = "unused"
+//! ```
 //!
-//! ## Checks Implemented
+//! ## Rule
 //!
-//! | Check ID | Severity | Description |
-//! |----------|----------|-------------|
-//! | NASGU    | Warning  | Variable is assigned but never used |
-//! | NUSED    | Warning  | Variable is defined (input arg) but never used |
-//! | NOEFF    | Warning  | Statement has no effect (expression result discarded) |
-//! | EQEFF    | Warning  | Comparison has no effect (result not used) |
-//! | ASGLU    | Warning  | Assignment to a variable that is immediately overwritten |
-//! | SETNU    | Warning  | Output of function assigned but never used |
-//! | PUSE     | Warning  | Persistent/global variable set but not used |
-//! | PREALL   | Warning  | Variable preallocated but unused |
-//! | INUSA    | Warning  | Input argument not used in function |
-//! | INUSD    | Warning  | Input argument defined but could be removed |
-//! | VANUS    | Info     | Value assigned to ans is unused |
-//! | DEFNU    | Warning  | Local function defined but never called |
-//! | UNRCH    | Warning  | Unreachable code after return/break/continue |
-//! | MANU     | Warning  | Method defined but never called |
-//! | VUNUS    | Warning  | Variable assigned in all branches but unused after |
-//! | MSNU     | Warning  | Struct field set but never read |
-//! | MSNE     | Info     | Struct field doesn't exist (assigned but typo) |
+//! Detects unused variables, functions, methods, and dead code in MATLAB
+//! files. A single file-level engine (`UnusedEngine`) builds a symbol table
+//! and runs unreachability analysis, then cross-references every definition
+//! against its usages to identify dead code. It covers 17 checks from
+//! MATLAB's "Unused Constructions" category; each diagnostic carries the
+//! specific check ID (e.g. `NASGU`, `UNRCH`, `MSNU`).
+//!
+//! ## Check IDs
+//!
+//! | Check ID | Severity | Fix | Description                                                       |
+//! |----------|----------|-----|-------------------------------------------------------------------|
+//! | NASGU    | warning  | no  | Variable is assigned but never used                               |
+//! | NUSED    | warning  | no  | Variable is defined (input arg) but never used                    |
+//! | NOEFF    | warning  | no  | Statement has no effect (expression result discarded)             |
+//! | EQEFF    | warning  | no  | Comparison has no effect (result not used)                        |
+//! | ASGLU    | warning  | no  | Assignment to a variable that is immediately overwritten          |
+//! | SETNU    | warning  | no  | Output of function assigned but never used                        |
+//! | PUSE     | warning  | no  | Persistent/global variable set but not used                       |
+//! | PREALL   | warning  | no  | Variable preallocated but unused                                  |
+//! | INUSA    | warning  | no  | Input argument not used in function                               |
+//! | INUSD    | warning  | no  | Input argument defined but could be removed                       |
+//! | VANUS    | info     | no  | Value assigned to `ans` is unused                                 |
+//! | DEFNU    | warning  | no  | Local function defined but never called                           |
+//! | UNRCH    | warning  | no  | Unreachable code after return/break/continue                      |
+//! | MANU     | warning  | no  | Method defined but never called                                   |
+//! | VUNUS    | warning  | no  | Variable assigned in all branches but unused after                |
+//! | MSNU     | warning  | no  | Struct field set but never read                                   |
+//! | MSNE     | info     | no  | Struct field doesn't exist (assigned but possibly a typo)         |
+//!
+//! ## Examples
+//!
+//! ### Incorrect
+//!
+//! ```matlab
+//! function f()
+//!     temp = compute();   % NASGU: assigned but never used
+//!     x = 1;
+//!     return;
+//!     y = x;              % UNRCH: unreachable after return
+//!     s.field = 1;        % MSNU: set but never read
+//! end
+//! ```
+//!
+//! ### Correct
+//!
+//! ```matlab
+//! function f()
+//!     x = compute();
+//!     disp(x);
+//!     s.field = x;
+//!     disp(s.field);
+//! end
+//! ```
 //!
 //! ## Configuration
 //!

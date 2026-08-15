@@ -1,27 +1,59 @@
-//! # Generic Naming Engine
+//! # NAMING_ENGINE: Naming Checks
 //!
-//! This module implements ALL 81 naming convention checks from MATLAB's Code Analyzer
-//! as a single file-level rule engine. The 81 checks are the Cartesian product of:
+//! ```mlt
+//! id = "NAMING_ENGINE"
+//! title = "Naming Checks"
+//! category = "naming"
+//! severity = "info"
+//! fix = false
+//! icon = "lucide/type"
+//! slug = "naming"
+//! generated = "naming"
+//! ```
 //!
-//! - **9 entity types**: class, function, localFunction, method, nestedFunction,
+//! ## Rule
+//!
+//! A single generic engine that implements all 81 naming-convention checks
+//! from MATLAB's Code Analyzer. The check IDs are the Cartesian product of
+//! 9 entity types × 9 check types:
+//!
+//! - **Entities**: class, function, localFunction, method, nestedFunction,
 //!   property, event, enumeration, variable
-//! - **9 check types**: maxLength, minLength, regularExpression, requiredPrefix,
-//!   disallowedPrefix, disallowedPhrase, requiredSuffix, disallowedSuffix, casing
+//! - **Check types**: maxLength, minLength, regularExpression, requiredPrefix,
+//!   disallowedPrefix, disallowedPhrase, requiredSuffix, disallowedSuffix,
+//!   casing
 //!
-//! Rule IDs follow the pattern `naming.<entity>.<checkType>`.
+//! Rule IDs follow the pattern `naming.<entity>.<checkType>` (e.g.
+//! `naming.class.casing`). The `NamingEngine` registers once with inventory
+//! as `"NAMING_ENGINE"` and uses `has_file_check() = true`: it walks the tree
+//! once to extract all named entities, then applies every enabled check to
+//! each matching entity, emitting diagnostics with the specific rule ID.
 //!
-//! ## Architecture
+//! Only `maxLength` (default 63, MATLAB's `namelengthmax`) and `minLength`
+//! (default 2) produce diagnostics without user configuration; the other
+//! seven check types require configuration.
 //!
-//! A single `NamingEngine` rule instance:
-//! - Registers once with inventory as `"NAMING_ENGINE"`
-//! - Uses `has_file_check() = true` for full-tree traversal
-//! - Walks the tree once to extract all named entities
-//! - Applies all enabled naming checks to each entity
-//! - Emits diagnostics with the specific rule ID (e.g., `"naming.class.casing"`)
+//! ## Examples
+//!
+//! ### Incorrect
+//!
+//! ```matlab
+//! myvar1 = 1;       % naming.variable.casing — style configured, e.g. camelCase
+//! classdef myClass  % naming.class.casing — style configured, e.g. PascalCase
+//! end
+//! ```
+//!
+//! ### Correct
+//!
+//! ```matlab
+//! myVar1 = 1;
+//! classdef MyClass
+//! end
+//! ```
 //!
 //! ## Configuration
 //!
-//! Each of the 81 checks can be configured individually:
+//! Each of the 81 checks can be configured individually through its rule ID:
 //!
 //! ```toml
 //! [lint.rules."naming.class.casing"]

@@ -1,20 +1,66 @@
-//! # Unset Variables Engine
+//! # UNSET_VARIABLES_ENGINE: Unset Variables
 //!
-//! This module implements file-level checks for variables that might not be
-//! defined before use. It wraps 6 related MATLAB Code Analyzer checks into a
-//! single rule engine that leverages the symbol table and definite-assignment
-//! analysis.
+//! ```mlt
+//! id = "UNSET_VARIABLES_ENGINE"
+//! title = "Unset Variables"
+//! category = "unset-variables"
+//! severity = "warning"
+//! fix = false
+//! icon = "lucide/alert-triangle"
+//! slug = "unset-variables"
+//! ```
 //!
-//! ## Checks
+//! ## Rule
 //!
-//! | ID | Description |
-//! |----|-------------|
-//! | NODEF | Variable might not be defined before use |
-//! | USENS | Variable used but might not be set in all code paths |
-//! | PSET | Variable set in one branch but not others |
-//! | SUSENS | Script variable used before set |
-//! | SVNODEF | Variable in script might not be defined |
-//! | STOUT | Output variable might not be assigned |
+//! Detects variables that might not be defined before use. A single file-level
+//! engine (`UnsetVariablesEngine`) builds a symbol table and runs
+//! definite-assignment analysis to find variables used on code paths where
+//! they may never have been assigned. It covers 6 checks from MATLAB's "Unset
+//! Variables" category; each diagnostic carries the specific check ID (e.g.
+//! `NODEF`, `PSET`, `STOUT`).
+//!
+//! ## Check IDs
+//!
+//! | Check ID | Severity | Fix | Description                                          |
+//! |----------|----------|-----|------------------------------------------------------|
+//! | NODEF    | warning  | no  | Variable might not be defined before use             |
+//! | USENS    | warning  | no  | Variable used but might not be set in all code paths |
+//! | PSET     | warning  | no  | Variable set in one branch but not others            |
+//! | SUSENS   | warning  | no  | Script variable used before set                      |
+//! | SVNODEF  | warning  | no  | Variable in script might not be defined              |
+//! | STOUT    | warning  | no  | Output variable might not be assigned                |
+//!
+//! ## Examples
+//!
+//! ### Incorrect
+//!
+//! ```matlab
+//! function f()
+//!     disp(x);    % NODEF: x may never be defined before use
+//! end
+//!
+//! function y = g()
+//!     if flag
+//!         y = 1;
+//!     end         % STOUT: output not assigned on all paths
+//! end
+//! ```
+//!
+//! ### Correct
+//!
+//! ```matlab
+//! function f()
+//!     x = 0;
+//!     disp(x);
+//! end
+//!
+//! function y = g()
+//!     y = 0;
+//!     if flag
+//!         y = 1;
+//!     end
+//! end
+//! ```
 //!
 //! ## Configuration
 //!

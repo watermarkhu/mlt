@@ -1,238 +1,254 @@
-//! # Language Specification Errors Engine
+//! # LANGUAGE_SPEC_ENGINE: Language Specification Errors
 //!
-//! This module implements language specification error checks from MATLAB's Code Analyzer.
-//! All checks are handled by a single file-level engine (`LanguageSpecEngine`) that performs
-//! a full DFS traversal maintaining context stacks for parfor/spmd detection.
+//! ```mlt
+//! id = "LANGUAGE_SPEC_ENGINE"
+//! title = "Language Specification Errors"
+//! category = "language-specification"
+//! severity = "error"
+//! fix = false
+//! icon = "lucide/book-marked"
+//! slug = "language-spec"
+//! ```
+//!
+//! ## Rule
+//!
+//! Enforces MATLAB language-specification constraints from the Code Analyzer.
+//! All 165 checks share a single file-level engine (`LanguageSpecEngine`) that
+//! performs a full DFS traversal with context stacks for parfor/spmd/loop
+//! detection, then runs class, arguments-block, global/persistent, and
+//! script-level checks over extracted file metadata. Each diagnostic carries
+//! the specific check ID (e.g. `PFPF`, `FVAPN`, `MCFIL`).
+//!
+//! The checks are grouped into families:
+//!
+//! - **PF\*** — parfor restrictions, banned functions, and sliced-variable /
+//!   reduction classification.
+//! - **SP\*** — spmd block restrictions (`SPNST`, `SPRET`, `SPGP`, and the
+//!   transparency group `SPDEC`, `SPEVC`, `SPLD`, `SPNF`, `SPSV`, `SPWHOS`,
+//!   `SPBFN`).
+//! - **AT\*** — class, events, property, and method attribute validation.
+//! - **CLS\* / NOPRV** — class-file structure checks.
+//! - **VTP\*** — property validation function checks.
+//! - **MC\*** — class/OOP rules: naming, set/get signatures, constructor and
+//!   superclass calls, Constant/WeakHandle properties.
+//! - **FV\*** — `arguments` block validation (plus `TINVALDIM`,
+//!   `TTOOFEWDIMS`).
+//! - **Miscellaneous** — `FCONV`, `FCONF`, `GPFST`, `GPNES`, `NPERS`,
+//!   `ROWLN`, `FCNANS`, `CLANS`, `BRKFOR`, `CONTFOR`, `IDXCOLND`, `ERTXT`,
+//!   `WTXT`, `MHERIT`, `NCHKOS`, `CTOINE`, `CTORO`, `USESWNS`.
 //!
 //! ## Check IDs
 //!
-//! ### Parfor restrictions (PF* checks)
+//! | Check ID    | Severity | Fix | Description                                                          |
+//! |-------------|----------|-----|----------------------------------------------------------------------|
+//! | PFPF        | error    | no  | Nested parfor inside parfor                                          |
+//! | PFSPMD      | error    | no  | SPMD inside parfor                                                   |
+//! | PFBRK       | error    | no  | break inside parfor                                                  |
+//! | PFRTN       | error    | no  | return inside parfor                                                 |
+//! | PFGLOB      | error    | no  | global declaration inside parfor                                     |
+//! | PFPERS      | error    | no  | persistent declaration inside parfor                                 |
+//! | PFFORA      | error    | no  | Assignment to for-loop variable inside parfor                        |
+//! | PFXST       | error    | no  | Assignment to parfor loop variable                                   |
+//! | PFNF        | error    | no  | Nested function call inside parfor                                   |
+//! | FPFORP      | error    | no  | fprintf writing to a file opened read-only                           |
+//! | FWFORP      | error    | no  | fwrite writing to a file opened read-only                            |
+//! | PFANON      | error    | no  | Sliced output variable used in an anonymous function                 |
+//! | PFANSLP     | error    | no  | 'ans' as parfor loop variable                                        |
+//! | PFANSNS     | error    | no  | 'ans' as for loop variable inside parfor                             |
+//! | PFCEL       | error    | no  | Function does not support cell arrays                                |
+//! | PFCTXT      | error    | no  | Sliced variable indexed outside its defining for loop                |
+//! | PFEVC       | error    | no  | EVALIN/ASSIGNIN('caller') invalid inside parfor                      |
+//! | PFFRNG      | error    | no  | Nested for range must be positive constants                          |
+//! | PFFSUB      | error    | no  | Indexing a nested for loop variable                                  |
+//! | PFINCR      | error    | no  | Different reduction functions on the same variable                   |
+//! | PFINPT      | error    | no  | 'inputname' not supported in parfor                                  |
+//! | PFLD        | error    | no  | 'load' must assign to an output in parfor                            |
+//! | PFMLTI      | error    | no  | Nested for loop variable assigned in the body                        |
+//! | PFNACK      | error    | no  | narginchk/nargoutchk cannot be used in parfor                        |
+//! | PFNAIO      | error    | no  | nargin/nargout require a function argument                           |
+//! | PFNAR       | error    | no  | Subtracting a reduction variable from expressions                    |
+//! | PFRFH       | error    | no  | Reduction function must be a name or broadcast variable              |
+//! | PFRNG       | error    | no  | Parfor range must be increasing consecutive integers                 |
+//! | PFSLO       | error    | no  | Variable indexed with parfor var is not a sliced output              |
+//! | PFSLRD      | error    | no  | Sliced indexing combined with non-indexed reads                      |
+//! | PFSLW       | error    | no  | Sliced accesses must all use the same subscripts                     |
+//! | PFSV        | error    | no  | SAVE requires '-fromstruct' in parfor                                |
+//! | PFUNK       | error    | no  | Parfor cannot run due to the way a variable is used                  |
+//! | PFUTMP      | error    | no  | Temporary variable must be set before it is used                     |
+//! | PFUTVR      | error    | no  | Variable intended as reduction but uninitialized                     |
+//! | PFVARS      | error    | no  | Parfor loop contains too many variables                              |
+//! | PFVSUB      | error    | no  | Indexing the parfor loop variable                                    |
+//! | PFANSRE     | error    | no  | 'ans' is not supported as a reduction variable                       |
+//! | PFANSSL     | error    | no  | 'ans' is not supported as a sliced variable                          |
+//! | PFDF        | error    | no  | FOR with DRANGE becomes a conventional FOR inside a PARFOR           |
+//! | PFPIE       | error    | no  | Valid indices for a sliced variable are restricted                   |
+//! | PFSAME      | error    | no  | Sliced variable indexed in different ways                            |
+//! | PFTIN       | error    | no  | Temporary variable must be set before it is used                     |
+//! | ATUNK       | error    | no  | Unknown attribute name                                               |
+//! | ATLAB       | error    | no  | 'Input'/'Output' attribute must not be valued or negated             |
+//! | ATNAS       | error    | no  | Meta-class attribute must be a meta-class or cell array              |
+//! | ATNPI       | error    | no  | Class access attribute has an unexpected value                       |
+//! | ATNPP       | error    | no  | Events access attribute has an unexpected value                      |
+//! | ATPPI       | error    | no  | Property access attribute has an unexpected value                    |
+//! | ATPPP       | error    | no  | Method access attribute has an unexpected value                      |
+//! | ATAS        | error    | no  | Meta-class attribute value is unexpected                             |
+//! | ATVIZE      | error    | no  | 'Visible' attribute is invalid for classes/events                    |
+//! | CLSAT       | error    | no  | Specify class attributes before the class name                       |
+//! | CLSUNK      | error    | no  | Class or superclass could not be found on the path                   |
+//! | NOPRV       | error    | no  | Class definition cannot be inside a private directory                |
+//! | VTPCON      | error    | no  | Validation functions must only use the property or literals          |
+//! | VTPEAL      | error    | no  | Specify at least one input argument for validator                    |
+//! | VTPIN       | error    | no  | Validation function must use the property as an input                |
+//! | SPNST       | error    | no  | parfor or spmd inside spmd                                           |
+//! | SPRET       | error    | no  | return/break/continue inside spmd                                    |
+//! | SPGP        | error    | no  | global/persistent inside spmd                                        |
+//! | MCFIL       | error    | no  | Class name and file name don't match                                 |
+//! | MCDIR       | error    | no  | Class name and @directory name don't match                           |
+//! | MCRED       | error    | no  | Property/event/enum name same as class name                          |
+//! | MCCBD       | error    | no  | Constructor not in class definition file                             |
+//! | MCS2I       | error    | no  | Setter must have exactly 2 inputs                                    |
+//! | MCS1O       | error    | no  | Setter must have at most 1 output                                    |
+//! | MCG1I       | error    | no  | Getter must have exactly 1 input                                     |
+//! | MCG1O       | error    | no  | Getter must have exactly 1 output                                    |
+//! | MCEB        | error    | no  | Events defined in non-handle class                                   |
+//! | MCANI       | error    | no  | Abstract property initialized                                        |
+//! | MCASC       | error    | no  | Abstract property in Sealed class                                    |
+//! | MCSGA       | error    | no  | Set/get method in methods block with attributes                      |
+//! | MCSGP       | error    | no  | Set/get method refers to invalid property                            |
+//! | MABSEAC     | error    | no  | Instance properties/methods illegal in Sealed+Abstract classes       |
+//! | MABSEAM     | error    | no  | A method cannot be both Abstract and Sealed                          |
+//! | MCAPP       | error    | no  | Private property cannot be Abstract                                  |
+//! | MCCBS       | error    | no  | Superclass constructor is not a declared superclass name             |
+//! | MCCBU       | error    | no  | Superclass constructor called after object use                       |
+//! | MCCMC       | error    | no  | Constructor for superclass can only be called once                   |
+//! | MCCSOP      | error    | no  | Unable to modify Constant property                                   |
+//! | MCGSA       | error    | no  | Set/get method tries to access an abstract property                  |
+//! | MCMIO       | error    | no  | Method has too many inputs or outputs                                |
+//! | MCMSP       | error    | no  | Private method cannot be Abstract                                    |
+//! | MCMTP       | error    | no  | TestParameterDefinition methods must be Static                       |
+//! | MCPIN       | error    | no  | Property initialized to instance of the class itself                 |
+//! | MCPSG       | error    | no  | Set or get method must be fully defined in the class file            |
+//! | MCSCC       | error    | no  | Superclass constructor call needs a matching subclass constructor name |
+//! | MCSCF       | error    | no  | Superclass constructor must be assigned to the first output          |
+//! | MCSCM       | error    | no  | Superclass method call needs a matching method name                  |
+//! | MCSCN       | error    | no  | Method tries to set a constant property                              |
+//! | MCSCO       | error    | no  | Superclass constructor must use the first output argument            |
+//! | MCSCT       | error    | no  | Superclass constructor call must not be conditionalized              |
+//! | MCSMO       | error    | no  | Multiple outputs from superclass initialization unsupported          |
+//! | MCSWA       | error    | no  | Sealed class cannot specify allowed subclasses                       |
+//! | MTAGS3      | error    | no  | Access attribute conflicts with SetAccess/GetAccess                  |
+//! | MTMAT       | error    | no  | Attribute can only be set once                                       |
+//! | MWKCL       | error    | no  | WeakHandle property must have a class validation                     |
+//! | MWKCT       | error    | no  | WeakHandle and Constant attributes conflict                          |
+//! | MWKREF      | error    | no  | WeakHandle and Dependent attributes conflict                         |
+//! | FVNST       | error    | no  | Arguments blocks in nested functions                                 |
+//! | FVAPN       | error    | no  | Move name=value name-value arguments to the end                      |
+//! | FVATF       | error    | no  | Attribute values in arguments blocks must be logical constants       |
+//! | FVBTN       | error    | no  | Use of this function is not supported in arguments blocks            |
+//! | FVDAN       | error    | no  | Same name as name-value structure and positional                     |
+//! | FVDAP       | error    | no  | Positional argument can only be declared once                        |
+//! | FVDNF       | error    | no  | Name-value argument can only be declared once                        |
+//! | FVDREP      | error    | no  | Multiple Repeating arguments blocks not supported                    |
+//! | FVIDV       | error    | no  | Validation/default on ignored arguments unsupported                  |
+//! | FVIOA       | error    | no  | Both 'Input' and 'Output' attributes on one block                    |
+//! | FVMCL       | error    | no  | Multiple name-value structures using .? syntax                       |
+//! | FVNDE       | error    | no  | Default values illegal for class-name name-value                     |
+//! | FVNIV       | error    | no  | Variable is not an input to the function                             |
+//! | FVNREP      | error    | no  | Name-value arguments in Repeating block unsupported                  |
+//! | FVNSC       | error    | no  | Calling nested functions in arguments blocks                         |
+//! | FVNVL       | error    | no  | Validation illegal for class-name name-value                         |
+//! | FVOBI       | error    | no  | Declare input blocks before output blocks                            |
+//! | FVOCON      | error    | no  | Output validation only uses arg or literals                          |
+//! | FVOND       | error    | no  | Name-value arguments in default values unsupported                   |
+//! | FVONV       | error    | no  | Name-value arguments without dotted name in validation               |
+//! | FVOOD       | error    | no  | Default value for output argument unsupported                        |
+//! | FVOOI       | error    | no  | Ignored arguments in output block unsupported                        |
+//! | FVOON       | error    | no  | Name-value argument as output unsupported                            |
+//! | FVORDI      | error    | no  | Ignored inputs after Repeating or name-value                         |
+//! | FVORDN      | error    | no  | Positional arguments before name-value arguments                     |
+//! | FVORDO      | error    | no  | Repeating outputs after required outputs                             |
+//! | FVORDP      | error    | no  | Positional order: required, optional, repeating                      |
+//! | FVORM       | error    | no  | Multiple repeating output arguments unsupported                      |
+//! | FVOVREP     | error    | no  | varargout only in Repeating output block                             |
+//! | FVREPD      | error    | no  | Defaults in Repeating block unsupported                              |
+//! | FVREPO      | error    | no  | Repeating input block with varargin has no other args                |
+//! | FVSOR       | error    | no  | Input block matches function line order                              |
+//! | FVSORO      | error    | no  | Output block matches function line order                             |
+//! | FVUBD       | error    | no  | Argument referenced before declared                                  |
+//! | FVVCON      | error    | no  | Input validation only uses prior positionals                         |
+//! | FVVIN       | error    | no  | Validation function must use the argument                            |
+//! | FVVREP      | error    | no  | varargin only inside repeating input block                           |
+//! | TINVALDIM   | error    | no  | Each dimension must be nonnegative integer or colon                  |
+//! | TTOOFEWDIMS | error    | no  | Specify at least two dimensions for size                             |
+//! | FCONV       | error    | no  | Variable name same as script name                                    |
+//! | FCONF       | error    | no  | Local function name same as file name                                |
+//! | GPFST       | error    | no  | Global/persistent must precede first use                             |
+//! | GPNES       | error    | no  | Global/persistent must be in outermost function                      |
+//! | NPERS       | error    | no  | Persistent in script                                                 |
+//! | ROWLN       | error    | no  | Matrix rows must be same length                                      |
+//! | FCNANS      | error    | no  | Function named 'ans'                                                 |
+//! | CLANS       | error    | no  | Class named 'ans'                                                    |
+//! | BRKFOR      | error    | no  | break outside loop                                                   |
+//! | CONTFOR     | error    | no  | continue outside loop                                                |
+//! | IDXCOLND    | error    | no  | END operator outside index expression                                |
+//! | CTOINE      | error    | no  | Use of constructed object as input to constructor is not supported   |
+//! | CTORO       | error    | no  | Class constructors must be declared with at least one output argument |
+//! | ERTXT       | error    | no  | Specify an error message with the message identifier                 |
+//! | MHERIT      | error    | no  | Deriving from a built-in MATLAB class is not supported               |
+//! | NCHKOS      | error    | no  | NARGINCHK does not return any values                                 |
+//! | SPBFN       | error    | no  | Non-transparent workspace access inside spmd                         |
+//! | SPDEC       | error    | no  | SPMD worker bounds must be nonnegative integers                      |
+//! | SPDEC3      | error    | no  | SPMD can only specify lower and upper worker bounds                  |
+//! | SPEVC       | error    | no  | EVALIN/ASSIGNIN('caller') invalid inside spmd                        |
+//! | SPLD        | error    | no  | Assign the output of LOAD in spmd blocks                             |
+//! | SPNF        | error    | no  | Nested function call inside spmd                                     |
+//! | SPSV        | error    | no  | SAVE requires '-fromstruct' inside spmd                              |
+//! | SPWHOS      | error    | no  | who/whos without '-file' invalid inside spmd                         |
+//! | USESWNS     | error    | no  | Variable must be explicitly defined before first use                 |
+//! | WTXT        | error    | no  | Specify a warning message with the message identifier                |
 //!
-//! | Check ID | Description                                      |
-//! |----------|--------------------------------------------------|
-//! | PFPF     | Nested parfor inside parfor                      |
-//! | PFSPMD   | SPMD inside parfor                               |
-//! | PFBRK    | break inside parfor                              |
-//! | PFRTN    | return inside parfor                             |
-//! | PFGLOB   | global declaration inside parfor                 |
-//! | PFPERS   | persistent declaration inside parfor             |
-//! | PFFORA   | Assignment to for-loop variable inside parfor    |
-//! | PFXST    | Assignment to parfor loop variable               |
-//! | PFNF     | Nested function call inside parfor               |
+//! ## Examples
 //!
-//! ### Parfor variable, slicing, and reduction checks
+//! ### Incorrect
 //!
-//! | Check ID | Description                                      |
-//! |----------|--------------------------------------------------|
-//! | FPFORP   | fprintf writing to a file opened read-only       |
-//! | FWFORP   | fwrite writing to a file opened read-only        |
-//! | PFANON   | Sliced output variable used in an anonymous function |
-//! | PFANSLP  | 'ans' as parfor loop variable                    |
-//! | PFANSNS  | 'ans' as for loop variable inside parfor         |
-//! | PFCEL    | Function does not support cell arrays            |
-//! | PFCTXT   | Sliced variable indexed outside its defining for loop |
-//! | PFEVC    | EVALIN/ASSIGNIN('caller') invalid inside parfor  |
-//! | PFFRNG   | Nested for range must be positive constants      |
-//! | PFFSUB   | Indexing a nested for loop variable              |
-//! | PFINCR   | Different reduction functions on the same variable |
-//! | PFINPT   | 'inputname' not supported in parfor              |
-//! | PFLD     | 'load' must assign to an output in parfor        |
-//! | PFMLTI   | Nested for loop variable assigned in the body    |
-//! | PFNACK   | narginchk/nargoutchk cannot be used in parfor    |
-//! | PFNAIO   | nargin/nargout require a function argument       |
-//! | PFNAR    | Subtracting a reduction variable from expressions |
-//! | PFRFH    | Reduction function must be a name or broadcast variable |
-//! | PFRNG    | Parfor range must be increasing consecutive integers |
-//! | PFSLO    | Variable indexed with parfor var is not a sliced output |
-//! | PFSLRD   | Sliced indexing combined with non-indexed reads  |
-//! | PFSLW    | Sliced accesses must all use the same subscripts |
-//! | PFSV     | SAVE requires '-fromstruct' in parfor            |
-//! | PFUNK    | Parfor cannot run due to the way a variable is used |
-//! | PFUTMP   | Temporary variable must be set before it is used |
-//! | PFUTVR   | Variable intended as reduction but uninitialized |
-//! | PFVARS   | Parfor loop contains too many variables          |
-//! | PFVSUB   | Indexing the parfor loop variable                |
+//! ```matlab
+//! parfor i = 1:10          % PFPF: nested parfor
+//!     parfor j = 1:10
+//!     end
+//!     break                % PFBRK: break inside parfor
+//! end
 //!
-//! ### Parfor additions (PF* checks)
+//! function y = f(a)
+//!     arguments (Input, Output)   % FVIOA
+//!         a (1,1) double = 1      % FVOOD: default on output
+//!     end
+//! end
+//! ```
 //!
-//! | Check ID | Description                                      |
-//! |----------|--------------------------------------------------|
-//! | PFANSRE  | 'ans' is not supported as a reduction variable   |
-//! | PFANSSL  | 'ans' is not supported as a sliced variable      |
-//! | PFDF     | FOR with DRANGE becomes a conventional FOR inside a PARFOR |
-//! | PFPIE    | Valid indices for a sliced variable are restricted |
-//! | PFSAME   | Sliced variable indexed in different ways        |
-//! | PFTIN    | Temporary variable must be set before it is used |
+//! ### Correct
 //!
-//! ### Class attribute checks (AT* checks)
+//! ```matlab
+//! parfor i = 1:10
+//!     x(i) = i;
+//! end
 //!
-//! | Check ID | Description                                      |
-//! |----------|--------------------------------------------------|
-//! | ATUNK    | Unknown attribute name                           |
-//! | ATLAB    | 'Input'/'Output' attribute must not be valued or negated |
-//! | ATNAS    | Meta-class attribute must be a meta-class or cell array |
-//! | ATNPI    | Class access attribute has an unexpected value   |
-//! | ATNPP    | Events access attribute has an unexpected value  |
-//! | ATPPI    | Property access attribute has an unexpected value |
-//! | ATPPP    | Method access attribute has an unexpected value  |
-//! | ATAS     | Meta-class attribute value is unexpected         |
-//! | ATVIZE   | 'Visible' attribute is invalid for classes/events |
-//!
-//! ### Class file checks (CLS* / NOPRV checks)
-//!
-//! | Check ID | Description                                      |
-//! |----------|--------------------------------------------------|
-//! | CLSAT    | Specify class attributes before the class name   |
-//! | CLSUNK   | Class or superclass could not be found on the path |
-//! | NOPRV    | Class definition cannot be inside a private directory |
-//!
-//! ### Property validation function checks (VTP* checks)
-//!
-//! | Check ID | Description                                      |
-//! |----------|--------------------------------------------------|
-//! | VTPCON   | Validation functions must only use the property or literals |
-//! | VTPEAL   | Specify at least one input argument for validator |
-//! | VTPIN    | Validation function must use the property as an input |
-//!
-//! ### SPMD restrictions (SP* checks)
-//!
-//! | Check ID | Description                                      |
-//! |----------|--------------------------------------------------|
-//! | SPNST    | parfor or spmd inside spmd                       |
-//! | SPRET    | return/break/continue inside spmd                |
-//! | SPGP     | global/persistent inside spmd                    |
-//!
-//! ### Class/OOP rules (MC* checks)
-//!
-//! | Check ID | Description                                      |
-//! |----------|--------------------------------------------------|
-//! | MCFIL    | Class name and file name don't match             |
-//! | MCDIR    | Class name and @directory name don't match       |
-//! | MCRED    | Property/event/enum name same as class name      |
-//! | MCCBD    | Constructor not in class definition file         |
-//! | MCS2I    | Setter must have exactly 2 inputs                |
-//! | MCS1O    | Setter must have at most 1 output                |
-//! | MCG1I    | Getter must have exactly 1 input                 |
-//! | MCG1O    | Getter must have exactly 1 output                |
-//! | MCEB     | Events defined in non-handle class               |
-//! | MCANI    | Abstract property initialized                    |
-//! | MCASC    | Abstract property in Sealed class                |
-//! | MCSGA    | Set/get method in methods block with attributes  |
-//! | MCSGP    | Set/get method refers to invalid property        |
-//! | MABSEAC  | Instance properties/methods illegal in Sealed+Abstract classes |
-//! | MABSEAM  | A method cannot be both Abstract and Sealed      |
-//! | MCAPP    | Private property cannot be Abstract              |
-//! | MCCBS    | Superclass constructor is not a declared superclass name |
-//! | MCCBU    | Superclass constructor called after object use   |
-//! | MCCMC    | Constructor for superclass can only be called once |
-//! | MCCSOP   | Unable to modify Constant property               |
-//! | MCGSA    | Set/get method tries to access an abstract property |
-//! | MCMIO    | Method has too many inputs or outputs            |
-//! | MCMSP    | Private method cannot be Abstract                |
-//! | MCMTP    | TestParameterDefinition methods must be Static   |
-//! | MCPIN    | Property initialized to instance of the class itself |
-//! | MCPSG    | Set or get method must be fully defined in the class file |
-//! | MCSCC    | Superclass constructor call needs a matching subclass constructor name |
-//! | MCSCF    | Superclass constructor must be assigned to the first output |
-//! | MCSCM    | Superclass method call needs a matching method name |
-//! | MCSCN    | Method tries to set a constant property         |
-//! | MCSCO    | Superclass constructor must use the first output argument |
-//! | MCSCT    | Superclass constructor call must not be conditionalized |
-//! | MCSMO    | Multiple outputs from superclass initialization unsupported |
-//! | MCSWA    | Sealed class cannot specify allowed subclasses  |
-//! | MTAGS3   | Access attribute conflicts with SetAccess/GetAccess |
-//! | MTMAT    | Attribute can only be set once                  |
-//! | MWKCL    | WeakHandle property must have a class validation |
-//! | MWKCT    | WeakHandle and Constant attributes conflict      |
-//! | MWKREF   | WeakHandle and Dependent attributes conflict     |
-//!
-//! ### Function validation (FV* checks)
-//!
-//! | Check ID | Description                                      |
-//! |----------|--------------------------------------------------|
-//! | FVNST    | Arguments blocks in nested functions             |
-//! | VTPOD    | Validation out of order (size, then class, then functions) |
-//! | FVAPN    | Move name=value name-value arguments to the end  |
-//! | FVATF    | Attribute values in arguments blocks must be logical constants |
-//! | FVBTN    | Use of this function is not supported in arguments blocks |
-//! | FVDAN    | Same name as name-value structure and positional |
-//! | FVDAP    | Positional argument can only be declared once    |
-//! | FVDNF    | Name-value argument can only be declared once    |
-//! | FVDREP   | Multiple Repeating arguments blocks not supported |
-//! | FVIDV    | Validation/default on ignored arguments unsupported |
-//! | FVIOA    | Both 'Input' and 'Output' attributes on one block |
-//! | FVMCL    | Multiple name-value structures using .? syntax   |
-//! | FVNDE    | Default values illegal for class-name name-value |
-//! | FVNIV    | Variable is not an input to the function        |
-//! | FVNREP   | Name-value arguments in Repeating block unsupported |
-//! | FVNSC    | Calling nested functions in arguments blocks     |
-//! | FVNVL    | Validation illegal for class-name name-value    |
-//! | FVOBI    | Declare input blocks before output blocks       |
-//! | FVOCON   | Output validation only uses arg or literals     |
-//! | FVOND    | Name-value arguments in default values unsupported |
-//! | FVONV    | Name-value arguments without dotted name in validation |
-//! | FVOOD    | Default value for output argument unsupported   |
-//! | FVOOI    | Ignored arguments in output block unsupported   |
-//! | FVOON    | Name-value argument as output unsupported       |
-//! | FVORDI   | Ignored inputs after Repeating or name-value    |
-//! | FVORDN   | Positional arguments before name-value arguments |
-//! | FVORDO   | Repeating outputs after required outputs        |
-//! | FVORDP   | Positional order: required, optional, repeating |
-//! | FVORM    | Multiple repeating output arguments unsupported |
-//! | FVOVREP  | varargout only in Repeating output block        |
-//! | FVREPD   | Defaults in Repeating block unsupported         |
-//! | FVREPO   | Repeating input block with varargin has no other args |
-//! | FVSOR    | Input block matches function line order         |
-//! | FVSORO   | Output block matches function line order        |
-//! | FVUBD    | Argument referenced before declared             |
-//! | FVVCON   | Input validation only uses prior positionals    |
-//! | FVVIN    | Validation function must use the argument       |
-//! | FVVREP   | varargin only inside repeating input block      |
-//! | TINVALDIM| Each dimension must be nonnegative integer or colon |
-//! | TTOOFEWDIMS | Specify at least two dimensions for size    |
-//!
-//! ### Other language spec checks
-//!
-//! | Check ID | Description                                      |
-//! |----------|--------------------------------------------------|
-//! | FCONV    | Variable name same as script name                |
-//! | FCONF    | Local function name same as file name            |
-//! | GPFST    | Global/persistent must precede first use         |
-//! | GPNES    | Global/persistent must be in outermost function  |
-//! | NPERS    | Persistent in script                             |
-//! | ROWLN    | Matrix rows must be same length                  |
-//! | FCNANS   | Function named 'ans'                             |
-//! | CLANS    | Class named 'ans'                                |
-//! | BRKFOR   | break outside loop                               |
-//! | CONTFOR  | continue outside loop                            |
-//! | IDXCOLND | END operator outside index expression            |
-//!
-//! ### SPMD transparency, message, and construction checks (C4 group)
-//!
-//! | Check ID | Description                                      |
-//! |----------|--------------------------------------------------|
-//! | CTOINE   | Use of constructed object as input to constructor is not supported |
-//! | CTORO    | Class constructors must be declared with at least one output argument |
-//! | ERTXT    | Specify an error message with the message identifier |
-//! | MHERIT   | Deriving from a built-in MATLAB class is not supported |
-//! | NCHKOS   | NARGINCHK does not return any values             |
-//! | SPBFN    | Non-transparent workspace access inside spmd     |
-//! | SPBRK    | break/continue not fully contained in spmd (subsumed by SPRET) |
-//! | SPDEC    | SPMD worker bounds must be nonnegative integers  |
-//! | SPDEC3   | SPMD can only specify lower and upper worker bounds |
-//! | SPEVC    | EVALIN/ASSIGNIN('caller') invalid inside spmd    |
-//! | SPLD     | Assign the output of LOAD in spmd blocks         |
-//! | SPNF     | Nested function call inside spmd                 |
-//! | SPSV     | SAVE requires '-fromstruct' inside spmd          |
-//! | SPWHOS   | who/whos without '-file' invalid inside spmd     |
-//! | USESWNS  | Variable must be explicitly defined before first use |
-//! | WTXT     | Specify a warning message with the message identifier |
+//! function y = f(a)
+//!     arguments (Input)
+//!         a (1,1) double
+//!     end
+//!     arguments (Output)
+//!         y (1,1) double
+//!     end
+//!     y = a;
+//! end
+//! ```
 //!
 //! ## Configuration
 //!
 //! ```toml
 //! [lint.rules.LANGUAGE_SPEC_ENGINE]
 //! severity = "error"
+//! disabled_checks = ["PFPF", "FVIOA"]
 //! ```
 use std::collections::{HashMap, HashSet};
 use std::ops::Range;

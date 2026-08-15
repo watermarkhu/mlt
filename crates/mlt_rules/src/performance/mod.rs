@@ -1,20 +1,91 @@
 //! # PERFORMANCE_ENGINE: Performance Improvement Checks
 //!
-//! A hybrid rule module implementing 41 performance-related MATLAB lint checks.
-//! Most checks operate at the node level (function calls, operators, commands),
-//! while AGROW, SAGROW, and PFBNS require file-level traversal to detect
-//! array growth patterns inside loops.
+//! ```mlt
+//! id = "PERFORMANCE_ENGINE"
+//! title = "Performance Improvement Checks"
+//! category = "performance"
+//! severity = "info"
+//! fix = true
+//! icon = "lucide/zap"
+//! slug = "performance"
+//! ```
 //!
-//! ## Architecture
+//! ## Rule
 //!
-//! A single `PerformanceEngine` struct handles all 41 checks. Node-level checks
-//! are dispatched by node kind (`function_call`, `command`, `binary_operator`,
-//! `boolean_operator`, `comparison_operator`). File-level checks traverse the
-//! full tree looking for growth patterns inside `for_statement`/`while_statement`.
+//! A hybrid rule module implementing 41 performance-related MATLAB lint
+//! checks from MATLAB's Code Analyzer. Most checks operate at the node level
+//! (function calls, operators, commands), while AGROW, SAGROW, and PFBNS
+//! require file-level traversal to detect array-growth patterns inside loops.
+//! Each diagnostic carries the specific check ID (e.g. `AGROW`, `MINV`).
+//!
+//! A single `PerformanceEngine` struct handles all 41 checks. Node-level
+//! checks are dispatched by node kind (`function_call`, `command`,
+//! `binary_operator`, `boolean_operator`, `comparison_operator`,
+//! `unary_operator`); file-level checks traverse the full tree looking for
+//! growth patterns inside `for_statement`/`while_statement`. The node-level
+//! `check_*` methods and their tests live in sibling `check_*.rs` modules;
+//! this module keeps the engine, the dispatch, the file-level growth walk
+//! (AGROW/SAGROW/PFBNS), and the shared free helpers.
+//!
+//! ## Check IDs
+//!
+//! | Check ID     | Severity | Fix | Description |
+//! |--------------|----------|-----|-------------|
+//! | AGROW        | info     | no  | Variable appears to grow inside a loop; consider preallocating |
+//! | SAGROW       | info     | no  | Struct field appears to grow inside a loop; consider preallocating |
+//! | AND2         | info     | yes | Use `&&` (short-circuit) instead of `&` for scalar logical operations |
+//! | OR2          | info     | yes | Use `\|\|` (short-circuit) instead of `\|` for scalar logical operations |
+//! | MINV         | info     | no  | Use `A\b` instead of `inv(A)*b` for better numerical stability and performance |
+//! | GFLD         | info     | no  | Use dynamic field names `s.(name)` instead of `getfield` |
+//! | SFLD         | info     | no  | Use dynamic field names `s.(name) = val` instead of `setfield` |
+//! | EXIST        | info     | no  | Use `isfile` or `isfolder` instead of `exist(..., 'file')` |
+//! | PFBNS        | info     | no  | Array initialized as empty then grown; preallocate for known size |
+//! | CCAT         | info     | no  | Use string concatenation or `join` instead of repeated `strcat` |
+//! | CCAT1        | info     | no  | Consider using `join` for cell array of character vector concatenation |
+//! | ISMT         | info     | no  | Use `isempty(x)` instead of `length(x)==0` |
+//! | ISCL         | info     | no  | Use `isscalar(x)` instead of `length(x)==1` |
+//! | ST2NM        | info     | yes | Use `str2double` instead of `str2num` for performance and security |
+//! | FLPST        | info     | yes | Use `flip` instead of `flipud`/`fliplr` on vectors |
+//! | MXFND        | info     | no  | Use `max(x,[],'all')` instead of nested `max(max(x))` |
+//! | EFIND        | info     | no  | Use logical indexing instead of `find` when used as a subscript |
+//! | UDIM         | info     | no  | Specify the dimension argument in `sum`/`max`/`min`/`prod`/`mean` |
+//! | FREAD        | info     | no  | Specify the precision argument in `fread` for performance |
+//! | N2UNI        | info     | no  | Consider using `unique` instead of `setdiff`+`union` patterns |
+//! | TNMLP        | info     | no  | Move `tic`/`toc` outside the loop body for accurate timing |
+//! | LAXES        | info     | no  | Cache the axes handle returned by `gca`/`gcf` instead of repeated calls |
+//! | MMTC         | info     | no  | Use `.^2` instead of `.*` with the same operand |
+//! | MRPBW        | info     | yes | Use `imbinarize` instead of deprecated `im2bw` |
+//! | SPRIX        | info     | no  | Avoid indexing sparse matrices with full logical arrays |
+//! | TRSRT        | info     | no  | Use `mink`/`maxk` instead of sorting then indexing |
+//! | GRIDD        | info     | no  | Consider using `meshgrid` or `ndgrid` for grid generation |
+//! | CLALL        | info     | no  | `clear all` also clears breakpoints; use `clearvars` instead |
+//! | CLCLS        | info     | no  | `clear classes` is a slow operation; avoid in production code |
+//! | CLFUNC       | info     | no  | `clear functions` is a slow operation; avoid in production code |
+//! | CLJAVA       | info     | no  | `clear java` is a slow operation; avoid in production code |
+//! | CLMEX        | info     | no  | `clear mex` clears all MEX files from memory; use specific names |
+//! | CLEAR0ARGS   | info     | no  | `clear` with no arguments clears all variables; use `clearvars` instead |
+//! | RGXP1        | info     | no  | Regex pattern can be simplified for performance |
+//! | RGXPI        | info     | no  | Use `regexpi` instead of `regexp` with the `ignorecase` option |
+//! | TRIM1        | info     | yes | Use `strtrim` instead of `deblank` for more thorough whitespace removal |
+//! | TRIM2        | info     | yes | Use `strip` instead of `strtrim` for more flexible whitespace removal |
+//! | STTOK        | info     | no  | Use `split` instead of `strtok` in a loop for better performance |
+//! | STNCI        | info     | no  | Use `strcmpi` instead of wrapping `strcmp` with `lower` |
+//! | STCCS        | info     | no  | Use `contains` instead of `~isempty(strfind(...))` |
+//! | FNDSB        | info     | yes | Use `contains` or `matches` instead of `findstr` |
+//!
+//! ## Fix
+//!
+//! Rewrites the flagged call or operator into its faster equivalent:
+//!
+//! - `&` → `&&` and `|` → `||` in boolean contexts (AND2, OR2).
+//! - `str2num` → `str2double` (ST2NM), `flipud`/`fliplr` → `flip` (FLPST).
+//! - `im2bw` → `imbinarize` (MRPBW), `deblank` → `strtrim` (TRIM1),
+//!   `strtrim` → `strip` (TRIM2), `findstr` → `contains` (FNDSB).
 //!
 //! ## Examples
 //!
-//! Bad:
+//! ### Incorrect
+//!
 //! ```matlab
 //! for i = 1:n
 //!     x = [x, val];          % AGROW
@@ -24,7 +95,8 @@
 //! exist('foo', 'file')       % EXIST
 //! ```
 //!
-//! Good:
+//! ### Correct
+//!
 //! ```matlab
 //! x = zeros(1, n);
 //! for i = 1:n
@@ -34,13 +106,21 @@
 //! A \ b
 //! isfile('foo')
 //! ```
-
-//! ## Layout
 //!
-//! The node-level `check_*` methods and their tests live in sibling
-//! `check_*.rs` modules in this directory. This module keeps the engine,
-//! the dispatch, the file-level growth walk (AGROW/SAGROW/PFBNS), and the
-//! shared free helpers.
+//! ### Fixed
+//!
+//! ```diff
+//! - if a & b
+//! + if a && b
+//! ```
+//!
+//! ## Configuration
+//!
+//! ```toml
+//! [lint.rules.PERFORMANCE_ENGINE]
+//! severity = "info"
+//! skip_checks = ["AGROW", "ST2NM"]
+//! ```
 
 use mlt_core::{Category, Config, Diagnostic, FileContext, Fix, NodeContext, Rule, Severity};
 use serde::Deserialize;

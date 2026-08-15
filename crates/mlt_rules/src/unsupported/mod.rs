@@ -1,31 +1,64 @@
 //! # UNSUPPORTED_ENGINE: Unsupported Feature Checks
 //!
-//! Implements 13 checks for detecting usage of unsupported, deprecated, or
-//! platform-specific features that are no longer available in modern MATLAB
-//! or are restricted to specific configurations.
+//! ```mlt
+//! id = "UNSUPPORTED_ENGINE"
+//! title = "Unsupported Feature Checks"
+//! category = "unsupported"
+//! severity = "warning"
+//! fix = false
+//! icon = "lucide/ban"
+//! slug = "unsupported"
+//! ```
 //!
-//! ## Checks
+//! ## Rule
 //!
-//! | ID | Description |
-//! |----|-------------|
-//! | MCADE | ADE (Application Deployment Environment) functions |
-//! | AWTIUD | Await syntax usage |
-//! | AXCHUD | ActiveX/COM automation |
-//! | FEATUD | `feature` function usage |
-//! | FNDPUD | `findprop` usage |
-//! | HGCNUD | Handle Graphics container objects |
-//! | IMPKG | Import package syntax |
-//! | ISMBUD | `isMember` (old casing) usage |
-//! | MIPKG | `meta.package` usage |
-//! | SEPTUD | Serial port (legacy `serial` function) |
-//! | SYDEUD | System.Data .NET usage |
-//! | UIRSUD | `uiresume` in unsupported context |
-//! | UISUUD | UI setup patterns |
+//! Detects usage of unsupported, deprecated, or platform-specific features
+//! that are no longer available in modern MATLAB or restricted to specific
+//! configurations. All 13 checks share a single `UnsupportedEngine` that
+//! dispatches node-level checks on `function_call` and `command` nodes; each
+//! diagnostic carries the specific check ID (e.g. `MCADE`, `FEATUD`).
+//!
+//! ## Check IDs
+//!
+//! | Check ID | Severity | Fix | Description |
+//! |----------|----------|-----|-------------|
+//! | MCADE    | warning  | no  | ADE (Application Deployment Environment) function is no longer supported |
+//! | AWTIUD   | warning  | no  | Await syntax is not supported in this context |
+//! | AXCHUD   | warning  | no  | ActiveX/COM automation is deprecated; use modern alternatives |
+//! | FEATUD   | warning  | no  | 'feature' is an undocumented internal function; avoid in production code |
+//! | FNDPUD   | warning  | no  | 'findprop' is deprecated; use 'findobj' or property access instead |
+//! | HGCNUD   | warning  | no  | Handle Graphics container object pattern is deprecated |
+//! | IMPKG    | warning  | no  | Import package syntax is not supported in this context |
+//! | ISMBUD   | warning  | no  | 'isMember' (camelCase) is deprecated; use 'ismember' (lowercase) |
+//! | MIPKG    | warning  | no  | 'meta.package' is an internal API; use 'what' or package-qualified names instead |
+//! | SEPTUD   | warning  | no  | 'serial' is deprecated; use 'serialport' instead |
+//! | SYDEUD   | warning  | no  | System.Data .NET interop is platform-specific and may not be available |
+//! | UIRSUD   | warning  | no  | 'uiresume' used outside of a figure callback context |
+//! | UISUUD   | warning  | no  | Deprecated UI setup pattern; use modern App Designer patterns |
+//!
+//! ## Examples
+//!
+//! ### Incorrect
+//!
+//! ```matlab
+//! deploytool();           % MCADE: ADE function
+//! s = serial('COM1');     % SEPTUD: use serialport instead
+//! v = feature('version'); % FEATUD: undocumented internal function
+//! import pkg.sub.*;       % IMPKG: unsupported import context
+//! ```
+//!
+//! ### Correct
+//!
+//! ```matlab
+//! sp = serialport('COM1', 9600);
+//! v = version;
+//! ```
 //!
 //! ## Configuration
 //!
 //! ```toml
 //! [lint.rules.UNSUPPORTED_ENGINE]
+//! severity = "warning"
 //! skip_checks = ["IMPKG"]
 //! ```
 

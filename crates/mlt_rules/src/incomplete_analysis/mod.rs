@@ -1,30 +1,75 @@
-//! # Incomplete Analysis: Linter-Internal Limit Checks
+//! # INCOMPLETE_ANALYSIS: Linter-Internal Limit Checks
 //!
-//! This module implements the 17 "Incomplete Analysis" checks from MATLAB's Code
-//! Analyzer. These are special internal-limit diagnostics that **cannot be disabled**
-//! by the user. They all have default severity `Error`.
+//! ```mlt
+//! id = "INCOMPLETE_ANALYSIS"
+//! title = "Incomplete Analysis"
+//! category = "incomplete-analysis"
+//! severity = "error"
+//! fix = false
+//! icon = "lucide/wrench"
+//! slug = "incomplete-analysis"
+//! ```
+//!
+//! ## Rule
+//!
+//! Implements the "Incomplete Analysis" checks from MATLAB's Code Analyzer.
+//! These diagnostics report when the analysis itself was limited or could not
+//! complete reliably: too many diagnostics, too many parse errors, files that
+//! are too large, too deeply nested, or too long. They represent linter
+//! internal limits and **cannot be disabled** by the user.
+//!
+//! A single file-level engine (`IncompleteAnalysisEngine`) collects tree
+//! metrics (node count, ERROR count, nesting depths) in one pass, then applies
+//! each threshold check against the configured limits. Each diagnostic carries
+//! the specific check ID (e.g. `TMMSG`, `MDEEP`).
+//!
+//! Three related MATLAB checks are not emitted by this engine: `QUIT`
+//! (analysis did not complete — the panic guard lives in the linter core),
+//! `NOFIL` (file not found), and `RDERR` (unable to read file) are handled by
+//! the CLI.
 //!
 //! ## Check IDs
 //!
-//! | Check ID | Description                                  | Detection                                  |
-//! |----------|----------------------------------------------|--------------------------------------------|
-//! | TMMSG    | More than 10,000 diagnostics generated       | Post-lint (diagnostic count > threshold)   |
-//! | TMSMS    | More than 1,000 parse errors generated       | Count ERROR nodes in tree                  |
-//! | MXASET   | File too complex to analyze                  | Node count > threshold                     |
-//! | QUIT     | Analysis did not complete                    | Engine panic guard (`catch_unwind` in `Linter::lint`) |
-//! | NOSPC    | File too complex (nesting)                   | Max nesting depth > threshold              |
-//! | MBIG     | File too large                               | Source length > threshold                  |
-//! | NOFIL    | File not found                               | No-op (handled by CLI)                     |
-//! | MDOTM    | Invalid file extension                       | File extension != `.m`                     |
-//! | MDMCR    | Deployed MATLAB file                         | File extension == `.ctf` or `.p`           |
-//! | RDERR    | Unable to read file                          | No-op (handled by CLI)                     |
-//! | EOFER    | Too many syntax errors                       | ERROR node count > threshold               |
-//! | EOFMI    | Incomplete file                              | Last node is ERROR or MISSING              |
-//! | MDEEP    | Parentheses/brackets nested too deeply       | Max `()`, `[]`, `{}` nesting depth         |
-//! | DEEPC    | Block comments nested too deeply             | Nested `%{ %}` detection                   |
-//! | DEEPN    | Functions nested too deeply                  | Nested `function_definition` depth         |
-//! | DEEPS    | Statements nested too deeply                 | Nested if/for/while/switch/try depth       |
-//! | TEXTL    | Text too long                                | Max line length > threshold                |
+//! | Check ID | Severity | Fix | Description                               |
+//! |----------|----------|-----|-------------------------------------------|
+//! | TMMSG    | error    | no  | More than 10,000 diagnostics generated     |
+//! | TMSMS    | error    | no  | More than 1,000 parse errors generated     |
+//! | MXASET   | error    | no  | File too complex to analyze                |
+//! | NOSPC    | error    | no  | File too complex (nesting)                 |
+//! | MBIG     | error    | no  | File too large                             |
+//! | MDOTM    | error    | no  | Invalid file extension (not `.m`)          |
+//! | MDMCR    | error    | no  | Deployed MATLAB file (`.ctf` or `.p`)      |
+//! | EOFER    | error    | no  | Too many syntax errors                     |
+//! | EOFMI    | error    | no  | Incomplete file (ends in ERROR/MISSING)    |
+//! | MDEEP    | error    | no  | Parentheses/brackets nested too deeply     |
+//! | DEEPC    | error    | no  | Block comments nested too deeply           |
+//! | DEEPN    | error    | no  | Functions nested too deeply                |
+//! | DEEPS    | error    | no  | Statements nested too deeply               |
+//! | TEXTL    | error    | no  | Text too long (line length)                |
+//!
+//! ## Examples
+//!
+//! ### Incorrect
+//!
+//! ```matlab
+//! % EOFMI: file ends mid-block without a matching `end`
+//! function f()
+//!     if x > 0
+//!         y = 1;
+//! % MDEEP: parentheses nested deeper than the configured limit
+//! z = ((((((((((((((((((((((((((((((((((((((((((1)))))))))))))))))))))))))))))))))))))))))))));
+//! ```
+//!
+//! ### Correct
+//!
+//! ```matlab
+//! function f()
+//!     if x > 0
+//!         y = 1;
+//!     end
+//! end
+//! z = 1;
+//! ```
 //!
 //! ## Configuration
 //!
@@ -39,11 +84,6 @@
 //! max_statement_depth = 15
 //! max_line_length = 4096
 //! ```
-//!
-//! ## Module layout
-//!
-//! The engine, shared tree-walking infrastructure, and `check_file` dispatch live
-//! in this `mod.rs`; each individual check lives in its own `check_*.rs` submodule.
 
 mod check_block_comments;
 mod check_diagnostic_count;

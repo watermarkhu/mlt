@@ -1,184 +1,194 @@
-//! # Good Practices: Common best-practice checks for MATLAB code
+//! # GOOD_PRACTICES_ENGINE: Good Practices
 //!
-//! This module implements 59 good-practice checks from MATLAB's Code Analyzer,
+//! ```mlt
+//! id = "GOOD_PRACTICES_ENGINE"
+//! title = "Good Practices"
+//! category = "good-practices"
+//! severity = "warning"
+//! fix = true
+//! icon = "lucide/check-circle"
+//! slug = "good-practices"
+//! ```
+//!
+//! ## Rule
+//!
+//! Encourages recommended coding practices for MATLAB code. All 106 checks are
 //! handled by a single hybrid engine (`GoodPracticesEngine`). Node-level checks
-//! cover simple pattern matches (error handling, eval usage, string comparisons,
-//! parfor/spmd usage), while file-level checks use metadata extraction and the
-//! symbol table for context-aware analysis.
+//! cover simple pattern matches (error handling, `eval` usage, string
+//! comparisons, parfor/spmd usage, redundant comparisons), while file-level
+//! checks use metadata extraction and the symbol table for context-aware
+//! analysis (last-statement detection, variable shadowing, class and property
+//! validation). Each diagnostic carries the specific check ID (e.g. `TRYNC`,
+//! `EVLCS`, `PFRNI`).
+//!
+//! The checks span error handling, string and comparison idioms, `eval`/dynamic
+//! code, parfor/spmd parallel practices, structure and field access, OOP and
+//! class properties, logical-usage patterns, shared variables, arity, and App
+//! Designer methods.
 //!
 //! ## Check IDs
 //!
-//! ### Error handling
+//! | Check ID    | Severity | Fix | Description                                                                |
+//! |-------------|----------|-----|----------------------------------------------------------------------------|
+//! | TRYNC       | warning  | no  | `try` without `catch`                                                      |
+//! | CTCH        | warning  | no  | `catch` block is empty                                                     |
+//! | WLAST       | warning  | no  | `warning` called as last statement in function                             |
+//! | WNTAG       | warning  | no  | `warning` without message ID                                               |
+//! | ERTAG       | warning  | no  | `error` without message ID                                                 |
+//! | MEXCEP      | warning  | no  | `catch` without exception variable                                         |
+//! | STCMP       | warning  | no  | Use `strcmp`/`strcmpi` instead of `==` for strings                         |
+//! | STCI        | warning  | no  | Use `strcmpi` for case-insensitive comparison                              |
+//! | STISA       | warning  | no  | Use `isa` instead of `class` + `strcmp`                                    |
+//! | STRNU       | warning  | no  | Use `str2double` instead of `str2num`                                      |
+//! | EVLCS       | warning  | no  | Avoid `eval`                                                               |
+//! | EVLDOT      | warning  | no  | Avoid `eval` for dynamic field access                                      |
+//! | EVLEQ       | warning  | no  | Avoid `eval` for dynamic variable creation                                 |
+//! | EVLSYS      | warning  | no  | Avoid `eval` for system commands                                           |
+//! | EVLDUAL     | warning  | no  | Avoid `evalin`                                                             |
+//! | EVLSEQVAR   | warning  | no  | Avoid `eval` to create sequential variables                                |
+//! | NOANS       | warning  | no  | Statement result assigned to `ans`                                         |
+//! | LOAD        | warning  | no  | `load` without output variable                                             |
+//! | SEPEX       | info     | no  | Multiple statements on one line                                            |
+//! | NBRAK1      | info     | yes | Unnecessary brackets around scalar                                         |
+//! | LNGNM       | warning  | no  | Variable name exceeds length                                               |
+//! | CHAIN       | info     | no  | Method chaining on one line                                                |
+//! | DISPLAY     | warning  | no  | Override `display` is discouraged                                          |
+//! | FNDEF       | warning  | no  | Function not defined at expected location                                  |
+//! | NOIN        | info     | no  | Function has no input validation                                           |
+//! | VALST       | info     | no  | Validate function arguments                                                |
+//! | PROP        | info     | no  | Property validation missing                                                |
+//! | CPROP       | info     | no  | Constant property could be method                                          |
+//! | FVAL        | warning  | no  | Function value not used                                                    |
+//! | FNCOLND     | warning  | no  | `end` used as column index without dimension                               |
+//! | COMNC       | info     | yes | Comment lacks space after `%`                                              |
+//! | ITERS       | warning  | no  | Loop variable shadows outer variable                                       |
+//! | LOGPROD     | warning  | no  | Use `all` instead of `prod` on logical                                     |
+//! | LOGMIN      | warning  | no  | Use `all` instead of `min` on logical                                      |
+//! | LOGMAX      | warning  | no  | Use `any` instead of `max` on logical                                      |
+//! | ELARLOG     | warning  | no  | Element-wise `&`/`\|` on logicals in if/while                              |
+//! | SHOCIRAA    | warning  | no  | Short-circuit in array context                                             |
+//! | UNRPWR      | warning  | no  | Power of negative base may be complex                                      |
+//! | ADAPPREF    | warning  | no  | Avoid `addpref` (use settings)                                             |
+//! | KEYBOARDFUN | warning  | no  | `keyboard` left in code                                                    |
+//! | GVMIS       | warning  | no  | Global variable used but never declared                                    |
+//! | PFEVB       | warning  | no  | EVALIN('base')/ASSIGNIN('base') inside a PARFOR loop refers to worker base workspace |
+//! | PFGP        | warning  | no  | Assigning to GLOBAL/PERSISTENT variable inside a PARFOR loop               |
+//! | PFGV        | warning  | no  | Using a GLOBAL variable in a PARFOR loop                                   |
+//! | PFIIN       | warning  | no  | The input variable should be initialized before the PARFOR loop            |
+//! | PFOUS       | warning  | no  | The output variable might not be used after the PARFOR loop                |
+//! | PFRNI       | warning  | yes | Explicit increment in a PARFOR loop; parfor only supports an increment of one |
+//! | PFRIN       | warning  | no  | The reduction variable might not be set before the PARFOR loop             |
+//! | PFRUS       | warning  | no  | The reduction variable might not be used after the PARFOR loop             |
+//! | PFTUSW      | warning  | no  | The temporary variable might be used after the PARFOR loop                 |
+//! | PFUIXW      | warning  | no  | The index variable might be used after the PARFOR loop                     |
+//! | SPEVB       | warning  | no  | EVALIN('base')/ASSIGNIN('base') inside an SPMD block refers to worker base workspace |
+//! | SPGV        | warning  | no  | GLOBAL/PERSISTENT variable in an SPMD block might fail on a worker         |
+//! | DSPMDA      | warning  | no  | Distributed array must be created outside of an SPMD block                 |
+//! | COMFS       | warning  | no  | Comma makes the file a script, so functions are local                      |
+//! | DUALC       | warning  | no  | Command might be prematurely ended by comma                                |
+//! | RMFLD       | warning  | no  | `rmfield` output must be assigned back to the structure                    |
+//! | RMWRN       | warning  | no  | Warning tag has been removed from MATLAB                                   |
+//! | SEMFS       | warning  | no  | Semicolon makes the file a script, so functions are local                  |
+//! | STFLD       | warning  | no  | `setfield` output must be assigned back to the structure                   |
+//! | STRSZ       | warning  | no  | Use `strcmp` to compare character vectors of different sizes               |
+//! | ATTF        | warning  | no  | Unable to determine if the `Abstract` attribute expression is true or false |
+//! | ATTOF       | info     | no  | Setting the class attribute `Abstract` to false is not recommended         |
+//! | MCPO        | warning  | no  | `SetObservable`/`GetObservable`/`AbortSet` property has no effect in a value class |
+//! | MCSAC       | warning  | no  | `SetAccess` cannot be set on Constant properties                           |
+//! | MOBSRV      | info     | no  | `SetObservable`/`GetObservable` on a Constant property has no effect       |
+//! | MDEPIN      | warning  | no  | Default values should not be assigned to dependent properties              |
+//! | MCCPI       | warning  | no  | Initialize the Constant property or make it an Abstract Constant property  |
+//! | MGMD        | warning  | no  | `get` method should be implemented for each dependent property without private `GetAccess` |
+//! | MCCPE       | warning  | no  | Attempting to call a property or event as a function                       |
+//! | MTHANS      | info     | no  | Using `ANS` as a method name is not recommended                            |
+//! | MHERM       | info     | no  | Parenthesize the multiplication of a variable and its transpose            |
+//! | MNUML       | warning  | no  | Use `VAR_NAME(numel(...), numel(...))` to create a square matrix           |
+//! | COMPNOP     | warning  | yes | Comparison with `true` simplifies to the function call itself              |
+//! | COMPNOT     | warning  | yes | Comparison with `~= true` or `== false` simplifies to `~call(...)`         |
+//! | M3COL       | warning  | no  | Three colons (`a:b:c:d`) in an expression is probably unintended           |
+//! | BDLGI       | warning  | no  | Variable might be set by a nonlogical operator                             |
+//! | BDLOG1      | warning  | no  | Non-scalar logical value used in a conditional expression                  |
+//! | BDLOG2      | warning  | no  | Scalar non-logical value used in a conditional expression                  |
+//! | BDSCA       | warning  | no  | `&&`/`\|\|` used in a scalar context with a non-scalar operand             |
+//! | BDSCI       | warning  | no  | Variable might be set by a nonscalar operator                              |
+//! | MCHDP       | warning  | no  | Property default that directly constructs a handle is shared by all instances |
+//! | MCHDT       | warning  | no  | Property default that resolves to a handle is shared by all instances      |
+//! | SHVAU       | warning  | no  | Ambiguous shared-variable usage between a nested function and its parent   |
+//! | GTARG       | warning  | no  | Function might be called with too many arguments                           |
+//! | LTARG       | warning  | no  | Function might be called with too few arguments                            |
+//! | CTPCT       | warning  | no  | `sprintf`/`fprintf` format might not agree with the argument count         |
+//! | FXSET       | warning  | no  | Loop index variable is changed inside of a `for` loop                      |
+//! | SIMPT       | warning  | no  | `import` statement does not run first in a function                        |
+//! | TLEV        | warning  | no  | Dynamic-code function used as a sub-expression, not a top-level statement  |
+//! | UNONC       | warning  | no  | `onCleanup` output must be assigned to a variable, not `~`                 |
+//! | MIPC1       | warning  | no  | `computer('arch')` is platform-specific                                    |
+//! | SUBSINDEX   | warning  | no  | Do not overload `subsindex` for fundamental data types                     |
+//! | VTFIN       | warning  | no  | Validated value should be the first input to a `validate*` function        |
+//! | CTOINW      | warning  | no  | Constructed object passed to its own constructor                           |
+//! | FXUP        | warning  | no  | Outer loop index set inside a nested function                              |
+//! | ADMTHDINV   | warning  | no  | Class method called without `app` as the first argument                    |
+//! | ADPROP      | warning  | no  | Property assigned through a bare identifier instead of `app.PROP`          |
+//! | ADPROPLC    | warning  | no  | Property read through a bare identifier instead of `app.PROP`              |
+//! | MCNPN       | warning  | no  | Member access on the object that is not declared in the class              |
+//! | MCNPR       | warning  | no  | Assignment target on the object that is not a property                     |
+//! | MCSNOV      | warning  | no  | Value-class setter does not return the modified object                     |
+//! | MCSOH       | warning  | no  | Handle-class setter unnecessarily returns the modified object              |
+//! | MCVM        | warning  | no  | Value-class method modifying the object has no output                      |
+//! | MCCSPS      | warning  | no  | Constant property name used as a struct in a dot-access chain              |
+//! | MCSUP       | warning  | no  | Setter accesses a property other than the one it sets                      |
 //!
-//! | Check ID | Description |
-//! |----------|-------------|
-//! | TRYNC    | `try` without `catch` |
-//! | CTCH     | `catch` block is empty |
-//! | WLAST    | `warning` called as last statement in function |
-//! | WNTAG    | `warning` without message ID |
-//! | ERTAG    | `error` without message ID |
-//! | MEXCEP   | `catch` without exception variable |
+//! ## Fix
 //!
-//! ### String / comparison
+//! Rewrites the flagged construct into the cleaner equivalent:
 //!
-//! | Check ID | Description |
-//! |----------|-------------|
-//! | STCMP    | Use `strcmp`/`strcmpi` instead of `==` for strings |
-//! | STCI     | Use `strcmpi` for case-insensitive comparison |
-//! | STISA    | Use `isa` instead of `class` + `strcmp` |
-//! | STRNU    | Use `str2double` instead of `str2num` |
+//! - `call(...) == true` → `call(...)` (COMPNOP) and
+//!   `call(...) ~= true` / `call(...) == false` → `~call(...)` (COMPNOT).
+//! - `parfor i = 1:step:end` → `parfor i = 1:end` (PFRNI).
+//! - `%comment` → `% comment` (COMNC).
+//! - `(scalar)` → `scalar` (NBRAK1).
 //!
-//! ### Eval / dynamic code
+//! ## Examples
 //!
-//! | Check ID   | Description |
-//! |------------|-------------|
-//! | EVLCS      | Avoid `eval` |
-//! | EVLDOT     | Avoid `eval` for dynamic field access |
-//! | EVLEQ      | Avoid `eval` for dynamic variable creation |
-//! | EVLSYS     | Avoid `eval` for system commands |
-//! | EVLDUAL    | Avoid `evalin` |
-//! | EVLSEQVAR  | Avoid `eval` to create sequential variables |
+//! ### Incorrect
 //!
-//! ### General practices
+//! ```matlab
+//! if isa(x, 'double') == true      % COMPNOP
+//!     disp('double');
+//! end
+//! parfor i = 1:2:10                % PFRNI
+//!     y(i) = i;
+//! end
+//! %comment with no space           % COMNC
+//! x = (5);                         % NBRAK1
+//! ```
 //!
-//! | Check ID    | Description |
-//! |-------------|-------------|
-//! | NOANS       | Statement result assigned to `ans` |
-//! | LOAD        | `load` without output variable |
-//! | SEPEX       | Multiple statements on one line |
-//! | NBRAK1      | Unnecessary brackets around scalar |
-//! | LNGNM       | Variable name exceeds length |
-//! | CHAIN       | Method chaining on one line |
-//! | DISPLAY     | Override `display` is discouraged |
-//! | FNDEF       | Function not defined at expected location |
-//! | NOIN        | Function has no input validation |
-//! | VALST       | Validate function arguments |
-//! | PROP        | Property validation missing |
-//! | CPROP       | Constant property could be method |
-//! | FVAL        | Function value not used |
-//! | FNCOLND     | `end` used as column index without dimension |
-//! | COMNC       | Comment lacks space after `%` |
-//! | ITERS       | Loop variable shadows outer variable |
-//! | LOGPROD     | Use `all` instead of `prod` on logical |
-//! | LOGMIN      | Use `all` instead of `min` on logical |
-//! | LOGMAX      | Use `any` instead of `max` on logical |
-//! | ELARLOG     | Element-wise `&`/`|` on logicals in if/while |
-//! | SHOCIRAA    | Short-circuit in array context |
-//! | UNRPWR      | Power of negative base may be complex |
-//! | ADAPPREF    | Avoid `addpref` (use settings) |
-//! | KEYBOARDFUN | `keyboard` left in code |
-//! | GVMIS       | Global variable used but never declared |
+//! ### Correct
 //!
-//! ### Parfor / SPMD / parallel practices
+//! ```matlab
+//! if isa(x, 'double')              % COMPNOP fix applied
+//!     disp('double');
+//! end
+//! parfor i = 1:10                  % PFRNI fix applied
+//!     y(i) = i;
+//! end
+//! % comment with space             % COMNC fix applied
+//! x = 5;                           % NBRAK1 fix applied
+//! ```
 //!
-//! | Check ID | Description |
-//! |----------|-------------|
-//! | PFEVB     | Using EVALIN('base') or ASSIGNIN('base') inside a PARFOR loop refers to the worker machines' base workspaces |
-//! | PFGP      | Avoid assigning to GLOBAL or PERSISTENT variable inside a PARFOR loop |
-//! | PFGV      | Avoid using GLOBAL variable in a PARFOR loop |
-//! | PFIIN     | The input variable should be initialized before the PARFOR loop |
-//! | PFOUS     | The output variable might not be used after the PARFOR loop |
-//! | PFRNI     | Do not specify the increment explicitly; parfor can only use an increment of one |
-//! | PFRIN     | The reduction variable might not be set before the PARFOR loop |
-//! | PFRUS     | The reduction variable might not be used after the PARFOR loop |
-//! | PFTUSW    | The temporary variable might be used after the PARFOR loop |
-//! | PFUIXW    | The index variable might be used after the PARFOR loop |
-//! | SPEVB     | Using EVALIN('base') or ASSIGNIN('base') inside an SPMD block refers to the worker machines' base workspaces |
-//! | SPGV      | Using the GLOBAL or PERSISTENT variable in an SPMD block might fail because it is accessed on a worker machine |
-//! | DSPMDA    | Distributed array must be created outside of an SPMD block |
+//! ### Fixed
 //!
-//! ### Structure / string / misc
-//!
-//! | Check ID | Description |
-//! |----------|-------------|
-//! | COMFS     | Comma makes the file a script, so functions are local |
-//! | DUALC     | Command might be prematurely ended by comma |
-//! | RMFLD     | `rmfield` output must be assigned back to the structure |
-//! | RMWRN     | Warning tag has been removed from MATLAB |
-//! | SEMFS     | Semicolon makes the file a script, so functions are local |
-//! | STFLD     | `setfield` output must be assigned back to the structure |
-//! | STRSZ     | Use `strcmp` to compare character vectors of different sizes |
-//!
-//! ### OOP / class / property
-//!
-//! | Check ID | Description |
-//! |----------|-------------|
-//! | ATTF     | Unable to determine if the expression assigned to the `Abstract` attribute evaluates to true or false |
-//! | ATTOF    | Setting the class attribute `Abstract` to false is not recommended |
-//! | MCPO     | `SetObservable`/`GetObservable`/`AbortSet` property has no effect in a value class |
-//! | MCSAC    | `SetAccess` cannot be set on Constant properties |
-//! | MOBSRV   | `SetObservable`/`GetObservable` on a Constant property has no effect |
-//! | MDEPIN   | Default values should not be assigned to dependent properties |
-//! | MCCPI    | Initialize the Constant property or make it an Abstract Constant property |
-//! | MGMD     | `get` method should be implemented for each dependent property without private `GetAccess` |
-//! | MCCPE    | Attempting to call a property or event as a function |
-//! | MTHANS   | Using `ANS` as a method name is not recommended |
-//! | MHERM    | Parenthesize the multiplication of a variable and its transpose |
-//! | MNUML    | Use `VAR_NAME(numel(...), numel(...))` to create a square matrix |
-//!
-//! ### Logical / comparison / range
-//!
-//! | Check ID | Description |
-//! |----------|-------------|
-//! | COMPNOP   | Comparison with `true` simplifies to the function call itself |
-//! | COMPNOT   | Comparison with `~= true` or `== false` simplifies to `~call(...)` |
-//! | M3COL     | Three colons (`a:b:c:d`) in an expression is probably unintended |
-//!
-//! ### Logical usage / handle defaults / shared variables / arity
-//!
-//! | Check ID | Description |
-//! |----------|-------------|
-//! | BDLGI    | Variable might be set by a nonlogical operator |
-//! | BDLOG1   | Non-scalar logical value used in a conditional expression |
-//! | BDLOG2   | Scalar non-logical value used in a conditional expression |
-//! | BDSCA    | `&&`/`||` used in a scalar context with a non-scalar operand |
-//! | BDSCI    | Variable might be set by a nonscalar operator |
-//! | MCHDP    | Property default that directly constructs a handle is shared by all instances |
-//! | MCHDT    | Property default that resolves to a handle is shared by all instances |
-//! | SHVAU    | Ambiguous shared-variable usage between a nested function and its parent |
-//! | GTARG    | Function might be called with too many arguments |
-//! | LTARG    | Function might be called with too few arguments |
-//!
-//! ### Function-call conventions
-//!
-//! | Check ID | Description |
-//! |----------|-------------|
-//! | CTPCT    | `sprintf`/`fprintf` format might not agree with the argument count |
-//! | FXSET    | Loop index variable is changed inside of a `for` loop |
-//! | SIMPT    | `import` statement does not run first in a function |
-//! | TLEV     | Dynamic-code function used as a sub-expression, not a top-level statement |
-//! | UNONC    | `onCleanup` output must be assigned to a variable, not `~` |
-//! | MIPC1    | `computer('arch')` is platform-specific |
-//! | SUBSINDEX | Do not overload `subsindex` for fundamental data types |
-//! | VTFIN    | Validated value should be the first input to a `validate*` function |
-//! | CTOINW   | Constructed object passed to its own constructor |
-//! | FXUP     | Outer loop index set inside a nested function |
-//!
-//! ### App Designer
-//!
-//! | Check ID | Description |
-//! |----------|-------------|
-//! | ADMTHDINV | Class method called without `app` as the first argument |
-//! | ADPROP   | Property assigned through a bare identifier instead of `app.PROP` |
-//! | ADPROPLC | Property read through a bare identifier instead of `app.PROP` |
-//!
-//! ### OOP practice
-//!
-//! | Check ID | Description |
-//! |----------|-------------|
-//! | MCNPN    | Member access on the object that is not declared in the class |
-//! | MCNPR    | Assignment target on the object that is not a property |
-//! | MCSNOV   | Value-class setter does not return the modified object |
-//! | MCSOH    | Handle-class setter unnecessarily returns the modified object |
-//! | MCVM     | Value-class method modifying the object has no output |
-//! | MCCSPS   | Constant property name used as a struct in a dot-access chain |
-//! | MCSUP    | Setter accesses a property other than the one it sets |
+//! ```diff
+//! - if isa(x, 'double') == true
+//! + if isa(x, 'double')
+//! - parfor i = 1:2:10
+//! + parfor i = 1:10
+//! ```
 //!
 //! ## Configuration
 //!
 //! ```toml
 //! [lint.rules.GOOD_PRACTICES_ENGINE]
-//! severity = "warn"
+//! severity = "warning"
 //! max_variable_name_length = 63
 //! disabled_checks = []
 //! ```

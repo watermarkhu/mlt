@@ -9,37 +9,151 @@ icon: lucide/trash-2
 **Category:** Unused Constructions
 **Can be disabled:** Yes
 
-## What this engine does
+## What this rule does
 
-The `UNUSED_ENGINE` rule implements the MATLAB Code Analyzer checks in the **Unused Constructions** category. All checks share one engine and are dispatched by tree-sitter node kind or by file-level traversal; each diagnostic carries the specific check ID (e.g. `NASGU`).
+Detects unused variables, functions, methods, and dead code in MATLAB
+files. A single file-level engine (`UnusedEngine`) builds a symbol table
+and runs unreachability analysis, then cross-references every definition
+against its usages to identify dead code. It covers 17 checks from
+MATLAB's "Unused Constructions" category; each diagnostic carries the
+specific check ID (e.g. `NASGU`, `UNRCH`, `MSNU`).
 
 ## Check IDs
 
-| Check ID | Description |
-| -------- | ----------- |
-| `NASGU` | Variable is assigned but never used |
-| `NUSED` | Variable is defined (input arg) but never used |
-| `NOEFF` | Statement has no effect (expression result discarded) |
-| `EQEFF` | Comparison has no effect (result not used) |
-| `ASGLU` | Assignment to a variable that is immediately overwritten |
-| `SETNU` | Output of function assigned but never used |
-| `PUSE` | Persistent/global variable set but not used |
-| `PREALL` | Variable preallocated but unused |
-| `INUSA` | Input argument not used in function |
-| `INUSD` | Input argument defined but could be removed |
-| `VANUS` | Value assigned to ans is unused |
-| `DEFNU` | Local function defined but never called |
-| `UNRCH` | Unreachable code after return/break/continue |
-| `MANU` | Method defined but never called |
-| `VUNUS` | Variable assigned in all branches but unused after |
-| `MSNU` | Struct field set but never read |
-| `MSNE` | Struct field doesn't exist (assigned but typo) |
+### NASGU
+
+Severity: **warning** · Auto-fix: **no**
+
+Variable is assigned but never used
+
+### NUSED
+
+Severity: **warning** · Auto-fix: **no**
+
+Variable is defined (input arg) but never used
+
+### NOEFF
+
+Severity: **warning** · Auto-fix: **no**
+
+Statement has no effect (expression result discarded)
+
+### EQEFF
+
+Severity: **warning** · Auto-fix: **no**
+
+Comparison has no effect (result not used)
+
+### ASGLU
+
+Severity: **warning** · Auto-fix: **no**
+
+Assignment to a variable that is immediately overwritten
+
+### SETNU
+
+Severity: **warning** · Auto-fix: **no**
+
+Output of function assigned but never used
+
+### PUSE
+
+Severity: **warning** · Auto-fix: **no**
+
+Persistent/global variable set but not used
+
+### PREALL
+
+Severity: **warning** · Auto-fix: **no**
+
+Variable preallocated but unused
+
+### INUSA
+
+Severity: **warning** · Auto-fix: **no**
+
+Input argument not used in function
+
+### INUSD
+
+Severity: **warning** · Auto-fix: **no**
+
+Input argument defined but could be removed
+
+### VANUS
+
+Severity: **info** · Auto-fix: **no**
+
+Value assigned to `ans` is unused
+
+### DEFNU
+
+Severity: **warning** · Auto-fix: **no**
+
+Local function defined but never called
+
+### UNRCH
+
+Severity: **warning** · Auto-fix: **no**
+
+Unreachable code after return/break/continue
+
+### MANU
+
+Severity: **warning** · Auto-fix: **no**
+
+Method defined but never called
+
+### VUNUS
+
+Severity: **warning** · Auto-fix: **no**
+
+Variable assigned in all branches but unused after
+
+### MSNU
+
+Severity: **warning** · Auto-fix: **no**
+
+Struct field set but never read
+
+### MSNE
+
+Severity: **info** · Auto-fix: **no**
+
+Struct field doesn't exist (assigned but possibly a typo)
+
+## Examples
+
+### Incorrect
+
+```matlab
+function f()
+    temp = compute();   % NASGU: assigned but never used
+    x = 1;
+    return;
+    y = x;              % UNRCH: unreachable after return
+    s.field = 1;        % MSNU: set but never read
+end
+```
+
+### Correct
+
+```matlab
+function f()
+    x = compute();
+    disp(x);
+    s.field = x;
+    disp(s.field);
+end
+```
 
 ## Configuration
 
 ```toml
 [lint.rules.UNUSED_ENGINE]
-disabled_checks = ["XXXX"]   # Turn off specific checks
+severity = "warning"
+ignore_patterns = ["_*", "unused*"]
+disabled_checks = ["VANUS"]
 ```
 
-See [Configuration](../configuration.md#per-engine-parameters) for the full parameter list and [rules.md](../rules.md) for the complete rule inventory.
+See [Configuration](../configuration.md) for the full parameter list and [rules.md](../rules.md) for the complete rule inventory.

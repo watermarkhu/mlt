@@ -1,40 +1,78 @@
-//! # CODEGEN_ENGINE: MATLAB Code Generation Checks
+//! # CODEGEN_ENGINE: Code Generation Constraint Checks
 //!
-//! Implements 20 checks for MATLAB Coder / code generation constraints.
-//! MATLAB code intended for code generation (C/C++) has many restrictions
-//! compared to general MATLAB code. This engine detects constructs that are
-//! unsupported or problematic for code generation.
+//! ```mlt
+//! id = "CODEGEN_ENGINE"
+//! title = "MATLAB Code Generation Constraint Checks"
+//! category = "code-generation"
+//! severity = "error"
+//! fix = false
+//! icon = "lucide/braces"
+//! slug = "codegen"
+//! ```
 //!
-//! ## Checks
+//! ## Rule
 //!
-//! | ID | Description |
-//! |----|-------------|
-//! | EMVDF | Variable-size data not supported |
-//! | EMGRO | Growing arrays not supported |
-//! | EMNODEF | Variable must be defined before use |
-//! | EMFCN | Unsupported function for codegen |
-//! | EMCEL | Cell arrays not supported |
-//! | EMTC | Try-catch not supported |
-//! | EMIMP | Import not supported |
-//! | EMNST | Nested functions not supported |
-//! | EMSCR | Scripts not supported |
-//! | EMBRK | Break in unsupported context |
-//! | EMCNT | Continue in unsupported context |
-//! | EMPFR | Parfor not supported |
-//! | EMRTN | Return in unsupported context |
-//! | EMWHL | While loops with non-constant bounds |
-//! | EMRIFAV | Arguments block feature |
-//! | EMLOAD | Load not supported |
-//! | EMS2N | str2num not supported |
-//! | PRMNOIN | No input validation in codegen |
-//! | LOOPPRAGMAWITHOUTFOR | coder.loop pragma without for |
-//! | FPASE | Fixed-point: assignment to scaled expression |
+//! Detects MATLAB constructs that are unsupported or problematic for MATLAB
+//! Coder / code generation. MATLAB code intended to be compiled to C/C++ has
+//! many restrictions compared to general MATLAB code; this engine flags
+//! variable-size data, growing arrays, unsupported functions, cell arrays,
+//! try-catch, imports, nested functions, scripts, and similar constraints.
+//! All 15 checks share a single `CodegenEngine` that dispatches node-level
+//! checks on `function_call`, `command`, `try_statement`, `for_statement`,
+//! `assignment`, `cell`, and `arguments_statement` nodes, plus file-level
+//! checks for nested functions and script-mode files. Each diagnostic carries
+//! the specific check ID (e.g. `EMFCN`, `EMSCR`).
+//!
+//! ## Check IDs
+//!
+//! | Check ID             | Severity | Fix | Description                                                           |
+//! |----------------------|----------|-----|-----------------------------------------------------------------------|
+//! | EMVDF                | error    | no  | Variable-size data is not supported for code generation               |
+//! | EMGRO                | error    | no  | Growing arrays inside loops is not supported for code generation      |
+//! | EMFCN                | error    | no  | Function is not supported for code generation                         |
+//! | EMCEL                | error    | no  | Cell arrays are not supported for code generation                     |
+//! | EMTC                 | error    | no  | Try-catch statements are not supported for code generation            |
+//! | EMIMP                | error    | no  | Import statements are not supported for code generation               |
+//! | EMNST                | error    | no  | Nested functions are not supported for code generation                |
+//! | EMSCR                | error    | no  | Scripts are not supported; use functions instead                      |
+//! | EMPFR                | error    | no  | Parfor is not supported for code generation                           |
+//! | EMRIFAV              | error    | no  | Arguments validation block is not fully supported for code generation |
+//! | EMLOAD               | error    | no  | 'load' is not supported for code generation                           |
+//! | EMS2N                | error    | no  | 'str2num' is not supported; use 'str2double'                          |
+//! | PRMNOIN              | error    | no  | No input validation available in generated code                       |
+//! | LOOPPRAGMAWITHOUTFOR | error    | no  | coder.loop pragma must be immediately followed by a for-loop          |
+//! | FPASE                | error    | no  | Assignment to a scaled fixed-point expression may lose precision      |
+//!
+//! ## Examples
+//!
+//! ### Incorrect
+//!
+//! ```matlab
+//! x = [];
+//! for i = 1:10
+//!     x(end+1) = i;   % EMGRO: growing array
+//! end
+//! y = {1, 2};         % EMCEL: cell array
+//! z = str2num('1 2'); % EMS2N: use str2double
+//! ```
+//!
+//! ### Correct
+//!
+//! ```matlab
+//! x = zeros(1, 10);
+//! for i = 1:10
+//!     x(i) = i;
+//! end
+//! y = [1, 2];
+//! z = str2double('1 2');
+//! ```
 //!
 //! ## Configuration
 //!
 //! ```toml
 //! [lint.rules.CODEGEN_ENGINE]
-//! skip_checks = ["EMSCR", "EMWHL"]
+//! severity = "error"
+//! skip_checks = ["EMSCR", "EMFCN"]
 //! ```
 
 mod check_arguments_statement;

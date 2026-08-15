@@ -1,38 +1,70 @@
-//! # Custom Checks: Configurable Code Complexity and Style Metrics
+//! # CUSTOM_CHECKS: Custom Checks
 //!
-//! This module implements 25 configurable code complexity/style metric checks from
-//! MATLAB's Code Analyzer. All checks are handled by a single engine that performs
-//! one traversal per file and computes all metrics simultaneously.
+//! ```mlt
+//! id = "CUSTOM_CHECKS"
+//! title = "Custom Checks"
+//! category = "custom-checks"
+//! severity = "warning"
+//! fix = false
+//! icon = "lucide/sliders-horizontal"
+//! slug = "custom-checks"
+//! ```
+//!
+//! ## Rule
+//!
+//! Configurable code-complexity and style-metric checks from MATLAB's Code
+//! Analyzer. All 25 checks are handled by a single file-level engine
+//! (`CustomChecksEngine`) that performs one traversal per file and computes
+//! all metrics simultaneously. Each check has a configurable threshold; a
+//! threshold of `0` disables that check.
 //!
 //! ## Check IDs
 //!
-//! | Check ID   | Description                                      |
-//! |------------|--------------------------------------------------|
-//! | SYSBANG    | System command used (!)                           |
-//! | FCNIL      | Function input count exceeds limit                |
-//! | FCNOL      | Function output count exceeds limit               |
-//! | FCNLL      | Function line count exceeds limit                 |
-//! | LLMNC      | Line length exceeds limit                         |
-//! | MNCSN      | Statement nesting depth exceeds limit             |
-//! | DAFTC      | Too many children in tree                         |
-//! | DAFPV      | Too many persistent variables                     |
-//! | DAFCO      | Too many conditions in expression                 |
-//! | DAFBR      | Too many branches in switch/if                    |
-//! | DAFRT      | Too many return points                            |
-//! | DAFSC      | Too many semicolons on one line                   |
-//! | DAFNF      | Too many nested functions                         |
-//! | DAFCF      | Too many called functions                         |
-//! | DAFAF      | Too many anonymous functions                      |
-//! | DAFCV      | Too many local variables                          |
-//! | DAFCVC     | Too many local constants                          |
-//! | DAFVI      | Too many input arguments used                     |
-//! | DAFVO      | Too many output arguments used                    |
-//! | CYCCOM     | Cyclomatic complexity of function exceeds limit   |
-//! | SCYCCOM    | Strict cyclomatic complexity exceeds limit         |
-//! | ACYCCOM    | Average cyclomatic complexity exceeds limit        |
-//! | MCYCCOM    | Method cyclomatic complexity exceeds limit         |
-//! | MSCYCCOM   | Method strict cyclomatic complexity exceeds limit  |
-//! | MACYCCOM   | Method average cyclomatic complexity exceeds limit |
+//! | Check ID | Severity | Fix | Description                                       |
+//! |----------|----------|-----|---------------------------------------------------|
+//! | SYSBANG  | warning  | no  | System command used (!)                           |
+//! | FCNIL    | warning  | no  | Function input count exceeds limit                |
+//! | FCNOL    | warning  | no  | Function output count exceeds limit               |
+//! | FCNLL    | warning  | no  | Function line count exceeds limit                 |
+//! | LLMNC    | warning  | no  | Line length exceeds limit                         |
+//! | MNCSN    | warning  | no  | Statement nesting depth exceeds limit             |
+//! | DAFTC    | warning  | no  | Too many children in tree                         |
+//! | DAFPV    | warning  | no  | Too many persistent variables                     |
+//! | DAFCO    | warning  | no  | Too many conditions in expression                 |
+//! | DAFBR    | warning  | no  | Too many branches in switch/if                    |
+//! | DAFRT    | warning  | no  | Too many return points                            |
+//! | DAFSC    | warning  | no  | Too many semicolons on one line                   |
+//! | DAFNF    | warning  | no  | Too many nested functions                         |
+//! | DAFCF    | warning  | no  | Too many called functions                         |
+//! | DAFAF    | warning  | no  | Too many anonymous functions                      |
+//! | DAFCV    | warning  | no  | Too many local variables                          |
+//! | DAFCVC   | warning  | no  | Too many local constants                          |
+//! | DAFVI    | warning  | no  | Too many input arguments used                     |
+//! | DAFVO    | warning  | no  | Too many output arguments used                    |
+//! | CYCCOM   | warning  | no  | Cyclomatic complexity of function exceeds limit   |
+//! | SCYCCOM  | warning  | no  | Strict cyclomatic complexity exceeds limit        |
+//! | ACYCCOM  | warning  | no  | Average cyclomatic complexity exceeds limit       |
+//! | MCYCCOM  | warning  | no  | Method cyclomatic complexity exceeds limit        |
+//! | MSCYCCOM | warning  | no  | Method strict cyclomatic complexity exceeds limit |
+//! | MACYCCOM | warning  | no  | Method average cyclomatic complexity exceeds limit|
+//!
+//! ## Examples
+//!
+//! ### Incorrect
+//!
+//! ```matlab
+//! function f(a, b, c, d, e, f, g, h, i)  % FCNIL — too many inputs
+//!     x = 1; y = 2; z = 3;               % DAFSC — too many semicolons on one line
+//! end
+//! ```
+//!
+//! ### Correct
+//!
+//! ```matlab
+//! function f(a, b, c)  % within the default input limit
+//!     x = 1;
+//! end
+//! ```
 //!
 //! ## Configuration
 //!

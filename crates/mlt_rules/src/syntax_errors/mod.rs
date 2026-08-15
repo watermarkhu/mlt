@@ -1,61 +1,118 @@
-//! # Syntax Errors: Parser-Level and Semantic Syntax Validation
+//! # SYNTAX_ERRORS_ENGINE: Parser-Level and Semantic Syntax Validation
 //!
-//! This module implements syntax error checks that detect issues tree-sitter flags
-//! as ERROR/MISSING nodes, as well as semantic syntax issues the parser cannot catch
-//! (invalid operators, bad file names, structural violations).
+//! ```mlt
+//! id = "SYNTAX_ERRORS_ENGINE"
+//! title = "Syntax Errors"
+//! category = "syntax-errors"
+//! severity = "error"
+//! fix = true
+//! icon = "lucide/x-circle"
+//! slug = "syntax-errors"
+//! ```
+//!
+//! ## Rule
+//!
+//! Detects syntax errors in MATLAB source files. The engine combines
+//! tree-sitter `ERROR`/`MISSING` node analysis with semantic checks the parser
+//! cannot catch on its own: invalid operators, malformed file and function
+//! names, structural violations, unterminated strings and comments, and
+//! invalid numeric literals.
+//!
+//! A single file-level engine (`SyntaxErrorsEngine`) dispatches all 48 checks
+//! in one pass over the parse tree, plus targeted source scans that skip over
+//! comments and strings. Each diagnostic carries the specific check ID
+//! (e.g. `SYNER`, `BADNE`, `SEPEXR`).
 //!
 //! ## Check IDs
 //!
-//! | Check ID | Description                                              |
-//! |----------|----------------------------------------------------------|
-//! | SYNER    | ERROR node detected in parse tree                        |
-//! | BDFIL    | File name doesn't follow MATLAB naming rules             |
-//! | BADNE    | Source contains `!=` (MATLAB uses `~=`)                  |
-//! | BADOT    | Source contains `..` not part of `...`                   |
-//! | TWOCM    | Source contains `,,`                                     |
-//! | CLIS     | class_definition in a script file                        |
-//! | CLTWO    | Multiple class_definition nodes in one file              |
-//! | SOFOC    | Statements outside a class_definition in a class file    |
-//! | SEMFU    | File has only empty statements (only `;` and whitespace) |
-//! | FNDOT    | Function name contains dots outside class methods block  |
-//! | FNSWA    | Function name doesn't start with alphabetic character    |
-//! | NOPAR2   | Missing closing bracket mid-file                         |
-//! | EOLPAR   | Missing closing bracket at end of line                   |
-//! | ENDPAR   | Missing closing bracket at end of file                   |
-//! | ENDCT    | ERROR node suggesting missing END                        |
-//! | ENDCT2   | An END might be missing after a block-opening keyword    |
-//! | ENDCT3   | An END might be missing before a block-opening keyword   |
-//! | ENDCT4   | A METHODS block or END might be missing before a function definition |
-//! | EOFMI    | File ends with ERROR node (incomplete)                   |
-//! | NOLHS    | Assignment with empty left side                          |
-//! | BADCH    | Invalid control characters in source                     |
-//! | BADSP    | Non-ASCII whitespace characters in source                |
-//! | BADCT    | Unicode explicit directional formatting characters       |
-//! | REDEF    | Same identifier used as both function name and variable  |
-//! | SEPEXR   | Missing newline/semicolon between statements             |
-//! | SBTMP    | Chaining outputs after parenthesis is not supported      |
-//! | FVSYN    | Invalid function argument syntax                         |
-//! | FVACI    | Name-value arguments in cell indexing not supported      |
-//! | FVACS    | Quoted string used as name in name=value syntax          |
-//! | FVAMI    | Name in name=value syntax is not a valid identifier      |
-//! | UNSET    | Invalid use of operator on the left side of an assignment |
-//! | LHROW    | Assignment left side cannot have multiple rows (';')      |
-//! | RESWD    | Invalid use of a reserved word                           |
-//! | SYNEND   | Invalid use for END operator                             |
-//! | MCPLD    | Invalid property syntax                                  |
-//! | BADNOT   | Using ~ to ignore a value is not permitted               |
-//! | BADNOTLHS| Invalid use of logical not operator (~) on LHS           |
-//! | STRIN    | A quoted character vector is unterminated                |
-//! | DOUQT    | A double quoted string is unterminated                   |
-//! | INBLK    | A block comment is unterminated at the end of the file   |
-//! | BADFP    | Invalid floating-point constant (e.g., truncated `1.2.3`) |
-//! | BADHBH   | Invalid digit in a hexadecimal literal                   |
-//! | BADHBB   | Invalid digit in a binary literal                        |
-//! | BADHBHT  | Hex literal has too many digits for its type suffix      |
-//! | BADHBBT  | Binary literal has too many digits for its type suffix   |
-//! | HEXTOOLONG | Hex literal has too many digits (max 16 without suffix) |
-//! | BINARYTOOLONG | Binary literal has too many digits (max 64 without suffix) |
-//! | VTPOD    | Specify validation in the following order: size, then class, then functions |
+//! | Check ID      | Severity | Fix | Description                                                            |
+//! |---------------|----------|-----|------------------------------------------------------------------------|
+//! | SYNER         | error    | no  | ERROR node detected in parse tree                                      |
+//! | BDFIL         | error    | no  | File name doesn't follow MATLAB naming rules                           |
+//! | BADNE         | error    | yes | Source contains `!=` (MATLAB uses `~=`)                                |
+//! | BADOT         | error    | no  | Source contains `..` not part of `...`                                 |
+//! | TWOCM         | error    | no  | Source contains `,,`                                                   |
+//! | CLIS          | error    | no  | `classdef` in a script file                                            |
+//! | CLTWO         | error    | no  | Multiple `classdef` blocks in one file                                 |
+//! | SOFOC         | error    | no  | Statements outside a class definition in a class file                  |
+//! | SEMFU         | error    | no  | File has only empty statements (only `;` and whitespace)               |
+//! | FNDOT         | error    | no  | Function name contains dots outside a class methods block              |
+//! | FNSWA         | error    | no  | Function name doesn't start with an alphabetic character               |
+//! | NOPAR2        | error    | no  | Missing closing bracket mid-file                                       |
+//! | EOLPAR        | error    | no  | Missing closing bracket at end of line                                 |
+//! | ENDPAR        | error    | no  | Missing closing bracket at end of file                                 |
+//! | ENDCT         | error    | no  | ERROR node suggesting a missing `end`                                  |
+//! | ENDCT2        | error    | no  | An `end` might be missing after a block-opening keyword                |
+//! | ENDCT3        | error    | no  | An `end` might be missing before a block-opening keyword               |
+//! | ENDCT4        | error    | no  | A METHODS block or `end` might be missing before a function definition |
+//! | EOFMI         | error    | no  | File ends with an ERROR node (incomplete)                              |
+//! | NOLHS         | error    | no  | Assignment with empty left side                                        |
+//! | BADCH         | error    | no  | Invalid control characters in source                                   |
+//! | BADSP         | error    | no  | Non-ASCII whitespace characters in source                              |
+//! | BADCT         | error    | no  | Unicode explicit directional formatting characters                     |
+//! | REDEF         | error    | no  | Same identifier used as both function name and variable                |
+//! | SEPEXR        | error    | yes | Missing newline/semicolon between statements                           |
+//! | SBTMP         | error    | no  | Chaining outputs after a parenthesis is not supported                  |
+//! | FVSYN         | error    | no  | Invalid function argument syntax                                       |
+//! | FVACI         | error    | no  | Name-value arguments in cell indexing not supported                    |
+//! | FVACS         | error    | no  | Quoted string used as name in `name=value` syntax                      |
+//! | FVAMI         | error    | no  | Name in `name=value` syntax is not a valid identifier                  |
+//! | UNSET         | error    | no  | Invalid use of an operator on the left side of an assignment           |
+//! | LHROW         | error    | no  | Assignment left side cannot have multiple rows (`;`)                   |
+//! | RESWD         | error    | no  | Invalid use of a reserved word                                         |
+//! | SYNEND        | error    | no  | Invalid use of the END operator                                        |
+//! | MCPLD         | error    | no  | Invalid property syntax                                                |
+//! | BADNOT        | error    | no  | Using `~` to ignore a value is not permitted                           |
+//! | BADNOTLHS     | error    | no  | Invalid use of logical not (`~`) on the left side                      |
+//! | STRIN         | error    | no  | A quoted character vector is unterminated                              |
+//! | DOUQT         | error    | no  | A double-quoted string is unterminated                                 |
+//! | INBLK         | error    | no  | A block comment is unterminated at end of file                         |
+//! | BADFP         | error    | no  | Invalid floating-point constant (e.g. truncated `1.2.3`)               |
+//! | BADHBH        | error    | no  | Invalid digit in a hexadecimal literal                                 |
+//! | BADHBB        | error    | no  | Invalid digit in a binary literal                                      |
+//! | BADHBHT       | error    | no  | Hex literal has too many digits for its type suffix                    |
+//! | BADHBBT       | error    | no  | Binary literal has too many digits for its type suffix                 |
+//! | HEXTOOLONG    | error    | no  | Hex literal has too many digits (max 16 without suffix)                |
+//! | BINARYTOOLONG | error    | no  | Binary literal has too many digits (max 64 without suffix)             |
+//! | VTPOD         | error    | no  | Specify validation in order: size, then class, then functions          |
+//!
+//! ## Fix
+//!
+//! Two checks carry automatic fixes:
+//!
+//! - `BADNE` rewrites `!=` to `~=`, the MATLAB not-equal operator.
+//! - `SEPEXR` inserts a `;` between two statements that share a line with no
+//!   separator.
+//!
+//! ## Examples
+//!
+//! ### Incorrect
+//!
+//! ```matlab
+//! x = 1 != 2;      % BADNE: `!=` is not MATLAB
+//! a = 1 b = 2;     % SEPEXR: statements on one line without separator
+//! if x > 0
+//!     y = 'unterminated;   % STRIN
+//! ```
+//!
+//! ### Correct
+//!
+//! ```matlab
+//! x = 1 ~= 2;
+//! a = 1; b = 2;
+//! if x > 0
+//!     y = 'terminated';
+//! end
+//! ```
+//!
+//! ### Fixed
+//!
+//! ```diff
+//! - x = 1 != 2;
+//! + x = 1 ~= 2;
+//! - a = 1 b = 2;
+//! + a = 1; b = 2;
+//! ```
 //!
 //! ## Configuration
 //!

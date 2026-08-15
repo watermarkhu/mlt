@@ -83,6 +83,7 @@ export default defineConfig({
                 { text: 'Performance Improvements', link: '/rules/performance' },
                 { text: 'Custom Checks', link: '/rules/custom-checks' },
                 { text: 'Naming Checks', link: '/rules/naming' },
+                { text: 'NOSEMI - Trailing Semicolon Missing', link: '/rules/nosemi' },
               ],
             },
             {
@@ -103,11 +104,6 @@ export default defineConfig({
                 { text: 'Unsupported Features', link: '/rules/unsupported' },
                 { text: 'Code Analyzer Configuration Issues', link: '/rules/config-issues' },
               ],
-            },
-            {
-              text: 'Example',
-              collapsed: true,
-              items: [{ text: 'NOSEMI - Trailing Semicolon Missing', link: '/rules/nosemi' }],
             },
           ],
         },

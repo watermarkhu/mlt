@@ -1,38 +1,64 @@
-//! # SUGGESTED_IMPROVEMENTS: Suggested Improvements Lookup Engine
+//! # SUGGESTED_IMPROVEMENTS: Suggested Improvements
 //!
-//! A data-driven rule module that handles ~243 MATLAB Code Analyzer checks
-//! about functions and patterns that are not recommended, with suggestions
-//! for modern replacements. Instead of implementing one struct per check, a
-//! single `SuggestedImprovementsEngine` loads a TOML data file at compile
-//! time, parses it into a lookup table, and emits diagnostics with the
-//! specific check ID from the matched entry.
-//!
-//! ## Architecture
-//!
-//! - A `SuggestedEntry` struct represents one check (id, function_name,
-//!   message, replacement).
-//! - A single `SuggestedImprovementsEngine` rule registers with inventory once.
-//! - On each `function_call` or `command` node, the engine extracts the
-//!   function name and performs an O(1) HashMap lookup.
-//! - If a match is found, a diagnostic is emitted with the entry's specific
-//!   check ID (e.g., "CSVRD"), not the meta-ID "SUGGESTED_IMPROVEMENTS".
-//!
-//! ## Data File
-//!
-//! The entries are stored in `data/suggested_improvements.toml` and loaded via
-//! `include_str!` at compile time. The format is:
-//!
-//! ```toml
-//! [[checks]]
-//! id = "CSVRD"
-//! function_name = "csvread"
-//! message = "'csvread' is not recommended. Use 'readmatrix' instead."
-//! replacement = "readmatrix"
+//! ```mlt
+//! id = "SUGGESTED_IMPROVEMENTS"
+//! title = "Suggested Improvements"
+//! category = "suggested-improvements"
+//! severity = "info"
+//! fix = false
+//! icon = "lucide/lightbulb"
+//! slug = "suggested-improvements"
+//! data_file = "suggested_improvements.toml"
 //! ```
 //!
-//! Entries with `function_name = ""` are "generic" checks that cannot be
-//! matched by function name alone (they require AST pattern matching) and
-//! are skipped during the lookup-based check.
+//! ## Rule
+//!
+//! A data-driven rule module that handles 243 MATLAB Code Analyzer checks
+//! about functions and patterns that are not recommended, pairing each with a
+//! modern replacement suggestion. Instead of implementing one struct per
+//! check, a single `SuggestedImprovementsEngine` loads
+//! `data/suggested_improvements.toml` at compile time, parses it into a
+//! function-name lookup table, and emits diagnostics with the specific check
+//! ID from the matched entry (e.g. `CSVRD`, not the meta ID
+//! `SUGGESTED_IMPROVEMENTS`).
+//!
+//! On each `function_call` or `command` node the engine extracts the function
+//! name and performs an O(1) HashMap lookup, reporting the first matching
+//! entry for that name (some names map to several check IDs, e.g.
+//! `maketform` → MTFA1, MTFA2, MTFP1, MTFP2, MTFB). Entries with an empty
+//! `function_name` are "generic" checks that cannot be matched by name alone
+//! (they require AST pattern matching) and are skipped during the
+//! lookup-based check.
+//!
+//! ## Examples
+//!
+//! ### Incorrect
+//!
+//! ```matlab
+//! data = csvread('data.csv');   % CSVRD — use readmatrix instead
+//! if isdir(folder)              % ISDIR — use isfolder instead
+//!     disp('folder exists');
+//! end
+//! ```
+//!
+//! ### Correct
+//!
+//! ```matlab
+//! data = readmatrix('data.csv');
+//! if isfolder(folder)
+//!     disp('folder exists');
+//! end
+//! ```
+//!
+//! ## Configuration
+//!
+//! ```toml
+//! [lint.categories]
+//! suggested-improvements = "info"
+//!
+//! [lint.rules]
+//! SUGGESTED_IMPROVEMENTS = "off"
+//! ```
 
 use std::collections::HashMap;
 use std::sync::LazyLock;

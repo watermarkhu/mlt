@@ -2,31 +2,70 @@
 icon: lucide/cog
 ---
 
-# Code Analyzer Configuration Issues
+# Configuration Issues
 
 **Default severity:** Error
 **Auto-fix:** No
 **Category:** Configuration Issues
 **Can be disabled:** Yes
 
-## What this engine does
+## What this rule does
 
-The `CONFIG_ISSUES_ENGINE` rule implements the MATLAB Code Analyzer checks in the **Code Analyzer Configuration Issues** category. All checks share one engine and are dispatched by tree-sitter node kind or by file-level traversal; each diagnostic carries the specific check ID (e.g. `BDCFG`).
+Detects MATLAB-side configuration issues such as invalid parameter names
+passed to configuration functions, wrong argument counts, and invalid
+option values. The engine matches `function_call` and `command` nodes
+against known configuration function patterns and emits a diagnostic with
+the specific check ID (`BDCFG`, `CFERR`, `BDOPT`, `CFIG`).
 
 ## Check IDs
 
-| Check ID | Description |
-| -------- | ----------- |
-| `BDCFG` | BDCFG |
-| `CFERR` | CFERR |
-| `BDOPT` | BDOPT |
-| `CFIG` | CFIG |
+### BDCFG
+
+Severity: **error** · Auto-fix: **no**
+
+Invalid configuration parameter
+
+### CFERR
+
+Severity: **error** · Auto-fix: **no**
+
+Configuration function error
+
+### BDOPT
+
+Severity: **error** · Auto-fix: **no**
+
+Invalid option value
+
+### CFIG
+
+Severity: **error** · Auto-fix: **no**
+
+Configuration file issue
+
+## Examples
+
+### Incorrect
+
+```matlab
+set_param(gcs, 'NotARealParam', 'value');
+cfg = coder.config('something');
+opts = optimset('NotAnOption', 1);
+```
+
+### Correct
+
+```matlab
+set_param(gcs, 'SimulationCommand', 'start');
+cfg = coder.config('lib');
+opts = optimset('Display', 'off');
+```
 
 ## Configuration
 
 ```toml
 [lint.rules.CONFIG_ISSUES_ENGINE]
-disabled_checks = ["XXXX"]   # Turn off specific checks
+disabled_checks = []
 ```
 
-See [Configuration](../configuration.md#per-engine-parameters) for the full parameter list and [rules.md](../rules.md) for the complete rule inventory.
+See [Configuration](../configuration.md) for the full parameter list and [rules.md](../rules.md) for the complete rule inventory.

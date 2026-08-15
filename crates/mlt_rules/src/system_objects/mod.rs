@@ -1,49 +1,82 @@
 //! # SYSTEM_OBJECTS_ENGINE: System Object Validation Checks
 //!
-//! Implements 9 checks for MATLAB System object validation. System objects
-//! (classes inheriting from `matlab.System`) have specific lifecycle
-//! constraints that static analysis can partially verify.
+//! ```mlt
+//! id = "SYSTEM_OBJECTS_ENGINE"
+//! title = "System Object Validation Checks"
+//! category = "system-objects"
+//! severity = "warning"
+//! fix = false
+//! icon = "lucide/boxes"
+//! slug = "system-objects"
+//! ```
 //!
-//! Since full type information is not available to a static linter, these
-//! checks use pattern-based heuristics — detecting System object patterns
-//! based on common conventions (classes ending in "System", method calls
-//! like `step()`, `setup()`, `release()`, property access patterns).
+//! ## Rule
 //!
-//! ## Checks
+//! Validates MATLAB System object usage. System objects (classes inheriting
+//! from `matlab.System`) have specific lifecycle constraints that static
+//! analysis can partially verify. Since full type information is not available
+//! to a static linter, these checks use pattern-based heuristics — detecting
+//! System object patterns by class inheritance, lifecycle method calls
+//! (`step`, `setup`, `release`, `reset`), and property access conventions.
+//! All 9 checks share a single `SystemObjectsEngine` that dispatches node-level
+//! checks on `function_call` nodes plus file-level class analysis; each
+//! diagnostic carries the specific check ID (e.g. `SONUMIN`, `SOTUNPROP3`).
 //!
-//! | ID | Severity | Description |
-//! |----|----------|-------------|
-//! | SONUMIN | Error | Wrong number of inputs to System object method |
-//! | SONUMOUT | Error | Wrong number of outputs from System object method |
-//! | SODEPPROP | Warning | Deprecated system object property |
-//! | SOINITPROP | Warning | Property should be set in constructor |
-//! | SODFLTVAL | Warning | Default value issue in system object |
-//! | SORSRVDNM | Warning | Reserved name used for system object member |
-//! | SOTUNPROP1 | Warning | Tunable property issue |
-//! | SOTUNPROP3 | Warning | Non-tunable property modified after setup |
-//! | SOTUNPROP4 | Error | Non-tunable property modified in step method |
+//! ## Check IDs
+//!
+//! | Check ID   | Severity | Fix | Description |
+//! |------------|----------|-----|-------------|
+//! | SONUMIN    | error    | no  | System object method called with wrong number of inputs |
+//! | SONUMOUT   | error    | no  | System object method called with wrong number of outputs |
+//! | SODEPPROP  | warning  | no  | Deprecated system object property; use the recommended replacement |
+//! | SOINITPROP | warning  | no  | DiscreteState properties must be initialized within a 'resetImpl' method |
+//! | SODFLTVAL  | error    | no  | Property default value uses a function call, which may not be valid |
+//! | SORSRVDNM  | warning  | no  | Reserved name used for system object member; choose a different name |
+//! | SOTUNPROP1 | warning  | no  | Logical attribute not supported for tunable properties on MATLAB System blocks |
+//! | SOTUNPROP3 | warning  | no  | Tunable properties on System blocks must be numeric; char property is made Nontunable |
+//! | SOTUNPROP4 | warning  | no  | Tunable properties on System blocks must be numeric; string property is made Nontunable |
+//!
+//! ## Examples
+//!
+//! ### Incorrect
+//!
+//! ```matlab
+//! classdef MySystem < matlab.System
+//!     properties
+//!         Gain = rand();      % SODFLTVAL: function-call default value
+//!         Flag logical = false % SOTUNPROP1: logical tunable property
+//!     end
+//!     methods
+//!         function step(obj)   % SORSRVDNM: reserved method name
+//!         end
+//!     end
+//! end
+//! step(); % SONUMIN: step() called without inputs
+//! ```
+//!
+//! ### Correct
+//!
+//! ```matlab
+//! classdef MySystem < matlab.System
+//!     properties
+//!         Gain = 1;
+//!         Flag = false;
+//!     end
+//!     methods
+//!         function stepImpl(obj) % use the *Impl override, not 'step'
+//!         end
+//!     end
+//! end
+//! step(obj, input); % pass the object and the input signal
+//! ```
 //!
 //! ## Configuration
 //!
 //! ```toml
 //! [lint.rules.SYSTEM_OBJECTS_ENGINE]
+//! severity = "warning"
 //! skip_checks = ["SONUMIN"]
 //! ```
-//!
-//! ## Limitations
-//!
-//! Without runtime type information, these checks rely on heuristics:
-//! - Method names (`step`, `setup`, `release`, `reset`) suggest System object usage
-//! - Class names containing "System" or inheriting from `matlab.System`
-//! - Property access patterns on objects that appear to be System objects
-//!
-//! False positives are possible for non-System classes using similar method names.
-//!
-//! ## Layout
-//!
-//! The per-check `check_*` methods and their tests live in sibling `check_*.rs`
-//! modules in this directory. This module keeps the engine, the dispatch, the
-//! file-level class traversal, and the shared free helpers.
 
 mod check_sodeprop;
 mod check_sodfltval;

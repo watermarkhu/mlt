@@ -1,41 +1,115 @@
 //! # READABILITY_ENGINE: Readability Improvements
 //!
+//! ```mlt
+//! id = "READABILITY_ENGINE"
+//! title = "Readability Improvements"
+//! category = "readability"
+//! severity = "info"
+//! fix = true
+//! icon = "lucide/eye"
+//! slug = "readability"
+//! ```
+//!
+//! ## Rule
+//!
 //! A multi-check rule engine that detects readability improvements in MATLAB
 //! code. Instead of implementing one struct per check, a single
 //! `ReadabilityEngine` dispatches to per-check-ID logic inside its `check()`
-//! method, emitting diagnostics with specific check IDs (e.g., `ISCHR`,
-//! `IJCL`, `RPMT1`).
+//! method (and a file-level pass for MFAMB), emitting diagnostics with the
+//! specific check ID (e.g. `ISCHR`, `IJCL`, `RPMT1`).
 //!
-//! ## Checks
+//! The 35 checks cover type-checking simplification (`isa(x, 'type')` →
+//! dedicated predicates), dimension checks (`size(x,dim)==1` → `isrow`/`iscolumn`),
+//! variable shadowing, unnecessary brackets, modern string functions,
+//! character literals, formatting, control-flow style, error/warning message
+//! IDs, input validation, output style, flip/rotate, redundant arithmetic and
+//! boolean logic, size and logical helpers, `arguments` attributes, and
+//! ambiguous identifiers.
 //!
-//! This engine covers 36 readability checks across these patterns:
+//! ## Check IDs
 //!
-//! - **Type checking simplification** (ISCHR, ISSTR, ISLOG, ISCEL, ISMAT):
-//!   prefer `ischar`, `isstring`, etc. over `isa(x, 'type')`.
-//! - **Dimension checks** (ISROW, ISCOL): prefer `isrow`/`iscolumn` over
-//!   `size(x,dim)==1`.
-//! - **Variable shadowing** (IJCL): `i`/`j` as assignment LHS shadows the
-//!   complex unit.
-//! - **Unnecessary brackets** (NBRAK2): `[x]` where `x` is a scalar.
-//! - **String comparisons** (STREMP, STRCL1, STRCLFH, STRIFCND, STLOW):
-//!   prefer modern string functions; flag unnecessary UPPER/LOWER calls.
-//! - **Character literals** (CHARTEN): use `newline` instead of `char(10)`.
-//! - **Formatting** (SPRINTFN): use `num2str` over simple `sprintf`.
-//! - **Control flow style** (ASGSL): avoid inline assignment in conditions.
-//! - **Error/warning style** (SPERR, SPWRN): prefer message IDs.
-//! - **Input validation** (NCHKE): prefer `narginchk`/`nargoutchk`.
-//! - **Output style** (DSPSP, DSPSY): prefer `fprintf`/`disp` over wrappers.
-//! - **Flip/rotate** (FLUDLR): prefer `rot90(x, 2)` over `flipud(fliplr(x))` /
-//!   `fliplr(flipud(x))`.
-//! - **Redundant arithmetic** (RPMT1, RPMT0, RPMTI, RPMTN): simplify trivial
-//!   multiplication/addition.
-//! - **Redundant logic** (RPMTT, RPMTF): simplify boolean tautologies.
-//! - **Size helpers** (PSIZE): prefer `numel` over `prod(size(x))`.
-//! - **Logical helpers** (LOGSUM, LOGL): prefer `any`/logical indexing.
-//! - **Arguments attribute** (FVINR): add an `(Input)` attribute to `arguments`
-//!   blocks that have no attribute for readability.
-//! - **Ambiguous identifiers** (MFAMB): flag identifiers used as function
-//!   calls that are also defined as variables.
+//! | Check ID | Severity | Fix | Description |
+//! |----------|----------|-----|-------------|
+//! | ASGSL    | info     | no  | Assignment inside a conditional expression |
+//! | COMNL    | info     | yes | Newline following comma acts as a row separator in a matrix |
+//! | SPERR    | info     | no  | Prefer a message identifier for `error` |
+//! | SPWRN    | info     | no  | Prefer a message identifier for `warning` |
+//! | NCHKE    | info     | no  | Use `narginchk`/`nargoutchk` for argument validation |
+//! | DSPSP    | info     | yes | Prefer `fprintf` over `disp(sprintf(...))` |
+//! | DSPSY    | info     | no  | Prefer `disp` over `display` |
+//! | STLOW    | info     | yes | Unnecessary UPPER/LOWER call in a comparison |
+//! | FLUDLR   | info     | yes | Use `rot90(x, 2)` instead of `flipud(fliplr(x))`/`fliplr(flipud(x))` |
+//! | RPMT1    | info     | yes | Trivial multiplication by 1 |
+//! | RPMT0    | info     | yes | Multiplication by 0 |
+//! | RPMTT    | info     | yes | Boolean tautology (`x \|\| true`) |
+//! | RPMTF    | info     | yes | Boolean contradiction (`x && false`) |
+//! | RPMTI    | info     | yes | Trivial addition of 0 |
+//! | RPMTN    | info     | yes | Trivial subtraction of 0 |
+//! | PSIZE    | info     | yes | Use `numel(x)` instead of `prod(size(x))` |
+//! | LOGSUM   | info     | no  | Use `any` instead of `sum(logical) > 0` |
+//! | LOGL     | info     | no  | Use logical indexing instead of `x(find(condition))` |
+//! | ISCHR    | info     | yes | Use `ischar(x)` instead of `isa(x, 'char')` |
+//! | ISSTR    | info     | yes | Use `isstring(x)` instead of `isa(x, 'string')` |
+//! | ISLOG    | info     | yes | Use `islogical(x)` instead of `isa(x, 'logical')` |
+//! | ISCEL    | info     | yes | Use `iscell(x)` instead of `isa(x, 'cell')` |
+//! | IJCL     | info     | no  | `i`/`j` used as a variable (shadows the complex unit) |
+//! | ISMAT    | info     | yes | Use `isnumeric(x)` instead of `isa(x, 'double')` |
+//! | ISROW    | info     | yes | Use `isrow(x)` instead of `size(x, 1) == 1` |
+//! | ISCOL    | info     | yes | Use `iscolumn(x)` instead of `size(x, 2) == 1` |
+//! | NBRAK2   | info     | yes | Unnecessary brackets around a scalar expression |
+//! | MFAMB    | info     | no  | Cannot determine whether a name is a variable or function |
+//! | FVINR    | info     | yes | Add an `(Input)` attribute to `arguments` blocks for readability |
+//! | STREMP   | info     | yes | Use `strlength(s)==0` instead of `strcmp(s, '')` |
+//! | STRCL1   | info     | no  | Use `startsWith`/`endsWith` instead of `strncmp`/`strncmpi` |
+//! | STRCLFH  | info     | no  | Use `contains` instead of `strfind` for presence checks |
+//! | STRIFCND | info     | no  | Simplify if-conditions involving string comparisons |
+//! | CHARTEN  | info     | yes | Use `newline` instead of `char(10)` |
+//! | SPRINTFN | info     | yes | Use `num2str` over simple `sprintf` for number formatting |
+//!
+//! ## Fix
+//!
+//! Rewrites the flagged construct into the clearer equivalent:
+//!
+//! - `isa(x, 'type')` → `ischar`/`isstring`/`islogical`/`iscell`/`isnumeric`
+//!   (ISCHR, ISSTR, ISLOG, ISCEL, ISMAT).
+//! - `size(x, dim) == 1` → `isrow(x)`/`iscolumn(x)` (ISROW, ISCOL).
+//! - `x * 1` → `x`, `x * 0` → `zeros(size(x))`, `x + 0` → `x`,
+//!   `x - 0` → `x` (RPMT1, RPMT0, RPMTI, RPMTN).
+//! - `x | true` → `true` and `x & false` → `false` (RPMTT, RPMTF).
+//! - `prod(size(x))` → `numel(x)`, `char(10)` → `newline`,
+//!   `sprintf('%d', x)` → `num2str(x)`, `strcmp(s, '')` → `strlength(s)==0`.
+//! - `flipud(fliplr(x))` → `rot90(x, 2)`, `[scalar]` → `scalar`,
+//!   `disp(sprintf(...))` → `fprintf(...)`.
+//! - A trailing comma before a newline in a matrix becomes a semicolon (COMNL).
+//! - An `(Input)` attribute is inserted into attribute-less `arguments`
+//!   blocks (FVINR).
+//!
+//! ## Examples
+//!
+//! ### Incorrect
+//!
+//! ```matlab
+//! if isa(x, 'char')
+//! if a || true
+//! y = flipud(fliplr(m));
+//! n = prod(size(a));
+//! ```
+//!
+//! ### Correct
+//!
+//! ```matlab
+//! if ischar(x)
+//! if a
+//! y = rot90(m, 2);
+//! n = numel(a);
+//! ```
+//!
+//! ### Fixed
+//!
+//! ```diff
+//! - n = prod(size(a));
+//! + n = numel(a);
+//! ```
 //!
 //! ## Configuration
 //!

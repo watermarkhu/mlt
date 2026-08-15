@@ -5,1324 +5,718 @@ icon: lucide/check-circle
 # Good Practices
 
 **Default severity:** Warning
-**Auto-fix:** No
+**Auto-fix:** Yes
 **Category:** Good Practices
 **Can be disabled:** Yes
 
-## What these checks do
+## What this rule does
 
-These checks cover function-call conventions: `sprintf`/`fprintf` format strings that do not agree with the argument count, `for` loop iterator variables that are reassigned inside the loop, `import` statements that do not run first in a function, dynamic-code functions (`eval`, `evalc`, `evalin`, `feval`) used as sub-expressions, `onCleanup` outputs that are discarded or assigned to `~`, and the platform-specific `computer('arch')` query.
+Encourages recommended coding practices for MATLAB code. All 106 checks are
+handled by a single hybrid engine (`GoodPracticesEngine`). Node-level checks
+cover simple pattern matches (error handling, `eval` usage, string
+comparisons, parfor/spmd usage, redundant comparisons), while file-level
+checks use metadata extraction and the symbol table for context-aware
+analysis (last-statement detection, variable shadowing, class and property
+validation). Each diagnostic carries the specific check ID (e.g. `TRYNC`,
+`EVLCS`, `PFRNI`).
+
+The checks span error handling, string and comparison idioms, `eval`/dynamic
+code, parfor/spmd parallel practices, structure and field access, OOP and
+class properties, logical-usage patterns, shared variables, arity, and App
+Designer methods.
 
 ## Check IDs
 
-| Check ID | Message |
-| -------- | ------- |
-| `CTPCT` | The format might not agree with the argument count. |
-| `FXSET` | Loop index `VAR_NAME` is changed inside of a FOR loop. |
-| `SIMPT` | This import statement runs before any other code in function `VAR_NAME`. Consider placing it at the top of the function body. |
-| `TLEV` | `VAR_NAME` could be very inefficient unless it is a top-level statement in its function. |
-| `UNONC` | Assign the onCleanup output argument to a variable. Do not use the tilde operator (~) in place of a variable. |
-| `MIPC1` | Calling the computer function with 'arch' returns 'win64', 'glnxa64', or 'maci64'. |
-| `ATTF` | The Code Analyzer is unable to determine if the expression assigned to the `Abstract` attribute evaluates to true or false. |
-| `ATTOF` | Setting the class attribute `Abstract` to false is not recommended. |
-| `MCPO` | `SetObservable`/`GetObservable`/`AbortSet` property has no effect in a value class. |
-| `MCSAC` | `SetAccess` cannot be set on Constant properties. |
-| `MOBSRV` | `SetObservable`/`GetObservable` on a Constant property has no effect. |
-| `MDEPIN` | Default values should not be assigned to dependent properties. |
-| `MCCPI` | Initialize the Constant property or make it an Abstract Constant property. |
-| `MGMD` | `get` method should be implemented for each dependent property without private `GetAccess`. |
-| `MCCPE` | Attempting to call a property or event as a function. |
-| `MTHANS` | Using `ANS` as a method name is not recommended. |
-| `MHERM` | Parenthesize the multiplication of a variable and its transpose. |
-| `MNUML` | To create a square matrix, use `VAR_NAME(numel(...), numel(...))`. |
-| `COMFS` | This comma makes the file a script. Therefore, all functions in the file are local functions. |
-| `DUALC` | Command might be prematurely ended by comma. |
-| `RMFLD` | RMFIELD output must be assigned back to the structure. |
-| `RMWRN` | The warning with tag VAR_NAME has been removed from MATLAB, so this statement has no effect. |
-| `SEMFS` | This semicolon makes the file a script. Therefore, all functions in the file are local functions. |
-| `STFLD` | SETFIELD output must be assigned back to the structure. |
-| `STRSZ` | Use STRCMP to compare character vectors that can have different sizes. |
-| `SUBSINDEX` | Do not overload 'subsindex' for fundamental data types. |
-| `VTFIN` | VAR_NAME should be the first input argument to the VAR_NAME function. |
-| `CTOINW` | Use of constructed object as input to constructor is not necessary. |
-| `FXUP` | Outer loop index VAR_NAME is set inside a nested function. |
-
-### App Designer / OOP practice
-
-| Check ID | Message |
-| -------- | ------- |
-| `ADMTHDINV` | Use VAR_NAME(app, ...) to call this function. |
-| `ADPROP` | Use app.VAR_NAME to refer to this property. |
-| `ADPROPLC` | Use app.VAR_NAME to reference a property of app. |
-| `MCNPN` | VAR_NAME is referenced but is not a property, method, or event name defined in this class. |
-| `MCNPR` | VAR_NAME is not a property, but is the target of an assignment. |
-| `MCSNOV` | Set function in value class must return the modified object. |
-| `MCSOH` | Set function in handle class does not need to return the modified object. |
-| `MCVM` | Value class method that modifies the object must return the modified object. |
-| `MCCSPS` | Constant property VAR_NAME is not modified. 'VAR_NAME.VAR_NAME' creates a struct named VAR_NAME with a field named VAR_NAME. |
-| `MCSUP` | The set method for the property VAR_NAME should not access another property (VAR_NAME). |
-
-### Logical / comparison / range
-
-| Check ID | Message |
-| -------- | ------- |
-| `COMPNOP` | This logical comparison simplifies to VAR_NAME(...). Did you mean to use VAR_NAME to evaluate function argument: VAR_NAME(...VAR_NAME...)? |
-| `COMPNOT` | This logical comparison simplifies to ~VAR_NAME(...). Did you mean to use VAR_NAME to evaluate function argument: VAR_NAME(...VAR_NAME...)? |
-| `M3COL` | Using three colons (a:b:c:d) in an expression is probably unintended. |
-
-### Logical usage / handle defaults / shared variables / arity
-
-| Check ID | Message |
-| -------- | ------- |
-| `BDLGI` | Variable might be set by a nonlogical operator. |
-| `BDLOG1` | A scalar logical value is expected in the conditional expression. Use 'any' or 'all' to reduce the array to a logical scalar. |
-| `BDLOG2` | A scalar logical value is expected in the conditional expression. Use 'any' or 'all' to reduce the array to a logical scalar, or compare the scalar value to 0. |
-| `BDSCA` | Unexpected use of VAR_OPERATOR in a scalar context. |
-| `BDSCI` | Variable might be set by a nonscalar operator. |
-| `MCHDP` | A property default value that is a handle will cause all instances to share the same object data. To avoid sharing, create the property value in the constructor. For intentional sharing, consider using a Constant property. |
-| `MCHDT` | Declaring the value of a property as a handle might cause all instances to share the same default handle. To avoid sharing, create the handle for this property in the constructor. To express that sharing is intentional, use the Constant property attribute. |
-| `SHVAU` | Confusing usage of name VAR_NAME on lines VAR_NUMBER and VAR_NUMBER. Initialize VAR_NAME before line VAR_NUMBER to make it a shared variable or rename VAR_NAME on line VAR_NUMBER to disambiguate. |
-| `GTARG` | Function might be called with too many arguments. |
-| `LTARG` | Function might be called with too few arguments. |
-
-### Parfor / SPMD / parallel practices
-
-| Check ID | Message |
-| -------- | ------- |
-| `PFEVB` | Using EVALIN('base') or ASSIGNIN('base') inside a PARFOR loop refers to the worker machines' base workspaces. |
-| `PFGP` | Avoid assigning to GLOBAL or PERSISTENT variable `VAR_NAME` inside a PARFOR loop. |
-| `PFGV` | Avoid using GLOBAL variable `VAR_NAME` in a PARFOR loop. |
-| `PFIIN` | The input variable `VAR_NAME` should be initialized before the PARFOR loop. |
-| `PFOUS` | The output variable `VAR_NAME` might not be used after the PARFOR loop. |
-| `PFRNI` | Do not specify the increment explicitly. The parfor loop can only use an increment of one. |
-| `PFRIN` | The reduction variable `VAR_NAME` might not be set before the PARFOR loop. |
-| `PFRUS` | The reduction variable `VAR_NAME` might not be used after the PARFOR loop. |
-| `PFTUSW` | The temporary variable `VAR_NAME` might be used after the PARFOR loop on line `VAR_NUMBER`. |
-| `PFUIXW` | The index variable `VAR_NAME` might be used after the PARFOR loop on line `VAR_NUMBER`. |
-| `SPEVB` | Using EVALIN('base') or ASSIGNIN('base') inside an SPMD block refers to the worker machines' base workspaces. |
-| `SPGV` | Using the GLOBAL or PERSISTENT variable `VAR_NAME` in an SPMD block might fail because it is accessed on a worker machine. |
-| `DSPMDA` | Distributed array must be created outside of an SPMD block. |
-
-## CTPCT - Format and Argument Count
-
-Flags `sprintf` and `fprintf` calls whose format string contains a number of conversion specifiers that does not match the number of remaining arguments. Escaped `%%`, `%*` width specifiers, and `%n$` positional specifiers are not counted.
-
-### Why this matters
-
-A mismatch between the format string and the arguments produces incorrect output or runtime errors (`sprintf` returns fewer/more values than expected, or conversion fails).
-
-### Examples
-
-#### Incorrect
+### TRYNC
 
-```matlab
-fprintf('%d %d', x);       % two specifiers, one argument
-sprintf('%s %s', a);       % two specifiers, one argument
-```
-
-#### Correct
-
-```matlab
-fprintf('%d %d', x, y);    % two specifiers, two arguments
-sprintf('100%% %d', x);    % %% is escaped, one specifier
-```
-
-### Limitations
-
-`%*` (width from argument) and `%n$` (positional) specifiers are not counted. A format string with a file identifier as the first argument (`fprintf(fid, ...)`) is supported: the first string argument is treated as the format.
-
-## FXSET - Loop Index Modified Inside the Loop
-
-Flags `for` loops whose iterator variable is assigned inside the loop body.
-
-### Why this matters
-
-Changing the loop index inside the body changes the iteration sequence in ways that are usually unintended and hard to debug. MATLAB's `for` loop index should only be updated by the loop itself.
-
-### Examples
-
-#### Incorrect
-
-```matlab
-for i = 1:10
-    i = 5;                 % modifies the loop index
-end
-```
-
-#### Correct
-
-```matlab
-for i = 1:10
-    y = i;                 % reads the loop index
-end
-```
-
-## SIMPT - Import Not First in Function
-
-Flags `import` commands that do not run before any other code in their enclosing function.
-
-### Why this matters
-
-An `import` that executes after other statements may not affect the earlier code, and the imported symbols may not be available where the user expects them. MATLAB's Code Analyzer recommends placing `import` statements at the top of the function body.
-
-### Examples
-
-#### Incorrect
-
-```matlab
-function f()
-    x = 1;
-    import foo.bar
-end
-```
-
-#### Correct
+Severity: **warning** · Auto-fix: **no**
 
-```matlab
-function f()
-    import foo.bar;
-    x = 1;
-end
-```
-
-Imports at the file/script level are not flagged.
-
-## TLEV - Dynamic-Code Function Used as a Sub-Expression
-
-Flags `eval`, `evalc`, `evalin`, and `feval` calls that are used as sub-expressions inside a larger expression instead of as top-level statements.
-
-### Why this matters
-
-Dynamic-code execution is expensive. Using these functions in the middle of an expression forces the interpreter to construct and evaluate code at runtime while the surrounding expression waits; a top-level statement can often be replaced by a more efficient, static construct.
+`try` without `catch`
 
-### Examples
+### CTCH
 
-#### Incorrect
+Severity: **warning** · Auto-fix: **no**
 
-```matlab
-eval(x + y);               % bare statement; result discarded
-z = f(eval(y));            % eval nested inside another call
-z = eval(y) + 1;           % eval nested inside an operator
-```
+`catch` block is empty
 
-#### Correct
-
-```matlab
-z = eval(y);               % eval is the entire right-hand side
-```
+### WLAST
 
-A call that is the entire right-hand side of an assignment is treated as a top-level statement and is not flagged.
+Severity: **warning** · Auto-fix: **no**
 
-## UNONC - onCleanup Output Not Assigned
+`warning` called as last statement in function
 
-Flags `onCleanup` calls whose output object is discarded or assigned to `~`.
+### WNTAG
 
-### Why this matters
+Severity: **warning** · Auto-fix: **no**
 
-The object returned by `onCleanup` runs its cleanup function when it is destroyed. If the object is discarded immediately or assigned to `~`, the cleanup runs at the end of the statement and the function never executes at the intended scope.
+`warning` without message ID
 
-### Examples
+### ERTAG
 
-#### Incorrect
+Severity: **warning** · Auto-fix: **no**
 
-```matlab
-onCleanup(@myCleanup);     % object discarded immediately
-[~] = onCleanup(@myCleanup); % cleanup runs right away
-```
+`error` without message ID
 
-#### Correct
+### MEXCEP
 
-```matlab
-cleanupObj = onCleanup(@myCleanup);
-```
+Severity: **warning** · Auto-fix: **no**
 
-## MIPC1 - computer('arch')
+`catch` without exception variable
 
-Flags calls to `computer` with a single string argument `'arch'`.
+### STCMP
 
-### Why this matters
+Severity: **warning** · Auto-fix: **no**
 
-`computer('arch')` returns one of `'win64'`, `'glnxa64'`, or `'maci64'` and is often used in code that must remain platform-specific. The check points out the platform-dependent result so you can decide whether the behavior is intended.
+Use `strcmp`/`strcmpi` instead of `==` for strings
 
-### Examples
+### STCI
 
-#### Incorrect
+Severity: **warning** · Auto-fix: **no**
 
-```matlab
-arch = computer('arch');
-```
+Use `strcmpi` for case-insensitive comparison
 
-#### Correct
+### STISA
 
-```matlab
-c = computer;              % no 'arch' argument
-arch = computer('win');    % not the 'arch' query
-```
+Severity: **warning** · Auto-fix: **no**
 
-## OOP / class / property checks
+Use `isa` instead of `class` + `strcmp`
 
-These checks analyze `classdef` files: class-level attributes, property block attributes, dependent/constant property semantics, and method/property naming.
+### STRNU
 
-### ATTF / ATTOF - Class Abstract Attribute
+Severity: **warning** · Auto-fix: **no**
 
-`ATTF` fires when the expression assigned to the class `Abstract` attribute cannot be determined to be a boolean literal. `ATTOF` fires when `Abstract` is explicitly set to `false`.
+Use `str2double` instead of `str2num`
 
-### Why this matters
+### EVLCS
 
-The Code Analyzer cannot always statically evaluate the value assigned to `Abstract`; a non-literal value may be neither `true` nor `false` at parse time. Setting `Abstract` to `false` is redundant and often masks a mistaken `Abstract` declaration.
+Severity: **warning** · Auto-fix: **no**
 
-### Examples
+Avoid `eval`
 
-#### Incorrect
+### EVLDOT
 
-```matlab
-classdef (Abstract = someVar) Foo      % ATTF: value is not a boolean literal
-end
+Severity: **warning** · Auto-fix: **no**
 
-classdef (Abstract = false) Foo        % ATTOF: explicit false is not recommended
-end
-```
+Avoid `eval` for dynamic field access
 
-#### Correct
+### EVLEQ
 
-```matlab
-classdef (Abstract = true) Foo
-end
-```
+Severity: **warning** · Auto-fix: **no**
 
-### MCPO - Observable Attributes on a Value Class
+Avoid `eval` for dynamic variable creation
 
-Fires when a property block of a value class (a class that does not inherit from `handle`) uses `SetObservable`, `GetObservable`, or `AbortSet`.
+### EVLSYS
 
-### Why this matters
+Severity: **warning** · Auto-fix: **no**
 
-Observable attributes only take effect on handle classes. On a value class, listeners cannot observe property changes, so the attributes are silently ignored.
+Avoid `eval` for system commands
 
-### Examples
+### EVLDUAL
 
-#### Incorrect
+Severity: **warning** · Auto-fix: **no**
 
-```matlab
-classdef ValClass
-    properties (SetObservable)
-        Data
-    end
-end
-```
+Avoid `evalin`
 
-#### Correct
+### EVLSEQVAR
 
-```matlab
-classdef HClass < handle
-    properties (SetObservable)
-        Data
-    end
-end
-```
+Severity: **warning** · Auto-fix: **no**
 
-### MCSAC - SetAccess on Constant Properties
+Avoid `eval` to create sequential variables
 
-Fires when a property block declares both `Constant` and `SetAccess`.
+### NOANS
 
-### Why this matters
+Severity: **warning** · Auto-fix: **no**
 
-Constant properties are set only at class definition time; `SetAccess` cannot control writes to them and is meaningless.
+Statement result assigned to `ans`
 
-### Examples
+### LOAD
 
-#### Incorrect
+Severity: **warning** · Auto-fix: **no**
 
-```matlab
-classdef MyConst
-    properties (Constant, SetAccess = public)
-        X = 1
-    end
-end
-```
+`load` without output variable
 
-#### Correct
+### SEPEX
 
-```matlab
-classdef MyConst
-    properties (Constant)
-        X = 1
-    end
-end
-```
+Severity: **info** · Auto-fix: **no**
 
-### MOBSRV - Observable Attributes on Constant Properties
+Multiple statements on one line
 
-Fires when a property block declares both `Constant` and `SetObservable` or `GetObservable`.
+### NBRAK1
 
-### Why this matters
+Severity: **info** · Auto-fix: **yes**
 
-Constant properties are evaluated once at class load; observable accessors have no effect on them.
+Unnecessary brackets around scalar
 
-### Examples
+### LNGNM
 
-#### Incorrect
+Severity: **warning** · Auto-fix: **no**
 
-```matlab
-classdef MyConst
-    properties (Constant, SetObservable)
-        X = 1
-    end
-end
-```
+Variable name exceeds length
 
-#### Correct
+### CHAIN
 
-```matlab
-classdef MyConst
-    properties (Constant)
-        X = 1
-    end
-end
-```
+Severity: **info** · Auto-fix: **no**
 
-### MDEPIN - Default Values on Dependent Properties
+Method chaining on one line
 
-Fires when a `Dependent` property is assigned a default value.
+### DISPLAY
 
-### Why this matters
+Severity: **warning** · Auto-fix: **no**
 
-Dependent properties do not store values; they are computed by `get` methods on demand. A default value would never be stored or returned.
+Override `display` is discouraged
 
-### Examples
+### FNDEF
 
-#### Incorrect
+Severity: **warning** · Auto-fix: **no**
 
-```matlab
-classdef DepClass
-    properties (Dependent)
-        Y = 5
-    end
-end
-```
+Function not defined at expected location
 
-#### Correct
+### NOIN
 
-```matlab
-classdef DepClass
-    properties (Dependent)
-        Y
-    end
-end
-```
+Severity: **info** · Auto-fix: **no**
 
-### MCCPI - Uninitialized Constant Property
+Function has no input validation
 
-Fires when a `Constant` property has no default value and is not declared `Abstract`.
+### VALST
 
-### Why this matters
+Severity: **info** · Auto-fix: **no**
 
-A constant property that is never initialized cannot be read. Initialize it, or declare the property (or class) `Abstract`.
+Validate function arguments
 
-### Examples
+### PROP
 
-#### Incorrect
+Severity: **info** · Auto-fix: **no**
 
-```matlab
-classdef MyConst
-    properties (Constant)
-        X
-    end
-end
-```
+Property validation missing
 
-#### Correct
+### CPROP
 
-```matlab
-classdef MyConst
-    properties (Constant)
-        X = 1
-    end
-end
-```
+Severity: **info** · Auto-fix: **no**
 
-```matlab
-classdef MyConst
-    properties (Constant, Abstract)
-        X
-    end
-end
-```
+Constant property could be method
 
-### MGMD - Dependent Property Without a get Method
+### FVAL
 
-Fires for each `Dependent` property that has no corresponding `get.PropName` method, unless the block declares `GetAccess = private`.
+Severity: **warning** · Auto-fix: **no**
 
-### Why this matters
+Function value not used
 
-A dependent property is computed by its `get` method. Without one, the property cannot return a value.
+### FNCOLND
 
-### Examples
+Severity: **warning** · Auto-fix: **no**
 
-#### Incorrect
+`end` used as column index without dimension
 
-```matlab
-classdef DepClass
-    properties (Dependent)
-        Y
-    end
-end
-```
+### COMNC
 
-#### Correct
+Severity: **info** · Auto-fix: **yes**
 
-```matlab
-classdef DepClass
-    properties (Dependent)
-        Y
-    end
-    methods
-        function val = get.Y(obj)
-            val = 1;
-        end
-    end
-end
-```
+Comment lacks space after `%`
 
-### MCCPE - Property or Event Called as a Function
+### ITERS
 
-Fires when a `function_call` inside the class body uses the name of a property or event defined by the class.
+Severity: **warning** · Auto-fix: **no**
 
-### Why this matters
+Loop variable shadows outer variable
 
-Properties and events are not callable. The call is likely a mistake — the code probably meant to index the property or reference the object field.
+### LOGPROD
 
-### Examples
+Severity: **warning** · Auto-fix: **no**
 
-#### Incorrect
+Use `all` instead of `prod` on logical
 
-```matlab
-classdef Foo
-    properties
-        Color
-    end
-    methods
-        function go(obj)
-            y = Color(1);        % property called as a function
-        end
-    end
-end
-```
+### LOGMIN
 
-#### Correct
+Severity: **warning** · Auto-fix: **no**
 
-```matlab
-classdef Foo
-    properties
-        Color
-    end
-    methods
-        function go(obj)
-            y = obj.Color;       % field access
-        end
-    end
-end
-```
+Use `all` instead of `min` on logical
 
-### MTHANS - ans as a Method Name
+### LOGMAX
 
-Fires when a method is named `ans`.
+Severity: **warning** · Auto-fix: **no**
 
-### Why this matters
+Use `any` instead of `max` on logical
 
-`ans` is the implicit output variable in MATLAB and is frequently overwritten by the interpreter. A method named `ans` is error-prone and confusing.
+### ELARLOG
 
-### Examples
+Severity: **warning** · Auto-fix: **no**
 
-#### Incorrect
+Element-wise `&`/`\|` on logicals in if/while
 
-```matlab
-classdef Foo
-    methods
-        function ans = ans(obj)
-            ans = 1;
-        end
-    end
-end
-```
+### SHOCIRAA
 
-#### Correct
+Severity: **warning** · Auto-fix: **no**
 
-```matlab
-classdef Foo
-    methods
-        function result = compute(obj)
-            result = 1;
-        end
-    end
-end
-```
+Short-circuit in array context
 
-### MHERM - Unparenthesized Multiplication by a Transpose
+### UNRPWR
 
-Fires when a `*` or `.*` multiplication has a transposed operand (`'`) and the multiplication is not wrapped in parentheses.
+Severity: **warning** · Auto-fix: **no**
 
-### Why this matters
+Power of negative base may be complex
 
-`x * x'` is not guaranteed to be Hermitian in floating-point arithmetic; parenthesizing as `(x * x')` makes the intent explicit and ensures a Hermitian result.
+### ADAPPREF
 
-### Examples
+Severity: **warning** · Auto-fix: **no**
 
-#### Incorrect
+Avoid `addpref` (use settings)
 
-```matlab
-z = x * x';
-```
+### KEYBOARDFUN
 
-#### Correct
+Severity: **warning** · Auto-fix: **no**
 
-```matlab
-z = (x * x');
-```
+`keyboard` left in code
 
-### MNUML - Square Matrix Creation With a Single numel Argument
+### GVMIS
 
-Fires when `zeros`, `ones`, `rand`, `randn`, `false`, or `true` is called with a single `numel(...)` argument.
+Severity: **warning** · Auto-fix: **no**
 
-### Why this matters
+Global variable used but never declared
 
-`zeros(numel(x))` creates a square matrix with `numel(x)` rows and columns, which is rarely the intended shape. Pass both dimensions (`zeros(numel(x), numel(x))`) or use `size` (`zeros(size(x))`) to make the intent explicit.
+### PFEVB
 
-### Examples
+Severity: **warning** · Auto-fix: **no**
 
-#### Incorrect
+EVALIN('base')/ASSIGNIN('base') inside a PARFOR loop refers to worker base workspace
 
-```matlab
-y = zeros(numel(x));
-```
+### PFGP
 
-#### Correct
+Severity: **warning** · Auto-fix: **no**
 
-```matlab
-y = zeros(numel(x), numel(x));
-y = zeros(size(x));
-```
+Assigning to GLOBAL/PERSISTENT variable inside a PARFOR loop
 
-## Parfor / SPMD / parallel practices
+### PFGV
 
-These checks analyze `parfor` loops and `spmd` blocks. `parfor` is a `for_statement` whose source text starts with `parfor`; `spmd` is an `spmd_statement` node.
+Severity: **warning** · Auto-fix: **no**
 
-### PFRNI - Explicit Increment in a PARFOR Loop
+Using a GLOBAL variable in a PARFOR loop
 
-Fires when a `parfor` range is written as `start:step:end` (three parts). `parfor` only supports an increment of one.
+### PFIIN
 
-#### Incorrect
+Severity: **warning** · Auto-fix: **no**
 
-```matlab
-parfor i = 1:2:10
-    x(i) = i;
-end
-```
+The input variable should be initialized before the PARFOR loop
 
-#### Correct
+### PFOUS
 
-```matlab
-parfor i = 1:10
-    x(i) = i;
-end
-```
+Severity: **warning** · Auto-fix: **no**
 
-This check provides an automatic fix that rewrites `1:2:10` as `1:10`.
+The output variable might not be used after the PARFOR loop
 
-### PFEVB / SPEVB - EVALIN/ASSIGNIN('base') in PARFOR or SPMD
+### PFRNI
 
-Fires when `evalin` or `assignin` is called with `'base'` as the first argument inside a `parfor` loop body (`PFEVB`) or an `spmd` block (`SPEVB`). Calls with other workspaces (e.g., `'caller'`) are not flagged.
+Severity: **warning** · Auto-fix: **yes**
 
-#### Incorrect
+Explicit increment in a PARFOR loop; parfor only supports an increment of one
 
-```matlab
-parfor i = 1:10
-    evalin('base', 'x');
-end
+### PFRIN
 
-spmd
-    assignin('base', 'y', 1);
-end
-```
+Severity: **warning** · Auto-fix: **no**
 
-#### Correct
+The reduction variable might not be set before the PARFOR loop
 
-```matlab
-parfor i = 1:10
-    evalin('caller', 'x');
-end
-```
+### PFRUS
 
-### PFGP - Assigning to a GLOBAL/PERSISTENT Variable in PARFOR
+Severity: **warning** · Auto-fix: **no**
 
-Fires when a `parfor` body assigns to a variable declared `global` or `persistent` anywhere in the file.
+The reduction variable might not be used after the PARFOR loop
 
-#### Incorrect
+### PFTUSW
 
-```matlab
-global gVar;
-parfor i = 1:10
-    gVar = i;
-end
-```
+Severity: **warning** · Auto-fix: **no**
 
-#### Correct
+The temporary variable might be used after the PARFOR loop
 
-```matlab
-parfor i = 1:10
-    x(i) = i;
-end
-```
+### PFUIXW
 
-### PFGV - Using a GLOBAL Variable in PARFOR
+Severity: **warning** · Auto-fix: **no**
 
-Fires when a `parfor` body reads a variable declared `global`. (Assignment to a global is handled by `PFGP`.)
+The index variable might be used after the PARFOR loop
 
-#### Incorrect
+### SPEVB
 
-```matlab
-global gVar;
-parfor i = 1:10
-    x(i) = gVar;
-end
-```
+Severity: **warning** · Auto-fix: **no**
 
-### SPGV - Using a GLOBAL/PERSISTENT Variable in SPMD
+EVALIN('base')/ASSIGNIN('base') inside an SPMD block refers to worker base workspace
 
-Fires when an `spmd` block uses a variable declared `global` or `persistent`. Each worker machine has its own copy of the workspace, so the value is undefined.
+### SPGV
 
-#### Incorrect
+Severity: **warning** · Auto-fix: **no**
 
-```matlab
-global g2;
-spmd
-    z = g2 + 1;
-end
-```
+GLOBAL/PERSISTENT variable in an SPMD block might fail on a worker
 
-### DSPMDA - Distributed Array Created Inside SPMD
+### DSPMDA
 
-Fires when `distributed`, `gpuArray`, or `codistributed` is called inside an `spmd` block. Distributed arrays must be created on the client.
+Severity: **warning** · Auto-fix: **no**
 
-#### Incorrect
+Distributed array must be created outside of an SPMD block
 
-```matlab
-spmd
-    d = distributed(zeros(100));
-end
-```
+### COMFS
 
-#### Correct
+Severity: **warning** · Auto-fix: **no**
 
-```matlab
-d = distributed(zeros(100));
-spmd
-    work_with(d);
-end
-```
+Comma makes the file a script, so functions are local
 
-### PFIIN - Input Variable Not Initialized Before PARFOR
+### DUALC
 
-Fires when a variable is read inside a `parfor` body but is never initialized before the loop and is not assigned inside the loop. Function inputs and `global`/`persistent` declarations count as initialized.
+Severity: **warning** · Auto-fix: **no**
 
-#### Incorrect
+Command might be prematurely ended by comma
 
-```matlab
-parfor i = 1:10
-    q = z + i;      % z is never initialized
-end
-```
+### RMFLD
 
-#### Correct
+Severity: **warning** · Auto-fix: **no**
 
-```matlab
-z = 0;
-parfor i = 1:10
-    q = z + i;
-end
-```
+`rmfield` output must be assigned back to the structure
 
-### PFOUS - Output Variable Not Used After PARFOR
+### RMWRN
 
-Fires when a simple variable (not `x(i)` indexed assignment) is assigned inside a `parfor` body but never read after the loop.
+Severity: **warning** · Auto-fix: **no**
 
-#### Incorrect
+Warning tag has been removed from MATLAB
 
-```matlab
-parfor i = 1:10
-    q = i;
-end
-```
+### SEMFS
 
-#### Correct
+Severity: **warning** · Auto-fix: **no**
 
-```matlab
-parfor i = 1:10
-    q = i;
-end
-disp(q);
-```
+Semicolon makes the file a script, so functions are local
 
-### PFTUSW - Temporary Variable Used After PARFOR
+### STFLD
 
-Fires when a simple variable assigned inside a `parfor` body (other than the index variable) is read after the loop. The message reports the line of the first use after the loop; the value comes from an unspecified worker.
+Severity: **warning** · Auto-fix: **no**
 
-#### Incorrect
+`setfield` output must be assigned back to the structure
 
-```matlab
-parfor i = 1:10
-    tmp = compute(i);
-    x(i) = tmp;
-end
-disp(tmp);
-```
+### STRSZ
 
-### PFUIXW - Index Variable Used After PARFOR
+Severity: **warning** · Auto-fix: **no**
 
-Fires when the `parfor` index variable is read after the loop. The message reports the line of the first use after the loop. Uses inside a subsequent `for`/`parfor` body are ignored because the variable is re-bound there.
+Use `strcmp` to compare character vectors of different sizes
 
-#### Incorrect
+### ATTF
 
-```matlab
-parfor i = 1:10
-    x(i) = i;
-end
-disp(i);
-```
+Severity: **warning** · Auto-fix: **no**
 
-## Structure, String, and Misc Checks
+Unable to determine if the `Abstract` attribute expression is true or false
 
-These checks cover structure-manipulation calls whose results are silently discarded, character-vector comparisons that should use `strcmp`, warning tags that no longer exist, command statements that a comma may prematurely end, and file-level separators that turn a function file into a script file.
+### ATTOF
 
-### RMFLD / STFLD - Structure Output Must Be Assigned Back
+Severity: **info** · Auto-fix: **no**
 
-Fires when `rmfield` or `setfield` is called as a bare statement instead of being assigned back to the structure.
+Setting the class attribute `Abstract` to false is not recommended
 
-### Why this matters
+### MCPO
 
-`rmfield` and `setfield` return the modified structure; calling them as a bare statement discards the result, so the modification never takes effect.
+Severity: **warning** · Auto-fix: **no**
 
-### Examples
+`SetObservable`/`GetObservable`/`AbortSet` property has no effect in a value class
 
-#### Incorrect
+### MCSAC
 
-```matlab
-rmfield(s, 'a');       % result discarded
-setfield(s, 'a', 1);   % result discarded
-```
+Severity: **warning** · Auto-fix: **no**
 
-#### Correct
+`SetAccess` cannot be set on Constant properties
 
-```matlab
-s = rmfield(s, 'a');
-s = setfield(s, 'a', 1);
-```
+### MOBSRV
 
-### STRSZ - Comparing Character Vectors of Different Sizes
+Severity: **info** · Auto-fix: **no**
 
-Fires when `==` or `~=` compares two string literals of different lengths.
+`SetObservable`/`GetObservable` on a Constant property has no effect
 
-### Why this matters
+### MDEPIN
 
-`==` on two character vectors performs element-wise comparison; when the vectors have different sizes the result is not a scalar logical, which is almost always a bug. `strcmp` compares the whole vectors.
+Severity: **warning** · Auto-fix: **no**
 
-### Examples
+Default values should not be assigned to dependent properties
 
-#### Incorrect
+### MCCPI
 
-```matlab
-x = 'abc' == 'abcd';
-```
+Severity: **warning** · Auto-fix: **no**
 
-#### Correct
+Initialize the Constant property or make it an Abstract Constant property
 
-```matlab
-x = strcmp('abc', 'abcd');
-```
+### MGMD
 
-### RMWRN - Removed Warning Tag
+Severity: **warning** · Auto-fix: **no**
 
-Fires when `warning` is called with a message ID tag that MATLAB has removed. The denylist of removed tags is currently **empty** (placeholder), so the check is inert until tags are populated.
+`get` method should be implemented for each dependent property without private `GetAccess`
 
-### Why this matters
+### MCCPE
 
-A `warning(...)` call with a removed message ID tag silently does nothing, which hides genuine warnings.
+Severity: **warning** · Auto-fix: **no**
 
-### DUALC - Command Prematurely Ended by Comma
+Attempting to call a property or event as a function
 
-Fires when a command-syntax statement is immediately followed by a comma.
+### MTHANS
 
-### Why this matters
+Severity: **info** · Auto-fix: **no**
 
-In command syntax, the command consumes the rest of the line; a comma after a command may end it prematurely and make the remaining text a separate statement.
+Using `ANS` as a method name is not recommended
 
-### Examples
+### MHERM
 
-#### Incorrect
+Severity: **info** · Auto-fix: **no**
 
-```matlab
-disp hello, disp world
-```
+Parenthesize the multiplication of a variable and its transpose
 
-#### Correct
+### MNUML
 
-```matlab
-disp hello;
-disp world;
-```
+Severity: **warning** · Auto-fix: **no**
 
-### Limitations
+Use `VAR_NAME(numel(...), numel(...))` to create a square matrix
 
-`DUALC` is a heuristic: it fires whenever a `command` node is immediately followed by a comma sibling. In one-line `if`/`for` constructions (e.g., `if x, disp y, end`) this also matches and is reported.
+### COMPNOP
 
-### COMFS / SEMFS - File Structure Makes Functions Local
+Severity: **warning** · Auto-fix: **yes**
 
-Fires when a file that contains a `function` definition also has a top-level comma (`COMFS`) or semicolon (`SEMFS`) statement.
+Comparison with `true` simplifies to the function call itself
 
-### Why this matters
+### COMPNOT
 
-A file that contains both script statements and `function` definitions is treated as a script, so every function becomes a local function.
+Severity: **warning** · Auto-fix: **yes**
 
-### Examples
+Comparison with `~= true` or `== false` simplifies to `~call(...)`
 
-#### Incorrect (the comma and semicolon at the top level make `f` a local function)
+### M3COL
 
-```matlab
-x = 1,
-y = 2;
-function f()
-end
-```
+Severity: **warning** · Auto-fix: **no**
 
-#### Correct (a pure function file)
+Three colons (`a:b:c:d`) in an expression is probably unintended
 
-```matlab
-function f()
-    x = 1;
-    y = 2;
-end
-```
+### BDLGI
 
-### Limitations
+Severity: **warning** · Auto-fix: **no**
 
-- **`RMWRN`** uses a denylist of removed warning tags that is currently **empty** (placeholder). The mechanism is implemented and will start reporting as tags are added to the denylist.
-- **`STRSZ`** only compares two literal character vectors; comparisons involving variables or non-string operands are not reported.
+Variable might be set by a nonlogical operator
 
-## Logical, Comparison, and Range Checks
+### BDLOG1
 
-These checks flag redundant logical comparisons of function results and accidentally-chained colon expressions.
+Severity: **warning** · Auto-fix: **no**
 
-### COMPNOP - Comparison With `true` Simplifies to the Call
+Non-scalar logical value used in a conditional expression
 
-Fires when a `function_call` is compared with `== true` (in either order). The comparison always has the same value as the call itself.
+### BDLOG2
 
-#### Why this matters
+Severity: **warning** · Auto-fix: **no**
 
-`isa(x, 'double') == true` reads as if `isa` needed a second step to produce a logical, and obscures the fact that `isa` already returns a logical.
+Scalar non-logical value used in a conditional expression
 
-#### Incorrect
+### BDSCA
 
-```matlab
-if isa(x, 'double') == true
-end
-```
+Severity: **warning** · Auto-fix: **no**
 
-#### Correct
+`&&`/`\|\|` used in a scalar context with a non-scalar operand
 
-```matlab
-if isa(x, 'double')
-end
-```
+### BDSCI
 
-This check provides an automatic fix that replaces the whole comparison with the call: `isa(x, 'double') == true` becomes `isa(x, 'double')`.
+Severity: **warning** · Auto-fix: **no**
 
-### COMPNOT - Comparison With `~= true` or `== false` Simplifies to `~call(...)`
+Variable might be set by a nonscalar operator
 
-Fires when a `function_call` is compared with `~= true` or `== false` (in either order). The comparison always equals the negated call.
+### MCHDP
 
-#### Why this matters
+Severity: **warning** · Auto-fix: **no**
 
-`~= true` and `== false` are indirect ways of writing logical negation and obscure the intent.
+Property default that directly constructs a handle is shared by all instances
 
-#### Incorrect
+### MCHDT
 
-```matlab
-if isa(x, 'double') ~= true
-end
-if isa(x, 'double') == false
-end
-```
+Severity: **warning** · Auto-fix: **no**
 
-#### Correct
+Property default that resolves to a handle is shared by all instances
 
-```matlab
-if ~isa(x, 'double')
-end
-```
+### SHVAU
 
-This check provides an automatic fix that replaces the whole comparison with the negated call: `isa(x, 'double') == false` becomes `~isa(x, 'double')`.
+Severity: **warning** · Auto-fix: **no**
 
-The fix is semantically safe when the call returns a scalar logical, which is the intended use; it is offered unconditionally to match MATLAB's behavior.
+Ambiguous shared-variable usage between a nested function and its parent
 
-### M3COL - Three Colons in an Expression
+### GTARG
 
-Fires when an expression contains three colons (`a:b:c:d`). MATLAB's colon operator accepts `start:end` or `start:step:end` only, so a third colon is almost always a typo.
+Severity: **warning** · Auto-fix: **no**
 
-#### Why this matters
+Function might be called with too many arguments
 
-`1:2:3:4` is not valid MATLAB — the extra `:` turns the statement into a syntax error.
+### LTARG
 
-#### Incorrect
+Severity: **warning** · Auto-fix: **no**
 
-```matlab
-a = 1:2:3:4;
-```
+Function might be called with too few arguments
 
-#### Correct
+### CTPCT
 
-```matlab
-a = 1:2:3;
-```
+Severity: **warning** · Auto-fix: **no**
 
-This check does not provide an automatic fix.
+`sprintf`/`fprintf` format might not agree with the argument count
 
-## BDLGI - Variable Might Be Set by a Nonlogical Operator
+### FXSET
 
-Flags variables that are assigned from an arithmetic operator (`+`, `-`, `*`, `/`, `^`, `.*`, ...) and later used as a bare `if` / `while` condition. A numeric value used as a condition is almost always a mistake; the condition should be a logical expression.
+Severity: **warning** · Auto-fix: **no**
 
-### Why this matters
+Loop index variable is changed inside of a `for` loop
 
-Using a computed numeric value as a condition relies on the implicit nonzero-is-true rule, which is easy to misread and often indicates a missing comparison (for example `if x` instead of `if x > 0`).
+### SIMPT
 
-### Examples
+Severity: **warning** · Auto-fix: **no**
 
-#### Incorrect
+`import` statement does not run first in a function
 
-```matlab
-x = a + b;
-if x
-    ...
-end
-```
+### TLEV
 
-#### Correct
+Severity: **warning** · Auto-fix: **no**
 
-```matlab
-x = a + b;
-if x > 0
-    ...
-end
-```
+Dynamic-code function used as a sub-expression, not a top-level statement
 
-The check only fires when the type environment can confirm the variable is not logical.
+### UNONC
 
-## BDLOG1 - Non-Scalar Logical Value in a Conditional Expression
+Severity: **warning** · Auto-fix: **no**
 
-Flags `if` / `while` conditions that are logical but not scalar. MATLAB requires a scalar logical value in a conditional expression; an array logical condition is an error (or `all`/`any` was intended).
+`onCleanup` output must be assigned to a variable, not `~`
 
-### Why this matters
+### MIPC1
 
-A logical vector produced by a comparison (`x = a > b; if x`) does not give the expected single true/false answer. Use `any` or `all` to reduce it to a scalar.
+Severity: **warning** · Auto-fix: **no**
 
-### Examples
+`computer('arch')` is platform-specific
 
-#### Incorrect
+### SUBSINDEX
 
-```matlab
-x = a > b;      % logical vector when a, b are vectors
-if x
-    ...
-end
-```
+Severity: **warning** · Auto-fix: **no**
 
-#### Correct
+Do not overload `subsindex` for fundamental data types
 
-```matlab
-if any(a > b)
-    ...
-end
-```
+### VTFIN
 
-## BDLOG2 - Scalar Non-Logical Value in a Conditional Expression
+Severity: **warning** · Auto-fix: **no**
 
-Flags `if` / `while` conditions that are scalar but not provably logical, such as a numeric scalar literal or a variable assigned a scalar number.
+Validated value should be the first input to a `validate*` function
 
-### Why this matters
+### CTOINW
 
-A scalar numeric condition (`if x` where `x = 5`) always evaluates to true. MATLAB recommends comparing the scalar to 0 (`if x ~= 0`) to make the intent explicit.
+Severity: **warning** · Auto-fix: **no**
 
-### Examples
+Constructed object passed to its own constructor
 
-#### Incorrect
+### FXUP
 
-```matlab
-x = 5;
-if x
-    ...
-end
-```
+Severity: **warning** · Auto-fix: **no**
 
-#### Correct
+Outer loop index set inside a nested function
 
-```matlab
-x = 5;
-if x ~= 0
-    ...
-end
-```
+### ADMTHDINV
 
-## BDSCA - Short-Circuit Operator in a Scalar Context
+Severity: **warning** · Auto-fix: **no**
 
-Flags `&&` / `||` operators whose operand is a non-scalar logical array. Short-circuit operators require scalar logical operands; element-wise `&` / `|` (or `any`/`all`) should be used for arrays.
+Class method called without `app` as the first argument
 
-### Why this matters
+### ADPROP
 
-`&&` on an array is a runtime error. The fix is usually to reduce the operand with `any`/`all` or switch to the element-wise operator.
+Severity: **warning** · Auto-fix: **no**
 
-### Examples
+Property assigned through a bare identifier instead of `app.PROP`
 
-#### Incorrect
+### ADPROPLC
 
-```matlab
-x = a > b;          % logical vector
-if x && y
-    ...
-end
-```
+Severity: **warning** · Auto-fix: **no**
 
-#### Correct
+Property read through a bare identifier instead of `app.PROP`
 
-```matlab
-if all(x) && y
-    ...
-end
-```
+### MCNPN
 
-## BDSCI - Variable Might Be Set by a Nonscalar Operator
+Severity: **warning** · Auto-fix: **no**
 
-Flags variables assigned from an array-producing expression (a colon range `a:b`, a matrix `[...]`, or a cell `{...}` literal with more than one element) and later used in a scalar context such as a bare `if` / `while` condition.
+Member access on the object that is not declared in the class
 
-### Why this matters
+### MCNPR
 
-Using an array where a scalar is expected is a common mistake; the array assignment usually indicates a different intent (for example, a missing subscript).
+Severity: **warning** · Auto-fix: **no**
 
-### Examples
+Assignment target on the object that is not a property
 
-#### Incorrect
+### MCSNOV
 
-```matlab
-idx = 1:10;
-if idx
-    ...
-end
-```
+Severity: **warning** · Auto-fix: **no**
 
-#### Correct
+Value-class setter does not return the modified object
 
-```matlab
-idx = 1:10;
-if isempty(idx)
-    ...
-end
-```
+### MCSOH
 
-## MCHDP - Property Default Directly Constructs a Handle
+Severity: **warning** · Auto-fix: **no**
 
-Flags properties whose default value directly constructs a handle instance (`handle()`, `onCleanup(...)`, `containers.Map(...)`, `timer()`, a constructor of the file's own handle class, and similar). The default is evaluated once when the class is loaded, so every instance shares the same object data.
+Handle-class setter unnecessarily returns the modified object
 
-### Why this matters
+### MCVM
 
-Shared handle defaults cause surprising aliasing: mutating the property on one instance changes it for every instance created later.
+Severity: **warning** · Auto-fix: **no**
 
-### Examples
+Value-class method modifying the object has no output
 
-#### Incorrect
+### MCCSPS
 
-```matlab
-classdef Foo < handle
-    properties
-        Cleanup = onCleanup(@cleanup)
-    end
-end
-```
+Severity: **warning** · Auto-fix: **no**
 
-#### Correct
+Constant property name used as a struct in a dot-access chain
 
-```matlab
-classdef Foo < handle
-    properties
-        Cleanup
-    end
-    methods
-        function obj = Foo()
-            obj.Cleanup = onCleanup(@cleanup);
-        end
-    end
-end
-```
+### MCSUP
 
-If the sharing is intentional, declare the property `Constant`.
+Severity: **warning** · Auto-fix: **no**
 
-## MCHDT - Property Default Resolves to a Handle
+Setter accesses a property other than the one it sets
 
-Flags properties whose default value is an identifier or expression that the type environment proves to be a handle-typed value. This fires when the default names a handle value instead of constructing one inline; the sharing concern is the same as MCHDP.
+## Automatic fixes
 
-### Why this matters
+Rewrites the flagged construct into the cleaner equivalent:
 
-A property whose default is a handle value is shared by all instances, which is usually unintended.
+- `call(...) == true` → `call(...)` (COMPNOP) and
+  `call(...) ~= true` / `call(...) == false` → `~call(...)` (COMPNOT).
+- `parfor i = 1:step:end` → `parfor i = 1:end` (PFRNI).
+- `%comment` → `% comment` (COMNC).
+- `(scalar)` → `scalar` (NBRAK1).
 
-### Examples
+## Examples
 
-#### Incorrect
+### Incorrect
 
 ```matlab
-classdef Foo < handle
-    properties
-        Cleanup = cleanupObj   % cleanupObj is a handle
-    end
+if isa(x, 'double') == true      % COMPNOP
+    disp('double');
 end
-```
-
-#### Correct
-
-```matlab
-classdef Foo < handle
-    properties
-        Cleanup
-    end
-    methods
-        function obj = Foo()
-            obj.Cleanup = onCleanup(@cleanup);
-        end
-    end
+parfor i = 1:2:10                % PFRNI
+    y(i) = i;
 end
+%comment with no space           % COMNC
+x = (5);                         % NBRAK1
 ```
-
-Heuristic note: the check only fires when the type environment can prove the identifier is a handle. External handle classes that are neither in the built-in list nor the file's own class are not resolved.
-
-## SHVAU - Confusing Shared-Variable Usage
-
-Flags a name that is used inside a nested function and also assigned in the enclosing function *after* the nested function definition. MATLAB cannot tell whether the nested function's use refers to the shared variable or to a separate local, producing confusing behavior.
 
-### Why this matters
+### Correct
 
-Assigning a variable in the parent after a nested function definition makes the nested function's reference ambiguous. Initialize the variable before the nested function to make it a shared variable, or rename one of the two.
-
-### Examples
-
-#### Incorrect
-
 ```matlab
-function outer()
-    y = 1;
-    function inner()
-        disp(x);   % ambiguous: shared or local?
-    end
-    x = 2;         % assigned after the nested function
+if isa(x, 'double')              % COMPNOP fix applied
+    disp('double');
 end
-```
-
-#### Correct
-
-```matlab
-function outer()
-    x = 2;         % assigned before the nested function
-    function inner()
-        disp(x);   % clearly the shared variable
-    end
+parfor i = 1:10                  % PFRNI fix applied
+    y(i) = i;
 end
-```
-
-## GTARG - Function Called with Too Many Arguments
-
-Flags `function_call` nodes that pass more arguments than the callee accepts. The callee arity comes from a same-file function definition first, then from a built-in table (`data/arity.toml`) covering common fixed-arity MATLAB functions.
-
-### Why this matters
-
-Passing extra arguments is usually a mistake and often indicates the wrong function was called or arguments were reordered.
-
-### Examples
-
-#### Incorrect
-
-```matlab
-sin(1, 2);
-myfunc(1, 2, 3);   % myfunc(a, b) takes two inputs
-```
-
-#### Correct
-
-```matlab
-sin(1);
-myfunc(1, 2);
-```
-
-Calls to functions that are neither defined in the same file nor in the built-in table are skipped (cross-file resolution is not implemented).
-
-## LTARG - Function Called with Too Few Arguments
-
-Flags `function_call` nodes that pass fewer arguments than the callee requires. Functions whose last input is `varargin` accept any number of extra arguments and are only checked for too-few calls.
-
-### Why this matters
-
-Missing arguments typically cause runtime errors or silently wrong behavior when the callee uses `nargin`.
-
-### Examples
-
-#### Incorrect
-
-```matlab
-disp();
-myfunc(1);         % myfunc(a, b) needs two inputs
+% comment with space             % COMNC fix applied
+x = 5;                           % NBRAK1 fix applied
 ```
 
-#### Correct
+### Fixed
 
-```matlab
-disp('hello');
-myfunc(1, 2);
+```diff
+- if isa(x, 'double') == true
++ if isa(x, 'double')
+- parfor i = 1:2:10
++ parfor i = 1:10
 ```
 
 ## Configuration
 
-These checks are part of the Good Practices engine and are disabled individually via the engine's `disabled_checks` list:
-
-```toml title=".mlt.toml"
+```toml
 [lint.rules.GOOD_PRACTICES_ENGINE]
-severity = "warn"
-disabled_checks = ["CTPCT", "FXSET"]
+severity = "warning"
+max_variable_name_length = 63
+disabled_checks = []
 ```
 
-| Parameter | Type | Default | Description |
-| --------- | ---- | ------- | ----------- |
-| `severity` | string | `"warn"` | Severity level (`"error"`, `"warn"`, `"info"`, `"off"`) |
-| `disabled_checks` | array of strings | `[]` | Check IDs to disable (e.g., `["CTPCT", "TLEV"]`) |
-
-## Automatic fixes
-
-- `PFRNI` — rewrites an explicit three-part parfor range (`1:2:10`) as a two-part range (`1:10`).
-- `COMPNOP` — replaces `call(...) == true` with `call(...)`.
-- `COMPNOT` — replaces `call(...) ~= true` or `call(...) == false` with `~call(...)`.
-
-The other checks in this engine do not provide automatic fixes.
-
-## Target node types
-
-- `function_call` — CTPCT, TLEV, UNONC, MIPC1, MNUML, MCCPE, RMFLD, STFLD, RMWRN
-- `for_statement` — FXSET, PFRNI, PFEVB, PFGP, PFGV
-- `spmd_statement` — SPEVB, SPGV, DSPMDA
-- `command` — SIMPT, DUALC
-- `comparison_operator` — COMPNOP, COMPNOT, MHERM, STRSZ
-- `range` — M3COL
-- `class_definition` — ATTF, ATTOF, MCPO, MCSAC, MOBSRV, MDEPIN, MCCPI, MGMD, MCCPE, MTHANS (via `check_file`)
-- File-level (via `check_file`) — PFIIN, PFOUS, PFTUSW, PFUIXW, COMFS, SEMFS, BDLGI, BDLOG1, BDLOG2, BDSCA, BDSCI, MCHDP, MCHDT, SHVAU, GTARG, LTARG
-
-## Related rules
-
-- `EVLCS` / `EVLDOT` / `EVLEQ` / `EVLSYS` / `EVLDUAL` / `EVLSEQVAR` — other `eval`-family checks
-- `LOAD` — another call whose output should be captured
-- `PFEVC` / `SPEVC` (Language Specification) — EVALIN/ASSIGNIN('caller') restrictions in parfor/spmd
-- `STCMP` — Use `strcmp`/`strcmpi` instead of `==` for strings
-- `SFLD` — Use dynamic field names instead of `setfield`
-- `NOANS` — Function result assigned to `ans` implicitly
-- `PFSLO` / `PFSLRD` / `PFSLW` (Language Specification) — parfor sliced-variable checks
-- `STCI` — Use `strcmpi` for case-insensitive comparison (related to `COMPNOP`/`COMPNOT`)
+See [Configuration](../configuration.md) for the full parameter list and [rules.md](../rules.md) for the complete rule inventory.

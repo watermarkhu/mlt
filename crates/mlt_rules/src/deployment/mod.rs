@@ -1,28 +1,62 @@
-//! # DEPLOYMENT_ENGINE: MATLAB Compiler / Deployment Checks
+//! # DEPLOYMENT_ENGINE: Deployment Constraint Checks
 //!
-//! Implements 10 checks for MATLAB Compiler deployment constraints.
-//! Deployed MATLAB applications (compiled with `mcc`) run in a restricted
-//! environment where certain functions are unavailable or behave differently.
+//! ```mlt
+//! id = "DEPLOYMENT_ENGINE"
+//! title = "MATLAB Compiler Deployment Constraint Checks"
+//! category = "deployment"
+//! severity = "warning"
+//! fix = false
+//! icon = "lucide/package"
+//! slug = "deployment"
+//! ```
 //!
-//! ## Checks
+//! ## Rule
 //!
-//! | ID | Severity | Description |
-//! |----|----------|-------------|
-//! | MCCD | Error | `cd` in deployed code |
-//! | MCPRD | Error | Path modification in deployed code |
-//! | MCHLP | Warning | `help`/`doc` in deployed code |
-//! | MCKBD | Warning | `keyboard` in deployed code |
-//! | MCSVP | Warning | `savepath` in deployed code |
-//! | MCMLR | Warning | `matlabroot` in deployed code |
-//! | MCABF | Error | `addpath` with absolute path |
-//! | MCMFL | Warning | `mfilename` in deployed code |
-//! | MCTBX | Warning | Toolbox function in deployed code |
-//! | MCLL | Error | License check in deployed code |
+//! Detects MATLAB constructs that are problematic in compiled, deployed
+//! applications built with `mcc`. Deployed MATLAB applications run in a
+//! restricted MCR environment where certain functions are unavailable or
+//! behave differently. All 10 checks share a single `DeploymentEngine` that
+//! dispatches node-level checks on `function_call` and `command` nodes; each
+//! diagnostic carries the specific check ID (e.g. `MCCD`, `MCTBX`) and its
+//! own severity.
+//!
+//! ## Check IDs
+//!
+//! | Check ID | Severity | Fix | Description |
+//! |----------|----------|-----|-------------|
+//! | MCCD     | error    | no  | 'cd' should not be used in deployed applications |
+//! | MCPRD    | error    | no  | Path modification functions should not be used in deployed applications |
+//! | MCHLP    | warning  | no  | 'help'/'doc' are not available in deployed applications |
+//! | MCKBD    | warning  | no  | 'keyboard' is not available in deployed applications |
+//! | MCSVP    | warning  | no  | 'savepath' is not available in deployed applications |
+//! | MCMLR    | warning  | no  | 'matlabroot' returns the MCR root, not the MATLAB root |
+//! | MCABF    | error    | no  | 'addpath' with an absolute path will fail in deployed applications |
+//! | MCMFL    | warning  | no  | 'mfilename' behaves differently in deployed applications |
+//! | MCTBX    | warning  | no  | Toolbox function may not be available without proper toolbox compilation |
+//! | MCLL     | error    | no  | License checking is not available in deployed applications |
+//!
+//! ## Examples
+//!
+//! ### Incorrect
+//!
+//! ```matlab
+//! cd /tmp;              % MCCD
+//! addpath('/abs/path'); % MCABF
+//! doc plot;             % MCHLP
+//! ```
+//!
+//! ### Correct
+//!
+//! ```matlab
+//! % Bundle resources with the deployed app and use relative paths.
+//! result = processFile('data.bin');
+//! ```
 //!
 //! ## Configuration
 //!
 //! ```toml
 //! [lint.rules.DEPLOYMENT_ENGINE]
+//! severity = "warning"
 //! skip_checks = ["MCTBX"]
 //! ```
 

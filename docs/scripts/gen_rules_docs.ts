@@ -14,17 +14,15 @@
  * 3. **Data-driven check tables** — the compatibility + suggested-improvements
  *    inventories from the TOML data files.
  *
- * Modules that have NOT yet been migrated to the schema are rendered through a
- * legacy fallback so the docs stay consistent during migration.
- *
  * CLI:
  *
  *     bun docs/scripts/gen_rules_docs.ts --print-data     # print data-driven tables
  *     bun docs/scripts/gen_rules_docs.ts --write          # write rule pages + rules.md (default)
  *     bun docs/scripts/gen_rules_docs.ts --check          # exit 1 if any generated file is stale
+ *     bun docs/scripts/gen_rules_docs.ts --check-module <slug>  # check a single rule page only
  */
 import { existsSync, readFileSync, readdirSync, statSync, writeFileSync } from 'node:fs'
-import { dirname, join, relative, resolve } from 'node:path'
+import { dirname, join, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 const REPO = resolve(dirname(fileURLToPath(import.meta.url)), '..', '..')
@@ -141,6 +139,7 @@ function parseFrontMatter(doc: string): FrontMatter | null {
   }
   if (!kv.id) return null
   return {
+    ...kv,
     id: kv.id,
     title: kv.title ?? kv.id,
     category: kv.category ?? '',
@@ -151,7 +150,6 @@ function parseFrontMatter(doc: string): FrontMatter | null {
     data_file: kv.data_file,
     note: kv.note,
     generated: kv.generated,
-    ...kv,
   }
 }
 
@@ -317,6 +315,39 @@ function discoverModules(): RuleModule[] {
   return modules
 }
 
+/** Naming engine check IDs: `naming.<entity>.<checkType>` Cartesian product. */
+function namingChecks(): Array<[string, string]> {
+  const entities = [
+    'class',
+    'function',
+    'localFunction',
+    'method',
+    'nestedFunction',
+    'property',
+    'event',
+    'enumeration',
+    'variable',
+  ]
+  const checkTypes = [
+    'maxLength',
+    'minLength',
+    'regularExpression',
+    'requiredPrefix',
+    'disallowedPrefix',
+    'disallowedPhrase',
+    'requiredSuffix',
+    'disallowedSuffix',
+    'casing',
+  ]
+  const out: Array<[string, string]> = []
+  for (const e of entities) {
+    for (const t of checkTypes) {
+      out.push([`naming.${e}.${t}`, `Naming check for ${e} ${t}`])
+    }
+  }
+  return out
+}
+
 function loadChecks(fm: FrontMatter, sections: Section[]): CheckRow[] {
   if (fm.generated === 'naming') {
     return namingChecks().map(([id, desc]) => ({
@@ -353,7 +384,7 @@ export function anchor(id: string): string {
 }
 
 // ---------------------------------------------------------------------------
-// Rule page rendering (schema path)
+// Rule page rendering
 // ---------------------------------------------------------------------------
 
 function renderRulePage(mod: RuleModule): string {
@@ -380,7 +411,10 @@ function renderRulePage(mod: RuleModule): string {
 
   if (mod.checks.length) {
     out.push('## Check IDs', '')
-    const isSmall = mod.checks.length <= 60
+    // Per-check `### ID` anchors up to 200 checks; only the huge data-driven
+    // engines (compatibility, suggested-improvements) fall back to compact
+    // grouped tables.
+    const isSmall = mod.checks.length <= 200
     if (isSmall) {
       for (const c of mod.checks) {
         out.push(`### ${c.id}`, '')
@@ -444,169 +478,6 @@ function rulePageName(mod: RuleModule): string {
   return slug + '.md'
 }
 
-// ---------------------------------------------------------------------------
-// Legacy fallback for un-migrated engines
-// ---------------------------------------------------------------------------
-
-const LEGACY_MODULES: Record<string, string> = {
-  performance: 'PERFORMANCE_ENGINE',
-  readability: 'READABILITY_ENGINE',
-  formatting: 'FORMATTING_ENGINE',
-  unset_variables: 'UNSET_VARIABLES_ENGINE',
-  unused: 'UNUSED_ENGINE',
-  codegen: 'CODEGEN_ENGINE',
-  deployment: 'DEPLOYMENT_ENGINE',
-  system_objects: 'SYSTEM_OBJECTS_ENGINE',
-  unsupported: 'UNSUPPORTED_ENGINE',
-  config_issues: 'CONFIG_ISSUES_ENGINE',
-  incomplete_analysis: 'INCOMPLETE_ANALYSIS',
-  syntax_errors: 'SYNTAX_ERRORS_ENGINE',
-}
-
-const LEGACY_TITLES: Record<string, string> = {
-  performance: 'Performance Improvements',
-  readability: 'Readability Improvements',
-  formatting: 'Formatting Suggestions',
-  unset_variables: 'Unset Variables',
-  unused: 'Unused Constructions',
-  codegen: 'MATLAB for Code Generation',
-  deployment: 'MATLAB Compiler (Deployment)',
-  system_objects: 'System Objects',
-  unsupported: 'Unsupported Features',
-  config_issues: 'Code Analyzer Configuration Issues',
-  incomplete_analysis: 'Incomplete Analysis',
-  syntax_errors: 'Syntax Errors',
-}
-
-const LEGACY_SEVERITIES: Record<string, string> = {
-  performance: 'Info',
-  readability: 'Info',
-  formatting: 'Info',
-  unset_variables: 'Warning',
-  unused: 'Warning',
-  codegen: 'Error',
-  deployment: 'Warning',
-  system_objects: 'Warning',
-  unsupported: 'Warning',
-  config_issues: 'Error',
-  incomplete_analysis: 'Error',
-  syntax_errors: 'Error',
-}
-
-const LEGACY_ICONS: Record<string, string> = {
-  performance: 'lucide/zap',
-  readability: 'lucide/eye',
-  formatting: 'lucide/align-left',
-  unset_variables: 'lucide/alert-triangle',
-  unused: 'lucide/trash-2',
-  codegen: 'lucide/braces',
-  deployment: 'lucide/package',
-  system_objects: 'lucide/boxes',
-  unsupported: 'lucide/ban',
-  config_issues: 'lucide/cog',
-  incomplete_analysis: 'lucide/wrench',
-  syntax_errors: 'lucide/x-circle',
-}
-
-const LEGACY_CATEGORY: Record<string, string> = {
-  performance: 'Performance',
-  readability: 'Readability',
-  formatting: 'Formatting',
-  unset_variables: 'Unset Variables',
-  unused: 'Unused Constructions',
-  codegen: 'Code Generation',
-  deployment: 'Deployment',
-  system_objects: 'System Objects',
-  unsupported: 'Unsupported',
-  config_issues: 'Configuration Issues',
-  incomplete_analysis: 'Incomplete Analysis',
-  syntax_errors: 'Syntax Errors',
-}
-
-/** Curated check tables for modules whose doc comments lack an ID table. */
-const LEGACY_CURATED: Record<string, Array<[string, string]>> = {
-  performance: [
-    ['AGROW', 'Variable appears to change size on every loop iteration; consider preallocating'],
-    ['SAGROW', 'Sliced variable appears to grow inside a loop'],
-    ['PFBNS', 'Prefer broadcasting syntax over bsxfun calls'],
-    ['RGXP1', 'Use regexp with output arguments instead of regexpi when case is known'],
-    ['RGXPI', 'Use regexpi output argument form'],
-    ['TRIM1', 'Use strtrim instead of deblank for trimming leading/trailing whitespace'],
-    ['TRIM2', 'Prefer strtrim over deblank'],
-    ['STTOK', 'Prefer split/strsplit over strtok'],
-    ['STNCI', 'Use startsWith instead of comparing the first characters of a string'],
-    ['STCCS', 'Use strcmp for character-vector comparison'],
-    ['FNDSB', 'Prefer find(x > 0, 1) over find(x, 1) style patterns'],
-    ['SFLD', 'Use dynamic field names instead of setfield'],
-    ['GFLD', 'Use dynamic field names instead of getfield'],
-    ['CCAT', 'Concatenate cell arrays using [] instead of extracting and reconstructing'],
-    ['CCAT1', "{A{I}} can usually be replaced by A(I) or A(I)'"],
-    ['ISMT', 'Use ismatrix instead of comparing ndims to 2'],
-    ['ISCL', 'Use isscalar instead of numel(x)==1'],
-    ['ST2NM', 'Prefer str2double over str2num'],
-    ['FLPST', 'Prefer flip/rot90 over flipud/fliplr where equivalent'],
-    ['MXFND', 'Use max with a single output when only the value is needed'],
-    ['EFIND', 'Use the faster find form for simple conditions'],
-    ['EXIST', 'Use isfile/isfolder instead of exist'],
-    ['UDIM', 'Use numel instead of size for a single dimension when the array is 1-D'],
-    ['FREAD', 'Use fread with fewer output arguments when possible'],
-    ['N2UNI', 'Use unique instead of manual sort+diff patterns'],
-    ['TNMLP', 'Prefer strlength over numel for strings'],
-    ['MINV', 'Use A\\b instead of inv(A)*b'],
-    ['LAXES', 'Prefer axes() with explicit arguments'],
-    ['MMTC', 'Use mtimes/mtimesc scalar-matrix shortcuts'],
-    ['MRPBW', 'Prefer repmat-avoiding broadcasting'],
-    ['SPRIX', 'Use sparse indexing forms'],
-    ['TRSRT', 'Use issorted instead of manual sort comparisons'],
-    ['GRIDD', 'Prefer ndgrid over meshgrid where appropriate'],
-    ['AND2', 'Use && instead of & for scalar logical AND'],
-    ['OR2', 'Use || instead of | for scalar logical OR'],
-    ['CLALL', 'Avoid clear all; it usually decreases performance'],
-    ['CLCLS', 'Avoid clear classes'],
-    ['CLFUNC', 'Avoid clear functions'],
-    ['CLJAVA', 'Avoid clear java'],
-    ['CLMEX', 'Avoid clear mex'],
-    ['CLEAR0ARGS', 'clear with no arguments is often unnecessary'],
-  ],
-  readability: [
-    ['ASGSL', 'Assignment inside a conditional expression'],
-    ['COMNL', 'Newline following comma acts as a row separator in a matrix'],
-    ['SPERR', 'Prefer a message identifier for error'],
-    ['SPWRN', 'Prefer a message identifier for warning'],
-    ['NCHKE', 'Use narginchk/nargoutchk for argument validation'],
-    ['DSPSP', 'Prefer fprintf/disp over sprintf+disp for display'],
-    ['DSPSY', 'Prefer fprintf/disp over system-based display'],
-    ['STLOW', 'Unnecessary UPPER/LOWER call in a comparison'],
-    ['FLUDLR', 'Nested flipud(fliplr(x))/fliplr(flipud(x)) should use rot90(x, 2)'],
-    ['RPMT1', 'Trivial multiplication by 1'],
-    ['RPMT0', 'Trivial addition/subtraction of 0'],
-    ['RPMTT', 'Boolean tautology (true || ...)'],
-    ['RPMTF', 'Boolean contradiction (false && ...)'],
-    ['RPMTI', 'Trivial multiplication by an identity-like expression'],
-    ['RPMTN', 'Trivial negation patterns'],
-    ['PSIZE', 'Use numel instead of prod(size(x))'],
-    ['LOGSUM', 'Use nnz instead of sum for logical vectors'],
-    ['LOGL', 'Prefer any/all over manual logical reduction'],
-    ['ISCHR', "Use ischar(x) instead of isa(x,'char')"],
-    ['ISSTR', "Use isstring(x) instead of isa(x,'string')"],
-    ['ISLOG', "Use islogical(x) instead of isa(x,'logical')"],
-    ['ISCEL', "Use iscell(x) instead of isa(x,'cell')"],
-    ['IJCL', 'i or j used as a variable (shadows the complex unit)'],
-    ['ISMAT', 'Use ismatrix(x) instead of ndims(x)==2'],
-    ['ISROW', 'Use isrow(x) instead of size(x,1)==1'],
-    ['ISCOL', 'Use iscolumn(x) instead of size(x,2)==1'],
-    ['NBRAK2', 'Unnecessary brackets in indexing'],
-    ['MFAMB', 'Cannot determine whether a name is a variable or function'],
-    ['FVINR', 'Add an (Input) attribute to arguments blocks for readability'],
-    ['STREMP', "Use strlength(s)==0 instead of strcmp(s,'')"],
-    ['STRCL1', 'Use strlength/strtrim instead of string-cleaning wrappers'],
-    ['STRCLFH', 'Use strip instead of string-cleaning wrappers'],
-    ['STRIFCND', 'Simplify if-conditions involving string comparisons'],
-    ['CHARTEN', 'Use newline instead of char(10)'],
-    ['SPRINTFN', 'Use num2str over simple sprintf for number formatting'],
-  ],
-}
-
 function splitTableRow(line: string): string[] {
   const cells: string[] = []
   let current = ''
@@ -624,227 +495,44 @@ function splitTableRow(line: string): string[] {
   return cells
 }
 
-export function extractTable(modDir: string): Array<[string, string]> {
-  const candidates = [join(SRCS, modDir, 'mod.rs'), join(SRCS, `${modDir}.rs`)]
-  const path = candidates.find((p) => existsSync(p))
-  if (!path) return []
-  const lines = readFileSync(path, 'utf8').split('\n')
-
-  let descIndex = 1
-  for (const ln of lines) {
-    if (!ln.includes('//!') || !ln.includes('|')) continue
-    const cells = splitTableRow(ln.split('//!', 2)[1])
-    if (cells.some((c) => c.includes('Check ID'))) {
-      for (let i = 0; i < cells.length; i++) {
-        if (cells[i].includes('Description')) {
-          descIndex = i
-          break
-        }
-      }
-      break
-    }
-  }
-
-  const rows: Array<[string, string]> = []
-  for (const ln of lines) {
-    if (!ln.includes('//!') || !ln.includes('|')) continue
-    const cells = splitTableRow(ln.split('//!', 2)[1])
-    if (cells.length < descIndex + 1) continue
-    const idCell = cells.find((c) => /^[A-Z][A-Z0-9]{2,}$/.test(c.replace(/[` ]/g, '')))
-    if (!idCell) continue
-    const id = idCell.replace(/[` ]/g, '')
-    let desc = cells[descIndex].trim()
-    desc = desc.replace(/^(Error|Warning|Info)\s*\|?\s*/, '')
-    desc = desc.replace(/\\\|/g, '|').trim()
-    rows.push([id, desc])
-  }
-  return rows
-}
-
-function legacyRows(mod: string): Array<[string, string]> {
-  const rows = LEGACY_CURATED[mod] ?? extractTable(mod)
-  const seen = new Set<string>()
-  return rows.filter(([id]) => (seen.has(id) ? false : (seen.add(id), true)))
-}
-
-function legacyPageName(mod: string): string {
-  return mod.replace(/_/g, '-') + '.md'
-}
-
-function renderLegacyBody(mod: string, rows: Array<[string, string]>): string {
-  const eng = LEGACY_MODULES[mod]
-  const title = LEGACY_TITLES[mod]
-  const cat = LEGACY_CATEGORY[mod]
-  const severity = LEGACY_SEVERITIES[mod] ?? 'Warning'
-  const example = rows[0]?.[0] ?? 'XXXX'
-
-  const lines = [
-    `# ${title}`,
-    '',
-    `**Default severity:** ${severity}`,
-    '**Auto-fix:** No',
-    `**Category:** ${cat}`,
-    '**Can be disabled:** Yes',
-    '',
-    '## What this engine does',
-    '',
-    `The \`${eng}\` rule implements the MATLAB Code Analyzer checks in the **${title}** category. All checks share one engine and are dispatched by tree-sitter node kind or by file-level traversal; each diagnostic carries the specific check ID (e.g. \`${example}\`).`,
-    '',
-    '## Check IDs',
-    '',
-    '| Check ID | Description |',
-    '| -------- | ----------- |',
-  ]
-  for (const [cid, desc] of rows) {
-    lines.push(`| \`${cid}\` | ${desc.replace(/\|/g, '\\|')} |`)
-  }
-  lines.push(
-    '',
-    '## Configuration',
-    '',
-    '```toml',
-    `[lint.rules.${eng}]`,
-  )
-  if (['performance', 'codegen', 'deployment', 'system_objects', 'unsupported'].includes(mod)) {
-    lines.push('skip_checks = ["AGROW"]   # Turn off specific checks')
-  } else {
-    lines.push('disabled_checks = ["XXXX"]   # Turn off specific checks')
-  }
-  lines.push(
-    '```',
-    '',
-    'See [Configuration](../configuration.md#per-engine-parameters) for the full parameter list and [rules.md](../rules.md) for the complete rule inventory.',
-    '',
-  )
-  return lines.join('\n')
-}
-
 // ---------------------------------------------------------------------------
 // rules.md — rule index table
 // ---------------------------------------------------------------------------
 
-/** Hand-written category pages not yet migrated to the schema. */
-const LEGACY_CATALOG: Record<
-  string,
-  { page: string; category: string; severity: string; checks: Array<[string, string]> }
-> = {
-  nosemi: {
-    page: 'rules/nosemi.md',
-    category: 'formatting',
-    severity: 'info',
-    checks: [['NOSEMI', 'Statement without trailing semicolon may produce unintended console output']],
-  },
-  'good-practices': {
-    page: 'rules/good-practices.md',
-    category: 'good-practices',
-    severity: 'warning',
-    checks: extractTable('good_practices'),
-  },
-  'language-spec': {
-    page: 'rules/language-spec.md',
-    category: 'language-specification',
-    severity: 'error',
-    checks: extractTable('language_spec'),
-  },
-  'custom-checks': {
-    page: 'rules/custom-checks.md',
-    category: 'custom-checks',
-    severity: 'warning',
-    checks: extractTable('custom_checks'),
-  },
-}
-
-/** Naming engine check IDs: `naming.<entity>.<checkType>` Cartesian product. */
-function namingChecks(): Array<[string, string]> {
-  const entities = [
-    'class',
-    'function',
-    'localFunction',
-    'method',
-    'nestedFunction',
-    'property',
-    'event',
-    'enumeration',
-    'variable',
-  ]
-  const checkTypes = [
-    'maxLength',
-    'minLength',
-    'regularExpression',
-    'requiredPrefix',
-    'disallowedPrefix',
-    'disallowedPhrase',
-    'requiredSuffix',
-    'disallowedSuffix',
-    'casing',
-  ]
-  const out: Array<[string, string]> = []
-  for (const e of entities) {
-    for (const t of checkTypes) {
-      out.push([`naming.${e}.${t}`, `Naming check for ${e} ${t}`])
-    }
-  }
-  return out
-}
-
-function catalogRows(): Array<[string, string, string, string, string]> {
-  // [id, page, category, severity, description]
-  const rows: Array<[string, string, string, string, string]> = []
-  for (const spec of Object.values(LEGACY_CATALOG)) {
-    for (const [id, desc] of spec.checks) {
-      rows.push([id, spec.page, spec.category, spec.severity, desc])
-    }
-  }
-  for (const [id, desc] of namingChecks()) {
-    rows.push([id, 'rules/naming.md', 'naming', 'info', desc])
-  }
-  return rows
-}
-
-/** Row in the global rule index: links back to a rule page + anchor. */
+/** Row in the global rule index: one row per rule, linking to its page. */
 function renderRuleTable(modules: RuleModule[]): string {
   const rows: string[] = [
-    '| Check ID | Category | Description | Default Severity | Auto-fix |',
-    '| -------- | -------- | ----------- | ---------------- | -------- |',
+    '| Rule ID | Category | Description | Default Severity | Auto-fix |',
+    '| ------- | -------- | ----------- | ---------------- | -------- |',
   ]
   const seen = new Set<string>()
-  const push = (id: string, link: string, category: string, desc: string, severity: string, fix: boolean) => {
-    if (seen.has(id) || !id) return
-    seen.add(id)
-    const cat = CATEGORY_HUMAN[category] ?? category
+  for (const mod of modules) {
+    const fm = mod.frontmatter
+    const slug = fm.slug ?? fm.id.toLowerCase().replace(/_/g, '-')
+    const page = `rules/${slug}.md`
+    if (seen.has(fm.id)) continue
+    seen.add(fm.id)
+    const cat = CATEGORY_HUMAN[fm.category] ?? fm.category
+    const n = mod.checks.length
+    const desc =
+      mod.description ||
+      `Emits ${n} check ID${n === 1 ? '' : 's'} (see the rule page for details).`
     rows.push(
-      `| [\`${id}\`](${link}) | ${cat} | ${desc.replace(/\|/g, '\\|')} | ${SEVERITY_LABEL[severity] ?? severity} | ${fix ? 'Yes' : 'No'} |`,
+      `| [\`${fm.id}\`](${page}) | ${cat} | ${desc.replace(/\|/g, '\\|')} | ${SEVERITY_LABEL[fm.severity] ?? fm.severity} | ${fm.fix ? 'Yes' : 'No'} |`,
     )
   }
-
-  for (const mod of modules) {
-    const slug = mod.frontmatter.slug ?? mod.frontmatter.id.toLowerCase().replace(/_/g, '-')
-    const page = `rules/${slug}.md`
-    for (const c of mod.checks) {
-      push(c.id, `${page}#${anchor(c.id)}`, c.category ?? mod.frontmatter.category, c.description, c.severity, c.fix)
-    }
-    // Single-check rules with no check table link to the page itself.
-    if (!mod.checks.length) {
-      push(mod.frontmatter.id, page, mod.frontmatter.category, mod.description, mod.frontmatter.severity, mod.frontmatter.fix)
-    }
-  }
-
-  // Legacy generated modules: page-level links only.
-  for (const mod of Object.keys(LEGACY_MODULES)) {
-    const page = `rules/${legacyPageName(mod)}`
-    const catKey = LEGACY_CATEGORY[mod].toLowerCase().replace(/ /g, '-')
-    for (const [id, desc] of legacyRows(mod)) {
-      push(id, page, catKey, desc, LEGACY_SEVERITIES[mod].toLowerCase(), false)
-    }
-  }
-
-  // Hand-written / data-driven catalog rows (migrated modules are skipped via
-  // the `seen` set once their schema pages exist).
-  for (const [id, page, category, severity, desc] of catalogRows()) {
-    push(id, `${page}#${anchor(id)}`, category, desc, severity, false)
-  }
-
   return rows.join('\n') + '\n'
+}
+
+function dataTable(entries: CheckEntry[], page?: string): string {
+  if (!entries.length) return '_(no checks)_\n'
+  const lines = ['| Check ID | Message |', '| -------- | ------- |']
+  for (const entry of entries) {
+    const msg = (entry.message || '').replace(/\|/g, '\\|')
+    const link = page ? `[\`${entry.id}\`](${page}#${anchor(entry.id ?? '')})` : `\`${entry.id}\``
+    lines.push(`| ${link} | ${msg} |`)
+  }
+  return lines.join('\n') + '\n'
 }
 
 function renderDataDrivenBody(): string {
@@ -873,18 +561,6 @@ function renderDataDrivenBody(): string {
   return parts.join('\n')
 }
 
-function dataTable(entries: CheckEntry[], page?: string): string {
-  if (!entries.length) return '_(no checks)_\n'
-  const lines = ['| Check ID | Message |', '| -------- | ------- |']
-  for (const entry of entries) {
-    const msg = (entry.message || '').replace(/\|/g, '\\|')
-    const id = `\`${entry.id}\``
-    const link = page ? `[\`${entry.id}\`](${page}#${anchor(entry.id ?? '')})` : id
-    lines.push(`| ${link} | ${msg} |`)
-  }
-  return lines.join('\n') + '\n'
-}
-
 function renderGeneratedRulesSection(): string {
   const intro =
     'These tables are generated from the TOML data files by the TypeScript\n' +
@@ -903,13 +579,6 @@ function writeRulePages(modules: RuleModule[]): void {
     const out = join(RULES_DIR, rulePageName(mod))
     writeFileSync(out, renderRulePage(mod), 'utf8')
     console.log(`wrote docs/rules/${rulePageName(mod)} (${mod.checks.length || 'single'} check${mod.checks.length === 1 ? '' : 's'})`)
-  }
-  for (const mod of Object.keys(LEGACY_MODULES)) {
-    const icon = LEGACY_ICONS[mod] ?? 'lucide/list-checks'
-    const content = `---\nicon: ${icon}\n---\n\n` + renderLegacyBody(mod, legacyRows(mod))
-    const out = join(RULES_DIR, legacyPageName(mod))
-    writeFileSync(out, content, 'utf8')
-    console.log(`wrote docs/rules/${legacyPageName(mod)} (legacy, ${legacyRows(mod).length} checks)`)
   }
 }
 
@@ -971,16 +640,6 @@ function checkDrift(modules: RuleModule[], only?: string): boolean {
     const out = join(RULES_DIR, rulePageName(mod))
     if (!existsSync(out) || readFileSync(out, 'utf8') !== expected) {
       console.error(`docs/rules/${rulePageName(mod)} is out of date (run \`bun run docs:gen\`)`)
-      clean = false
-    }
-  }
-  for (const mod of Object.keys(LEGACY_MODULES)) {
-    if (only && legacyPageName(mod).replace(/\.md$/, '') !== only) continue
-    const icon = LEGACY_ICONS[mod] ?? 'lucide/list-checks'
-    const expected = `---\nicon: ${icon}\n---\n\n` + renderLegacyBody(mod, legacyRows(mod))
-    const out = join(RULES_DIR, legacyPageName(mod))
-    if (!existsSync(out) || readFileSync(out, 'utf8') !== expected) {
-      console.error(`docs/rules/${legacyPageName(mod)} is out of date (run \`bun run docs:gen\`)`)
       clean = false
     }
   }

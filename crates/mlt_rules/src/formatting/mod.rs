@@ -1,29 +1,83 @@
-//! # Formatting Suggestions Engine
+//! # FORMATTING_ENGINE: Formatting Suggestion Checks
 //!
-//! This module implements 7 formatting checks from MATLAB's Code Analyzer as
-//! a single file-level rule engine. The checks are:
+//! ```mlt
+//! id = "FORMATTING_ENGINE"
+//! title = "Formatting Suggestion Checks"
+//! category = "formatting"
+//! severity = "info"
+//! fix = true
+//! icon = "lucide/align-left"
+//! slug = "formatting"
+//! ```
 //!
-//! | Check ID | Description |
-//! |----------|-------------|
-//! | NOCOMMA  | Use commas to separate elements in a row |
-//! | NO4LP    | Use 4-space indentation in loop/conditional bodies |
-//! | ALIGN    | Code alignment suggestion (elseif/else vs. if) |
-//! | NOPTS    | Add parentheses around condition in if/while |
-//! | NOPRT    | Remove unnecessary parentheses |
-//! | PRTCAL   | Consider using command syntax instead of function syntax |
-//! | NCOMMA   | Use comma to separate input arguments |
+//! ## Rule
 //!
-//! ## Architecture
+//! Suggests formatting improvements for MATLAB code. All 7 checks share a
+//! single `FormattingEngine` that runs as a file-level rule, walking the whole
+//! tree once and applying every enabled check per node. Each diagnostic
+//! carries the specific check ID (e.g. `NOCOMMA`, `NO4LP`). Individual checks
+//! can be enabled, disabled, or reconfigured through their own
+//! `[lint.rules.*]` tables.
 //!
-//! A single `FormattingEngine` rule instance:
-//! - Registers once with inventory as `"FORMATTING_ENGINE"`
-//! - Uses `has_file_check() = true` for full-tree traversal
-//! - Walks the tree once, running all applicable checks per node
-//! - Emits diagnostics with the specific check ID (e.g., `"NOCOMMA"`)
+//! ## Check IDs
+//!
+//! | Check ID | Severity | Fix | Description |
+//! |----------|----------|-----|-------------|
+//! | NOCOMMA  | info     | yes | Use commas to separate elements in a row |
+//! | NO4LP    | info     | yes | Use 4-space indentation in loop/conditional bodies |
+//! | ALIGN    | info     | yes | Align 'elseif'/'else' clauses with their 'if' |
+//! | NOPTS    | info     | yes | Remove unnecessary parentheses around if/while conditions |
+//! | NOPRT    | info     | yes | Remove unnecessary parentheses |
+//! | PRTCAL   | info     | yes | Consider using command syntax instead of function syntax |
+//! | NCOMMA   | info     | yes | Use a comma to separate input arguments |
+//!
+//! ## Fix
+//!
+//! Each check rewrites the flagged construct directly:
+//!
+//! - NOCOMMA inserts a comma between space-separated row elements (`[1 2 3]` → `[1, 2, 3]`).
+//! - NCOMMA inserts a comma between space-separated function arguments.
+//! - NO4LP rewrites the indentation prefix of misindented statements.
+//! - ALIGN re-indents `elseif`/`else` clauses to the column of their `if`.
+//! - NOPTS and NOPRT strip unnecessary parentheses (`(x)` → `x`).
+//! - PRTCAL rewrites a string-only call to command syntax (`disp('hello')` → `disp hello`).
+//!
+//! ## Examples
+//!
+//! ### Incorrect
+//!
+//! ```matlab
+//! x = [1 2 3];
+//! y = (a);
+//! if (x > 0)
+//!     disp('hello');
+//! end
+//! ```
+//!
+//! ### Correct
+//!
+//! ```matlab
+//! x = [1, 2, 3];
+//! y = a;
+//! if x > 0
+//!     disp hello;
+//! end
+//! ```
+//!
+//! ### Fixed
+//!
+//! ```diff
+//! - x = [1 2 3];
+//! + x = [1, 2, 3];
+//! - y = (a);
+//! + y = a;
+//! - if (x > 0)
+//! + if x > 0
+//! ```
 //!
 //! ## Configuration
 //!
-//! Each check can be configured individually:
+//! Each check is configured independently through its own rule table:
 //!
 //! ```toml
 //! [lint.rules.NOCOMMA]

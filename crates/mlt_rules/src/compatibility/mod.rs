@@ -1,38 +1,71 @@
-//! # COMPAT: Compatibility Lookup Engine
+//! # COMPAT: Compatibility
 //!
-//! A data-driven rule module that handles ~1,803 MATLAB Code Analyzer checks
-//! about deprecated/removed functions and behavior changes. Instead of
-//! implementing one struct per check, a single `CompatibilityEngine` loads a
-//! TOML data file at compile time, parses it into a lookup table, and emits
-//! diagnostics with the specific check ID from the matched entry.
-//!
-//! ## Architecture
-//!
-//! - A `CompatEntry` struct represents one check (id, severity, message,
-//!   function_name, category sub-type).
-//! - A single `CompatibilityEngine` rule registers with inventory once.
-//! - On each `function_call` or `command` node, the engine extracts the
-//!   function name and performs an O(1) HashMap lookup.
-//! - If a match is found, a diagnostic is emitted with the entry's specific
-//!   check ID (e.g., "DPSD"), not the meta-ID "COMPAT".
-//!
-//! ## Data File
-//!
-//! The entries are stored in `data/compatibility.toml` and loaded via
-//! `include_str!` at compile time. The format is:
-//!
-//! ```toml
-//! [[checks]]
-//! id = "DPSD"
-//! function_name = "psd"
-//! severity = "error"
-//! message = "'psd' has been removed. Use 'periodogram' or 'pwelch' instead."
+//! ```mlt
+//! id = "COMPAT"
+//! title = "Compatibility"
 //! category = "compatibility"
+//! severity = "warning"
+//! fix = false
+//! icon = "lucide/archive"
+//! slug = "compatibility"
+//! data_file = "compatibility.toml"
 //! ```
 //!
-//! Entries with `function_name = ""` are "generic" checks that cannot be
-//! matched by function name alone (they require AST pattern matching) and
-//! are skipped during the lookup-based check.
+//! ## Rule
+//!
+//! A data-driven rule module that handles 1,924 MATLAB Code Analyzer checks
+//! about deprecated and removed functions and behavior changes. Instead of
+//! implementing one struct per check, a single `CompatibilityEngine` loads
+//! `data/compatibility.toml` at compile time, parses it into a function-name
+//! lookup table, and emits diagnostics with the specific check ID from the
+//! matched entry (e.g. `DPSD`, not the meta ID `COMPAT`).
+//!
+//! On each `function_call` or `command` node, the engine extracts the function
+//! name and performs an O(1) HashMap lookup. A function name may map to
+//! multiple check IDs (e.g. `tcpip` → TCPC + TCPS); every matching entry is
+//! emitted. The entries span three category groups:
+//!
+//! - **compatibility** — deprecated or removed functions (1,012 entries)
+//! - **behavior-changes** — behavior changes between releases (905 entries)
+//! - **forward-compatibility** — constructs that will break in a future
+//!   release (7 entries)
+//!
+//! Entries with an empty `function_name` are "generic" checks that cannot be
+//! matched by function name alone (they require AST pattern matching) and are
+//! skipped during the lookup-based check. These are implemented as file-level
+//! AST-pattern checks in the `compatibility/generic/` modules (property and
+//! attribute removals, removed options and input arguments,
+//! forward-compatibility version gates, and behavior-change figure and axes
+//! properties) and dispatched from `check_file`.
+//!
+//! ## Examples
+//!
+//! ### Incorrect
+//!
+//! ```matlab
+//! psd(x)            % DPSD — removed; use periodogram or pwelch
+//! strread(s)        % STREAD — removed; use textscan
+//! ```
+//!
+//! ### Correct
+//!
+//! ```matlab
+//! periodogram(x)
+//! textscan(s)
+//! ```
+//!
+//! ## Configuration
+//!
+//! The lookup engine itself takes no parameters. Per-check severity can be
+//! overridden by rule ID or by category:
+//!
+//! ```toml
+//! [lint.categories]
+//! compatibility = "warn"
+//!
+//! [lint.rules]
+//! COMPAT = "error"
+//! ```
 
 use std::collections::HashMap;
 use std::sync::LazyLock;

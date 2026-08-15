@@ -1,24 +1,55 @@
 //! # CONFIG_ISSUES_ENGINE: Configuration Issue Checks
 //!
+//! ```mlt
+//! id = "CONFIG_ISSUES_ENGINE"
+//! title = "Configuration Issues"
+//! category = "configuration-issues"
+//! severity = "error"
+//! fix = false
+//! icon = "lucide/cog"
+//! slug = "config-issues"
+//! ```
+//!
+//! ## Rule
+//!
 //! Detects MATLAB-side configuration issues such as invalid parameter names
-//! in configuration functions, wrong argument counts, and invalid option values.
+//! passed to configuration functions, wrong argument counts, and invalid
+//! option values. The engine matches `function_call` and `command` nodes
+//! against known configuration function patterns and emits a diagnostic with
+//! the specific check ID (`BDCFG`, `CFERR`, `BDOPT`, `CFIG`).
 //!
-//! ## Checks
+//! ## Check IDs
 //!
-//! | ID    | Description                        |
-//! |-------|------------------------------------|
-//! | BDCFG | Invalid configuration parameter    |
-//! | CFERR | Configuration function error       |
-//! | BDOPT | Invalid option value               |
-//! | CFIG  | Configuration file issue           |
+//! | Check ID | Severity | Fix | Description                     |
+//! |----------|----------|-----|---------------------------------|
+//! | BDCFG    | error    | no  | Invalid configuration parameter |
+//! | CFERR    | error    | no  | Configuration function error    |
+//! | BDOPT    | error    | no  | Invalid option value            |
+//! | CFIG     | error    | no  | Configuration file issue        |
 //!
 //! ## Examples
 //!
-//! Bad:
+//! ### Incorrect
+//!
 //! ```matlab
 //! set_param(gcs, 'NotARealParam', 'value');
-//! cfg = coder.config();
+//! cfg = coder.config('something');
 //! opts = optimset('NotAnOption', 1);
+//! ```
+//!
+//! ### Correct
+//!
+//! ```matlab
+//! set_param(gcs, 'SimulationCommand', 'start');
+//! cfg = coder.config('lib');
+//! opts = optimset('Display', 'off');
+//! ```
+//!
+//! ## Configuration
+//!
+//! ```toml
+//! [lint.rules.CONFIG_ISSUES_ENGINE]
+//! disabled_checks = []
 //! ```
 
 mod check_bdcfg;
