@@ -1,0 +1,32 @@
+Split the `syntax_errors` rule engine in `crates/mlt_rules/src/syntax_errors.rs` (3,618 lines, 16 check_ methods, 167 tests) into a directory of one-file-per-check modules. PURE MECHANICAL REFACTOR — zero behavior change.
+
+## CRITICAL CONSTRAINTS
+- Do NOT delete or modify `crates/mlt_rules/src/syntax_errors.rs`.
+- Do NOT modify `crates/mlt_rules/src/lib.rs`.
+- Only CREATE new files under `crates/mlt_rules/src/syntax_errors/`.
+- Do NOT commit.
+
+## Target layout
+```
+crates/mlt_rules/src/syntax_errors/
+├── mod.rs                        # engine, config, impl Rule, inventory::submit!, shared helpers (pub(crate)), module doc, test helpers
+├── check_*.rs                    # one file per independent check
+└── ...
+```
+
+## How to do it
+1. Read the whole file. It has large file-level passes: `scan_source_text` (BADNE/BADOT/TWOCM/BADCH/BADSP/BADCT), `check_directional_formatting`, `check_number_literals`, `check_unterminated`, `check_error_nodes` (+ `walk_error_nodes`), `check_file_structure`, `check_function_names`, `check_statements`, `check_assignment_lhs`, `check_reserved_and_not`, `check_call_syntax`, `check_validation_order`.
+2. mod.rs keeps: module `//!` doc, `use` statements, `SyntaxErrorsConfig`, `SyntaxErrorsEngine` struct (with `disabled: HashSet`), ALL free helper fns + consts (`collect_skip_ranges`, `in_skip_range`, `last_descendant`, `find_operator_text`, etc. — make `pub(crate)`), the `impl Rule` (check_file dispatch), `inventory::submit!`, shared test helpers (`engine()`, `engine_with_disabled()`).
+3. Each INDEPENDENT `check_*` method → its own file `syntax_errors/check_<name>.rs`. IMPORTANT: a check method and its recursive walker helper (e.g. `check_error_nodes` + `walk_error_nodes`) MUST stay in the SAME file (the walker is called by the checker and shares state). Same for `scan_source_text`, `check_number_literals` + its helpers, `check_unterminated` + its walkers, `check_call_syntax` + its helpers.
+4. Move tests with their check. Tests are grouped by `// -- <CHECK> ---` headers. Add `use super::*; use crate::test_util::{has_id, lint_file}; use mlt_core::Config;` + local `engine()`/`engine_with_disabled()`.
+
+## Verification (REQUIRED)
+Write a python script that diffs each moved method body against the original (identical except `pub(crate)` + indentation), confirms every check ID appears exactly once across `syntax_errors/`, dispatch calls match, moved-test count + bodies match. Do NOT run `cargo build`.
+
+## Report back
+- Files created
+- Moved vs kept methods
+- Verification results
+- Risks/notes
+
+Do not touch anything outside `crates/mlt_rules/src/syntax_errors/`.
