@@ -1,0 +1,51 @@
+You are implementing the **behavior-change figure/axes property** generic compatibility checks in the `mlt` MATLAB linter.
+
+## Context
+`crates/mlt_rules/src/compatibility/` was just converted from a flat file to a directory. The engine's file-level walker (`check_file` → `check_generic` → `visit_generic_checks`) calls `crate::compatibility::generic::collect_node_checks` on every node. Your group's checks live in the stub file:
+
+`crates/mlt_rules/src/compatibility/generic/check_behavior_prop.rs`
+
+which currently has a no-op `collect_checks`. Implement your assigned checks there.
+
+## Your assigned check IDs (9)
+PTCLO, PTDLO, SMTHG, SMTHGF, SMTHF, SMTHFA, SMTHFT, INVHCRM, DINVHCRM
+
+## Official messages (use verbatim)
+PTCLO: "Changing the axes LineStyleOrder or ColorOrder properties of an existing chart now affects the chart and may cause it to render differently."
+PTDLO: "Specifying multiple line styles in the axes LineStyleOrder might result in charts that render differently."
+SMTHG: "'GraphicsSmoothing' property will be removed in a future release. Graphics smoothing behavior has been enabled by default since R2024a."
+SMTHGF: "'DefaultFigureGraphicsSmoothing' setting will be removed in a future release. Graphics smoothing behavior has been enabled by default since R2024a."
+SMTHF: "'FontSmoothing' property will be removed in a future release. Font smoothing behavior has been enabled by default since R2024a."
+SMTHFA: "'DefaultAxesFontSmoothing' setting will be removed in a future release. Font smoothing behavior has been enabled by default since R2024a."
+SMTHFT: "'DefaultTextFontSmoothing' setting will be removed in a future release. Font smoothing behavior has been enabled by default since R2024a."
+INVHCRM: "The 'InvertHardCopy' property will be removed in a future release and currently has no effect."
+DINVHCRM: "The 'defaultFigureInvertHardCopy' setting will be removed in a future release and currently has no effect."
+
+## Detection guidance
+These are all **name-value property/setting strings** passed to figure/axes functions:
+- **SMTHG, SMTHF, INVHCRM**: name-value pair on `figure`, `set`, `get`, or chart-creation calls. Detect a string literal matching the removed property name (`'GraphicsSmoothing'`, `'FontSmoothing'`, `'InvertHardCopy'`) used as a name-value argument (left side of a `'Name', value` pair) in a call.
+- **SMTHGF, SMTHFA, SMTHFT, DINVHCRM**: settings via `set`/`get`/`feature` with the setting name as a string (`'DefaultFigureGraphicsSmoothing'`, `'DefaultAxesFontSmoothing'`, `'DefaultTextFontSmoothing'`, `'defaultFigureInvertHardCopy'`). These are typically passed to `set(...)` or as `get(groot, ...)` args. Detect the exact string literal.
+- **PTCLO**: name-value `'LineStyleOrder'` or `'ColorOrder'` on an axes/plot call after chart creation — conservatively, detect `'LineStyleOrder'` / `'ColorOrder'` name-value args on `set`/`axes`/plot functions.
+- **PTDLO**: `'LineStyleOrder'` name-value specifying multiple line styles — detect `'LineStyleOrder'` where the value is a cell array with more than one style string.
+
+Implementation: exact string-literal matching of the removed property/setting name when it appears as a name-value argument (an identifier/string followed by a value in a call's arguments, or as an argument to `set`/`get`/`feature`). Fire on the string-literal node. Implement each as `pub(crate) fn check_<ID>(&self, node: Node, source: &str, diagnostics: &mut Vec<Diagnostic>)` on `CompatibilityEngine` in this file, dispatched from `collect_checks`.
+
+## File to modify
+- `crates/mlt_rules/src/compatibility/generic/check_behavior_prop.rs` — implement `collect_checks` + methods + `#[cfg(test)] mod tests`.
+
+## Constraints
+- Only modify your file. Do NOT touch other files. Do NOT commit.
+- Use `crate::test_util::{has_id, lint_file}`. Add fires + not-fires tests per check.
+- No code comments unless needed; `pub(crate)` for shared helpers.
+
+## Verification (REQUIRED)
+1. `cargo build` succeeds.
+2. `cargo clippy --all-targets` — zero warnings.
+3. `cargo test -p mlt_rules compatibility` passes.
+4. Each ID has a fires and a not-fires test.
+
+## Report back
+- Checks implemented + how detected
+- Test count added
+- Verification results
+- Any IDs you skipped with reason
