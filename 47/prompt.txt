@@ -1,0 +1,18 @@
+Rule IDs: ENDCT2, ENDCT3, ENDCT4
+Category: Syntax Errors (3.7)
+Module: crates/mlt_rules/src/syntax_errors.rs
+
+You are the Reviewer in mlt's rule pipeline. Review the implementation plan for the SYNTAX G6 group (missing END variants).
+
+READ the plan at /tmp/opencode/plans/SYNTAX_G6.md first.
+
+Then verify against the codebase:
+- Read crates/mlt_rules/src/syntax_errors.rs (especially walk_error_nodes, looks_like_missing_end, ENDCT emission, check_file dispatch, tests mod).
+- Run the AST probe in /tmp/opencode/astprobe to confirm how unterminated constructs (function without end, if inside function without end, function directly inside classdef without methods block) parse.
+
+KEY VERIFIED FINDING already in the plan: `classdef Foo\n  function f()\n  end\nend\n` parses as ERROR `classdef Foo\n` + `function_definition` + ERROR `end`. Adjudicate: the classification must NOT double-fire with existing ENDCT. Is ENDCT4's class-context detection right? ENDCT2/ENDCT3 split reasonable given the grammar? Are MUST/MUST NOT cases right? file/step/test requirements complete?
+
+Return exactly:
+- `VERDICT: APPROVED` or `VERDICT: CHANGES REQUIRED`
+- A short list of required corrections (or confirmations if approved)
+- The corrected, complete implementation plan (repeat the whole plan with fixes) — self-contained, since the Implementer only sees your message.
