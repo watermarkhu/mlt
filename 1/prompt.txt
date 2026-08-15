@@ -1,0 +1,34 @@
+You are fixing the `mlt` MATLAB linter (Rust, at /home/watermarkhu/repositories/mlt) to reimplement semantically-mismatched checks across several engines. Messages are ALREADY aligned to MathWorks verbatim — do not change them. Only fix DETECTION LOGIC to match MathWorks semantics.
+
+## Engines and mismatched checks
+
+### `unused/` (Unused Constructions)
+For each, read current impl (grep the ID in `crates/mlt_rules/src/unused/`) and rewrite logic to match the MathWorks message:
+- `DEFNU`: "Function might be unused." — current flags "local function defined but never called"; keep that (it's close) but ensure it's a *function* unused, not something else.
+- `MANU`: "Input argument might be unused. Consider replacing the argument with ~, or make this a nested function." — current flags "method never called"; reimplement to flag an unused INPUT ARGUMENT (a function/method input parameter never used in the body), not "method never called".
+- `NUSED`: "Global or persistent variable might be unused or unset in this function or script." — current flags "input argument unused"; reimplement to flag a GLOBAL or PERSISTENT variable declared but never used/read in the function/script.
+- `PUSE`: "Persistent variable might be unused." — current flags "{kind} variable declared but never used"; reimplement to specifically flag a PERSISTENT variable that is declared but never used.
+- `SETNU`: "Variable is set, but might be unused." — current flags "output assigned to X is never used"; reimplement to flag a variable that is ASSIGNED (set) but never subsequently USED.
+- `UNRCH`: "This statement (and possibly following ones) cannot be reached." — current flags "unreachable code after X"; verify it detects unreachable statements (after return/break/continue/error); fix if needed.
+- `EQEFF`: "To assign values to variables, use =. The == operator compares equality of values." — current flags "comparison has no effect (result not used)"; reimplement to flag an assignment-like statement that uses `==` where `=` is intended (a standalone `x == y` with no effect, suggesting `=`).
+- `VANUS`: "Input argument 'varargin' might be unused." — current flags "value assigned to ans is unused"; reimplement to flag an unused `varargin` input argument.
+
+### `custom_checks.rs` (Custom Checks)
+- `SYSBANG`: "Use of bang operator is disallowed by custom code analyzer configuration." — current flags "system command (!)"; verify it flags the `!` bang operator (system command); this is actually correct — only reimplement if current logic flags something else.
+
+### `codegen/` (Code Generation)
+- `EMSCR`: "Code generation does not support scripts." — current emits literally "EMSCR" as the message with no real detection; reimplement to flag a SCRIPT file (a `.m` file that is a script, not a function/class) being used where code generation requires a function. If the engine can't easily determine script vs function, flag a source file with top-level statements before any function definition.
+
+### `formatting/` (Formatting Suggestions)
+- `NOCOMMA`: "Extra comma is unnecessary." — current flags "use commas to separate elements"; reimplement to flag an EXTRA/trailing comma (e.g. `[1, 2,]` trailing comma, or `1,, 2` double comma) that is unnecessary.
+- `NCOMMA`: "Best practice is to separate output variables with commas." — current flags "use comma to separate input arguments"; reimplement to flag multiple OUTPUT variables not separated by commas (e.g. `[a b] = f()` should be `[a, b]`).
+- `NOPTS`: "Add a semicolon after the statement to hide the output (in a script)." — current flags "unnecessary parentheses around condition"; reimplement to flag a statement in a SCRIPT that produces output without a trailing semicolon.
+- `NOPRT`: "Add a semicolon after the statement to hide the output (in a function)." — current flags "unnecessary parentheses around X"; reimplement to flag a statement in a FUNCTION that produces output without a trailing semicolon.
+- `PRTCAL`: "Add a semicolon after the function call to hide the output." — current flags "consider command syntax"; reimplement to flag a bare function call statement (producing output) without a trailing semicolon.
+
+IMPORTANT: Do NOT change `rule_id`, `severity`, or the (already-aligned) message strings. Only change detection logic. Add/adjust unit tests (fire + no-fire). Delete orphaned helpers.
+
+## Verify
+Run `cargo build -p mlt_rules 2>&1 | grep -E 'error'` and `cargo test -p mlt_rules 2>&1 | tail -5`. Ignore errors in files OUTSIDE your engines (unused/, custom_checks.rs, codegen/, formatting/). Fix errors in your files.
+
+Return: which checks you reimplemented, and any you could not confidently reimplement (explain why).

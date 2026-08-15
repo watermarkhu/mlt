@@ -3,7 +3,7 @@
   "checkpoint_id": "01M03P4CR2NPPH27DQ97G434XB",
   "strategy": "manual-commit",
   "branch": "feat",
-  "checkpoints_count": 2,
+  "checkpoints_count": 3,
   "files_touched": [
     "crates/mlt_rules/src/bugs/check_assert_constant.rs",
     "crates/mlt_rules/src/bugs/check_duplicate_conditions.rs",
@@ -53,13 +53,20 @@
       "compact_transcript": "/0/transcript.jsonl",
       "content_hash": "/0/content_hash.txt",
       "prompt": "/0/prompt.txt"
+    },
+    {
+      "metadata": "/1/metadata.json",
+      "transcript": "/1/full.jsonl",
+      "compact_transcript": "/1/transcript.jsonl",
+      "content_hash": "/1/content_hash.txt",
+      "prompt": "/1/prompt.txt"
     }
   ],
   "token_usage": {
-    "input_tokens": 195028,
+    "input_tokens": 279991,
     "cache_creation_tokens": 0,
-    "cache_read_tokens": 46130432,
-    "output_tokens": 23670,
-    "api_call_count": 108
+    "cache_read_tokens": 56573056,
+    "output_tokens": 49969,
+    "api_call_count": 196
   }
 }

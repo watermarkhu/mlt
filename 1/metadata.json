@@ -1,0 +1,78 @@
+{
+  "cli_version": "0.10.0",
+  "checkpoint_id": "01M03P4CR2NPPH27DQ97G434XB",
+  "session_id": "ses_ff8fb7971ffeXO4E15MQS97Qci",
+  "strategy": "manual-commit",
+  "created_at": "2026-08-15T21:44:44.416804517Z",
+  "branch": "feat",
+  "checkpoints_count": 1,
+  "save_step_count": 1,
+  "files_touched": [
+    "crates/mlt_rules/src/bugs/mod.rs",
+    "crates/mlt_rules/src/codegen/mod.rs",
+    "crates/mlt_rules/src/custom_checks.rs",
+    "crates/mlt_rules/src/formatting/check_ncomma.rs",
+    "crates/mlt_rules/src/formatting/check_nocomma.rs",
+    "crates/mlt_rules/src/formatting/check_noprt.rs",
+    "crates/mlt_rules/src/formatting/check_nopts.rs",
+    "crates/mlt_rules/src/formatting/check_prtcal.rs",
+    "crates/mlt_rules/src/formatting/mod.rs",
+    "crates/mlt_rules/src/language_spec/mod.rs",
+    "crates/mlt_rules/src/unused/check_manu.rs",
+    "crates/mlt_rules/src/unused/check_noeff_eqeff.rs",
+    "crates/mlt_rules/src/unused/check_nused.rs",
+    "crates/mlt_rules/src/unused/check_puse.rs",
+    "crates/mlt_rules/src/unused/check_setnu.rs",
+    "crates/mlt_rules/src/unused/check_unrch.rs",
+    "crates/mlt_rules/src/unused/check_unused_inputs.rs",
+    "crates/mlt_rules/src/unused/check_vanus.rs",
+    "crates/mlt_rules/src/unused/mod.rs",
+    "docs/rules/bugs.md",
+    "docs/rules/language-spec.md"
+  ],
+  "agent": "OpenCode",
+  "model": "deepseek-v4-pro",
+  "turn_id": "881d9b91fdc8",
+  "compact_transcript_start": 0,
+  "token_usage": {
+    "input_tokens": 84963,
+    "cache_creation_tokens": 0,
+    "cache_read_tokens": 10442624,
+    "output_tokens": 26299,
+    "api_call_count": 88
+  },
+  "session_metrics": {
+    "turn_count": 1
+  },
+  "initial_attribution": {
+    "calculated_at": "2026-08-15T21:44:44.35346088Z",
+    "agent_lines": 224,
+    "agent_removed": 719,
+    "human_added": 345,
+    "human_modified": 712,
+    "human_removed": 0,
+    "total_committed": 1274,
+    "total_lines_changed": 3770,
+    "agent_percentage": 25.013262599469492,
+    "metric_version": 2
+  },
+  "prompt_attributions": [
+    {
+      "checkpoint_number": 1,
+      "user_lines_added": 206,
+      "user_lines_removed": 672,
+      "agent_lines_added": 0,
+      "agent_lines_removed": 0,
+      "user_added_per_file": {
+        "crates/mlt_rules/src/bugs/mod.rs": 1,
+        "crates/mlt_rules/src/language_spec/mod.rs": 205
+      },
+      "user_removed_per_file": {
+        "crates/mlt_rules/src/bugs/mod.rs": 137,
+        "crates/mlt_rules/src/language_spec/mod.rs": 487,
+        "docs/rules/bugs.md": 12,
+        "docs/rules/language-spec.md": 36
+      }
+    }
+  ]
+}
