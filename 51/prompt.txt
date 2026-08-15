@@ -1,0 +1,18 @@
+Rule IDs: STRIN, DOUQT, INBLK
+Category: Syntax Errors (3.7)
+Module: crates/mlt_rules/src/syntax_errors.rs
+
+You are the Reviewer in mlt's rule pipeline. Review the implementation plan for the SYNTAX G2 group (unterminated strings/comments).
+
+READ the plan at /tmp/opencode/plans/SYNTAX_G2.md first.
+
+Then verify against the codebase:
+- Read crates/mlt_rules/src/syntax_errors.rs (especially collect_skip_ranges, scan_source_text, check_error_nodes, check_file dispatch, and tests mod).
+- Run the AST probe in /tmp/opencode/astprobe if needed to confirm how `x = 'abc;`, `x = "abc;`, and unterminated `%{` block comments parse.
+
+Adjudicate: is the line-scan approach for STRIN (odd unmatched `'`) robust? Does `''` escaped-quote handling work? Is DOUQT's "unclosed at EOF" detection right (double-quoted strings span lines)? Is INBLK's comment-node detection right? Are MUST/MUST NOT cases right? file/step/test requirements complete?
+
+Return exactly:
+- `VERDICT: APPROVED` or `VERDICT: CHANGES REQUIRED`
+- A short list of required corrections (or confirmations if approved)
+- The corrected, complete implementation plan (repeat the whole plan with fixes) — self-contained, since the Implementer only sees your message.
