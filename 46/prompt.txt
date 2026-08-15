@@ -1,0 +1,18 @@
+Rule IDs: SBTMP, FVSYN, FVACI, FVACS, FVAMI
+Category: Syntax Errors (3.7)
+Module: crates/mlt_rules/src/syntax_errors.rs
+
+You are the Reviewer in mlt's rule pipeline. Review the implementation plan for the SYNTAX G7 group (call/argument syntax).
+
+READ the plan at /tmp/opencode/plans/SYNTAX_G7.md first.
+
+Then verify against the codebase:
+- Read crates/mlt_rules/src/syntax_errors.rs (especially walk_error_nodes, check_file dispatch, tests mod).
+- Run the AST probe in /tmp/opencode/astprobe to confirm how `x = f()(1);`, `f(1 2);`, `c{key, 'Name'} = 5;`, `f('Bad Name', 1);`, and `f(Name, 1);` parse.
+
+KEY VERIFIED FINDINGS already in the plan: `x = f()(1);` is `function_call "f()(1)"` whose name field is a `function_call`; `f(1 2);` has `arguments "1"` + ERROR `2`; `c{key, 'Name'}` is a `function_call` with `{}` and a string arg. Adjudicate: SBTMP detection (call name is a function_call) correct? FVSYN (ERROR inside call arguments) not conflicting with SYNER? FVACI/FVACS/FVAMI (name=value pairs with string/identifier names) implementable without excessive false positives? Are MUST/MUST NOT cases right? file/step/test requirements complete?
+
+Return exactly:
+- `VERDICT: APPROVED` or `VERDICT: CHANGES REQUIRED`
+- A short list of required corrections (or confirmations if approved)
+- The corrected, complete implementation plan (repeat the whole plan with fixes) — self-contained, since the Implementer only sees your message.
