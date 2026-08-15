@@ -1,0 +1,39 @@
+You are splitting the `good_practices` rule engine in `crates/mlt_rules/src/good_practices.rs` (69 check_ methods, 123 tests) into a directory of one-file-per-check modules. PURE MECHANICAL REFACTOR — zero behavior change.
+
+## CRITICAL CONSTRAINTS
+- Do NOT delete or modify `crates/mlt_rules/src/good_practices.rs`.
+- Do NOT modify `crates/mlt_rules/src/lib.rs`.
+- Only CREATE new files under `crates/mlt_rules/src/good_practices/`.
+- Do NOT commit.
+
+## Target layout
+```
+crates/mlt_rules/src/good_practices/
+├── mod.rs                        # GoodPracticesEngine, config, impl Rule (dispatch), inventory::submit!,
+│                                #   shared free helpers (pub(crate)), module doc, shared #[cfg(test)] helpers
+├── check_trync.rs                # ...
+├── check_ctch.rs                 # ...
+└── ...                           # one file per independent check
+```
+
+## How to do it
+1. Read `crates/mlt_rules/src/good_practices.rs` fully.
+2. `mod.rs` gets: module `//!` doc, `use` statements, config, `GoodPracticesEngine` struct, ALL free helpers + consts, the `impl Rule` with `check()`/`check_file()` dispatch, and `inventory::submit!`. Make shared free helpers `pub(crate)`.
+3. Each INDEPENDENT `check_*` method → own file `good_practices/check_<name>.rs`: `use super::*; impl GoodPracticesEngine { pub(crate) fn check_<name> ... }` + that check's tests.
+   - Note: many checks are file-level (`fn check_*(&self, tree: &Tree, source: &str)`). They are still independent if self-contained — give each its own file.
+   - Methods sharing MUTABLE traversal state (e.g. `check_parfor_file_level` or helpers that accumulate state and are called by another method) — keep together in mod.rs if they form a stateful unit; otherwise split.
+4. Move tests with their check: `use super::*; use crate::test_util::{has_id, lint_nodes, lint_file}; use mlt_core::Config;` + local `engine()` helper. Generic tests stay in mod.rs.
+
+## Verification (REQUIRED)
+- Diff each moved method body against original (identical except `pub(crate)` + indentation).
+- Confirm each check ID appears exactly once across `good_practices/`.
+- Confirm dispatch references match; moved-test count matches.
+You may write a diff script; do NOT run `cargo build`.
+
+## Report back
+- Files created
+- Moved vs kept methods (and why for any kept)
+- Verification results
+- Risks/notes
+
+Do not touch anything outside `crates/mlt_rules/src/good_practices/`.
