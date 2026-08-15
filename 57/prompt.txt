@@ -1,0 +1,24 @@
+Rule ID: MFAMB
+Category: Readability (3.3)
+Module: crates/mlt_rules/src/readability.rs
+
+You are the Implementer in mlt's rule pipeline. Implement MFAMB exactly per the approved plan.
+
+READ the approved plan at /tmp/opencode/plans/MFAMB.md first. It is a sub-check of the existing READABILITY_ENGINE, but implemented as a FILE-LEVEL check (hybrid rule) using the symbol table.
+
+CRITICAL: First read crates/mlt_rules/src/analysis/symbols.rs to verify the actual API — SymbolTable::build signature, Scope fields (defs, parent, scopes), DefKind variants, and scope_at. Adapt the plan's sketch to the real API. Also read crates/mlt_rules/src/unused.rs to see the idiomatic hybrid-rule pattern (has_file_check + check_file).
+
+Then implement:
+- crates/mlt_rules/src/readability.rs: imports (FileContext, SymbolTable, DefKind), has_file_check + check_file overrides, check_mfamb method, free fns walk_for_mfamb/check_one_mfamb/is_variable_in_scope, BUILTIN_DENYLIST const, module doc bullet, and all tests in the plan (using lint_file).
+- docs/mfamb.md (new, per docs/nosemi.md template; document the pragmatic interpretation).
+- docs/rules.md: add row.
+- zensical.toml: add nav entry.
+
+Verify:
+cargo build
+cargo clippy --all-targets
+cargo test
+
+Fix any failures until clean. Do NOT add code comments unless the plan requires them. Do NOT commit.
+
+Return a summary: files created/modified, whether it fires/not-fires on the plan's examples, cargo results, deviations from the plan.
