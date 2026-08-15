@@ -1,0 +1,22 @@
+Group: LANGSPEC C2 — Class/Method rules (26: MABSEAC, MABSEAM, MCAPP, MCCBS, MCCBU, MCCMC, MCCSOP, MCGSA, MCMIO, MCMSP, MCMTP, MCPIN, MCPSG, MCSCC, MCSCF, MCSCM, MCSCN, MCSCO, MCSCT, MCSMO, MCSWA, MTAGS3, MTMAT, MWKCL, MWKCT, MWKREF)
+Module: crates/mlt_rules/src/language_spec.rs
+
+You are the Reviewer in mlt's rule pipeline. Review the LANGSPEC C2 plan.
+
+READ the plan at /tmp/opencode/plans/LANGSPEC_C2.md first.
+
+Then verify against the codebase:
+- Read crates/mlt_rules/src/language_spec.rs (especially check_class_rules and the existing class checks MCFIL/MCDIR/MCRED/MCCBD/MCEB/MCANI/MCASC/MCSGA/MCSGP).
+- Read crates/mlt_rules/src/analysis/metadata.rs (ClassMeta, PropertiesBlockMeta, MethodsBlockMeta, AttributeMeta, PropertyMeta, FunctionMeta) to confirm the fields the plan relies on exist.
+- Run the astprobe (cd /tmp/opencode/astprobe && cargo run) to confirm the classdef AST (probe sample 1).
+
+Key adjudications:
+1. Does ClassMeta/AttributeMeta actually expose the attribute info needed (Sealed, Abstract, Access, SetAccess, GetAccess, WeakHandle, Constant, Dependent, AllowedSubclasses)? If attributes aren't parsed, which checks must fall back to raw tree walking?
+2. Are the MUST/MUST NOT examples valid MATLAB classdefs? Are they missing `end` etc.?
+3. Which of the 26 checks are genuinely implementable vs. too dependent on semantics the grammar can't capture? Recommend deferring any that can't be done reliably.
+4. file/step/test requirements complete?
+
+Return exactly:
+- `VERDICT: APPROVED` or `VERDICT: CHANGES REQUIRED`
+- A short list of required corrections (or confirmations if approved)
+- The corrected, complete implementation plan (repeat the whole plan with fixes) — self-contained, since the Implementer only sees your message.
