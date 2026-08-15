@@ -1,0 +1,18 @@
+Rule IDs: NOPAR2, EOLPAR, ENDPAR
+Category: Syntax Errors (3.7)
+Module: crates/mlt_rules/src/syntax_errors.rs
+
+You are the Reviewer in mlt's rule pipeline. Review the implementation plan for the SYNTAX G5 group (missing bracket/paren variants).
+
+READ the plan at /tmp/opencode/plans/SYNTAX_G5.md first.
+
+Then verify against the codebase:
+- Read crates/mlt_rules/src/syntax_errors.rs (especially walk_error_nodes, looks_like_missing_bracket, NOPAR emission, EOFMI, check_file dispatch, tests mod).
+- Run the AST probe in /tmp/opencode/astprobe to confirm how `x = f(1;`, `function f(`, and `x = f(1 + 2;` parse.
+
+KEY VERIFIED FINDING already in the plan: `x = f(1;` produces a MISSING `)` node (empty anon `)` marked ERR/MISS). Adjudicate: the classification (NOPAR2 mid-file / EOLPAR end-of-line / ENDPAR end-of-file) must NOT double-fire with existing NOPAR/EOFMI. Is replacing NOPAR with the variant correct? Are MUST/MUST NOT cases right? file/step/test requirements complete?
+
+Return exactly:
+- `VERDICT: APPROVED` or `VERDICT: CHANGES REQUIRED`
+- A short list of required corrections (or confirmations if approved)
+- The corrected, complete implementation plan (repeat the whole plan with fixes) — self-contained, since the Implementer only sees your message.

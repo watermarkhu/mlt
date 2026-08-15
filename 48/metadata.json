@@ -1,0 +1,56 @@
+{
+  "cli_version": "0.10.0",
+  "checkpoint_id": "01M02Z3V5D2C67P351J4ZF11JB",
+  "session_id": "ses_01ce84b96ffehY7XGzSewN3xPp",
+  "strategy": "manual-commit",
+  "created_at": "2026-08-15T15:02:35.254942814Z",
+  "branch": "feat",
+  "checkpoints_count": 2,
+  "save_step_count": 1,
+  "files_touched": [
+    "crates/mlt_rules/src/compatibility/mod.rs",
+    "crates/mlt_rules/src/config_issues/mod.rs",
+    "crates/mlt_rules/src/custom_checks.rs",
+    "crates/mlt_rules/src/incomplete_analysis/mod.rs",
+    "crates/mlt_rules/src/naming.rs",
+    "crates/mlt_rules/src/suggested_improvements.rs",
+    "crates/mlt_rules/src/syntax_errors/mod.rs",
+    "crates/mlt_rules/src/unset_variables/mod.rs",
+    "crates/mlt_rules/src/unused/mod.rs"
+  ],
+  "agent": "OpenCode",
+  "model": "",
+  "turn_id": "562df8398d26",
+  "compact_transcript_start": 0,
+  "token_usage": {
+    "input_tokens": 51037,
+    "cache_creation_tokens": 0,
+    "cache_read_tokens": 507200,
+    "output_tokens": 4934,
+    "api_call_count": 14
+  },
+  "session_metrics": {
+    "turn_count": 2
+  },
+  "initial_attribution": {
+    "calculated_at": "2026-08-15T15:02:35.233728193Z",
+    "agent_lines": 567,
+    "agent_removed": 230,
+    "human_added": 7086,
+    "human_modified": 0,
+    "human_removed": 0,
+    "total_committed": 7653,
+    "total_lines_changed": 11225,
+    "agent_percentage": 7.100222717149221,
+    "metric_version": 2
+  },
+  "prompt_attributions": [
+    {
+      "checkpoint_number": 1,
+      "user_lines_added": 0,
+      "user_lines_removed": 0,
+      "agent_lines_added": 0,
+      "agent_lines_removed": 0
+    }
+  ]
+}
