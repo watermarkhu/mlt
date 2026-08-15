@@ -1,0 +1,24 @@
+Rule ID: STLOW
+Category: Readability (3.3)
+Module: crates/mlt_rules/src/readability.rs
+
+You are the Reviewer in mlt's rule pipeline. Review the implementation plan for STLOW. You MUST produce a complete review in your final message.
+
+READ the plan at /tmp/opencode/plans/STLOW.md first.
+
+Then verify against the codebase:
+- Read crates/mlt_rules/src/readability.rs (check_strcmp around lines 292-340, check_function_call dispatch around lines 141-171, find_arguments helper around line 1149, diag() helper around line 117, is_empty_string around line 1155, and the tests mod).
+- Read crates/mlt_rules/src/lib.rs, crates/mlt_rules/src/nosemi.rs, AGENTS.md "Adding a New Rule", and docs/nosemi.md.
+
+The plan: STLOW fires when a strcmp-family call has one arg being upper(x)/lower(x) and the other arg being a string literal already all in that case. E.g. strcmp(upper(str), 'ABC') → literal already uppercase so upper() is unnecessary.
+
+Check carefully:
+1. Is the detection logic implementable with the real tree-sitter node structure? Confirm how to extract the strcmp arguments, detect a nested upper/lower function_call, and read a string literal's text.
+2. Does it integrate with the existing check_strcmp (dispatched for "strcmp") without overlap with STREMP (strcmp(s,'')) and STRIFCND (strcmp in if condition)? Should STLOW be its own dispatch arm for "strcmp"|"strcmpi"|"strncmp"|"strncmpi", or folded into check_strcmp?
+3. Are the MUST fire / MUST NOT fire cases correct?
+4. Are all files/steps/tests specified?
+
+Return exactly, in this order:
+- `VERDICT: APPROVED` or `VERDICT: CHANGES REQUIRED`
+- A short list of required corrections (or confirmations if approved)
+- The corrected, complete implementation plan (repeat the whole plan with your fixes) — self-contained, since the Implementer only sees your message.
