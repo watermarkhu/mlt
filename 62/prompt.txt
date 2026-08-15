@@ -1,0 +1,20 @@
+Rule ID: RDERR
+Category: Incomplete Analysis (3.6)
+Module: crates/mlt_cli/src/main.rs (CLI-level guard)
+
+You are the Reviewer in mlt's rule pipeline (plan in main → Reviewer → Implementer). Review the implementation plan for RDERR.
+
+READ the plan at /tmp/opencode/plans/RDERR.md first.
+
+Then verify against the codebase:
+- Read crates/mlt_cli/src/main.rs (especially the file-read loop around lines 48-54 and the diagnostic-printing format).
+- Read crates/mlt_core/src/ to see how Diagnostic is constructed.
+
+IMPORTANT CONFLICT: RDERR and NOFIL both modify the same `fs::read_to_string` match in main.rs. Adjudicate the best resolution: (a) one combined change implementing both NOFIL and RDERR together (cleaner), or (b) separate flows with careful integration. Your corrected RDERR plan should be self-contained and note integration with NOFIL.
+
+Adjudicate: RDERR (non-NotFound I/O errors) vs NOFIL (NotFound) distinction; printing vs real Diagnostic; exit-code preservation.
+
+You MUST return your full review in your final message. Return exactly:
+- `VERDICT: APPROVED` or `VERDICT: CHANGES REQUIRED`
+- A short list of required corrections (or confirmations if approved)
+- The corrected, complete implementation plan (repeat the whole plan with fixes) — self-contained, since the Implementer only sees your message.
