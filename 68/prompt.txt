@@ -1,0 +1,19 @@
+Rule ID: NOFIL
+Category: Incomplete Analysis (3.6)
+Module: crates/mlt_cli/src/main.rs (CLI-level guard)
+
+You are the Reviewer in mlt's rule pipeline (plan in main → Reviewer → Implementer). Review the implementation plan for NOFIL.
+
+READ the plan at /tmp/opencode/plans/NOFIL.md first.
+
+Then verify against the codebase:
+- Read crates/mlt_cli/src/main.rs (especially the file-read loop around lines 48-54 and the diagnostic-printing format, plus total_diagnostics/files_with_issues aggregation and exit-code logic).
+- Read crates/mlt_core/src/ to see how Diagnostic is constructed and whether constructing one in the CLI is feasible/cleaner than printing directly.
+- Check whether any CLI tests exist (crates/mlt_cli/tests/ or #[test] in main.rs).
+
+Key questions to adjudicate: printing directly vs constructing a real mlt_core::Diagnostic (which one is cleaner and keeps the exit-code logic correct)? Does the proposed approach preserve existing behavior for valid files? Is the message/format consistent with the lint output format?
+
+Return exactly:
+- `VERDICT: APPROVED` or `VERDICT: CHANGES REQUIRED`
+- A short list of required corrections (or confirmations if approved)
+- The corrected, complete implementation plan (repeat the whole plan with fixes) — self-contained, since the Implementer only sees your message.
