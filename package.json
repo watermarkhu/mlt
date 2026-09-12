@@ -9,7 +9,10 @@
     "docs:preview": "vitepress preview docs"
   },
   "devDependencies": {
+    "@shikijs/monaco": "^4.4.3",
     "lucide-vue-next": "^1.0.0",
+    "monaco-editor": "^0.56.0",
+    "shiki": "^4.4.3",
     "vitepress": "^1.6.4"
   }
 }

@@ -1330,24 +1330,22 @@ pub(crate) fn collect_global_use_diagnostics<'a>(
         if let Some(parent) = id.parent() {
             match parent.kind() {
                 "global_operator" | "persistent_operator" => continue,
-                "assignment" => {
+                "assignment"
                     if skip_writes
                         && parent
                             .child_by_field_name("left")
                             .map(|l| l.id() == id.id())
-                            .unwrap_or(false)
-                    {
-                        continue;
-                    }
+                            .unwrap_or(false) =>
+                {
+                    continue;
                 }
-                "field_expression" => {
+                "field_expression"
                     if parent
                         .child_by_field_name("field")
                         .map(|f| f.id() == id.id())
-                        .unwrap_or(false)
-                    {
-                        continue;
-                    }
+                        .unwrap_or(false) =>
+                {
+                    continue;
                 }
                 _ => {}
             }
@@ -1396,33 +1394,30 @@ pub(crate) fn collect_parfor_body_reads<'a>(
         }
         if let Some(parent) = id.parent() {
             match parent.kind() {
-                "function_call" => {
+                "function_call"
                     if parent
                         .child_by_field_name("name")
                         .map(|n| n.id() == id.id())
-                        .unwrap_or(false)
-                    {
-                        continue;
-                    }
+                        .unwrap_or(false) =>
+                {
+                    continue;
                 }
-                "assignment" => {
+                "assignment"
                     if parent
                         .child_by_field_name("left")
                         .map(|l| l.id() == id.id())
-                        .unwrap_or(false)
-                    {
-                        continue;
-                    }
+                        .unwrap_or(false) =>
+                {
+                    continue;
                 }
                 "global_operator" | "persistent_operator" => continue,
-                "field_expression" => {
+                "field_expression"
                     if parent
                         .child_by_field_name("field")
                         .map(|f| f.id() == id.id())
-                        .unwrap_or(false)
-                    {
-                        continue;
-                    }
+                        .unwrap_or(false) =>
+                {
+                    continue;
                 }
                 "iterator" => continue,
                 _ => {}

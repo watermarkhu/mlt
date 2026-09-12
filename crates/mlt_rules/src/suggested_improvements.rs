@@ -163,6 +163,11 @@ impl Rule for SuggestedImprovementsEngine {
         Category::SuggestedImprovements
     }
 
+    fn enabled_by_default(&self) -> bool {
+        // Replacement hints are noisy for general runs; opt in explicitly.
+        false
+    }
+
     fn target_node_types(&self) -> &'static [&'static str] {
         TARGET_NODES
     }

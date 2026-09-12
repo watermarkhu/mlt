@@ -196,6 +196,13 @@ pub trait Rule: Send + Sync {
         true
     }
 
+    /// Whether this rule is enabled by default (no config present).
+    /// Most rules return `true`. Specialized engines (code generation,
+    /// deployment, ...) return `false` so a default run stays focused.
+    fn enabled_by_default(&self) -> bool {
+        true
+    }
+
     /// Whether this rule implements file-level checking.
     ///
     /// Override to return `true` if the rule implements [`check_file`].

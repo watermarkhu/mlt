@@ -2204,7 +2204,7 @@ See [Configuration](configuration.md) for full details.
 
 ## Enabling and Disabling Rules
 
-All rules are enabled by default. Disable individual rules:
+Most rules are enabled by default. Disable individual rules:
 
 ```toml
 [lint.rules]
@@ -2217,6 +2217,20 @@ Or disable entire categories:
 [lint.categories]
 behavior-changes = "off"
 ```
+
+The specialized engines `CODEGEN_ENGINE`, `DEPLOYMENT_ENGINE`,
+`SYSTEM_OBJECTS_ENGINE`, `CONFIG_ISSUES_ENGINE`, `SUGGESTED_IMPROVEMENTS`, and
+`UNSUPPORTED_ENGINE` are off by default. Re-enable one per rule or per category:
+
+```toml
+[lint.rules.CODEGEN_ENGINE]
+severity = "error"
+
+[lint.categories]
+code-generation = "error"
+```
+
+See [Configuration](configuration.md#default-behavior) for the full default set.
 
 ## Auto-fix Support
 

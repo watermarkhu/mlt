@@ -151,6 +151,14 @@ mod wasm {
         }
     }
 
+    /// Build a `Linter` from a `.mlt.toml` string, returning a plain error
+    /// string (host-testable; the `#[wasm_bindgen]` wrapper maps it to `JsValue`).
+    fn from_toml_str(toml: &str) -> Result<Linter, String> {
+        let mlt_config =
+            Config::from_toml(toml).map_err(|e| format!("Invalid config: {e}"))?;
+        Ok(build_linter(mlt_config))
+    }
+
     /// Mark a rule ID as disabled in the config.
     fn disable_rule(config: &mut Config, rule_id: &str) {
         let entry = config.rules.entry(rule_id.to_string()).or_default();
@@ -212,6 +220,18 @@ mod wasm {
             let config = Config::from_toml(content)
                 .map_err(|e| JsValue::from_str(&format!("Invalid config: {e}")))?;
             Ok(build_linter(config))
+        }
+
+        /// Create a new `Linter` from a `.mlt.toml` configuration string.
+        ///
+        /// Supports the full config fidelity (per-rule severity, per-category
+        /// overrides, rule params, `exclude`). Returns a `JsValue` error string
+        /// when the TOML cannot be parsed, so callers can display it.
+        ///
+        /// # Arguments
+        /// * `toml` - The contents of a `.mlt.toml` file.
+        pub fn from_toml(toml: &str) -> Result<Linter, JsValue> {
+            from_toml_str(toml).map_err(|e| JsValue::from_str(&e))
         }
 
         /// Lint MATLAB content and return warnings as JSON.
@@ -392,6 +412,45 @@ mod wasm {
             }
             assert!(serde_json::from_str::<Vec<serde_json::Value>>(&warnings).is_ok());
         }
+
+        #[test]
+        fn from_toml_disables_rule() {
+            let mut l = from_toml_str("[lint.rules]\nNOSEMI = \"off\"\n").unwrap();
+            let warnings = l.check("x = 1\n", None);
+            let parsed: Vec<serde_json::Value> = serde_json::from_str(&warnings).unwrap();
+            assert!(
+                !parsed.iter().any(|w| w["rule_id"] == "NOSEMI"),
+                "NOSEMI should be disabled, got: {warnings}"
+            );
+        }
+
+        #[test]
+        fn from_toml_reenables_default_off_engine() {
+            // A bare script triggers EMSCR (codegen) only when CODEGEN_ENGINE is on.
+            let mut default_linter = linter();
+            let default_warnings = default_linter.check("x = 1\n", None);
+            let default_parsed: Vec<serde_json::Value> =
+                serde_json::from_str(&default_warnings).unwrap();
+            assert!(
+                !default_parsed.iter().any(|w| w["rule_id"] == "EMSCR"),
+                "EMSCR should be off by default, got: {default_warnings}"
+            );
+
+            let mut l =
+                from_toml_str("[lint.rules.CODEGEN_ENGINE]\nseverity = \"error\"\n")
+                    .unwrap();
+            let warnings = l.check("x = 1\n", None);
+            let parsed: Vec<serde_json::Value> = serde_json::from_str(&warnings).unwrap();
+            assert!(
+                parsed.iter().any(|w| w["rule_id"] == "EMSCR"),
+                "EMSCR should fire once CODEGEN_ENGINE is re-enabled, got: {warnings}"
+            );
+        }
+
+        #[test]
+        fn from_toml_rejects_invalid_toml() {
+            assert!(from_toml_str("[lint.rules\nNOSEMI = ").is_err());
+        }
     }
 }
 
@@ -400,31 +459,31 @@ mod preset_tests {
     use crate::wasm::*;
 
     #[test]
-    fn from_config_toml_reads_preset() {
-        // `recommended` disables formatting (which includes NOSEMI).
-        let l = Linter::from_config_toml("[lint]\npreset = \"recommended\"\n").unwrap();
-        let mut l = l;
+    fn from_config_toml_accepts_preset() {
+        // Presets are parsed without error, but they no longer gate category
+        // enablement (that is decided per-rule by `enabled_by_default`).
+        let mut l = Linter::from_config_toml("[lint]\npreset = \"recommended\"\n").unwrap();
         let warnings = l.check("x = 1\n", None);
         let parsed: Vec<serde_json::Value> = serde_json::from_str(&warnings).unwrap();
         assert!(
-            !parsed.iter().any(|w| w["rule_id"] == "NOSEMI"),
-            "NOSEMI (formatting) should be disabled under 'recommended', got: {warnings}"
+            parsed.iter().any(|w| w["rule_id"] == "NOSEMI"),
+            "NOSEMI (formatting) should stay enabled; presets no longer gate categories, got: {warnings}"
         );
     }
 
     #[test]
-    fn from_config_toml_mathworks_keeps_formatting() {
+    fn from_config_toml_default_enables_formatting() {
         let mut l = Linter::from_config_toml("").unwrap();
         let warnings = l.check("x = 1\n", None);
         let parsed: Vec<serde_json::Value> = serde_json::from_str(&warnings).unwrap();
         assert!(
             parsed.iter().any(|w| w["rule_id"] == "NOSEMI"),
-            "NOSEMI should be enabled under the default mathworks preset, got: {warnings}"
+            "NOSEMI should be enabled by default, got: {warnings}"
         );
     }
 
     #[test]
-    fn linter_config_preset_field() {
+    fn linter_config_preset_field_is_accepted() {
         let config = LinterConfig {
             preset: Some("recommended".to_string()),
             ..Default::default()
@@ -432,6 +491,9 @@ mod preset_tests {
         let mut l = from_config(config);
         let warnings = l.check("x = 1\n", None);
         let parsed: Vec<serde_json::Value> = serde_json::from_str(&warnings).unwrap();
-        assert!(!parsed.iter().any(|w| w["rule_id"] == "NOSEMI"));
+        assert!(
+            parsed.iter().any(|w| w["rule_id"] == "NOSEMI"),
+            "NOSEMI should stay enabled; presets no longer gate categories"
+        );
     }
 }

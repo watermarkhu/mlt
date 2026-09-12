@@ -259,21 +259,19 @@ fn check_bare_condition(
                 });
             }
         }
-        "number" => {
-            if eng.is_check_enabled("BDLOG2") {
-                diagnostics.push(Diagnostic {
-                    rule_id: "BDLOG2",
-                    message: "A scalar logical value is expected in the conditional expression. \
+        "number" if eng.is_check_enabled("BDLOG2") => {
+            diagnostics.push(Diagnostic {
+                rule_id: "BDLOG2",
+                message: "A scalar logical value is expected in the conditional expression. \
                               Use 'any' or 'all' to reduce the array to a logical scalar, or \
                               compare the scalar value to 0."
-                        .to_string(),
-                    severity: Severity::Warning,
-                    byte_range: value.start_byte()..value.end_byte(),
-                    line: pos.row + 1,
-                    column: pos.column + 1,
-                    fix: None,
-                });
-            }
+                    .to_string(),
+                severity: Severity::Warning,
+                byte_range: value.start_byte()..value.end_byte(),
+                line: pos.row + 1,
+                column: pos.column + 1,
+                fix: None,
+            });
         }
         _ => {}
     }

@@ -89,11 +89,90 @@ pub fn active_rules(config: &Config) -> Vec<Box<dyn Rule>> {
         .filter_map(|reg| {
             // Construct the rule to check its category for category-level filtering.
             let rule = (reg.factory)(config);
-            if config.is_rule_enabled_for_category(reg.id, rule.category()) {
+            if config.is_rule_enabled_for_category(
+                reg.id,
+                rule.category(),
+                rule.enabled_by_default(),
+            ) {
                 Some(rule)
             } else {
                 None
             }
         })
         .collect()
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn active_ids(config: &Config) -> Vec<String> {
+        active_rules(config)
+            .iter()
+            .map(|r| r.id().to_string())
+            .collect()
+    }
+
+    #[test]
+    fn specialized_engines_are_disabled_by_default() {
+        let ids = active_ids(&Config::default());
+        for off in [
+            "CODEGEN_ENGINE",
+            "DEPLOYMENT_ENGINE",
+            "SYSTEM_OBJECTS_ENGINE",
+            "CONFIG_ISSUES_ENGINE",
+            "SUGGESTED_IMPROVEMENTS",
+            "UNSUPPORTED_ENGINE",
+        ] {
+            assert!(
+                !ids.contains(&off.to_string()),
+                "{off} should be off by default"
+            );
+        }
+    }
+
+    #[test]
+    fn general_engines_are_enabled_by_default() {
+        let ids = active_ids(&Config::default());
+        for on in [
+            "INCOMPLETE_ANALYSIS",
+            "SYNTAX_ERRORS_ENGINE",
+            "LANGUAGE_SPEC_ENGINE",
+            "BUGS_ENGINE",
+            "UNSET_VARIABLES_ENGINE",
+            "UNUSED_ENGINE",
+            "GOOD_PRACTICES_ENGINE",
+            "READABILITY_ENGINE",
+            "FORMATTING_ENGINE",
+            "NOSEMI",
+            "PERFORMANCE_ENGINE",
+            "CUSTOM_CHECKS",
+            "NAMING_ENGINE",
+            "COMPAT",
+        ] {
+            assert!(
+                ids.contains(&on.to_string()),
+                "{on} should be on by default"
+            );
+        }
+    }
+
+    #[test]
+    fn disabled_by_default_engine_can_be_reenabled_per_rule() {
+        let config =
+            Config::from_toml("[lint.rules.CODEGEN_ENGINE]\nseverity = \"error\"\n").unwrap();
+        assert!(active_ids(&config).contains(&"CODEGEN_ENGINE".to_string()));
+    }
+
+    #[test]
+    fn disabled_by_default_engine_can_be_reenabled_per_category() {
+        let config = Config::from_toml("[lint.categories]\ncode-generation = \"error\"\n").unwrap();
+        assert!(active_ids(&config).contains(&"CODEGEN_ENGINE".to_string()));
+    }
+
+    #[test]
+    fn enabled_by_default_engine_can_be_disabled_per_category() {
+        let config = Config::from_toml("[lint.categories]\nperformance = \"off\"\n").unwrap();
+        assert!(!active_ids(&config).contains(&"PERFORMANCE_ENGINE".to_string()));
+    }
 }

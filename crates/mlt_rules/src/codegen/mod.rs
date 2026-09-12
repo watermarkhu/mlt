@@ -358,6 +358,11 @@ impl Rule for CodegenEngine {
         Category::CodeGeneration
     }
 
+    fn enabled_by_default(&self) -> bool {
+        // Only relevant for MATLAB Coder targets; opt in explicitly.
+        false
+    }
+
     fn target_node_types(&self) -> &'static [&'static str] {
         TARGET_NODES
     }

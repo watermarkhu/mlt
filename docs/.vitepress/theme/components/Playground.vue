@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
+import MonacoEditor from './MonacoEditor.vue'
 
 interface Warning {
   rule_id: string
@@ -64,6 +65,23 @@ const input = ref('')
 const warnings = ref<Warning[]>([])
 const exampleKey = ref('')
 
+const DEFAULT_TOML = `# mlt playground configuration (.mlt.toml).
+# Everything here is optional; comments-only uses mlt's defaults.
+# Engines off by default (uncomment a block to re-enable):
+#   code-generation, deployment, system-objects,
+#   configuration-issues, suggested-improvements, unsupported
+#
+# [lint.categories]
+# code-generation = "error"
+#
+# [lint.rules.CODEGEN_ENGINE]
+# severity = "error"
+`
+
+const tomlInput = ref(DEFAULT_TOML)
+const showConfig = ref(false)
+const configError = ref('')
+
 const fixDisabled = computed(() => !version.value)
 const charCount = computed(() => {
   const len = input.value.length
@@ -77,6 +95,8 @@ const warningCount = computed(() =>
 
 let linter: unknown = null
 let debounceTimer: ReturnType<typeof setTimeout> | undefined
+let tomlDebounceTimer: ReturnType<typeof setTimeout> | undefined
+let wasmMod: Record<string, any> | null = null
 
 // Vite refuses to `import()` files served from `public/` (they're copied as-is
 // during build and never pass through the module graph). Bypass Vite's static
@@ -98,7 +118,8 @@ async function main(): Promise<void> {
     const mod = await loadWasm()
     await mod.default()
     version.value = mod.Linter.get_version()
-    linter = new mod.Linter({})
+    wasmMod = mod
+    rebuildLinter()
     input.value = EXAMPLES.common
     lint()
     loading.value = false
@@ -106,6 +127,33 @@ async function main(): Promise<void> {
     loadError.value = `Failed to load mlt-wasm: ${(err as Error).message}`
     loading.value = false
   }
+}
+
+/// (Re)build the linter from the TOML panel content. Returns false and keeps
+/// the previous linter when the TOML is invalid.
+function rebuildLinter(): boolean {
+  if (!wasmMod) return false
+  const text = tomlInput.value.trim()
+  try {
+    linter = text ? wasmMod.Linter.from_toml(tomlInput.value) : new wasmMod.Linter({})
+    configError.value = ''
+    return true
+  } catch (err) {
+    configError.value = `Invalid .mlt.toml: ${typeof err === 'string' ? err : (err as Error).message}`
+    return false
+  }
+}
+
+function onTomlChange(): void {
+  clearTimeout(tomlDebounceTimer)
+  tomlDebounceTimer = setTimeout(() => {
+    if (rebuildLinter()) lint()
+  }, 600)
+}
+
+function resetToml(): void {
+  tomlInput.value = DEFAULT_TOML
+  if (rebuildLinter()) lint()
 }
 
 function lint(): void {
@@ -163,19 +211,32 @@ onMounted(main)
         </div>
       </div>
 
+      <div class="pg-config">
+        <button class="pg-btn pg-config-toggle" @click="showConfig = !showConfig">
+          {{ showConfig ? '▾' : '▸' }} .mlt.toml configuration
+        </button>
+        <div v-if="showConfig" class="pg-config-body">
+          <MonacoEditor
+            v-model="tomlInput"
+            language="toml"
+            min-height="220px"
+            @change="onTomlChange"
+          />
+          <div class="pg-config-footer">
+            <span v-if="configError" class="pg-config-error">{{ configError }}</span>
+            <span v-else class="pg-meta">Applied automatically</span>
+            <button class="pg-btn" @click="resetToml">Reset</button>
+          </div>
+        </div>
+      </div>
+
       <div class="pg-panels">
         <div class="pg-panel">
           <div class="pg-panel-header">
             <span>MATLAB input</span>
             <span class="pg-meta">{{ charCount }}</span>
           </div>
-          <textarea
-            v-model="input"
-            class="pg-editor"
-            spellcheck="false"
-            placeholder="Type or paste MATLAB code here…"
-            @input="onInput"
-          ></textarea>
+          <MonacoEditor v-model="input" language="matlab" @change="onInput" />
         </div>
         <div class="pg-panel">
           <div class="pg-panel-header">
@@ -322,19 +383,35 @@ onMounted(main)
   letter-spacing: 0;
 }
 
-.pg-editor {
-  flex: 1;
-  min-height: 360px;
-  padding: 0.75rem;
-  font-family: var(--vp-font-family-mono, 'Roboto Mono', monospace);
-  font-size: 0.82rem;
-  line-height: 1.6;
-  border: none;
-  outline: none;
-  resize: vertical;
+.pg-config {
+  margin-bottom: 0.75rem;
+}
+.pg-config-toggle {
+  width: 100%;
+  text-align: left;
+  font-family: var(--vp-font-family-mono, monospace);
+}
+.pg-config-body {
+  margin-top: 0.5rem;
+  border: 1px solid var(--vp-c-divider, #ddd);
+  border-radius: 6px;
+  overflow: hidden;
   background: var(--vp-c-bg, #fff);
-  color: var(--vp-c-text-1, #333);
-  tab-size: 2;
+}
+.pg-config-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.5rem 0.75rem;
+  border-top: 1px solid var(--vp-c-divider, #ddd);
+}
+.pg-config-error {
+  font-size: 0.8rem;
+  color: #c0392b;
+}
+
+.pg-monaco {
+  flex: 1;
 }
 
 .pg-results {

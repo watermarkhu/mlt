@@ -30,6 +30,10 @@ const warnings = JSON.parse(linter.check('x = 1'));
 
 // Apply all auto-fixes.
 const fixed = linter.fix('x = 1');
+
+// Or start from a `.mlt.toml` string (full fidelity: severities,
+// categories, rule params, exclude). Throws on invalid TOML.
+const configured = Linter.from_toml('[lint.rules]\nNOSEMI = "off"\n');
 ```
 
 See the package [`README`](https://github.com/watermarkhu/mlt/tree/main/wasm-pkg)

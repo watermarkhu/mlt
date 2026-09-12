@@ -151,6 +151,11 @@ impl Rule for ConfigIssuesEngine {
         Category::ConfigurationIssues
     }
 
+    fn enabled_by_default(&self) -> bool {
+        // Only relevant when configuration functions are misused; opt in explicitly.
+        false
+    }
+
     fn target_node_types(&self) -> &'static [&'static str] {
         TARGET_NODES
     }

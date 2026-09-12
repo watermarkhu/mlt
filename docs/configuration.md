@@ -196,10 +196,32 @@ All other keys in the table are rule-specific parameters (see **Per-Engine Param
 
 When no `.mlt.toml` is present:
 
-- The **`mathworks`** preset is active (Custom Checks and Naming are off)
-- All other rules are **enabled** at their default severity (typically `"warn"`)
+- Most rules are **enabled**; each uses its **default severity**
+- These specialized engines are **off by default** (opt in per rule or per category):
+  - `CODEGEN_ENGINE` (`code-generation`) — MATLAB Coder constraints
+  - `DEPLOYMENT_ENGINE` (`deployment`) — MATLAB Compiler constraints
+  - `SYSTEM_OBJECTS_ENGINE` (`system-objects`) — `matlab.System` validation
+  - `CONFIG_ISSUES_ENGINE` (`configuration-issues`) — config-function misuse
+  - `SUGGESTED_IMPROVEMENTS` (`suggested-improvements`) — replacement hints
+  - `UNSUPPORTED_ENGINE` (`unsupported`) — platform-specific features
 - No files are excluded
 - No rule-specific parameters are set
+
+The equivalent default configuration looks like this:
+
+```toml title=".mlt.toml"
+[lint.categories]
+code-generation = "off"
+deployment = "off"
+system-objects = "off"
+configuration-issues = "off"
+suggested-improvements = "off"
+unsupported = "off"
+
+# (CUSTOM_CHECKS stays enabled but inert: every threshold defaults to 0,
+# which disables that check until you set a limit. NAMING_ENGINE stays
+# enabled but only its length checks fire without further configuration.)
+```
 
 ## Severity Override Precedence
 

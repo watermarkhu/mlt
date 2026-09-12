@@ -251,6 +251,11 @@ impl Rule for UnsupportedEngine {
         Category::Unsupported
     }
 
+    fn enabled_by_default(&self) -> bool {
+        // Platform-specific feature checks are noisy for general runs; opt in explicitly.
+        false
+    }
+
     fn target_node_types(&self) -> &'static [&'static str] {
         TARGET_NODES
     }

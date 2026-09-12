@@ -272,6 +272,11 @@ impl Rule for DeploymentEngine {
         Category::Deployment
     }
 
+    fn enabled_by_default(&self) -> bool {
+        // Only relevant for MATLAB Compiler targets; opt in explicitly.
+        false
+    }
+
     fn target_node_types(&self) -> &'static [&'static str] {
         TARGET_NODES
     }

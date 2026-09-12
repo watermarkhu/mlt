@@ -329,6 +329,11 @@ impl Rule for SystemObjectsEngine {
         Category::SystemObjects
     }
 
+    fn enabled_by_default(&self) -> bool {
+        // Only relevant for matlab.System classes; opt in explicitly.
+        false
+    }
+
     fn target_node_types(&self) -> &'static [&'static str] {
         TARGET_NODES
     }

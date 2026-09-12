@@ -45,6 +45,22 @@ const linter = new Linter({
 });
 ```
 
+### `Linter.from_toml(toml)`
+
+Create a linter from a `.mlt.toml` configuration string, with full config
+fidelity (per-rule severity, per-category overrides, rule parameters,
+`exclude`). Throws a string error when the TOML cannot be parsed.
+
+```javascript
+const linter = Linter.from_toml(`
+[lint.rules]
+NOSEMI = "off"
+
+[lint.rules.CODEGEN_ENGINE]
+severity = "error"
+`);
+```
+
 ### `linter.check(content, path?)`
 
 Lint MATLAB content and return warnings as a JSON string.

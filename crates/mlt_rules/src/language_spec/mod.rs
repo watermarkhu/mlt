@@ -1495,23 +1495,21 @@ impl LanguageSpecEngine {
             match parent.kind() {
                 // Callee of a function call — recorded by the function_call arm.
                 "function_call" => return,
-                "field_expression" => {
+                "field_expression"
                     if parent
                         .child_by_field_name("field")
                         .map(|f| f.id() == node.id())
-                        .unwrap_or(false)
-                    {
-                        return;
-                    }
+                        .unwrap_or(false) =>
+                {
+                    return;
                 }
-                "assignment" => {
+                "assignment"
                     if parent
                         .child_by_field_name("left")
                         .map(|l| l.id() == node.id())
-                        .unwrap_or(false)
-                    {
-                        return;
-                    }
+                        .unwrap_or(false) =>
+                {
+                    return;
                 }
                 "iterator" => return,
                 "global_operator" | "persistent_operator" => return,
