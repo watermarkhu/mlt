@@ -1,0 +1,25 @@
+[workspace]
+resolver = "2"
+members = [
+    "crates/mlt_cli",
+    "crates/mlt_core",
+    "crates/mlt_rules",
+    "crates/mlt_wasm",
+]
+
+[workspace.package]
+edition = "2021"
+license = "MIT"
+authors = ["Mark Shui Hu"]
+
+[workspace.dependencies]
+tree-sitter = "0.25"
+tree-sitter-language = "0.1"
+tree-sitter-matlab = "1.3"
+serde = { version = "1", features = ["derive"] }
+toml = "0.8"
+thiserror = "2"
+anyhow = "1"
+clap = { version = "4", features = ["derive"] }
+inventory = "0.3"
+regex = "1"
